@@ -64,6 +64,18 @@
             </label>
           </div>
           <p class="muted small" id="profileSummary"></p>
+          <div class="lookup" id="lookup" hidden>
+            <div class="lookup-row">
+              <label class="field grow">Нік персонажа в Aion 2
+                <input id="lookupName" type="text" maxlength="24" autocomplete="off" placeholder="Напр. Sula">
+              </label>
+              <button class="btn" id="btnLookup" type="button">Підтягнути БМ</button>
+              <button class="btn btn-ghost" id="btnLookupRefresh" type="button" hidden>Оновити</button>
+              <button class="btn btn-ghost" id="btnLookupUnlink" type="button" hidden>Відв’язати</button>
+            </div>
+            <p class="muted small" id="lookupStatus" role="status"></p>
+            <ul class="candidates" id="lookupCandidates" hidden></ul>
+          </div>
         </div>
       </div>
       <div class="profile-actions">
@@ -196,7 +208,7 @@
 
 <footer class="footer">
   <div class="wrap">
-    <p>Неофіційний фанатський гайд за інфографікою «Новачок 45 рівня — дорожня карта спорядження». Aion 2 — торгова марка NCSoft. Інтерактивна карта належить interactivemap.app.</p>
+    <p>Неофіційний фанатський гайд за інфографікою «Новачок 45 рівня — дорожня карта спорядження». Aion 2 — торгова марка NCSoft. Інтерактивна карта належить interactivemap.app. Дані персонажів беруться з офіційного сайту Aion 2 через неофіційний доступ і можуть тимчасово бути недоступні — бойову міць можна ввести вручну.</p>
   </div>
 </footer>
 

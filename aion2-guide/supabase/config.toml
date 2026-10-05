@@ -1,0 +1,4 @@
+project_id = "1hp-aion2-guide"
+
+[functions.aion-lookup]
+verify_jwt = true

@@ -172,6 +172,21 @@
     return { name: name, cp: clamp(toInt(raw && raw.cp), 0, 9999), checks: checks };
   }
 
+  var REGIONS = ['nae', 'naw', 'eu', 'asia', 'latam'];
+
+  /* Прив'язаний персонаж (з Edge Function або з БД). Формат: n, s(сервер), cls, rg, cid, sid, lvl, il, cp, t */
+  function sanitizeCharacter(c) {
+    if (!c || typeof c !== 'object') return null;
+    var str = function (v, n) { return String(v == null ? '' : v).slice(0, n); };
+    var o = {
+      n: str(c.n, 24), s: str(c.s, 32), cls: str(c.cls, 32), rg: str(c.rg, 8), cid: str(c.cid, 200),
+      sid: toInt(c.sid), lvl: clamp(toInt(c.lvl), 0, 99), il: clamp(toInt(c.il), 0, 99999),
+      cp: clamp(toInt(c.cp), 0, 99999999), t: toInt(c.t),
+    };
+    if (!o.n || REGIONS.indexOf(o.rg) < 0 || !/^[A-Za-z0-9_.%-]{1,200}$/.test(o.cid) || o.sid <= 0) return null;
+    return o;
+  }
+
   function parseCode(input) {
     var s = String(input || '').trim();
     var m = s.match(/share=([A-Za-z0-9_-]+)/);
@@ -382,6 +397,7 @@
     $('btnDelete').textContent = p.cloud ? 'Видалити з 1 HP' : 'Видалити профіль';
 
     syncThresholds(p);
+    syncLookup(p);
     syncAuthUI();
     renderTeam();
   }
@@ -439,7 +455,7 @@
     sortRows(rows).forEach(function (r) {
       var nick = h('div', { class: 'nick' });
       if (r.avatar && /^https:\/\//.test(r.avatar)) nick.appendChild(h('img', { src: r.avatar, alt: '', width: 24, height: 24, loading: 'lazy', referrerpolicy: 'no-referrer' }));
-      nick.appendChild(document.createTextNode(r.name));
+      nick.appendChild(h('div', null, r.name, r.character ? h('span', { class: 'sub', text: r.character.cls + ' · ' + r.character.s }) : null));
       var tr = h('tr', { class: r.isActive ? 'active' : null },
         h('td', null, nick),
         h('td', { class: 'num', text: r.cp > 0 ? String(r.cp) : '—' }),
@@ -454,7 +470,7 @@
 
   function renderTeam() {
     var local = localProfiles().map(function (p) {
-      return { id: p.id, name: p.name, cp: p.cp, pct: roadPct(p.checks), isActive: p.id === state.active, profile: p };
+      return { id: p.id, name: p.name, cp: p.cp, pct: roadPct(p.checks), isActive: p.id === state.active, profile: p, character: p.character };
     });
     renderTable($('localTable'), local, {
       empty: 'Профілів немає.',
@@ -478,7 +494,7 @@
     var rows = local;
     if (loggedIn) {
       rows = cloudRows.map(function (m) {
-        return { name: m.name, avatar: m.avatar_url, cp: m.cp, pct: bitsRoadPct(m.checks), updated: m.updated_at, isActive: m.user_id === Cloud.user.id };
+        return { name: m.name, avatar: m.avatar_url, cp: m.cp, pct: bitsRoadPct(m.checks), updated: m.updated_at, isActive: m.user_id === Cloud.user.id, character: sanitizeCharacter(m.character) };
       });
       renderTable($('cloudTable'), rows, { empty: 'Поки що нікого немає.', updated: true });
     }
@@ -608,7 +624,7 @@
   function cloudPush() {
     var p = state.profiles.cloud;
     if (!p || !Cloud.user) return Promise.resolve();
-    return Cloud.saveMine({ cp: p.cp, checks: toBits(p.checks) }).then(function () {
+    return Cloud.saveMine({ cp: p.cp, checks: toBits(p.checks), character: p.character || null }).then(function () {
       setSync('Синхронізовано о ' + new Date().toLocaleTimeString('uk-UA', { hour: '2-digit', minute: '2-digit' }));
       loadRoster();
     }).catch(function (err) { setSync('Помилка синхронізації: ' + err.message); });
@@ -641,10 +657,12 @@
       if (row) {
         p.cp = row.cp;
         p.checks = fromBits(row.checks);
+        p.character = sanitizeCharacter(row.character);
       } else if (prev && !prev.cloud && countDone(prev.checks, ALL_IDS) + prev.cp > 0 &&
         window.confirm('Перенести прогрес профілю «' + prev.name + '» у ваш акаунт Discord?')) {
         p.cp = prev.cp;
         p.checks = Object.assign({}, prev.checks);
+        p.character = prev.character || null;
       }
       state.active = 'cloud';
       saveState();
@@ -667,10 +685,112 @@
     });
     if (!Cloud || !Cloud.enabled) return;
     Cloud.init().then(function (user) {
+      syncUI();
       Cloud.onChange(onCloudUser);
       if (user) onCloudUser(user); else onCloudUser(null);
     }).catch(function (err) {
       setSync('Вхід через Discord недоступний: ' + err.message);
+    });
+  }
+
+  /* ---------- Пошук персонажа за ніком ---------- */
+  var lookupBusy = false;
+  var lookupLast = 0;
+  var lookupFor = null;
+  var LOOKUP_ERR = {
+    bad_name: 'Нік має містити від 2 до 24 літер або цифр.',
+    not_found: 'Персонажа не знайдено в жодному регіоні. Перевірте нік.',
+    rate_limited: 'Забагато запитів. Спробуйте за хвилину.',
+    upstream: 'Сайт Aion 2 зараз не відповідає. Введіть бойову міць вручну.',
+    network: 'Не вдалося звернутися до сервісу пошуку. Введіть бойову міць вручну.',
+  };
+
+  function lookupMsg(t) { $('lookupStatus').textContent = t; }
+
+  function describeCharacter(c) {
+    var when = c.t ? ' Оновлено ' + new Date(c.t).toLocaleString('uk-UA', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' }) + '.' : '';
+    return c.n + ' · ' + c.s + ' · ' + c.cls + ', ' + c.lvl + ' рів. Рівень предметів ' + c.il + ' → це БМ за шкалою гайда. Бойова міць за API: ' + c.cp + '.' + when;
+  }
+
+  function syncLookup(p) {
+    var on = !!(Cloud && Cloud.enabled && Cloud.ready);
+    $('lookup').hidden = !on;
+    if (!on) return;
+    $('btnLookupRefresh').hidden = !p.character;
+    $('btnLookupUnlink').hidden = !p.character;
+    if (lookupFor !== p.id) {
+      lookupFor = p.id;
+      $('lookupName').value = p.character ? p.character.n : '';
+      $('lookupCandidates').hidden = true;
+      lookupMsg(p.character ? describeCharacter(p.character) : 'Введіть нік персонажа — бойова міць підтягнеться з сайту Aion 2.');
+    }
+  }
+
+  function setLookupBusy(busy) {
+    ['btnLookup', 'btnLookupRefresh', 'btnLookupUnlink'].forEach(function (id) { $(id).disabled = busy; });
+  }
+
+  function runLookup(body, onData) {
+    if (lookupBusy || Date.now() - lookupLast < 3000) return;
+    lookupBusy = true;
+    lookupLast = Date.now();
+    setLookupBusy(true);
+    $('lookupCandidates').hidden = true;
+    lookupMsg('Шукаю…');
+    Cloud.lookup(body).then(onData).catch(function (err) {
+      lookupMsg(LOOKUP_ERR[err.code] || LOOKUP_ERR.network);
+    }).then(function () {
+      lookupBusy = false;
+      setLookupBusy(false);
+    });
+  }
+
+  function applyCharacter(ch) {
+    var c = sanitizeCharacter({ n: ch.name, s: ch.serverName, cls: ch.className, rg: ch.region, cid: ch.characterId, sid: ch.serverId, lvl: ch.level, il: ch.itemLevel, cp: ch.combatPower, t: Date.now() });
+    if (!c) { lookupMsg(LOOKUP_ERR.upstream); return; }
+    var p = active();
+    p.character = c;
+    p.cp = clamp(c.il, 0, 9999);
+    $('lookupName').value = c.n;
+    $('lookupCandidates').hidden = true;
+    touch(p);
+    lookupMsg(describeCharacter(c));
+  }
+
+  function showCandidates(list) {
+    var ul = $('lookupCandidates');
+    ul.textContent = '';
+    list.forEach(function (ch) {
+      ul.appendChild(h('li', null, h('button', { type: 'button', onclick: function () { applyCharacter(ch); } },
+        h('b', { text: ch.name }),
+        h('span', { text: ch.serverName + ' · ' + ch.className + ' · ' + ch.level + ' рів.' }),
+        h('span', { text: 'Рівень предметів ' + ch.itemLevel }))));
+    });
+    ul.hidden = false;
+    lookupMsg('Знайдено кілька персонажів із таким ніком. Оберіть свого.');
+  }
+
+  function initLookup() {
+    $('btnLookup').addEventListener('click', function () {
+      runLookup({ name: $('lookupName').value.trim() }, function (data) {
+        if (data.character) applyCharacter(data.character);
+        else if (data.matches) showCandidates(data.matches);
+        else lookupMsg(LOOKUP_ERR.upstream);
+      });
+    });
+    $('lookupName').addEventListener('keydown', function (e) { if (e.key === 'Enter') $('btnLookup').click(); });
+    $('btnLookupRefresh').addEventListener('click', function () {
+      var c = active().character;
+      if (!c) return;
+      runLookup({ characterId: c.cid, serverId: c.sid, region: c.rg }, function (data) {
+        if (data.character) applyCharacter(data.character); else lookupMsg(LOOKUP_ERR.upstream);
+      });
+    });
+    $('btnLookupUnlink').addEventListener('click', function () {
+      var p = active();
+      p.character = null;
+      lookupFor = null;
+      touch(p);
     });
   }
 
@@ -727,6 +847,7 @@
   buildStatic();
   ensureProfile();
   bindProfileControls();
+  initLookup();
   initMap();
   syncUI();
   handleHash();

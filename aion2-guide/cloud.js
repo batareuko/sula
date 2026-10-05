@@ -43,6 +43,8 @@
 
     get user() { return user; },
 
+    get ready() { return !!client; },
+
     onChange: function (fn) { listeners.push(fn); },
 
     init: function () {
@@ -86,15 +88,31 @@
         avatar_url: user.avatar || null,
         cp: row.cp,
         checks: row.checks,
+        character: row.character || null,
         updated_at: new Date().toISOString(),
       }).then(check);
     },
 
     fetchAll: function () {
       return client.from('members')
-        .select('user_id,name,avatar_url,cp,checks,updated_at')
+        .select('user_id,name,avatar_url,cp,checks,character,updated_at')
         .order('updated_at', { ascending: false })
         .then(check);
+    },
+
+    /* Пошук персонажа через Edge Function aion-lookup. Помилки мають поле .code:
+       bad_name | not_found | rate_limited | upstream | network */
+    lookup: function (body) {
+      var fail = function (code) { return Object.assign(new Error(code), { code: code }); };
+      return client.functions.invoke('aion-lookup', { body: body }).then(function (res) {
+        if (!res.error) return res.data;
+        var ctx = res.error.context;
+        if (ctx && typeof ctx.json === 'function') {
+          return ctx.json().then(function (j) { throw fail((j && j.error) || 'upstream'); },
+            function () { throw fail('upstream'); });
+        }
+        throw fail('network');
+      });
     },
 
     deleteMine: function () {

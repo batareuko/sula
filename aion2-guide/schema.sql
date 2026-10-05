@@ -10,6 +10,11 @@ create table if not exists public.members (
   updated_at timestamptz not null default now()
 );
 
+-- прив'язаний персонаж Aion 2 (нік, сервер, клас); додається й до вже створеної таблиці
+alter table public.members
+  add column if not exists character jsonb
+  check (character is null or pg_column_size(character) < 1000);
+
 alter table public.members enable row level security;
 
 drop policy if exists "members readable by signed-in users" on public.members;

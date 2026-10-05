@@ -140,6 +140,21 @@ main section.wrap { margin-top: 40px; }
 .ring-fg { stroke: var(--gold); stroke-linecap: round; stroke-dasharray: 119.4; stroke-dashoffset: 119.4; transition: stroke-dashoffset .4s; }
 .ring b { position: absolute; inset: 0; display: grid; place-items: center; font: 600 24px var(--font-head); }
 
+/* ---------- Lookup ---------- */
+.lookup { margin-top: 14px; padding-top: 14px; border-top: 1px solid var(--line); }
+.lookup-row { display: flex; flex-wrap: wrap; gap: 8px; align-items: flex-end; }
+.lookup-row .field { min-width: 200px; }
+.lookup .small { margin-top: 8px; }
+.candidates { display: grid; grid-template-columns: repeat(auto-fill, minmax(230px, 1fr)); gap: 8px; margin-top: 10px; }
+.candidates button {
+  width: 100%; text-align: left; padding: 10px 12px; cursor: pointer;
+  background: var(--panel-2); border: 1px solid var(--line); border-radius: var(--radius);
+}
+.candidates button:hover { border-color: var(--gold); }
+.candidates b { display: block; }
+.candidates span { display: block; font-size: 12.5px; color: var(--muted); }
+.tbl .sub { display: block; font-size: 12px; font-weight: 400; color: var(--muted); }
+
 /* ---------- Start ---------- */
 .start { display: grid; grid-template-columns: 300px 1fr; gap: 28px; align-items: start; }
 .start h2 { font: 600 28px/1.1 var(--font-head); text-transform: uppercase; margin: 10px 0; }
