@@ -115,18 +115,30 @@
       });
     },
 
-    /* true, якщо поточний користувач є в таблиці leaders (інакше таблиці може не бути, тоді false) */
-    isLeader: function () {
-      return client.from('leaders').select('user_id').eq('user_id', user.id).maybeSingle()
-        .then(function (res) { return !res.error && !!res.data; }, function () { return false; });
+    /* ---- Спільні відмітки вбивств польових босів (таблиця boss_kills) ---- */
+    fetchKills: function () {
+      return client.from('boss_kills').select('boss_id,killed_at,by_name').then(check);
     },
 
-    /* Видалення чужого запису (лише лідер). Політика RLS мовчки не видаляє нічого для не-лідера,
-       тому перевіряємо, що рядок справді зник. */
-    deleteMember: function (userId) {
-      return client.from('members').delete().eq('user_id', userId).select('user_id').then(check).then(function (rows) {
-        if (!rows || !rows.length) throw new Error('Немає прав або запис уже видалено');
-      });
+    markKill: function (bossId, atMs) {
+      return client.from('boss_kills').upsert({
+        boss_id: bossId,
+        killed_at: new Date(atMs).toISOString(),
+        by_name: user.name,
+        by_user: user.id,
+      }).then(check);
+    },
+
+    clearKill: function (bossId) {
+      return client.from('boss_kills').delete().eq('boss_id', bossId).then(check);
+    },
+
+    /* Підписка на зміни в реальному часі; повертає функцію відписки */
+    onKillsChange: function (fn) {
+      var ch = client.channel('boss_kills')
+        .on('postgres_changes', { event: '*', schema: 'public', table: 'boss_kills' }, function () { fn(); })
+        .subscribe();
+      return function () { client.removeChannel(ch); };
     },
 
     deleteMine: function () {

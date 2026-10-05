@@ -50,7 +50,6 @@
   var state = loadState() || { v: 1, active: null, profiles: {} };
   var sortKey = 'pct';
   var cloudRows = [];
-  var isLeader = false;
   var cloudTimer = null;
 
   function loadState() {
@@ -159,9 +158,11 @@
     return periodStart(period, ms) + (period === 'week' ? 7 : 1) * DAY_MS + G.reset.utcHour * 3600000;
   }
   function timeLeft(ms) {
-    var m = Math.max(0, Math.floor(ms / 60000));
+    if (ms < 60000) return '<1 хв';
+    var m = Math.ceil(ms / 60000);
     var d = Math.floor(m / 1440), hh = Math.floor((m % 1440) / 60), mm = m % 60;
-    return (d ? d + ' дн ' : '') + hh + ' год ' + mm + ' хв';
+    if (d) return d + ' дн ' + hh + ' год';
+    return hh ? hh + ' год' + (mm ? ' ' + mm + ' хв' : '') : mm + ' хв';
   }
   function renderResetInfo() {
     var now = Date.now();
@@ -529,23 +530,10 @@
       rows = cloudRows.map(function (m) {
         return { userId: m.user_id, ts: Date.parse(m.updated_at) || 0, name: m.name, avatar: m.avatar_url, cp: m.cp, pct: bitsRoadPct(m.checks), updated: m.updated_at, isActive: m.user_id === Cloud.user.id, character: sanitizeCharacter(m.character) };
       });
-      renderTable($('cloudTable'), rows, {
-        empty: 'Поки що нікого немає.',
-        updated: true,
-        actions: function (r) {
-          if (!isLeader || r.isActive) return null;
-          return h('button', { class: 'btn btn-ghost', type: 'button', text: 'Видалити', 'aria-label': 'Видалити ' + r.name, onclick: function () { removeMember(r); } });
-        },
-      });
+      renderTable($('cloudTable'), rows, { empty: 'Поки що нікого немає.', updated: true });
     }
     var avg = rows.length ? Math.round(rows.reduce(function (s, r) { return s + r.pct; }, 0) / rows.length) : 0;
     $('teamSummary').textContent = rows.length ? rows.length + ' учасн. · середній прогрес ' + avg + '%' : '';
-  }
-
-  function removeMember(r) {
-    if (!window.confirm('Видалити «' + r.name + '» зі складу 1 HP? Запис зникне в усіх.')) return;
-    Cloud.deleteMember(r.userId).then(function () { toast('Видалено: ' + r.name); loadRoster(); })
-      .catch(function (err) { toast('Не вдалося видалити: ' + err.message); });
   }
 
   function deleteLocal(p) {
@@ -652,7 +640,7 @@
     who.textContent = '';
     if (user) {
       if (user.avatar && /^https:\/\//.test(user.avatar)) who.appendChild(h('img', { src: user.avatar, alt: '', referrerpolicy: 'no-referrer' }));
-      who.appendChild(document.createTextNode(user.name + (isLeader ? ' · лідер' : '')));
+      who.appendChild(document.createTextNode(user.name));
     }
     if (on && !user && !$('syncNote').textContent) {
       setSync('Увійдіть через Discord, щоб прогрес зберігався на сервері, а ви з’явились у складі 1 HP. Без входу прогрес лишається лише в цьому браузері.');
@@ -687,10 +675,10 @@
 
   function onCloudUser(user) {
     if (!user) {
-      isLeader = false;
       delete state.profiles.cloud;
       cloudRows = [];
       clearInterval(cloudTimer);
+      stopKillsSync();
       ensureProfile();
       setSync('');
       syncUI();
@@ -700,7 +688,6 @@
     p.name = user.name;
     p.avatar = user.avatar;
     var prev = active();
-    Cloud.isLeader().then(function (v) { isLeader = v; renderTeam(); syncAuthUI(); });
     Cloud.fetchMine().then(function (row) {
       if (row) {
         p.cp = row.cp;
@@ -718,8 +705,9 @@
       return cloudPush();
     }).then(function () {
       loadRoster();
+      startKillsSync();
       clearInterval(cloudTimer);
-      cloudTimer = setInterval(function () { if (!document.hidden) loadRoster(); }, 60000);
+      cloudTimer = setInterval(function () { if (!document.hidden) { loadRoster(); loadKills(); } }, 60000);
     }).catch(function (err) { setSync('Помилка: ' + err.message); });
   }
 
@@ -842,6 +830,241 @@
     });
   }
 
+  /* ---------- Таймери: Розлом, ресети, польові боси ---------- */
+  var BELL_SVG = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9"/><path d="M10.3 21a1.9 1.9 0 0 0 3.4 0"/></svg>';
+  var NOTIFY_BEFORE_MS = 5 * 60000;
+  var cloudKills = null;      /* { bossId: { t, by } } після входу; інакше відмітки в state.kills */
+  var killsUnsub = null;
+  var notified = {};
+
+  function prefGet(k, d) {
+    try { var v = JSON.parse(localStorage.getItem('aion2-pref-' + k)); return v == null ? d : v; } catch (e) { return d; }
+  }
+  function prefSet(k, v) { try { localStorage.setItem('aion2-pref-' + k, JSON.stringify(v)); } catch (e) { /* ігноруємо */ } }
+
+  var bossZone = prefGet('bossZone', G.bossZones[0].id);
+  var bossSort = prefGet('bossSort', 'time');
+  var bossBells = prefGet('bossBells', []);
+
+  function clock(t) { return new Date(t).toLocaleTimeString('uk-UA', { hour: '2-digit', minute: '2-digit' }); }
+  function cycleText(min) {
+    if (min < 60) return min + ' хв';
+    return Math.floor(min / 60) + ' год' + (min % 60 ? ' ' + (min % 60) + ' хв' : '');
+  }
+
+  function riftInfo(now) {
+    var P = G.rift.everyHours * 3600000;
+    var anchor = G.rift.anchorUtcHour * 3600000;
+    var last = anchor + Math.floor((now - anchor) / P) * P;
+    return { last: last, next: last + P, open: now < last + G.rift.portalMin * 60000, closes: last + G.rift.portalMin * 60000, P: P };
+  }
+
+  function renderTimerCards() {
+    var now = Date.now();
+    var r = riftInfo(now);
+    $('tcRift').classList.toggle('open', r.open);
+    $('tcRiftValue').textContent = r.open ? 'відкритий ще ' + timeLeft(r.closes - now) : 'через ' + timeLeft(r.next - now);
+    $('tcRiftSub').textContent = 'Далі: ' + [r.next, r.next + r.P, r.next + 2 * r.P].map(clock).join(', ');
+    var day = nextReset('day', now), week = nextReset('week', now);
+    $('tcDayValue').textContent = 'через ' + timeLeft(day - now);
+    $('tcDaySub').textContent = 'о ' + clock(day) + ' за вашим часом';
+    $('tcWeekValue').textContent = 'через ' + timeLeft(week - now);
+    $('tcWeekSub').textContent = new Date(week).toLocaleDateString('uk-UA', { weekday: 'long' }) + ' о ' + clock(week);
+  }
+
+  function killsMap() {
+    if (Cloud && Cloud.user && cloudKills) return cloudKills;
+    return state.kills || (state.kills = {});
+  }
+
+  function bossState(b, now) {
+    var k = killsMap()[b.id];
+    if (!k) return { s: 'unknown', order: 3 };
+    var at = k.t + b.min * 60000, end = at + G.bossWindowMin * 60000;
+    if (now < at) return { s: 'dead', at: at, end: end, k: k, order: 1 };
+    if (now < end) return { s: 'window', at: at, end: end, k: k, order: 0 };
+    return { s: 'up', at: at, end: end, k: k, order: 2 };
+  }
+
+  function renderBosses(force) {
+    var list = $('bossList');
+    if (!force && list.contains(document.activeElement)) return; /* не збиваємо фокус клавіатури */
+    var now = Date.now();
+    var items = G.bosses.filter(function (b) { return b.zone === bossZone; }).map(function (b, i) {
+      return { b: b, st: bossState(b, now), i: i };
+    });
+    if (bossSort === 'time') {
+      items.sort(function (x, y) {
+        return x.st.order - y.st.order || (x.st.at || 0) - (y.st.at || 0) || x.i - y.i;
+      });
+    }
+    list.textContent = '';
+    items.forEach(function (it) { list.appendChild(bossRow(it.b, it.st, now)); });
+    $('bossTabs').querySelectorAll('.tab').forEach(function (t) { t.setAttribute('aria-selected', t.dataset.zone === bossZone ? 'true' : 'false'); });
+    $('bossSortTime').setAttribute('aria-pressed', bossSort === 'time' ? 'true' : 'false');
+    $('bossSortMap').setAttribute('aria-pressed', bossSort === 'map' ? 'true' : 'false');
+  }
+
+  function bossRow(b, st, now) {
+    var bell = h('button', {
+      class: 'bell', type: 'button', 'aria-pressed': bossBells.indexOf(b.id) >= 0 ? 'true' : 'false',
+      title: 'Сповіщати про цього боса', 'aria-label': 'Сповіщати про ' + b.name,
+      onclick: function () { toggleBell(b.id); },
+    });
+    bell.innerHTML = BELL_SVG;
+
+    var main = h('div', { class: 'boss-main' },
+      h('b', { text: b.name }),
+      h('span', { class: 'meta', text: b.area + ' · рів. ' + b.lv + ' · відродження ' + cycleText(b.min) }));
+
+    var big, small;
+    if (st.s === 'unknown') { big = 'немає відмітки'; small = ''; }
+    else if (st.s === 'dead') { big = 'через ' + timeLeft(st.at - now); small = 'о ' + clock(st.at); }
+    else if (st.s === 'window') { big = 'може з’явитись'; small = 'вікно до ' + clock(st.end); }
+    else { big = 'має бути живий'; small = 'з ' + clock(st.at); }
+    if (st.k) small += (small ? ' · ' : '') + 'вбито о ' + clock(st.k.t) + (st.k.by ? ' (' + st.k.by + ')' : '');
+    var status = h('div', { class: 'boss-st', 'aria-live': 'off' }, h('b', { text: big }), small ? h('span', { text: small }) : null);
+
+    var act = h('div', { class: 'boss-act' },
+      h('button', { class: 'btn', type: 'button', text: 'Вбито', 'aria-label': 'Вбито: ' + b.name, onclick: function () { setKill(b, Date.now()); } }),
+      h('button', { class: 'btn btn-ghost', type: 'button', text: 'Раніше…', 'aria-label': 'Вказати час вбивства: ' + b.name, onclick: function () { askKillTime(b); } }),
+      st.k ? h('button', { class: 'btn btn-ghost', type: 'button', text: '✕', title: 'Скасувати відмітку', 'aria-label': 'Скасувати відмітку: ' + b.name, onclick: function () { clearKill(b); } }) : null);
+
+    return h('li', { class: 'boss is-' + st.s }, bell, main, status, act);
+  }
+
+  function askKillTime(b) {
+    var v = window.prompt('Скільки хвилин тому вбили «' + b.name + '»?', '5');
+    if (v == null) return;
+    var min = parseInt(v, 10);
+    if (isNaN(min) || min < 0 || min > 1440) { toast('Вкажіть число хвилин від 0 до 1440.'); return; }
+    setKill(b, Date.now() - min * 60000);
+  }
+
+  function setKill(b, t) {
+    if (Cloud && Cloud.user && cloudKills) {
+      cloudKills[b.id] = { t: t, by: Cloud.user.name };
+      renderBosses(true);
+      Cloud.markKill(b.id, t).catch(function (err) { toast('Не вдалося зберегти відмітку: ' + err.message); loadKills(); });
+    } else {
+      killsMap()[b.id] = { t: t };
+      saveState();
+      renderBosses(true);
+    }
+  }
+
+  function clearKill(b) {
+    if (Cloud && Cloud.user && cloudKills) {
+      delete cloudKills[b.id];
+      renderBosses(true);
+      Cloud.clearKill(b.id).catch(function (err) { toast('Не вдалося скасувати: ' + err.message); loadKills(); });
+    } else {
+      delete killsMap()[b.id];
+      saveState();
+      renderBosses(true);
+    }
+  }
+
+  function loadKills() {
+    if (!(Cloud && Cloud.user)) return;
+    Cloud.fetchKills().then(function (rows) {
+      var m = {};
+      (rows || []).forEach(function (r) {
+        var t = Date.parse(r.killed_at);
+        if (t) m[r.boss_id] = { t: t, by: r.by_name || '' };
+      });
+      cloudKills = m;
+      $('bossSync').textContent = 'Спільні відмітки 1 HP: їх бачать і змінюють усі, хто увійшов через Discord. Оновлюються автоматично.';
+      renderBosses(true);
+    }).catch(function (err) {
+      $('bossSync').textContent = 'Не вдалося завантажити спільні відмітки (' + err.message + '). Чи виконано оновлений schema.sql?';
+    });
+  }
+
+  function startKillsSync() {
+    loadKills();
+    if (killsUnsub) killsUnsub();
+    try { killsUnsub = Cloud.onKillsChange(loadKills); } catch (e) { killsUnsub = null; }
+  }
+
+  function stopKillsSync() {
+    if (killsUnsub) killsUnsub();
+    killsUnsub = null;
+    cloudKills = null;
+    syncBossSyncNote();
+    renderBosses(true);
+  }
+
+  function syncBossSyncNote() {
+    if (Cloud && Cloud.user) return;
+    $('bossSync').textContent = Cloud && Cloud.enabled
+      ? 'Зараз відмітки зберігаються лише в цьому браузері. Увійдіть через Discord, щоб бачити спільні відмітки всього складу 1 HP.'
+      : 'Відмітки зберігаються в цьому браузері.';
+  }
+
+  function toggleBell(id) {
+    var i = bossBells.indexOf(id);
+    if (i >= 0) bossBells.splice(i, 1); else bossBells.push(id);
+    prefSet('bossBells', bossBells);
+    if (i < 0 && notifyPermission() !== 'granted') toast('Щоб отримувати сповіщення, натисніть «Увімкнути сповіщення».');
+    renderBosses(true);
+  }
+
+  function notifyPermission() { return 'Notification' in window ? Notification.permission : 'unsupported'; }
+
+  function syncNotifyButton() {
+    var p = notifyPermission(), btn = $('bossNotify');
+    btn.textContent = p === 'granted' ? 'Сповіщення увімкнено' : p === 'denied' ? 'Сповіщення заблоковані' : p === 'unsupported' ? 'Сповіщення недоступні' : 'Увімкнути сповіщення';
+    btn.disabled = p !== 'default';
+  }
+
+  function notify(title, body) {
+    toast(title + ': ' + body);
+    if (notifyPermission() !== 'granted') return;
+    try { new Notification(title, { body: body, icon: 'favicon.svg', tag: title }); } catch (e) { /* деякі браузери вимагають service worker */ }
+  }
+
+  function checkNotify() {
+    var now = Date.now();
+    G.bosses.forEach(function (b) {
+      if (bossBells.indexOf(b.id) < 0) return;
+      var st = bossState(b, now);
+      if (!st.k) return;
+      var key = b.id + ':' + st.k.t;
+      if (st.s === 'dead' && st.at - now <= NOTIFY_BEFORE_MS && !notified[key + ':soon']) {
+        notified[key + ':soon'] = true;
+        notify(b.name, 'відродиться через ' + timeLeft(st.at - now) + ' (' + b.area + ')');
+      } else if (st.s === 'window' && !notified[key + ':up']) {
+        notified[key + ':up'] = true;
+        notify(b.name, 'може з’явитись зараз (' + b.area + ')');
+      }
+    });
+  }
+
+  function initTimers() {
+    var tabs = $('bossTabs');
+    G.bossZones.forEach(function (z) {
+      tabs.appendChild(h('button', {
+        class: 'tab', type: 'button', role: 'tab', 'data-zone': z.id, text: z.name + ' · ' + z.faction,
+        onclick: function () { bossZone = z.id; prefSet('bossZone', z.id); renderBosses(true); },
+      }));
+    });
+    $('bossSortTime').addEventListener('click', function () { bossSort = 'time'; prefSet('bossSort', 'time'); renderBosses(true); });
+    $('bossSortMap').addEventListener('click', function () { bossSort = 'map'; prefSet('bossSort', 'map'); renderBosses(true); });
+    $('bossNotify').addEventListener('click', function () {
+      if (notifyPermission() !== 'default') return;
+      Notification.requestPermission().then(function () {
+        syncNotifyButton();
+        if (notifyPermission() === 'granted' && !bossBells.length) toast('Тепер натисніть дзвіночок біля потрібних босів.');
+      });
+    });
+    syncNotifyButton();
+    syncBossSyncNote();
+    renderTimerCards();
+    renderBosses(true);
+    setInterval(function () { renderTimerCards(); renderBosses(false); checkNotify(); }, 15000);
+  }
+
   /* ---------- Інтерактивна карта ---------- */
   var mapZone = G.map.zones[0];
   var mapLoaded = false;
@@ -898,6 +1121,7 @@
   ensureProfile();
   bindProfileControls();
   initLookup();
+  initTimers();
   initMap();
   syncUI();
   handleHash();
