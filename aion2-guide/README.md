@@ -5,7 +5,11 @@
 вбудована інтерактивна карта (interactivemap.app) і склад 1 HP.
 
 Збірки немає — це чисті HTML/CSS/JS. Відкрийте `index.html` або викладіть папку на будь-який статичний хостинг
-(GitHub Pages, Netlify, Cloudflare Pages: «publish directory» = `aion2-guide`).
+(Netlify, Cloudflare Pages: «publish directory» = `aion2-guide`).
+
+**GitHub Pages:** workflow `.github/workflows/pages.yml` публікує сайт після злиття в `main`. Один раз увімкніть
+*Settings → Pages → Build and deployment → Source: GitHub Actions*. Адреса: `https://<користувач>.github.io/<репозиторій>/`.
+Для Discord-входу додайте цю адресу в *Site URL / Redirect URLs* у Supabase.
 
 > Корінь репозиторію — окремий проєкт (WordPress-стартер на Next.js). Цей сайт від нього не залежить.
 
