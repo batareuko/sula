@@ -31,6 +31,7 @@
     <a class="brand" href="#top">1 HP <span>· AION 2</span></a>
     <nav class="nav" aria-label="Розділи">
       <a href="#progress">Мій прогрес</a>
+      <a href="#timers">Таймери</a>
       <a href="#roadmap">Дорожня карта</a>
       <a href="#systems">Системи</a>
       <a href="#daily">Щоденні</a>
@@ -102,6 +103,49 @@
         <button class="btn btn-ghost" id="btnLogout" type="button" hidden>Вийти</button>
       </div>
       <p class="muted small" id="syncNote"></p>
+    </div>
+  </section>
+
+  <!-- ===== Таймери ===== -->
+  <section class="wrap" id="timers" aria-labelledby="timersTitle">
+    <div class="sec-head">
+      <h2 id="timersTitle">Таймери</h2>
+      <span class="mono muted">Global · у вашому часі</span>
+    </div>
+    <div class="timer-cards">
+      <div class="tcard" id="tcRift">
+        <span class="tlabel">Розлом (Spacetime Rift)</span>
+        <b class="tvalue" id="tcRiftValue">—</b>
+        <span class="tsub" id="tcRiftSub"></span>
+      </div>
+      <div class="tcard">
+        <span class="tlabel">Щоденний ресет</span>
+        <b class="tvalue" id="tcDayValue">—</b>
+        <span class="tsub" id="tcDaySub"></span>
+      </div>
+      <div class="tcard">
+        <span class="tlabel">Щотижневий ресет</span>
+        <b class="tvalue" id="tcWeekValue">—</b>
+        <span class="tsub" id="tcWeekSub"></span>
+      </div>
+    </div>
+    <p class="muted small">Ресет: щодня о 07:00 UTC, щотижня в середу. Розлом: кожні 3 години, портал відкритий 10 хвилин. Розклад Розлому для Global NCSOFT не публікував, це дані гравців, тож звіряйте з таймером у грі.</p>
+
+    <div class="panel bosses">
+      <div class="boss-head">
+        <h3 class="h-card">Польові боси</h3>
+        <div class="boss-tools">
+          <div class="tabs" id="bossTabs" role="tablist" aria-label="Зона"></div>
+          <div class="tabs" role="group" aria-label="Порядок">
+            <button class="tab" type="button" id="bossSortTime">Найближчі</button>
+            <button class="tab" type="button" id="bossSortMap">За картою</button>
+          </div>
+          <button class="btn" type="button" id="bossNotify">Увімкнути сповіщення</button>
+        </div>
+      </div>
+      <p class="muted small" id="bossSync"></p>
+      <ul class="boss-list" id="bossList"></ul>
+      <p class="muted small">Натисніть «Вбито», коли боса вбили: відлік до відродження почнеться з цієї миті. Якщо вбили раніше, кнопка «Раніше…» дозволяє вказати, скільки хвилин тому. Гра повертає боса протягом приблизно 10 хвилин після кінця циклу. Дзвіночок вмикає сповіщення за 5 хвилин до відродження (поки сторінка відкрита). Цикли відродження для Global — за даними гравців (<a href="https://couga54.github.io/aion2-guides/en/bosses/" target="_blank" rel="noopener">AION 2 Guides</a>, <a href="https://www.aion2timers.com/world-boss-timer/" target="_blank" rel="noopener">Aion 2 Timers</a>).</p>
     </div>
   </section>
 
