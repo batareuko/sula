@@ -6,6 +6,19 @@
   <title>1 HP · Aion 2 · Дорожня карта 45 рівня</title>
   <meta name="description" content="Гайд для новачків Aion 2 Global: дорожня карта спорядження від 1000 до 2800+ бойової міці, чекліст прогресу для учасників 1 HP та інтерактивна карта.">
   <meta name="theme-color" content="#0a0c12">
+  <link rel="canonical" href="https://guide.sulaslova.com/">
+  <link rel="icon" href="favicon.svg" type="image/svg+xml">
+  <meta property="og:type" content="website">
+  <meta property="og:site_name" content="1 HP">
+  <meta property="og:locale" content="uk_UA">
+  <meta property="og:url" content="https://guide.sulaslova.com/">
+  <meta property="og:title" content="1 HP · Aion 2: дорожня карта 45 рівня">
+  <meta property="og:description" content="Чекліст прогресу від 1000 до 2800+, пороги розблокування, інтерактивна карта та склад 1 HP.">
+  <meta property="og:image" content="https://guide.sulaslova.com/og.png">
+  <meta property="og:image:width" content="1200">
+  <meta property="og:image:height" content="630">
+  <meta property="og:image:alt" content="Новачок 45 рівня: дорожня карта спорядження, шкала порогів від 1000 до 2800">
+  <meta name="twitter:card" content="summary_large_image">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Fira+Sans:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&family=Oswald:wght@500;600;700&display=swap" rel="stylesheet">
@@ -59,11 +72,12 @@
             <label class="field">Нік
               <input id="profileName" type="text" maxlength="40" autocomplete="off">
             </label>
-            <label class="field field-cp">Бойова міць
+            <label class="field field-cp">БМ · рівень предметів
               <input id="profileCp" type="number" inputmode="numeric" min="0" max="9999" step="1" placeholder="0">
             </label>
           </div>
           <p class="muted small" id="profileSummary"></p>
+          <p class="muted small">Шкала гайда (1000–2800) відповідає рівню предметів (Gear Score) у грі: саме за ним відкриваються пороги.</p>
           <div class="lookup" id="lookup" hidden>
             <div class="lookup-row">
               <label class="field grow">Нік персонажа в Aion 2
@@ -129,7 +143,7 @@
         <h2 class="h-card">Щоденні / щотижневі пріоритети</h2>
         <ul class="prio" id="prioList"></ul>
         <p class="muted small" id="prioNote"></p>
-        <p class="muted small">Лічильники скидаються автоматично: щодня о 00:00 та щопонеділка (за вашим часом). Ігровий ресет може відрізнятись — зменшуйте лічильник вручну.</p>
+        <p class="muted small" id="resetInfo"></p>
       </section>
     </aside>
   </div>
