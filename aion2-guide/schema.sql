@@ -33,3 +33,20 @@ create policy "members update own row"
 drop policy if exists "members delete own row" on public.members;
 create policy "members delete own row"
   on public.members for delete to authenticated using (auth.uid() = user_id);
+
+-- Лідери: можуть видаляти будь-які записи зі складу. Додаються лише вручну через SQL Editor:
+--   insert into public.leaders (user_id) values ('<User UID з Authentication → Users>');
+create table if not exists public.leaders (
+  user_id uuid primary key references auth.users (id) on delete cascade
+);
+
+alter table public.leaders enable row level security;
+
+drop policy if exists "leaders read own row" on public.leaders;
+create policy "leaders read own row"
+  on public.leaders for select to authenticated using (auth.uid() = user_id);
+
+drop policy if exists "leaders delete any member" on public.members;
+create policy "leaders delete any member"
+  on public.members for delete to authenticated
+  using (exists (select 1 from public.leaders l where l.user_id = auth.uid()));

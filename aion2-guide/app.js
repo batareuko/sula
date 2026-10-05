@@ -50,6 +50,7 @@
   var state = loadState() || { v: 1, active: null, profiles: {} };
   var sortKey = 'pct';
   var cloudRows = [];
+  var isLeader = false;
   var cloudTimer = null;
 
   function loadState() {
@@ -139,10 +140,37 @@
 
   /* ---------- Щоденні / щотижневі лічильники ---------- */
   function pad2(n) { return n < 10 ? '0' + n : '' + n; }
+  var DAY_MS = 86400000;
+  var STALE_DAYS = 14; /* скільки днів без оновлень вважати «давно» */
+
+  /* Початок поточного періоду, виражений як UTC-північ «ігрової» доби (доба починається о G.reset.utcHour UTC) */
+  function periodStart(period, ms) {
+    var s = new Date(ms - G.reset.utcHour * 3600000);
+    var d = Date.UTC(s.getUTCFullYear(), s.getUTCMonth(), s.getUTCDate());
+    if (period === 'week') d -= ((s.getUTCDay() - G.reset.weeklyDay + 7) % 7) * DAY_MS;
+    return d;
+  }
   function periodKey(period) {
-    var d = new Date();
-    if (period === 'week') d.setDate(d.getDate() - ((d.getDay() + 6) % 7)); /* понеділок */
-    return period + ':' + d.getFullYear() + '-' + pad2(d.getMonth() + 1) + '-' + pad2(d.getDate());
+    var d = new Date(periodStart(period, Date.now()));
+    return period + ':' + d.getUTCFullYear() + '-' + pad2(d.getUTCMonth() + 1) + '-' + pad2(d.getUTCDate());
+  }
+  /* Момент наступного ресету (мс) */
+  function nextReset(period, ms) {
+    return periodStart(period, ms) + (period === 'week' ? 7 : 1) * DAY_MS + G.reset.utcHour * 3600000;
+  }
+  function timeLeft(ms) {
+    var m = Math.max(0, Math.floor(ms / 60000));
+    var d = Math.floor(m / 1440), hh = Math.floor((m % 1440) / 60), mm = m % 60;
+    return (d ? d + ' дн ' : '') + hh + ' год ' + mm + ' хв';
+  }
+  function renderResetInfo() {
+    var now = Date.now();
+    var day = nextReset('day', now), week = nextReset('week', now);
+    var hhmm = function (t) { return new Date(t).toLocaleTimeString('uk-UA', { hour: '2-digit', minute: '2-digit' }); };
+    var wd = new Date(week).toLocaleDateString('uk-UA', { weekday: 'long' });
+    $('resetInfo').textContent = 'Лічильники скидаються за часом гри (Global): щодня о 07:00 UTC, щотижня в середу. ' +
+      'Щоденний ресет о ' + hhmm(day) + ' за вашим часом, через ' + timeLeft(day - now) + '. ' +
+      'Щотижневий: ' + wd + ' о ' + hhmm(week) + ', через ' + timeLeft(week - now) + '.';
   }
   function counterValue(p, item) {
     var c = p.counters[item.id];
@@ -427,6 +455,7 @@
   function sortRows(rows) {
     return rows.slice().sort(function (a, b) {
       if (sortKey === 'name') return a.name.localeCompare(b.name, 'uk');
+      if (sortKey === 'updated') return (a.ts || 0) - (b.ts || 0) || a.name.localeCompare(b.name, 'uk'); /* давно не оновлені — зверху */
       if (sortKey === 'cp') return b.cp - a.cp || a.name.localeCompare(b.name, 'uk');
       return b.pct - a.pct || b.cp - a.cp || a.name.localeCompare(b.name, 'uk');
     });
@@ -447,7 +476,7 @@
   function renderTable(table, rows, opts) {
     table.textContent = '';
     var head = h('tr', null, sortHead('Нік', 'name'), sortHead('БМ', 'cp'), h('th', { text: 'Етап' }), sortHead('Прогрес', 'pct'));
-    if (opts.updated) head.appendChild(h('th', { text: 'Оновлено' }));
+    if (opts.updated) head.appendChild(sortHead('Оновлено', 'updated'));
     head.appendChild(h('th'));
     table.appendChild(h('thead', null, head));
     var body = h('tbody');
@@ -461,7 +490,11 @@
         h('td', { class: 'num', text: r.cp > 0 ? String(r.cp) : '—' }),
         h('td', { text: stageLabel(r.cp) }),
         barCell(r.pct));
-      if (opts.updated) tr.appendChild(h('td', { class: 'muted small', text: r.updated ? new Date(r.updated).toLocaleDateString('uk-UA') : '' }));
+      if (opts.updated) {
+        var age = r.ts ? Math.floor((Date.now() - r.ts) / DAY_MS) : null;
+        tr.appendChild(h('td', { class: 'small ' + (age !== null && age >= STALE_DAYS ? 'stale' : 'muted'),
+          text: age === null ? '' : age <= 0 ? 'сьогодні' : age === 1 ? 'вчора' : age + ' дн. тому' }));
+      }
       tr.appendChild(h('td', { class: 'acts' }, opts.actions ? opts.actions(r) : null));
       body.appendChild(tr);
     });
@@ -470,7 +503,7 @@
 
   function renderTeam() {
     var local = localProfiles().map(function (p) {
-      return { id: p.id, name: p.name, cp: p.cp, pct: roadPct(p.checks), isActive: p.id === state.active, profile: p, character: p.character };
+      return { id: p.id, name: p.name, cp: p.cp, pct: roadPct(p.checks), isActive: p.id === state.active, profile: p, character: p.character, ts: p.updated };
     });
     renderTable($('localTable'), local, {
       empty: 'Профілів немає.',
@@ -494,12 +527,25 @@
     var rows = local;
     if (loggedIn) {
       rows = cloudRows.map(function (m) {
-        return { name: m.name, avatar: m.avatar_url, cp: m.cp, pct: bitsRoadPct(m.checks), updated: m.updated_at, isActive: m.user_id === Cloud.user.id, character: sanitizeCharacter(m.character) };
+        return { userId: m.user_id, ts: Date.parse(m.updated_at) || 0, name: m.name, avatar: m.avatar_url, cp: m.cp, pct: bitsRoadPct(m.checks), updated: m.updated_at, isActive: m.user_id === Cloud.user.id, character: sanitizeCharacter(m.character) };
       });
-      renderTable($('cloudTable'), rows, { empty: 'Поки що нікого немає.', updated: true });
+      renderTable($('cloudTable'), rows, {
+        empty: 'Поки що нікого немає.',
+        updated: true,
+        actions: function (r) {
+          if (!isLeader || r.isActive) return null;
+          return h('button', { class: 'btn btn-ghost', type: 'button', text: 'Видалити', 'aria-label': 'Видалити ' + r.name, onclick: function () { removeMember(r); } });
+        },
+      });
     }
     var avg = rows.length ? Math.round(rows.reduce(function (s, r) { return s + r.pct; }, 0) / rows.length) : 0;
     $('teamSummary').textContent = rows.length ? rows.length + ' учасн. · середній прогрес ' + avg + '%' : '';
+  }
+
+  function removeMember(r) {
+    if (!window.confirm('Видалити «' + r.name + '» зі складу 1 HP? Запис зникне в усіх.')) return;
+    Cloud.deleteMember(r.userId).then(function () { toast('Видалено: ' + r.name); loadRoster(); })
+      .catch(function (err) { toast('Не вдалося видалити: ' + err.message); });
   }
 
   function deleteLocal(p) {
@@ -606,7 +652,7 @@
     who.textContent = '';
     if (user) {
       if (user.avatar && /^https:\/\//.test(user.avatar)) who.appendChild(h('img', { src: user.avatar, alt: '', referrerpolicy: 'no-referrer' }));
-      who.appendChild(document.createTextNode(user.name));
+      who.appendChild(document.createTextNode(user.name + (isLeader ? ' · лідер' : '')));
     }
     if (on && !user && !$('syncNote').textContent) {
       setSync('Увійдіть через Discord, щоб прогрес зберігався на сервері, а ви з’явились у складі 1 HP. Без входу прогрес лишається лише в цьому браузері.');
@@ -641,6 +687,7 @@
 
   function onCloudUser(user) {
     if (!user) {
+      isLeader = false;
       delete state.profiles.cloud;
       cloudRows = [];
       clearInterval(cloudTimer);
@@ -653,6 +700,7 @@
     p.name = user.name;
     p.avatar = user.avatar;
     var prev = active();
+    Cloud.isLeader().then(function (v) { isLeader = v; renderTeam(); syncAuthUI(); });
     Cloud.fetchMine().then(function (row) {
       if (row) {
         p.cp = row.cp;
@@ -845,6 +893,8 @@
 
   /* ---------- Старт ---------- */
   buildStatic();
+  renderResetInfo();
+  setInterval(function () { renderResetInfo(); syncUI(); }, 60000);
   ensureProfile();
   bindProfileControls();
   initLookup();

@@ -115,6 +115,20 @@
       });
     },
 
+    /* true, якщо поточний користувач є в таблиці leaders (інакше таблиці може не бути, тоді false) */
+    isLeader: function () {
+      return client.from('leaders').select('user_id').eq('user_id', user.id).maybeSingle()
+        .then(function (res) { return !res.error && !!res.data; }, function () { return false; });
+    },
+
+    /* Видалення чужого запису (лише лідер). Політика RLS мовчки не видаляє нічого для не-лідера,
+       тому перевіряємо, що рядок справді зник. */
+    deleteMember: function (userId) {
+      return client.from('members').delete().eq('user_id', userId).select('user_id').then(check).then(function (rows) {
+        if (!rows || !rows.length) throw new Error('Немає прав або запис уже видалено');
+      });
+    },
+
     deleteMine: function () {
       return client.from('members').delete().eq('user_id', user.id).then(check);
     },
