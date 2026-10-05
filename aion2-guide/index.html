@@ -1,0 +1,222 @@
+<!doctype html>
+<html lang="uk">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>1 HP · Aion 2 · Дорожня карта 45 рівня</title>
+  <meta name="description" content="Гайд для новачків Aion 2 Global: дорожня карта спорядження від 1000 до 2800+ бойової міці, чекліст прогресу для учасників 1 HP та інтерактивна карта.">
+  <meta name="theme-color" content="#0a0c12">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Fira+Sans:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&family=Oswald:wght@500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+
+<header class="topbar">
+  <div class="wrap topbar-in">
+    <a class="brand" href="#top">1 HP <span>· AION 2</span></a>
+    <nav class="nav" aria-label="Розділи">
+      <a href="#progress">Мій прогрес</a>
+      <a href="#roadmap">Дорожня карта</a>
+      <a href="#systems">Системи</a>
+      <a href="#daily">Щоденні</a>
+      <a href="#thresholds">Пороги</a>
+      <a href="#map">Карта</a>
+      <a href="#team">Склад 1 HP</a>
+    </nav>
+    <a class="chip" href="#progress" id="topChip" title="Загальний прогрес активного профілю">
+      <span id="topChipName">—</span> <b id="topChipPct">0%</b>
+    </a>
+  </div>
+</header>
+
+<main id="top">
+  <section class="hero wrap">
+    <p class="eyebrow">Aion 2 Global · Офіційний гайд для новачків Beeks</p>
+    <h1>Новачок 45 рівня<br>Дорожня карта<br>спорядження</h1>
+  </section>
+
+  <section class="wrap rules" aria-labelledby="rulesTitle">
+    <h2 id="rulesTitle" class="h-side">Основні правила</h2>
+    <ol id="rules" class="rules-list"></ol>
+  </section>
+
+  <!-- ===== Мій прогрес / профілі / вхід ===== -->
+  <section class="wrap" id="progress">
+    <div class="panel profile">
+      <div class="profile-main">
+        <div class="ring" aria-hidden="true">
+          <svg viewBox="0 0 44 44"><circle class="ring-bg" cx="22" cy="22" r="19"/><circle class="ring-fg" id="ringFg" cx="22" cy="22" r="19"/></svg>
+          <b id="ringPct">0%</b>
+        </div>
+        <div class="profile-info">
+          <p class="eyebrow">Мій прогрес</p>
+          <div class="profile-row">
+            <label class="field">Профіль
+              <select id="profileSelect"></select>
+            </label>
+            <label class="field">Нік
+              <input id="profileName" type="text" maxlength="40" autocomplete="off">
+            </label>
+            <label class="field field-cp">Бойова міць
+              <input id="profileCp" type="number" inputmode="numeric" min="0" max="9999" step="1" placeholder="0">
+            </label>
+          </div>
+          <p class="muted small" id="profileSummary"></p>
+          <div class="lookup" id="lookup" hidden>
+            <div class="lookup-row">
+              <label class="field grow">Нік персонажа в Aion 2
+                <input id="lookupName" type="text" maxlength="24" autocomplete="off" placeholder="Напр. Sula">
+              </label>
+              <button class="btn" id="btnLookup" type="button">Підтягнути БМ</button>
+              <button class="btn btn-ghost" id="btnLookupRefresh" type="button" hidden>Оновити</button>
+              <button class="btn btn-ghost" id="btnLookupUnlink" type="button" hidden>Відв’язати</button>
+            </div>
+            <p class="muted small" id="lookupStatus" role="status"></p>
+            <ul class="candidates" id="lookupCandidates" hidden></ul>
+          </div>
+        </div>
+      </div>
+      <div class="profile-actions">
+        <button class="btn btn-discord" id="btnLogin" type="button" hidden>Увійти через Discord</button>
+        <span class="who" id="whoami" hidden></span>
+        <button class="btn" id="btnNew" type="button">+ Новий профіль</button>
+        <button class="btn" id="btnCopyCode" type="button">Копіювати посилання</button>
+        <button class="btn btn-ghost" id="btnReset" type="button">Скинути</button>
+        <button class="btn btn-ghost" id="btnDelete" type="button">Видалити профіль</button>
+        <button class="btn btn-ghost" id="btnLogout" type="button" hidden>Вийти</button>
+      </div>
+      <p class="muted small" id="syncNote"></p>
+    </div>
+  </section>
+
+  <!-- ===== Стартова точка ===== -->
+  <section class="wrap" id="startpoint">
+    <div class="panel start">
+      <div class="start-head">
+        <p class="eyebrow">Стартова точка</p>
+        <h2 id="startTitle"></h2>
+        <p class="muted" id="startGoal"></p>
+      </div>
+      <ul class="checklist cols-2" id="startList"></ul>
+    </div>
+  </section>
+
+  <!-- ===== Дорожня карта + бічна колонка ===== -->
+  <div class="wrap grid">
+    <section id="roadmap" class="col-main" aria-labelledby="roadmapTitle">
+      <div class="sec-head">
+        <h2 id="roadmapTitle">Дорожня карта</h2>
+        <span class="mono muted">БМ · 1000 → 2800+</span>
+      </div>
+      <div id="stages"></div>
+    </section>
+
+    <aside class="col-side">
+      <section class="panel" id="systems">
+        <h2 class="h-card">Ключові системи · Спеціальні слоти</h2>
+        <div id="systemsList"></div>
+      </section>
+
+      <section class="panel" id="energy">
+        <h2 class="h-card">Енергія Оділе</h2>
+        <div class="stats" id="energyStats"></div>
+        <ul class="dash" id="energyList"></ul>
+      </section>
+
+      <section class="panel" id="daily">
+        <h2 class="h-card">Щоденні / щотижневі пріоритети</h2>
+        <ul class="prio" id="prioList"></ul>
+        <p class="muted small" id="prioNote"></p>
+        <p class="muted small">Лічильники скидаються автоматично: щодня о 00:00 та щопонеділка (за вашим часом). Ігровий ресет може відрізнятись — зменшуйте лічильник вручну.</p>
+      </section>
+    </aside>
+  </div>
+
+  <!-- ===== Пороги ===== -->
+  <section class="wrap" id="thresholds" aria-labelledby="thTitle">
+    <div class="sec-head">
+      <h2 id="thTitle">Пороги розблокування</h2>
+      <span class="mono muted">Необхідна бойова міць</span>
+    </div>
+    <p class="th-status" id="thStatus"></p>
+    <ol class="timeline" id="timeline"></ol>
+  </section>
+
+  <!-- ===== Інтерактивна карта ===== -->
+  <section class="wrap" id="map" aria-labelledby="mapTitle">
+    <div class="sec-head">
+      <h2 id="mapTitle">Інтерактивна карта</h2>
+      <span class="mono muted">interactivemap.app</span>
+    </div>
+    <p class="muted lead">Карта вбудована зі стороннього сервісу <a href="https://interactivemap.app/aion2/" target="_blank" rel="noopener">interactivemap.app</a>: пошук, фільтри категорій, власні відмітки. Сама карта — англійською (української версії в сервісу немає), тому назви категорій нижче подано з англійським оригіналом.</p>
+
+    <div class="map-tools">
+      <div class="tabs" id="zoneTabs" role="tablist" aria-label="Зони"></div>
+      <div class="map-tools-r">
+        <button class="btn" id="mapFull" type="button">На весь екран</button>
+        <a class="btn" id="mapOpen" href="#" target="_blank" rel="noopener">Відкрити в новій вкладці ↗</a>
+      </div>
+    </div>
+
+    <div class="map-frame" id="mapFrame">
+      <div class="map-placeholder" id="mapPlaceholder">
+        <p>Карта завантажується, коли ви доходите до цього розділу.</p>
+        <button class="btn" id="mapLoad" type="button">Завантажити карту зараз</button>
+      </div>
+    </div>
+    <p class="muted small">Якщо карта не відображається (блокувальник реклами/трекерів, обмеження мережі) — відкрийте її в новій вкладці. <a id="routeGuide" href="#" target="_blank" rel="noopener">Гайд зі маршрутів ↗</a></p>
+
+    <div class="panel mapcheck">
+      <h3 class="h-card">Що шукати на карті · мій прогрес по зонах</h3>
+      <p class="muted small">Назви категорій — як у бічній панелі карти (англ.). Відмічайте, де ви вже все зачистили. Набір категорій може відрізнятись між зонами.</p>
+      <div class="table-scroll">
+        <table class="tbl" id="mapMatrix"></table>
+      </div>
+    </div>
+  </section>
+
+  <!-- ===== Склад 1 HP ===== -->
+  <section class="wrap" id="team" aria-labelledby="teamTitle">
+    <div class="sec-head">
+      <h2 id="teamTitle">Склад 1 HP</h2>
+      <span class="mono muted" id="teamSummary"></span>
+    </div>
+
+    <div class="panel" id="cloudBlock" hidden>
+      <h3 class="h-card">Учасники (Discord) <button class="btn btn-sm" id="btnRefresh" type="button">Оновити</button></h3>
+      <p class="muted small" id="cloudStatus"></p>
+      <div class="table-scroll"><table class="tbl" id="cloudTable"></table></div>
+    </div>
+
+    <div class="panel">
+      <h3 class="h-card">Профілі на цьому пристрої</h3>
+      <div class="table-scroll"><table class="tbl" id="localTable"></table></div>
+      <div class="import">
+        <label class="field grow">Імпортувати код або посилання учасника
+          <input id="importInput" type="text" placeholder="Вставте код або посилання з #share=…" autocomplete="off">
+        </label>
+        <button class="btn" id="btnImport" type="button">Імпортувати</button>
+        <button class="btn btn-ghost" id="btnExport" type="button">Зберегти все у файл</button>
+        <label class="btn btn-ghost file">Завантажити з файлу<input id="fileInput" type="file" accept="application/json,.json" hidden></label>
+      </div>
+      <p class="muted small">Без входу через Discord прогрес зберігається лише в цьому браузері. Щоб передати його лідеру, скопіюйте «посилання» у своєму профілі й надішліть — лідер імпортує його сюди. Імпорт оновлює профіль з тим самим ніком.</p>
+    </div>
+  </section>
+</main>
+
+<footer class="footer">
+  <div class="wrap">
+    <p>Неофіційний фанатський гайд за інфографікою «Новачок 45 рівня — дорожня карта спорядження». Aion 2 — торгова марка NCSoft. Інтерактивна карта належить interactivemap.app. Дані персонажів беруться з офіційного сайту Aion 2 через неофіційний доступ і можуть тимчасово бути недоступні — бойову міць можна ввести вручну.</p>
+  </div>
+</footer>
+
+<div class="toast" id="toast" role="status" aria-live="polite"></div>
+
+<script src="config.js"></script>
+<script src="data.js"></script>
+<script src="cloud.js"></script>
+<script src="app.js"></script>
+</body>
+</html>
