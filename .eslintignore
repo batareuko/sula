@@ -45,3 +45,5 @@ yarn.lock
 public
 
 .all-contributorsrc
+# standalone static site, not part of the Next.js app
+aion2-guide/
