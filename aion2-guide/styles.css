@@ -347,9 +347,29 @@ img.broken { visibility: hidden; }
 .b-chain { display: flex; flex-wrap: wrap; align-items: center; gap: 4px; }
 .warn-text { color: var(--gold); }
 .b-stig { display: grid; gap: 4px; font-size: 14px; }
-.b-stig li::before { font-weight: 700; margin-right: 6px; }
+.b-stig li { display: flex; align-items: center; flex-wrap: wrap; gap: 4px; }
+.b-stig li::before { font-weight: 700; margin-right: 2px; }
+.sk-ic { width: 22px; height: 22px; flex: none; border-radius: 50%; background: var(--panel-2); display: inline-block; vertical-align: middle; }
+.chip-s .sk-ic { width: 18px; height: 18px; margin-left: -6px; }
+.sk-name { display: inline-flex; align-items: center; gap: 8px; white-space: nowrap; }
 .b-stig li.ok::before { content: "✓"; color: var(--green); }
 .b-stig li.todo::before { content: "!"; color: var(--gold); }
+
+.build-area { display: grid; gap: 10px; grid-template-columns: minmax(0, 1fr); }
+.char-card, .build-cmp, .b-picker { grid-template-columns: minmax(0, 1fr); }
+.char-card > *, .build-cmp > *, .build-area > *, .b-picker > * { min-width: 0; }
+.b-source { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; }
+.b-source select { min-height: 32px; max-width: 100%; padding: 4px 8px; background: var(--bg-2); border: 1px solid var(--line); border-radius: var(--radius); color: var(--text); }
+.b-picker { display: grid; gap: 8px; padding: 14px 16px; background: var(--bg-2); border: 1px solid var(--line); border-radius: var(--radius); }
+.b-picker-form { display: flex; gap: 8px; flex-wrap: wrap; }
+.b-picker-form input { flex: 1 1 200px; min-height: 32px; padding: 4px 10px; background: var(--panel); border: 1px solid var(--line); border-radius: var(--radius); color: var(--text); }
+.b-list { display: grid; }
+.b-list li { display: flex; justify-content: space-between; align-items: center; gap: 10px; padding: 8px 0; border-bottom: 1px solid var(--line); }
+.b-list li > div { min-width: 0; }
+.b-nc { margin-left: 6px; padding: 0 6px; font: 600 10px var(--font-mono); color: var(--bg); background: var(--gold); border-radius: 3px; vertical-align: middle; }
+.b-pages { display: flex; gap: 8px; }
+.gold { color: var(--gold); }
+.tbl td.warn-text { color: var(--gold); }
 
 /* ---------- Timers ---------- */
 .timer-cards { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px; margin-bottom: 10px; }

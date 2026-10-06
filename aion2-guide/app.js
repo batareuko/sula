@@ -264,7 +264,7 @@
       skins: A(g.skins, 20, function (x) { return [S(x[0], 16), S(x[1], 60), S(x[2], 16), I(x[3])]; }),
       pet: Array.isArray(g.pet) ? [S(g.pet[0], 40), N(g.pet[1]), I(g.pet[2])] : null,
       wing: Array.isArray(g.wing) ? [S(g.wing[0], 40), S(g.wing[1], 16), N(g.wing[2]), I(g.wing[3])] : null,
-      skills: A(g.skills, 60, function (x) { return [S(x[0], 40), S(x[1], 10), N(x[2]), x[3] ? 1 : 0, I(x[4])]; }),
+      skills: A(g.skills, 60, function (x) { return [S(x[0], 40), S(x[1], 10), N(x[2]), x[3] ? 1 : 0, I(x[4]), /^\d{1,12}$/.test(String(x[5] || '')) ? String(x[5]) : '']; }),
     };
   }
 
@@ -966,6 +966,11 @@
     return game.skills.filter(function (x) { return keys.indexOf(normName(x[0])) >= 0; })[0] || null;
   }
 
+  /* Маленька іконка вміння з CDN гри (порожньо, якщо немає) */
+  function skillIcon(s) {
+    return s && s[4] ? h('img', { class: 'sk-ic', src: ICON_BASE + s[4], alt: '', width: 22, height: 22, loading: 'lazy', referrerpolicy: 'no-referrer', onerror: hideBroken }) : h('span', { class: 'sk-ic' });
+  }
+
   function buildFor(c) { return c ? G.builds.filter(function (b) { return b.cls === c.cls; })[0] || null : null; }
 
   /* Пасивки за пріоритетом: перша, що відстає від менш важливої, — її підтягувати */
@@ -994,7 +999,7 @@
       var lv = s ? s[2] : 0;
       if (!on) actions.push({ w: 0, text: 'Екіпіруйте стигму ' + st.skill + '.' });
       else if (st.target && lv < st.target) actions.push({ w: 1, text: st.skill + ': ' + lv + ' → ' + st.target + ' (' + (st.note || 'ціль білду') + ').' });
-      stigRows.appendChild(h('li', { class: on ? 'ok' : 'todo' }, h('b', { lang: 'en', text: st.skill }),
+      stigRows.appendChild(h('li', { class: on ? 'ok' : 'todo' }, skillIcon(s), h('b', { lang: 'en', text: st.skill }),
         h('span', { class: 'muted', text: on ? ' · рів. ' + lv + (st.target ? ' / ціль ' + st.target : '') : ' · не екіпіровано' }),
         st.note ? h('span', { class: 'muted', text: ' · ' + st.note }) : null));
     });
@@ -1032,7 +1037,7 @@
         cell.appendChild(chip);
       });
       if (next) actions.push({ w: 2 + (next[0] - lv) / 100, text: a.skill + ': ' + lv + ' → ' + next[0] + ', потім опції ' + next[1] + '.' });
-      tb.appendChild(h('tr', null, h('td', { lang: 'en', text: a.skill }), h('td', { class: 'num', text: s ? String(lv) : '—' }), cell));
+      tb.appendChild(h('tr', null, h('td', null, h('span', { class: 'sk-name' }, skillIcon(s), h('span', { lang: 'en', text: a.skill }))), h('td', { class: 'num', text: s ? String(lv) : '—' }), cell));
     });
     tbl.appendChild(tb);
 
@@ -1043,7 +1048,7 @@
       var line = h('p', { class: 'b-chain' });
       group.forEach(function (n, i) {
         if (i) line.appendChild(h('span', { class: 'muted', text: ' > ' }));
-        line.appendChild(h('span', { class: 'chip-s' }, h('span', { lang: 'en', text: n }), ' ', h('b', { text: String(adv.lv[i]) })));
+        line.appendChild(h('span', { class: 'chip-s' }, skillIcon(findSkill(game, [n])), h('span', { lang: 'en', text: n }), ' ', h('b', { text: String(adv.lv[i]) })));
       });
       pas.appendChild(line);
       if (adv.text) { pas.appendChild(h('p', { class: 'small warn-text', text: adv.text })); actions.push({ w: 3, text: adv.text }); }
@@ -1073,6 +1078,191 @@
       h('h5', { text: 'Пасивки (пріоритет зліва направо)' }), pas,
       h('h5', { text: 'Стигми' }), stigRows, notes,
       h('h5', { text: 'Дошки Даеваніона: порядок' }), board);
+  }
+
+  /* ---------- Білди блогерів з questlog.gg (через функцію aion-lookup) ---------- */
+  var QL_CLASSES = ['gladiator', 'templar', 'assassin', 'ranger', 'sorcerer', 'elementalist', 'cleric', 'chanter'];
+  var picker = { open: false, busy: false, q: '', page: 1, data: null, err: '' };
+
+  function classIdOf(c) {
+    var id = String(c && c.cls || '').toLowerCase().replace(/[^a-z]/g, '');
+    if (id === 'spiritmaster') id = 'elementalist';
+    return QL_CLASSES.indexOf(id) >= 0 ? id : '';
+  }
+
+  function skillById(game, id) {
+    return game.skills.filter(function (x) { return x[5] && x[5] === String(id); })[0] || null;
+  }
+
+  function qlEnabled() { return !!(Cloud && Cloud.enabled && Cloud.ready); }
+
+  function loadPicker(classId) {
+    picker.busy = true; picker.err = '';
+    renderOwnCharacter(active(), true);
+    Cloud.lookup({ ql: 'search', classId: classId, page: picker.page, q: picker.q }).then(function (d) {
+      picker.data = d;
+    }).catch(function (e) {
+      picker.err = e.code === 'rate_limited' ? 'Забагато запитів, спробуйте за хвилину.' : 'questlog.gg не відповів. Спробуйте пізніше.';
+    }).then(function () { picker.busy = false; renderOwnCharacter(active(), true); });
+  }
+
+  function chooseQlBuild(p, c, b) {
+    var classId = classIdOf(c);
+    picker.busy = true;
+    renderOwnCharacter(p, true);
+    Promise.all([
+      Cloud.lookup({ ql: 'build', slug: b.user.slug, id: b.id }),
+      Cloud.lookup({ ql: 'skills', classId: classId }),
+    ]).then(function (r) {
+      var bd = r[0].build, cat = {};
+      (r[1].skills || []).forEach(function (s) { cat[s.id] = s; });
+      p.qlBuild = {
+        classId: classId, id: bd.id, slug: b.user.slug, name: bd.name, author: bd.user.name || b.user.name,
+        publisher: bd.publisher, likes: b.likes, skills: bd.skills, priority: bd.priority, catalog: cat, t: Date.now(),
+      };
+      p.buildMode = 'ql';
+      picker.open = false;
+      touch(p);
+    }).catch(function () { toast('Не вдалося завантажити білд з questlog.gg.'); })
+      .then(function () { picker.busy = false; renderOwnCharacter(p, true); });
+  }
+
+  /* Вибір джерела білду + порівняння */
+  function buildArea(c, game, p) {
+    if (!game || !game.skills.length) return null;
+    var staticB = buildFor(c), classId = classIdOf(c);
+    var qb = p && p.qlBuild && p.qlBuild.classId === classId ? p.qlBuild : null;
+    var mode = p && p.buildMode === 'ql' && qb ? 'ql' : staticB ? 'static' : qb ? 'ql' : null;
+    if (!p) return staticB ? buildSection(c, game, null) : null; // чужа картка: лише вбудований білд
+
+    var wrap = h('div', { class: 'build-area' });
+    if (classId && (staticB || qlEnabled())) {
+      var sel = h('select', { 'aria-label': 'Білд для порівняння' });
+      if (staticB) sel.appendChild(h('option', { value: 'static', text: 'Рекомендований: ' + staticB.name }));
+      if (qb) sel.appendChild(h('option', { value: 'ql', text: 'questlog: ' + qb.name + ' (' + qb.author + ')' }));
+      sel.value = mode || '';
+      sel.addEventListener('change', function () { p.buildMode = sel.value; touch(p); });
+      var bar = h('div', { class: 'b-source' }, h('span', { class: 'muted small', text: 'Порівнювати з білдом:' }), sel.options.length ? sel : null);
+      if (qlEnabled()) bar.appendChild(h('button', { class: 'btn btn-sm', type: 'button', text: picker.open ? 'Сховати список' : 'Обрати білд блогера', onclick: function () {
+        picker.open = !picker.open;
+        if (picker.open && !picker.data) loadPicker(classId); else renderOwnCharacter(p, true);
+      } }));
+      wrap.appendChild(bar);
+    }
+    if (picker.open && qlEnabled() && classId) wrap.appendChild(pickerPanel(p, c, classId));
+    if (mode === 'ql') wrap.appendChild(qlSection(c, game, p, qb));
+    else if (mode === 'static') wrap.appendChild(buildSection(c, game, p));
+    else if (!picker.open && qlEnabled() && classId) wrap.appendChild(h('p', { class: 'muted small', text: 'Оберіть білд блогера для свого класу, щоб побачити, що підтягнути.' }));
+    return wrap.childNodes.length ? wrap : null;
+  }
+
+  function pickerPanel(p, c, classId) {
+    var box = h('div', { class: 'b-picker' });
+    var input = h('input', { type: 'search', placeholder: 'Пошук за назвою білду', value: picker.q, 'aria-label': 'Пошук білду' });
+    var form = h('form', { class: 'b-picker-form' }, input, h('button', { class: 'btn btn-sm', type: 'submit', text: 'Знайти' }));
+    form.addEventListener('submit', function (e) { e.preventDefault(); picker.q = input.value.trim(); picker.page = 1; loadPicker(classId); });
+    box.appendChild(form);
+    if (picker.busy) box.appendChild(h('p', { class: 'muted small', text: 'Завантажую з questlog.gg…' }));
+    if (picker.err) box.appendChild(h('p', { class: 'small warn-text', text: picker.err }));
+    var d = picker.data;
+    if (d && !picker.busy) {
+      box.appendChild(h('p', { class: 'muted small', text: 'Білдів для класу: ' + fmtNum(d.total) + '. Позначка NC — офіційні білди NCSOFT.' }));
+      var ul = h('ul', { class: 'b-list' });
+      d.builds.forEach(function (b) {
+        ul.appendChild(h('li', null,
+          h('div', null,
+            h('b', { lang: 'en', text: b.name }), b.publisher === 'nc' ? h('span', { class: 'b-nc', text: 'NC' }) : null,
+            h('span', { class: 'muted small', text: ' · ' + (b.user.name || '—') + ' · ♥ ' + b.likes + (b.updatedAt ? ' · ' + new Date(b.updatedAt).toLocaleDateString('uk-UA') : '') })),
+          h('button', { class: 'btn btn-sm', type: 'button', text: 'Порівняти', disabled: !b.user.slug, onclick: function () { chooseQlBuild(p, c, b); } })));
+      });
+      if (!d.builds.length) ul.appendChild(h('li', { class: 'muted', text: 'Нічого не знайдено.' }));
+      box.appendChild(ul);
+      var nav = h('div', { class: 'b-pages' });
+      if (picker.page > 1) nav.appendChild(h('button', { class: 'btn btn-sm btn-ghost', type: 'button', text: '← Назад', onclick: function () { picker.page--; loadPicker(classId); } }));
+      if (picker.page < d.pages) nav.appendChild(h('button', { class: 'btn btn-sm btn-ghost', type: 'button', text: 'Далі →', onclick: function () { picker.page++; loadPicker(classId); } }));
+      box.appendChild(nav);
+    }
+    return box;
+  }
+
+  /* Порівняння з білдом questlog: рівні, стигми, опції (номер і з якого рівня відкривається) */
+  function qlSection(c, game, p, qb) {
+    var picks = (p.buildPicks && p.buildPicks['ql:' + qb.id]) || {};
+    var order = {};
+    (qb.priority || []).forEach(function (id, i) { order[id] = i; });
+    var groups = { active: [], passive: [], stigma: [] }, actions = [], ok = 0, total = 0, picksDue = 0, picksDone = 0;
+    qb.skills.forEach(function (bs) {
+      var meta = qb.catalog[bs[0]] || { name: bs[0], sub: 'active', specs: [] };
+      var cur = skillById(game, bs[0]) || findSkill(game, [meta.name]);
+      var item = { id: bs[0], meta: meta, target: bs[1], specs: bs[2] || [], cur: cur, lv: cur ? cur[2] : 0, equip: cur ? !!cur[3] : false };
+      (groups[meta.sub] || groups.active).push(item);
+      total++;
+      var done = item.lv >= item.target && (meta.sub !== 'stigma' || item.equip);
+      if (done) ok++;
+      if (meta.sub === 'stigma' && !item.equip) actions.push({ w: 0, text: 'Екіпіруйте стигму ' + meta.name + '.' });
+      else if (item.lv < item.target) actions.push({ w: (meta.sub === 'stigma' ? 1 : meta.sub === 'active' ? 2 : 3) + (order[bs[0]] != null ? order[bs[0]] / 100 : 0.5), text: meta.name + ': ' + item.lv + ' → ' + item.target + '.' });
+      if (item.specs.length) { picksDue++; if (picks[bs[0]]) picksDone++; }
+    });
+    groups.active.sort(function (a, b) { return (order[a.id] != null ? order[a.id] : 99) - (order[b.id] != null ? order[b.id] : 99); });
+    if (picksDue > picksDone) actions.push({ w: 4, text: 'Виставте в грі опції вмінь за білдом і відмітьте (' + picksDone + ' з ' + picksDue + ').' });
+    actions.sort(function (x, y) { return x.w - y.w; });
+
+    function optChips(item) {
+      var box = h('div', { class: 'b-steps' });
+      item.specs.map(function (sid) {
+        var n = Math.round((sid - Number(item.id)) / 10);
+        var spec = (item.meta.specs || []).filter(function (s) { return s[0] === sid; })[0];
+        return { n: n, unlock: spec ? spec[1] : 0 };
+      }).sort(function (a, b) { return a.n - b.n; }).forEach(function (o) {
+        var open = !o.unlock || item.lv >= o.unlock;
+        box.appendChild(h('span', { class: 'b-step ' + (open ? 'reached' : 'future'), title: o.unlock ? 'Доступна з ' + o.unlock + ' рівня вміння' : '' },
+          'опція ', h('b', { text: String(o.n) }), o.unlock ? ' · з рів. ' + o.unlock : ''));
+      });
+      if (item.specs.length) {
+        var cb = h('input', { type: 'checkbox', 'aria-label': item.meta.name + ': опції виставлено' });
+        cb.checked = !!picks[item.id];
+        cb.addEventListener('change', function () {
+          p.buildPicks = p.buildPicks || {};
+          var k = 'ql:' + qb.id;
+          p.buildPicks[k] = p.buildPicks[k] || {};
+          if (cb.checked) p.buildPicks[k][item.id] = true; else delete p.buildPicks[k][item.id];
+          touch(p);
+        });
+        box.appendChild(h('label', { class: 'b-step reached' + (picks[item.id] ? ' done' : '') }, cb, ' виставлено'));
+      }
+      return box;
+    }
+
+    function table(list, withOpts) {
+      var t = h('table', { class: 'tbl b-skills' });
+      t.appendChild(h('thead', null, h('tr', null, h('th', { text: 'Вміння' }), h('th', { text: 'Зараз → ціль' }), withOpts ? h('th', { text: 'Опції за білдом' }) : null)));
+      var tb = h('tbody');
+      list.forEach(function (it) {
+        var state = it.lv >= it.target && (it.meta.sub !== 'stigma' || it.equip);
+        tb.appendChild(h('tr', null,
+          h('td', null, h('span', { class: 'sk-name' }, skillIcon(it.cur), h('span', { lang: 'en', text: it.meta.name }))),
+          h('td', { class: 'num ' + (state ? 'up' : 'warn-text'), text: (it.cur ? it.lv : '—') + ' → ' + it.target + (it.meta.sub === 'stigma' && !it.equip ? ' · не екіпіровано' : '') }),
+          withOpts ? h('td', null, optChips(it)) : null));
+      });
+      t.appendChild(tb);
+      return h('div', { class: 'table-scroll' }, t);
+    }
+
+    var next = h('ol', { class: 'b-next' });
+    actions.slice(0, 10).forEach(function (a) { next.appendChild(h('li', { text: a.text })); });
+    if (!actions.length) next.appendChild(h('li', { text: 'Усе відповідає білду.' }));
+
+    var url = 'https://questlog.gg/aion-2/en/skill-builder';
+    return h('section', { class: 'build-cmp' },
+      h('div', { class: 'b-head' },
+        h('h4', null, 'Порівняння з білдом ', h('span', { class: 'gold', lang: 'en', text: qb.name }), qb.publisher === 'nc' ? h('span', { class: 'b-nc', text: 'NC' }) : null),
+        h('p', { class: 'small muted' }, 'Автор: ' + qb.author + ' · ♥ ' + (qb.likes || 0) + ' · джерело: ', h('a', { href: url, target: '_blank', rel: 'noopener', text: 'questlog.gg' }),
+          '. Відповідає білду: ' + ok + ' з ' + total + ' вмінь. Опції гра не віддає, тому виставлені відмічайте вручну.'),
+        h('div', { class: 'bar' }, h('i', { style: 'width:' + Math.round(100 * ok / Math.max(1, total)) + '%' }))),
+      h('h5', { text: 'Наступні кроки' }), next,
+      groups.active.length ? h('h5', { text: 'Активні вміння (у порядку пріоритету білду)' }) : null, groups.active.length ? table(groups.active, true) : null,
+      groups.stigma.length ? h('h5', { text: 'Стигми' }) : null, groups.stigma.length ? table(groups.stigma, true) : null,
+      groups.passive.length ? h('h5', { text: 'Пасивки' }) : null, groups.passive.length ? table(groups.passive, false) : null);
   }
 
   /* ---------- Картка персонажа: усі дані з гри + підказки за правилами гайда ---------- */
@@ -1162,7 +1352,7 @@
       return card;
     }
 
-    var cmp = buildSection(c, game, p);
+    var cmp = buildArea(c, game, p);
     if (cmp) card.appendChild(cmp);
 
     var hints = gameHints(game);
@@ -1237,8 +1427,10 @@
     return card;
   }
 
-  function renderOwnCharacter(p) {
+  function renderOwnCharacter(p, force) {
     var box = $('characterBox');
+    var ae = document.activeElement;
+    if (!force && ae && box.contains(ae) && /^(INPUT|SELECT)$/.test(ae.tagName)) return; /* не збиваємо введення */
     box.textContent = '';
     if (p.character) { box.appendChild(characterCard(p.character, p.game, p)); return; }
     box.appendChild(h('div', { class: 'panel char-empty' },
