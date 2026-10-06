@@ -326,6 +326,31 @@ img.broken { visibility: hidden; }
 .char-dialog .dialog-close { position: sticky; top: 8px; float: right; margin: 8px 8px -44px 0; z-index: 2; background: var(--panel-2); }
 @media (max-width: 640px) { .char-card { padding: 16px; } .char-id h3 { font-size: 24px; } }
 
+/* ---------- Build comparison ---------- */
+.build-cmp { display: grid; gap: 8px; padding: 16px 18px; background: var(--bg-2); border: 1px solid var(--gold); border-radius: var(--radius); }
+.build-cmp h4 { margin: 0; font: 600 16px var(--font-body); letter-spacing: 0; text-transform: none; color: var(--text); }
+.build-cmp h4 a { color: var(--gold); }
+.build-cmp h5 { margin: 10px 0 2px; font: 400 11px var(--font-mono); letter-spacing: .12em; text-transform: uppercase; color: var(--muted); }
+.b-next { padding-left: 20px; list-style: decimal; display: grid; gap: 4px; font-size: 14px; }
+.b-board { padding-left: 20px; list-style: decimal; display: grid; gap: 2px; font-size: 13.5px; color: #c4c8d4; }
+.b-notes { display: grid; gap: 2px; font-size: 13px; color: var(--muted); }
+.b-notes li::before { content: "— "; color: var(--gold); }
+.b-skills td { vertical-align: top; }
+.b-steps { display: flex; flex-wrap: wrap; gap: 6px; }
+.b-step { display: inline-flex; align-items: center; gap: 4px; padding: 2px 9px; font-size: 12.5px; border: 1px solid var(--line); border-radius: 999px; color: var(--muted); }
+.b-step b { color: var(--text); }
+.b-step.next { border-color: var(--gold); color: var(--gold); }
+.b-step.reached { border-color: #3a4152; color: var(--text); cursor: pointer; }
+.b-step.reached.done { border-color: var(--green); }
+.b-step.reached.done b { color: var(--green); }
+.b-step input { accent-color: var(--green); margin: 0; }
+.b-chain { display: flex; flex-wrap: wrap; align-items: center; gap: 4px; }
+.warn-text { color: var(--gold); }
+.b-stig { display: grid; gap: 4px; font-size: 14px; }
+.b-stig li::before { font-weight: 700; margin-right: 6px; }
+.b-stig li.ok::before { content: "✓"; color: var(--green); }
+.b-stig li.todo::before { content: "!"; color: var(--gold); }
+
 /* ---------- Timers ---------- */
 .timer-cards { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px; margin-bottom: 10px; }
 .tcard { display: grid; gap: 2px; padding: 16px 18px; background: var(--panel); border: 1px solid var(--line); border-radius: var(--radius); }

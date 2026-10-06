@@ -13,7 +13,8 @@ const SEARCH_URL = 'https://api-search.plaync.com/aion2global/search/v2/characte
 const INFO_URL = 'https://aion2.plaync.com/api/character/info';
 const EQUIP_URL = 'https://aion2.plaync.com/api/character/equipment';
 const ICON_BASE = 'https://assets.playnccdn.com/static-aion2-gamedata/resources/';
-const REGIONS = (Deno.env.get('AION_REGIONS') ?? 'nae,naw,eu,asia,latam').split(',');
+// Коди регіонів API: Північна Америка схід/захід, Європа, Азія (as), Південна Америка (la)
+const REGIONS = (Deno.env.get('AION_REGIONS') ?? 'nae,naw,eu,as,la').split(',');
 const CACHE_TTL_MS = 10 * 60 * 1000;
 const RATE_LIMIT = 20; // запитів на хвилину з однієї IP
 const MAX_MATCHES = 6;

@@ -228,7 +228,7 @@
     return { name: name, cp: clamp(toInt(raw && raw.cp), 0, 9999), checks: checks };
   }
 
-  var REGIONS = ['nae', 'naw', 'eu', 'asia', 'latam'];
+  var REGIONS = ['nae', 'naw', 'eu', 'as', 'la'];
 
   /* Прив'язаний персонаж (з Edge Function або з БД). Формат: n, s(сервер), cls, rg, cid, sid, lvl, il, cp, t */
   function sanitizeCharacter(c) {
@@ -958,6 +958,123 @@
     });
   }
 
+  /* ---------- Порівняння з білдом класу ---------- */
+  function normName(s) { return String(s || '').toLowerCase().replace(/[^a-z]/g, ''); }
+
+  function findSkill(game, names) {
+    var keys = names.map(normName);
+    return game.skills.filter(function (x) { return keys.indexOf(normName(x[0])) >= 0; })[0] || null;
+  }
+
+  function buildFor(c) { return c ? G.builds.filter(function (b) { return b.cls === c.cls; })[0] || null : null; }
+
+  /* Пасивки за пріоритетом: перша, що відстає від менш важливої, — її підтягувати */
+  function passiveAdvice(game, group) {
+    var lv = group.map(function (n) { var s = findSkill(game, [n]); return s ? s[2] : 0; });
+    for (var i = 0; i < group.length - 1; i++) {
+      var maxBelow = Math.max.apply(null, lv.slice(i + 1));
+      if (lv[i] < maxBelow) return { lv: lv, text: 'Підтягніть ' + group[i] + ' (' + lv[i] + '): вона важливіша, але нижча за ' + group[lv.indexOf(maxBelow, i + 1)] + ' (' + maxBelow + ').' };
+    }
+    return { lv: lv, text: null };
+  }
+
+  function buildSection(c, game, p) {
+    var b = buildFor(c);
+    if (!b || !game || !game.skills.length) return null;
+    var picks = (p && p.buildPicks && p.buildPicks[b.id]) || {};
+    var actions = [], stepsTotal = 0, stepsDone = 0, picksDue = 0, picksDone = 0;
+
+    // стигми
+    var stigRows = h('ul', { class: 'b-stig' });
+    var stigOk = 0;
+    b.stigmas.forEach(function (st) {
+      var s = findSkill(game, [st.skill]);
+      var on = !!(s && s[3]);
+      if (on) stigOk++;
+      var lv = s ? s[2] : 0;
+      if (!on) actions.push({ w: 0, text: 'Екіпіруйте стигму ' + st.skill + '.' });
+      else if (st.target && lv < st.target) actions.push({ w: 1, text: st.skill + ': ' + lv + ' → ' + st.target + ' (' + (st.note || 'ціль білду') + ').' });
+      stigRows.appendChild(h('li', { class: on ? 'ok' : 'todo' }, h('b', { lang: 'en', text: st.skill }),
+        h('span', { class: 'muted', text: on ? ' · рів. ' + lv + (st.target ? ' / ціль ' + st.target : '') : ' · не екіпіровано' }),
+        st.note ? h('span', { class: 'muted', text: ' · ' + st.note }) : null));
+    });
+
+    // активні вміння
+    var tbl = h('table', { class: 'tbl b-skills' });
+    tbl.appendChild(h('thead', null, h('tr', null, h('th', { text: 'Вміння' }), h('th', { text: 'Рівень' }), h('th', { text: 'Опції за білдом' }))));
+    var tb = h('tbody');
+    b.active.forEach(function (a) {
+      var s = findSkill(game, [a.skill].concat(a.aka || []));
+      var lv = s ? s[2] : 0;
+      var cell = h('td', { class: 'b-steps' });
+      var next = null;
+      a.steps.forEach(function (st) {
+        stepsTotal++;
+        var key = a.skill + '@' + st[0];
+        var reached = lv >= st[0];
+        if (reached) {
+          stepsDone++;
+          picksDue++;
+          if (picks[key]) picksDone++;
+        } else if (!next) next = st;
+        var chip = h('span', { class: 'b-step ' + (reached ? 'reached' : next === st ? 'next' : 'future') }, 'рів. ' + st[0] + ': ', h('b', { text: st[1] }));
+        if (reached && p) {
+          var cb = h('input', { type: 'checkbox', 'aria-label': a.skill + ', рівень ' + st[0] + ': опції ' + st[1] + ' встановлено' });
+          cb.checked = !!picks[key];
+          cb.addEventListener('change', function () {
+            p.buildPicks = p.buildPicks || {};
+            p.buildPicks[b.id] = p.buildPicks[b.id] || {};
+            if (cb.checked) p.buildPicks[b.id][key] = true; else delete p.buildPicks[b.id][key];
+            touch(p);
+          });
+          chip = h('label', { class: 'b-step reached' + (picks[key] ? ' done' : ''), title: 'Відмітьте, коли виставите ці опції в грі' }, cb, ' рів. ' + st[0] + ': ', h('b', { text: st[1] }));
+        }
+        cell.appendChild(chip);
+      });
+      if (next) actions.push({ w: 2 + (next[0] - lv) / 100, text: a.skill + ': ' + lv + ' → ' + next[0] + ', потім опції ' + next[1] + '.' });
+      tb.appendChild(h('tr', null, h('td', { lang: 'en', text: a.skill }), h('td', { class: 'num', text: s ? String(lv) : '—' }), cell));
+    });
+    tbl.appendChild(tb);
+
+    // пасивки
+    var pas = h('div', { class: 'b-pass' });
+    b.passives.forEach(function (group) {
+      var adv = passiveAdvice(game, group);
+      var line = h('p', { class: 'b-chain' });
+      group.forEach(function (n, i) {
+        if (i) line.appendChild(h('span', { class: 'muted', text: ' > ' }));
+        line.appendChild(h('span', { class: 'chip-s' }, h('span', { lang: 'en', text: n }), ' ', h('b', { text: String(adv.lv[i]) })));
+      });
+      pas.appendChild(line);
+      if (adv.text) { pas.appendChild(h('p', { class: 'small warn-text', text: adv.text })); actions.push({ w: 3, text: adv.text }); }
+    });
+
+    if (p && picksDue > picksDone) actions.push({ w: 4, text: 'Перевірте в грі опції вмінь і відмітьте встановлені (' + picksDone + ' з ' + picksDue + ').' });
+    actions.sort(function (x, y) { return x.w - y.w; });
+
+    var head = h('div', { class: 'b-head' },
+      h('h4', null, 'Порівняння з білдом ', h('a', { href: b.url, target: '_blank', rel: 'noopener', lang: 'en', text: b.name })),
+      h('p', { class: 'small muted', text: 'Пороги рівнів вмінь: ' + stepsDone + ' з ' + stepsTotal + ' · стигми ' + stigOk + ' з ' + b.stigmas.length +
+        (p ? ' · опції відмічено ' + picksDone + ' з ' + picksDue : '') + '. Опції вмінь і вузли дошок гра не віддає, тому їх звіряйте вручну.' }),
+      h('div', { class: 'bar' }, h('i', { style: 'width:' + Math.round(100 * stepsDone / Math.max(1, stepsTotal)) + '%' })));
+
+    var next = h('ol', { class: 'b-next' });
+    actions.slice(0, 8).forEach(function (a) { next.appendChild(h('li', { text: a.text })); });
+    if (!actions.length) next.appendChild(h('li', { text: 'Усе за білдом. Далі — дошки Даеваніона за пріоритетом нижче.' }));
+
+    var board = h('ol', { class: 'b-board' });
+    b.board.forEach(function (t) { board.appendChild(h('li', { text: t })); });
+    var notes = h('ul', { class: 'b-notes' });
+    (b.stigmaNotes || []).forEach(function (t) { notes.appendChild(h('li', { text: t })); });
+
+    return h('section', { class: 'build-cmp' }, head,
+      h('h5', { text: 'Наступні кроки' }), next,
+      h('h5', { text: 'Активні вміння' }), h('div', { class: 'table-scroll' }, tbl),
+      h('h5', { text: 'Пасивки (пріоритет зліва направо)' }), pas,
+      h('h5', { text: 'Стигми' }), stigRows, notes,
+      h('h5', { text: 'Дошки Даеваніона: порядок' }), board);
+  }
+
   /* ---------- Картка персонажа: усі дані з гри + підказки за правилами гайда ---------- */
   var ICON_BASE = 'https://assets.playnccdn.com/static-aion2-gamedata/resources/';
   var AUTO_REFRESH_MS = 6 * 3600000;
@@ -1023,7 +1140,7 @@
     return out;
   }
 
-  function characterCard(c, game) {
+  function characterCard(c, game, p) {
     var card = h('article', { class: 'char-card' });
     var head = h('div', { class: 'char-head' });
     head.appendChild(c.img ? h('img', { class: 'char-ava', src: c.img, alt: '', width: 72, height: 72, referrerpolicy: 'no-referrer', onerror: hideBroken }) : h('div', { class: 'char-ava' }));
@@ -1044,6 +1161,9 @@
       card.appendChild(h('p', { class: 'muted small', text: 'Повні дані ще не підтягнуто: натисніть «Оновити» біля пошуку персонажа.' }));
       return card;
     }
+
+    var cmp = buildSection(c, game, p);
+    if (cmp) card.appendChild(cmp);
 
     var hints = gameHints(game);
     if (hints.length) {
@@ -1120,7 +1240,7 @@
   function renderOwnCharacter(p) {
     var box = $('characterBox');
     box.textContent = '';
-    if (p.character) { box.appendChild(characterCard(p.character, p.game)); return; }
+    if (p.character) { box.appendChild(characterCard(p.character, p.game, p)); return; }
     box.appendChild(h('div', { class: 'panel char-empty' },
       h('p', null, 'Персонажа ще не прив’язано. ', Cloud && Cloud.enabled
         ? 'Введіть нік у «Мій прогрес» і натисніть «Підтягнути БМ»: тут з’являться спорядження, дошки Даеваніона, вміння та підказки за гайдом.'

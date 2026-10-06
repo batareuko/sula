@@ -156,6 +156,52 @@ window.GUIDE = {
     { id: 'nightmare', name: 'Спроби [Кошмару|Nightmare]', per: 2, daily: true, caps: [14] },
   ],
 
+  /* Білди класів для порівняння з персонажем (картка «Персонаж»).
+     active.steps: [рівень вміння, опції спеціалізації на цьому рівні] — опції API не віддає, їх відмічають вручну.
+     passives: групи в порядку пріоритету (ліве важливіше). aka — як вміння називається в API, якщо інакше. */
+  builds: [
+    {
+      id: 'cleric-silence-13798', cls: 'Cleric', name: 'The Silence of the Infernal Monster',
+      url: 'https://questlog.gg/aion-2/en/character-builder/TheSilenceOfTheInfernalMonster?build-id=13798',
+      active: [
+        { skill: 'Condemnation', steps: [[12, '2 4'], [20, '2 4 5']] },
+        { skill: 'Divine Aura', steps: [[12, '3 4'], [16, '2 5'], [20, '3 4 5']] },
+        { skill: 'Bolt', steps: [[16, '3 5'], [20, '3 4 5']] },
+        { skill: 'Judgement Thunder', aka: ['Judgment Thunder'], steps: [[12, '1 2']] },
+        { skill: 'Debilitating Mark', steps: [[12, '2 4']] },
+        { skill: 'Earth Retribution', aka: ["Earth's Retribution"], steps: [[12, '2 4']] },
+        { skill: 'Radiant Recovery', steps: [[12, '2 3']] },
+        { skill: 'Chain of Torment', steps: [[12, '2 4'], [16, '4 5']] },
+        { skill: 'Light of Regeneration', steps: [[12, '2 4']] },
+        { skill: 'Healing Light', steps: [[12, '1 3']] },
+        { skill: 'Lightning Strike', aka: ['Lightning Strike Scattershot'], steps: [[12, '3 4']] },
+      ],
+      passives: [
+        ["Empyrean Lord's Grace", "Earth's Grace"],
+        ['Healing Enhancement', 'Radiant Benediction', 'Warm Benediction', 'Immortal Veil'],
+      ],
+      stigmas: [
+        { skill: 'Earth Punishment', target: 20, note: 'до 20 першою' },
+        { skill: 'Prayer of Amplification' },
+        { skill: 'Light of Protection' },
+        { skill: 'Noble Aura' },
+      ],
+      stigmaNotes: [
+        'Поміняйте місцями слоти Earth Punishment і Prayer of Amplification.',
+        'Хочете Res / Yustiel (Summon Resurrection / Yustiel\'s Power) — замініть Noble Aura.',
+        'Якщо в групі є Chanter — замініть Light of Protection на Res / Yustiel.',
+      ],
+      board: [
+        'Активні вміння до 12',
+        'Помаранчеві атакувальні вузли: Combat Speed, CDR, Damage Boost, Crit Damage Boost, Multi Hit Chance',
+        'Пасивки: Empyrean Lord\'s Grace, Earth\'s Grace',
+        'Атакувальні вузли: Attack, Crit',
+        'Захисні: Damage Tolerance, Crit Damage Tolerance, HP, Defense',
+        'Решту заповнюйте будь-чим, крім MP +50',
+      ],
+    },
+  ],
+
   /* Збір у рідному регіоні (Вертерон для Елійців, Альтгард для Асмодіан): кількість — з інтерактивної карти та гайдів */
   collect: [
     { id: 'strongholds', name: '[Оплоти|Strongholds]', max: 15, reward: 'по 2 [сувої Благородного Пояса|Noble Belt Enhance Scrolls], разом 30' },
