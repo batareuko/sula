@@ -37,6 +37,7 @@
       <a href="#daily">Щоденні</a>
       <a href="#thresholds">Пороги</a>
       <a href="#map">Карта</a>
+      <a href="#glossary">Глосарій</a>
       <a href="#team">Склад 1 HP</a>
     </nav>
     <a class="chip" href="#progress" id="topChip" title="Загальний прогрес активного профілю">
@@ -49,6 +50,10 @@
   <section class="hero wrap">
     <p class="eyebrow">Aion 2 Global · Офіційний гайд для новачків Beeks</p>
     <h1>Новачок 45 рівня<br>Дорожня карта<br>спорядження</h1>
+    <div class="hero-tools">
+      <button class="btn btn-ghost btn-sm" id="btnEn" type="button" aria-pressed="true">Англійські назви: показано</button>
+      <span class="muted small">У дужках — як термін називається в англійському клієнті гри. Повний список у <a href="#glossary">глосарії</a>.</span>
+    </div>
   </section>
 
   <section class="wrap rules" aria-labelledby="rulesTitle">
@@ -131,6 +136,23 @@
     </div>
     <p class="muted small">Ресет: щодня о 07:00 UTC, щотижня в середу. Розлом: кожні 3 години, портал відкритий 10 хвилин. Розклад Розлому для Global NCSOFT не публікував, це дані гравців, тож звіряйте з таймером у грі.</p>
 
+    <div class="panel notify">
+      <h3 class="h-card">Сповіщення</h3>
+      <div class="notify-row">
+        <button class="btn" type="button" id="bossNotify">Увімкнути сповіщення</button>
+        <label class="field">Попереджати за
+          <select id="notifyLead"></select>
+        </label>
+        <label class="field" id="notifyCustomWrap" hidden>Свій час, хв
+          <input id="notifyCustom" type="number" inputmode="numeric" min="1" max="180" step="1">
+        </label>
+        <label class="check"><input type="checkbox" id="notifyAtSpawn"><span class="box"></span><span class="txt">Також у момент появи</span></label>
+        <label class="check"><input type="checkbox" id="notifyRift"><span class="box"></span><span class="txt">Розломи</span></label>
+        <button class="btn btn-ghost" type="button" id="notifyTest">Перевірити</button>
+      </div>
+      <p class="muted small">Боси: увімкніть дзвіночок біля потрібних у списку нижче. Розломи: позначте «Розломи». Сповіщення приходять, поки сайт відкритий у вкладці (її можна згорнути).</p>
+    </div>
+
     <div class="panel bosses">
       <div class="boss-head">
         <h3 class="h-card">Польові боси</h3>
@@ -140,12 +162,11 @@
             <button class="tab" type="button" id="bossSortTime">Найближчі</button>
             <button class="tab" type="button" id="bossSortMap">За картою</button>
           </div>
-          <button class="btn" type="button" id="bossNotify">Увімкнути сповіщення</button>
         </div>
       </div>
       <p class="muted small" id="bossSync"></p>
       <ul class="boss-list" id="bossList"></ul>
-      <p class="muted small">Натисніть «Вбито», коли боса вбили: відлік до відродження почнеться з цієї миті. Якщо вбили раніше, кнопка «Раніше…» дозволяє вказати, скільки хвилин тому. Гра повертає боса протягом приблизно 10 хвилин після кінця циклу. Дзвіночок вмикає сповіщення за 5 хвилин до відродження (поки сторінка відкрита). Цикли відродження для Global — за даними гравців (<a href="https://couga54.github.io/aion2-guides/en/bosses/" target="_blank" rel="noopener">AION 2 Guides</a>, <a href="https://www.aion2timers.com/world-boss-timer/" target="_blank" rel="noopener">Aion 2 Timers</a>).</p>
+      <p class="muted small">Натисніть «Вбито», коли боса вбили: відлік до відродження почнеться з цієї миті. Якщо вбили раніше, кнопка «Раніше…» дозволяє вказати, скільки хвилин тому. Гра повертає боса протягом приблизно 10 хвилин після кінця циклу. Дзвіночок вмикає сповіщення для боса (час попередження — у «Сповіщеннях» вище). Цикли відродження для Global — за даними гравців (<a href="https://couga54.github.io/aion2-guides/en/bosses/" target="_blank" rel="noopener">AION 2 Guides</a>, <a href="https://www.aion2timers.com/world-boss-timer/" target="_blank" rel="noopener">Aion 2 Timers</a>).</p>
     </div>
   </section>
 
@@ -233,6 +254,20 @@
         <table class="tbl" id="mapMatrix"></table>
       </div>
     </div>
+  </section>
+
+  <!-- ===== Глосарій ===== -->
+  <section class="wrap" id="glossary" aria-labelledby="glossaryTitle">
+    <div class="sec-head">
+      <h2 id="glossaryTitle">Глосарій</h2>
+      <span class="mono muted">українська → англійський клієнт</span>
+    </div>
+    <p class="muted lead">Гра на Global-серверах англійською, тож тут усі терміни з гайда з назвами, які ви побачите в грі.</p>
+    <label class="field gl-search">Пошук терміна
+      <input id="glossarySearch" type="search" placeholder="Напр. пояс або Belt" autocomplete="off">
+    </label>
+    <div class="gl-grid" id="glossaryList"></div>
+    <p class="muted" id="glossaryEmpty" hidden>Нічого не знайдено.</p>
   </section>
 
   <!-- ===== Склад 1 HP ===== -->
