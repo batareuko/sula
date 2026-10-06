@@ -20,6 +20,11 @@ alter table public.members
   add column if not exists game jsonb
   check (game is null or pg_column_size(game) < 32768);
 
+-- Тижневі входи, щоденні лічильники й збір у регіоні (для складу 1 HP), невеликий об'єкт
+alter table public.members
+  add column if not exists extra jsonb
+  check (extra is null or pg_column_size(extra) < 4096);
+
 alter table public.members enable row level security;
 
 drop policy if exists "members readable by signed-in users" on public.members;
@@ -75,3 +80,79 @@ do $$ begin
   alter publication supabase_realtime add table public.boss_kills;
 exception when duplicate_object then null;
 end $$;
+
+-- Історія рівня предметів для рейтингу 1 HP: один запис на учасника на день
+create table if not exists public.il_history (
+  user_id uuid not null references auth.users (id) on delete cascade,
+  day     date not null,
+  il      integer not null check (il between 0 and 99999),
+  primary key (user_id, day)
+);
+
+alter table public.il_history enable row level security;
+
+drop policy if exists "il history readable" on public.il_history;
+create policy "il history readable"
+  on public.il_history for select to authenticated using (true);
+
+drop policy if exists "il history insert own" on public.il_history;
+create policy "il history insert own"
+  on public.il_history for insert to authenticated with check (auth.uid() = user_id);
+
+drop policy if exists "il history update own" on public.il_history;
+create policy "il history update own"
+  on public.il_history for update to authenticated using (auth.uid() = user_id) with check (auth.uid() = user_id);
+
+-- Збір групи: оголошення та учасники
+create table if not exists public.groups (
+  id           uuid primary key default gen_random_uuid(),
+  activity     text not null check (char_length(activity) between 1 and 40),
+  starts_at    timestamptz not null,
+  size         integer not null default 5 check (size between 2 and 20),
+  note         text check (char_length(note) <= 160),
+  created_by   uuid not null default auth.uid() references auth.users (id) on delete cascade,
+  created_name text check (char_length(created_name) <= 40),
+  created_at   timestamptz not null default now()
+);
+
+create table if not exists public.group_members (
+  group_id  uuid not null references public.groups (id) on delete cascade,
+  user_id   uuid not null default auth.uid() references auth.users (id) on delete cascade,
+  name      text check (char_length(name) <= 40),
+  role      text not null check (role in ('tank', 'heal', 'dd', 'support')),
+  joined_at timestamptz not null default now(),
+  primary key (group_id, user_id)
+);
+
+alter table public.groups enable row level security;
+alter table public.group_members enable row level security;
+
+drop policy if exists "groups readable" on public.groups;
+create policy "groups readable" on public.groups for select to authenticated using (true);
+drop policy if exists "groups insert own" on public.groups;
+create policy "groups insert own" on public.groups for insert to authenticated with check (created_by = auth.uid());
+drop policy if exists "groups delete own" on public.groups;
+create policy "groups delete own" on public.groups for delete to authenticated using (created_by = auth.uid());
+
+drop policy if exists "group members readable" on public.group_members;
+create policy "group members readable" on public.group_members for select to authenticated using (true);
+drop policy if exists "group members join self" on public.group_members;
+create policy "group members join self" on public.group_members for insert to authenticated with check (user_id = auth.uid());
+drop policy if exists "group members leave self" on public.group_members;
+create policy "group members leave self" on public.group_members for delete to authenticated using (user_id = auth.uid());
+
+do $$ begin
+  alter publication supabase_realtime add table public.groups;
+exception when duplicate_object then null;
+end $$;
+do $$ begin
+  alter publication supabase_realtime add table public.group_members;
+exception when duplicate_object then null;
+end $$;
+
+-- Журнал надісланих у Discord сповіщень (щоб не дублювати). Доступ лише для функції discord-alerts (service role).
+create table if not exists public.alert_log (
+  key     text primary key,
+  sent_at timestamptz not null default now()
+);
+alter table public.alert_log enable row level security;

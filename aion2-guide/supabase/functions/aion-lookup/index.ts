@@ -8,12 +8,19 @@
 // POST { name }                             -> { character, game } | { matches } | { error }
 // POST { characterId, serverId, region }    -> { character, game } | { error }   (оновлення без пошуку)
 // `game` — компактний повний знімок: стати, дошки Даеваніона, титули, спорядження, скіни, пет, крила, вміння.
+// Білди вмінь з questlog.gg (публічні білди гравців і NCSOFT; сайт без CORS, тому через цю функцію):
+// POST { ql: 'search', classId, page?, q? }   -> { total, pages, builds: [...] }
+// POST { ql: 'build', slug, id }              -> { build }
+// POST { ql: 'skills', classId }              -> { skills }   (назви вмінь і опцій спеціалізації)
 
 const SEARCH_URL = 'https://api-search.plaync.com/aion2global/search/v2/character';
 const INFO_URL = 'https://aion2.plaync.com/api/character/info';
 const EQUIP_URL = 'https://aion2.plaync.com/api/character/equipment';
 const ICON_BASE = 'https://assets.playnccdn.com/static-aion2-gamedata/resources/';
-const REGIONS = (Deno.env.get('AION_REGIONS') ?? 'nae,naw,eu,asia,latam').split(',');
+const QL_TRPC = 'https://questlog.gg/aion-2/api/trpc/';
+const QL_CLASSES = ['gladiator', 'templar', 'assassin', 'ranger', 'sorcerer', 'elementalist', 'cleric', 'chanter'];
+// Коди регіонів API: Північна Америка схід/захід, Європа, Азія (as), Південна Америка (la)
+const REGIONS = (Deno.env.get('AION_REGIONS') ?? 'nae,naw,eu,as,la').split(',');
 const CACHE_TTL_MS = 10 * 60 * 1000;
 const RATE_LIMIT = 20; // запитів на хвилину з однієї IP
 const MAX_MATCHES = 6;
@@ -50,7 +57,7 @@ interface Game {
   skins: [string, string, string, string][];                 // слот, назва, рідкість, іконка
   pet: [string, number, string] | null;                      // назва, рівень, іконка
   wing: [string, string, number, string] | null;             // назва, рідкість, заточка, іконка
-  skills: [string, string, number, number, string][];        // назва, категорія, рівень, екіпіровано, іконка
+  skills: [string, string, number, number, string, string][]; // назва, категорія, рівень, екіпіровано, іконка, id вміння
 }
 
 const cache = new Map<string, { t: number; v: unknown }>();
@@ -153,8 +160,62 @@ const provider = {
       pet: pw.pet?.name ? [str(pw.pet.name, 40), num(pw.pet.level), icon(pw.pet.icon)] : null,
       wing: pw.wing?.name ? [str(pw.wing.name, 40), str(pw.wing.grade, 16), num(pw.wing.enchantLevel), icon(pw.wing.icon)] : null,
       skills: (e?.skill?.skillList ?? []).filter((x: any) => x.acquired).slice(0, 60).map((x: any) =>
-        [str(x.name, 40), str(x.category, 10), num(x.skillLevel), x.equip ? 1 : 0, icon(x.icon)]),
+        [str(x.name, 40), str(x.category, 10), num(x.skillLevel), x.equip ? 1 : 0, icon(x.icon), /^\d{1,12}$/.test(String(x.id)) ? String(x.id) : '']),
     };
+  },
+};
+
+// ----- questlog.gg: білди вмінь (неофіційний внутрішній API сайту; лише читання) -----
+async function qlQuery(proc: string, input: unknown): Promise<any> {
+  const res = await fetch(`${QL_TRPC}${proc}?input=${encodeURIComponent(JSON.stringify(input))}`, {
+    signal: AbortSignal.timeout(10000), headers: { Accept: 'application/json', 'User-Agent': '1HP-guide (guide.sulaslova.com)' },
+  });
+  if (!res.ok) throw new Error('questlog ' + res.status);
+  const d = await res.json();
+  return d?.result?.data;
+}
+
+const qlUser = (u: any) => ({ name: str(u?.name, 40), slug: /^[A-Za-z0-9_-]{1,40}$/.test(String(u?.slug ?? '')) ? String(u.slug) : '' });
+
+const questlog = {
+  search(classId: string, page: number, q: string) {
+    return cached(`ql:s:${classId}:${page}:${q}`, async () => {
+      const d = await qlQuery('skillBuilder.searchSkillBuilds', { searchTerm: q, page, classId });
+      return {
+        total: num(d?.totalHits), pages: num(d?.pageCount),
+        builds: (d?.pageData ?? []).slice(0, 30).map((b: any) => ({
+          id: num(b.id), name: str(b.name, 80), publisher: str(b.publisher, 10), likes: num(b.likeCount),
+          updatedAt: str(b.updatedAt, 30), user: qlUser(b.user),
+        })),
+      };
+    });
+  },
+
+  build(slug: string, id: number) {
+    return cached(`ql:b:${slug}:${id}`, async () => {
+      const d = await qlQuery('skillBuilder.getSkillBuilderBySlug', { slug });
+      const b = (d?.builds ?? []).find((x: any) => num(x.id) === id);
+      if (!b) return null;
+      const skills = Object.values(b.skills ?? {}).slice(0, 60).map((s: any) => [
+        /^\d{1,12}$/.test(String(s.id)) ? String(s.id) : '', num(s.lvl),
+        (Array.isArray(s.specializations) ? s.specializations : []).slice(0, 10).map((x: unknown) => num(x)),
+      ]).filter((s: any) => s[0]);
+      return {
+        id: num(b.id), name: str(b.name, 80), classId: str(b.classId, 20), publisher: str(b.publisher, 10),
+        user: qlUser(d?.user), skills, priority: (b.priority ?? []).slice(0, 30).map((x: unknown) => str(x, 12)),
+      };
+    });
+  },
+
+  skills(classId: string) {
+    return cached(`ql:k:${classId}`, async () => {
+      const all = await cached('ql:k:all', () => qlQuery('skillBuilder.getSkills', { language: 'en' }));
+      return (all ?? []).filter((s: any) => s.mainCategory === classId).map((s: any) => ({
+        id: str(s.id, 12), name: str(s.name, 50), sub: str(s.subCategory, 10),
+        // опції: [id, рівень вміння, з якого опцію можна обрати]; назв опцій questlog окремо не віддає
+        specs: (s.specializations ?? []).slice(0, 10).map((x: any) => [num(x.id), num(x.parentSkillLvl)]),
+      }));
+    });
   },
 };
 
@@ -179,6 +240,27 @@ export async function handler(req: Request): Promise<Response> {
   try { body = await req.json(); } catch { return json({ error: 'bad_request' }, 400); }
 
   try {
+    if (body.ql) {
+      const classId = String(body.classId ?? '');
+      if (body.ql === 'search') {
+        if (!QL_CLASSES.includes(classId)) return json({ error: 'bad_request' }, 400);
+        const page = Math.min(50, Math.max(1, num(body.page) || 1));
+        const q = String(body.q ?? '').trim().slice(0, 40);
+        return json(await questlog.search(classId, page, q));
+      }
+      if (body.ql === 'build') {
+        const slug = String(body.slug ?? '');
+        if (!/^[A-Za-z0-9_-]{1,40}$/.test(slug) || !num(body.id)) return json({ error: 'bad_request' }, 400);
+        const build = await questlog.build(slug, num(body.id));
+        return build ? json({ build }) : json({ error: 'not_found' }, 404);
+      }
+      if (body.ql === 'skills') {
+        if (!QL_CLASSES.includes(classId)) return json({ error: 'bad_request' }, 400);
+        return json({ skills: await questlog.skills(classId) });
+      }
+      return json({ error: 'bad_request' }, 400);
+    }
+
     if (body.characterId) {
       const serverId = Number(body.serverId);
       const region = String(body.region ?? '');

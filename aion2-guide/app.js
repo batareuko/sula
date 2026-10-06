@@ -182,6 +182,33 @@
     touch(p);
   }
 
+  /* Усі лічильники: пріоритети з інфографіки + тижневі входи (однаковий id = той самий лічильник) */
+  var COUNTERS = (function () {
+    var seen = {}, out = [];
+    G.priorities.concat(G.weekly.map(function (w) {
+      return Object.assign({ period: 'week', hint: w.hint || w.max + ' / тиждень' }, w);
+    })).forEach(function (it) { if (!seen[it.id]) { seen[it.id] = true; out.push(it); } });
+    return out;
+  })();
+  var COUNTER_BY_ID = {};
+  COUNTERS.forEach(function (it) { COUNTER_BY_ID[it.id] = it; });
+  var WEEKLY_TOTAL = G.weekly.reduce(function (s, w) { return s + w.max; }, 0);
+
+  function weeklyUsedFromProfile(p) {
+    return G.weekly.reduce(function (s, w) { return s + Math.min(w.max, counterValue(p, COUNTER_BY_ID[w.id])); }, 0);
+  }
+  function weeklyUsedFromExtra(x) {
+    if (!x || typeof x !== 'object' || x.wk !== periodKey('week') || !x.w || typeof x.w !== 'object') return 0;
+    return G.weekly.reduce(function (s, w) { return s + clamp(toInt(x.w[w.id]), 0, w.max); }, 0);
+  }
+
+  /* Невеликий знімок для складу: тижневі/щоденні лічильники та збір у регіоні */
+  function buildExtra(p) {
+    var w = {}, d = {};
+    COUNTERS.forEach(function (it) { var n = counterValue(p, it); if (n) (it.period === 'week' ? w : d)[it.id] = n; });
+    return { wk: periodKey('week'), w: w, dk: periodKey('day'), d: d, c: p.collect || {} };
+  }
+
   /* ---------- Поширення профілю (код / посилання) ---------- */
   function b64encode(str) { return btoa(unescape(encodeURIComponent(str))).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, ''); }
   function b64decode(str) {
@@ -201,7 +228,7 @@
     return { name: name, cp: clamp(toInt(raw && raw.cp), 0, 9999), checks: checks };
   }
 
-  var REGIONS = ['nae', 'naw', 'eu', 'asia', 'latam'];
+  var REGIONS = ['nae', 'naw', 'eu', 'as', 'la'];
 
   /* Прив'язаний персонаж (з Edge Function або з БД). Формат: n, s(сервер), cls, rg, cid, sid, lvl, il, cp, t */
   function sanitizeCharacter(c) {
@@ -211,6 +238,7 @@
       n: str(c.n, 24), s: str(c.s, 32), cls: str(c.cls, 32), rg: str(c.rg, 8), cid: str(c.cid, 200),
       sid: toInt(c.sid), lvl: clamp(toInt(c.lvl), 0, 99), il: clamp(toInt(c.il), 0, 99999),
       cp: clamp(toInt(c.cp), 0, 99999999), t: toInt(c.t), r: str(c.r, 20),
+      bo: clamp(toInt(c.bo), 0, 9999), bt: clamp(toInt(c.bt), 0, 9999),
       img: /^https:\/\/profileimg\.plaync\.com\/[A-Za-z0-9_\/?=&.%-]{1,200}$/.test(String(c.img || '')) ? String(c.img) : '',
     };
     if (!o.n || REGIONS.indexOf(o.rg) < 0 || !/^[A-Za-z0-9_.%-]{1,200}$/.test(o.cid) || o.sid <= 0) return null;
@@ -236,7 +264,7 @@
       skins: A(g.skins, 20, function (x) { return [S(x[0], 16), S(x[1], 60), S(x[2], 16), I(x[3])]; }),
       pet: Array.isArray(g.pet) ? [S(g.pet[0], 40), N(g.pet[1]), I(g.pet[2])] : null,
       wing: Array.isArray(g.wing) ? [S(g.wing[0], 40), S(g.wing[1], 16), N(g.wing[2]), I(g.wing[3])] : null,
-      skills: A(g.skills, 60, function (x) { return [S(x[0], 40), S(x[1], 10), N(x[2]), x[3] ? 1 : 0, I(x[4])]; }),
+      skills: A(g.skills, 60, function (x) { return [S(x[0], 40), S(x[1], 10), N(x[2]), x[3] ? 1 : 0, I(x[4]), /^\d{1,12}$/.test(String(x[5] || '')) ? String(x[5]) : '']; }),
     };
   }
 
@@ -370,6 +398,9 @@
     G.energy.bullets.forEach(function (t) { $('energyList').appendChild(h('li', null, rich(t))); });
 
     G.priorities.forEach(function (it) { $('prioList').appendChild(buildPriority(it)); });
+    G.weekly.forEach(function (w) { $('weeklyList').appendChild(buildPriority(COUNTER_BY_ID[w.id])); });
+    G.collect.forEach(function (c) { $('collectList').appendChild(buildCollect(c)); });
+    G.stocks.forEach(function (st) { $('stockList').appendChild(buildStock(st)); });
     $('prioNote').appendChild(rich(G.prioritiesNote));
 
     G.thresholds.forEach(function (t) {
@@ -436,18 +467,22 @@
       s.el.classList.toggle('current', i === cur && stageIndexByCp(p.cp) !== null);
     });
 
-    G.priorities.forEach(function (it) {
+    COUNTERS.forEach(function (it) {
       var n = counterValue(p, it);
-      var node = document.querySelector('[data-prio="' + it.id + '"]');
-      if (!node) return;
-      if (it.max === 1) {
-        node.checked = n >= 1;
-        node.closest('label').classList.toggle('done', n >= 1);
-      } else {
-        node.textContent = n + ' / ' + it.max;
-        node.classList.toggle('full', n >= it.max);
-      }
+      document.querySelectorAll('[data-prio="' + it.id + '"]').forEach(function (node) {
+        if (it.max === 1) {
+          node.checked = n >= 1;
+          node.closest('label').classList.toggle('done', n >= 1);
+        } else {
+          node.textContent = n + ' / ' + it.max;
+          node.classList.toggle('full', n >= it.max);
+        }
+      });
     });
+    var used = weeklyUsedFromProfile(p);
+    $('weeklySummary').textContent = 'Використано ' + used + ' з ' + WEEKLY_TOTAL + ' тижневих входів. До ресету: ' + timeLeft(nextReset('week', Date.now()) - Date.now()) + '.';
+    syncCollect(p);
+    syncStocks(p);
 
     var pct = roadPct(p.checks);
     $('ringFg').style.strokeDashoffset = String(RING_LEN * (1 - pct / 100));
@@ -521,11 +556,12 @@
   function renderTable(table, rows, opts) {
     table.textContent = '';
     var head = h('tr', null, sortHead('Нік', 'name'), sortHead('БМ', 'cp'), h('th', { text: 'Етап' }), sortHead('Прогрес', 'pct'));
+    head.appendChild(h('th', { text: 'Тиждень' }));
     if (opts.updated) head.appendChild(sortHead('Оновлено', 'updated'));
     head.appendChild(h('th'));
     table.appendChild(h('thead', null, head));
     var body = h('tbody');
-    if (!rows.length) body.appendChild(h('tr', null, h('td', { class: 'empty', colspan: opts.updated ? 6 : 5, text: opts.empty })));
+    if (!rows.length) body.appendChild(h('tr', null, h('td', { class: 'empty', colspan: opts.updated ? 7 : 6, text: opts.empty })));
     sortRows(rows).forEach(function (r) {
       var nick = h('div', { class: 'nick' });
       if (r.avatar && /^https:\/\//.test(r.avatar)) nick.appendChild(h('img', { src: r.avatar, alt: '', width: 24, height: 24, loading: 'lazy', referrerpolicy: 'no-referrer' }));
@@ -537,7 +573,8 @@
         h('td', null, nick),
         h('td', { class: 'num', text: r.cp > 0 ? String(r.cp) : '—' }),
         h('td', { text: stageLabel(r.cp) }),
-        barCell(r.pct));
+        barCell(r.pct),
+        barCell(Math.round(100 * (r.wused || 0) / WEEKLY_TOTAL)));
       if (opts.updated) {
         var age = r.ts ? Math.floor((Date.now() - r.ts) / DAY_MS) : null;
         tr.appendChild(h('td', { class: 'small ' + (age !== null && age >= STALE_DAYS ? 'stale' : 'muted'),
@@ -551,7 +588,7 @@
 
   function renderTeam() {
     var local = localProfiles().map(function (p) {
-      return { id: p.id, name: p.name, cp: p.cp, pct: roadPct(p.checks), isActive: p.id === state.active, profile: p, character: p.character, ts: p.updated };
+      return { id: p.id, name: p.name, cp: p.cp, pct: roadPct(p.checks), isActive: p.id === state.active, profile: p, character: p.character, ts: p.updated, wused: weeklyUsedFromProfile(p) };
     });
     renderTable($('localTable'), local, {
       empty: 'Профілів немає.',
@@ -576,7 +613,7 @@
     var rows = local;
     if (loggedIn) {
       rows = cloudRows.map(function (m) {
-        return { userId: m.user_id, ts: Date.parse(m.updated_at) || 0, name: m.name, avatar: m.avatar_url, cp: m.cp, pct: bitsRoadPct(m.checks), updated: m.updated_at, isActive: m.user_id === Cloud.user.id, character: sanitizeCharacter(m.character) };
+        return { userId: m.user_id, ts: Date.parse(m.updated_at) || 0, name: m.name, avatar: m.avatar_url, cp: m.cp, pct: bitsRoadPct(m.checks), updated: m.updated_at, isActive: m.user_id === Cloud.user.id, character: sanitizeCharacter(m.character), wused: weeklyUsedFromExtra(m.extra) };
       });
       renderTable($('cloudTable'), rows, {
         empty: 'Поки що нікого немає.',
@@ -589,6 +626,7 @@
         },
       });
     }
+    renderInsights(rows);
     var avg = rows.length ? Math.round(rows.reduce(function (s, r) { return s + r.pct; }, 0) / rows.length) : 0;
     $('teamSummary').textContent = rows.length ? rows.length + ' учасн. · середній прогрес ' + avg + '%' : '';
   }
@@ -715,7 +753,7 @@
   function cloudPush() {
     var p = state.profiles.cloud;
     if (!p || !Cloud.user) return Promise.resolve();
-    return Cloud.saveMine({ cp: p.cp, checks: toBits(p.checks), character: p.character || null, game: p.game || null }).then(function () {
+    return Cloud.saveMine({ cp: p.cp, checks: toBits(p.checks), character: p.character || null, game: p.game || null, extra: buildExtra(p) }).then(function () {
       setSync('Синхронізовано о ' + new Date().toLocaleTimeString('uk-UA', { hour: '2-digit', minute: '2-digit' }));
       loadRoster();
     }).catch(function (err) { setSync('Помилка синхронізації: ' + err.message); });
@@ -723,6 +761,11 @@
 
   function loadRoster() {
     if (!(Cloud && Cloud.user)) return;
+    Cloud.fetchIlHistory(new Date(Date.now() - 8 * DAY_MS).toISOString().slice(0, 10)).then(function (rows) {
+      ilHistory = {};
+      (rows || []).forEach(function (r) { (ilHistory[r.user_id] = ilHistory[r.user_id] || []).push({ day: r.day, il: r.il }); });
+      renderTeam();
+    }).catch(function () { /* таблиці може ще не бути */ });
     Cloud.fetchAll().then(function (rows) {
       cloudRows = rows || [];
       $('cloudStatus').textContent = 'Оновлено о ' + new Date().toLocaleTimeString('uk-UA', { hour: '2-digit', minute: '2-digit' }) + '. Нікнейми та прогрес бачать усі, хто увійшов.';
@@ -736,6 +779,7 @@
       cloudRows = [];
       clearInterval(cloudTimer);
       stopKillsSync();
+      stopGroupsSync();
       ensureProfile();
       setSync('');
       syncUI();
@@ -765,9 +809,10 @@
     }).then(function () {
       loadRoster();
       startKillsSync();
+      startGroupsSync();
       autoRefreshCharacter();
       clearInterval(cloudTimer);
-      cloudTimer = setInterval(function () { if (!document.hidden) { loadRoster(); loadKills(); } }, 60000);
+      cloudTimer = setInterval(function () { if (!document.hidden) { loadRoster(); loadKills(); loadGroups(); } }, 60000);
     }).catch(function (err) { setSync('Помилка: ' + err.message); });
   }
 
@@ -854,6 +899,12 @@
     p = p || active();
     p.character = c;
     if (game) p.game = sanitizeGame(game);
+    var g = p.game;
+    if (g && g.boards.length) {
+      c.bo = g.boards.reduce(function (s, b) { return s + b[1]; }, 0);
+      c.bt = g.boards.reduce(function (s, b) { return s + b[2]; }, 0);
+    }
+    if (p.cloud && Cloud && Cloud.user) Cloud.saveIl(c.il);
     p.cp = clamp(c.il, 0, 9999);
     var isActive = p === active();
     if (isActive) {
@@ -905,6 +956,313 @@
       lookupFor = null;
       touch(p);
     });
+  }
+
+  /* ---------- Порівняння з білдом класу ---------- */
+  function normName(s) { return String(s || '').toLowerCase().replace(/[^a-z]/g, ''); }
+
+  function findSkill(game, names) {
+    var keys = names.map(normName);
+    return game.skills.filter(function (x) { return keys.indexOf(normName(x[0])) >= 0; })[0] || null;
+  }
+
+  /* Маленька іконка вміння з CDN гри (порожньо, якщо немає) */
+  function skillIcon(s) {
+    return s && s[4] ? h('img', { class: 'sk-ic', src: ICON_BASE + s[4], alt: '', width: 22, height: 22, loading: 'lazy', referrerpolicy: 'no-referrer', onerror: hideBroken }) : h('span', { class: 'sk-ic' });
+  }
+
+  function buildFor(c) { return c ? G.builds.filter(function (b) { return b.cls === c.cls; })[0] || null : null; }
+
+  /* Пасивки за пріоритетом: перша, що відстає від менш важливої, — її підтягувати */
+  function passiveAdvice(game, group) {
+    var lv = group.map(function (n) { var s = findSkill(game, [n]); return s ? s[2] : 0; });
+    for (var i = 0; i < group.length - 1; i++) {
+      var maxBelow = Math.max.apply(null, lv.slice(i + 1));
+      if (lv[i] < maxBelow) return { lv: lv, text: 'Підтягніть ' + group[i] + ' (' + lv[i] + '): вона важливіша, але нижча за ' + group[lv.indexOf(maxBelow, i + 1)] + ' (' + maxBelow + ').' };
+    }
+    return { lv: lv, text: null };
+  }
+
+  function buildSection(c, game, p) {
+    var b = buildFor(c);
+    if (!b || !game || !game.skills.length) return null;
+    var picks = (p && p.buildPicks && p.buildPicks[b.id]) || {};
+    var actions = [], stepsTotal = 0, stepsDone = 0, picksDue = 0, picksDone = 0;
+
+    // стигми
+    var stigRows = h('ul', { class: 'b-stig' });
+    var stigOk = 0;
+    b.stigmas.forEach(function (st) {
+      var s = findSkill(game, [st.skill]);
+      var on = !!(s && s[3]);
+      if (on) stigOk++;
+      var lv = s ? s[2] : 0;
+      if (!on) actions.push({ w: 0, text: 'Екіпіруйте стигму ' + st.skill + '.' });
+      else if (st.target && lv < st.target) actions.push({ w: 1, text: st.skill + ': ' + lv + ' → ' + st.target + ' (' + (st.note || 'ціль білду') + ').' });
+      stigRows.appendChild(h('li', { class: on ? 'ok' : 'todo' }, skillIcon(s), h('b', { lang: 'en', text: st.skill }),
+        h('span', { class: 'muted', text: on ? ' · рів. ' + lv + (st.target ? ' / ціль ' + st.target : '') : ' · не екіпіровано' }),
+        st.note ? h('span', { class: 'muted', text: ' · ' + st.note }) : null));
+    });
+
+    // активні вміння
+    var tbl = h('table', { class: 'tbl b-skills' });
+    tbl.appendChild(h('thead', null, h('tr', null, h('th', { text: 'Вміння' }), h('th', { text: 'Рівень' }), h('th', { text: 'Опції за білдом' }))));
+    var tb = h('tbody');
+    b.active.forEach(function (a) {
+      var s = findSkill(game, [a.skill].concat(a.aka || []));
+      var lv = s ? s[2] : 0;
+      var cell = h('td', { class: 'b-steps' });
+      var next = null;
+      a.steps.forEach(function (st) {
+        stepsTotal++;
+        var key = a.skill + '@' + st[0];
+        var reached = lv >= st[0];
+        if (reached) {
+          stepsDone++;
+          picksDue++;
+          if (picks[key]) picksDone++;
+        } else if (!next) next = st;
+        var chip = h('span', { class: 'b-step ' + (reached ? 'reached' : next === st ? 'next' : 'future') }, 'рів. ' + st[0] + ': ', h('b', { text: st[1] }));
+        if (reached && p) {
+          var cb = h('input', { type: 'checkbox', 'aria-label': a.skill + ', рівень ' + st[0] + ': опції ' + st[1] + ' встановлено' });
+          cb.checked = !!picks[key];
+          cb.addEventListener('change', function () {
+            p.buildPicks = p.buildPicks || {};
+            p.buildPicks[b.id] = p.buildPicks[b.id] || {};
+            if (cb.checked) p.buildPicks[b.id][key] = true; else delete p.buildPicks[b.id][key];
+            touch(p);
+          });
+          chip = h('label', { class: 'b-step reached' + (picks[key] ? ' done' : ''), title: 'Відмітьте, коли виставите ці опції в грі' }, cb, ' рів. ' + st[0] + ': ', h('b', { text: st[1] }));
+        }
+        cell.appendChild(chip);
+      });
+      if (next) actions.push({ w: 2 + (next[0] - lv) / 100, text: a.skill + ': ' + lv + ' → ' + next[0] + ', потім опції ' + next[1] + '.' });
+      tb.appendChild(h('tr', null, h('td', null, h('span', { class: 'sk-name' }, skillIcon(s), h('span', { lang: 'en', text: a.skill }))), h('td', { class: 'num', text: s ? String(lv) : '—' }), cell));
+    });
+    tbl.appendChild(tb);
+
+    // пасивки
+    var pas = h('div', { class: 'b-pass' });
+    b.passives.forEach(function (group) {
+      var adv = passiveAdvice(game, group);
+      var line = h('p', { class: 'b-chain' });
+      group.forEach(function (n, i) {
+        if (i) line.appendChild(h('span', { class: 'muted', text: ' > ' }));
+        line.appendChild(h('span', { class: 'chip-s' }, skillIcon(findSkill(game, [n])), h('span', { lang: 'en', text: n }), ' ', h('b', { text: String(adv.lv[i]) })));
+      });
+      pas.appendChild(line);
+      if (adv.text) { pas.appendChild(h('p', { class: 'small warn-text', text: adv.text })); actions.push({ w: 3, text: adv.text }); }
+    });
+
+    if (p && picksDue > picksDone) actions.push({ w: 4, text: 'Перевірте в грі опції вмінь і відмітьте встановлені (' + picksDone + ' з ' + picksDue + ').' });
+    actions.sort(function (x, y) { return x.w - y.w; });
+
+    var head = h('div', { class: 'b-head' },
+      h('h4', null, 'Порівняння з білдом ', h('a', { href: b.url, target: '_blank', rel: 'noopener', lang: 'en', text: b.name })),
+      h('p', { class: 'small muted', text: 'Пороги рівнів вмінь: ' + stepsDone + ' з ' + stepsTotal + ' · стигми ' + stigOk + ' з ' + b.stigmas.length +
+        (p ? ' · опції відмічено ' + picksDone + ' з ' + picksDue : '') + '. Опції вмінь і вузли дошок гра не віддає, тому їх звіряйте вручну.' }),
+      h('div', { class: 'bar' }, h('i', { style: 'width:' + Math.round(100 * stepsDone / Math.max(1, stepsTotal)) + '%' })));
+
+    var next = h('ol', { class: 'b-next' });
+    actions.slice(0, 8).forEach(function (a) { next.appendChild(h('li', { text: a.text })); });
+    if (!actions.length) next.appendChild(h('li', { text: 'Усе за білдом. Далі — дошки Даеваніона за пріоритетом нижче.' }));
+
+    var board = h('ol', { class: 'b-board' });
+    b.board.forEach(function (t) { board.appendChild(h('li', { text: t })); });
+    var notes = h('ul', { class: 'b-notes' });
+    (b.stigmaNotes || []).forEach(function (t) { notes.appendChild(h('li', { text: t })); });
+
+    return h('section', { class: 'build-cmp' }, head,
+      h('h5', { text: 'Наступні кроки' }), next,
+      h('h5', { text: 'Активні вміння' }), h('div', { class: 'table-scroll' }, tbl),
+      h('h5', { text: 'Пасивки (пріоритет зліва направо)' }), pas,
+      h('h5', { text: 'Стигми' }), stigRows, notes,
+      h('h5', { text: 'Дошки Даеваніона: порядок' }), board);
+  }
+
+  /* ---------- Білди блогерів з questlog.gg (через функцію aion-lookup) ---------- */
+  var QL_CLASSES = ['gladiator', 'templar', 'assassin', 'ranger', 'sorcerer', 'elementalist', 'cleric', 'chanter'];
+  var picker = { open: false, busy: false, q: '', page: 1, data: null, err: '' };
+
+  function classIdOf(c) {
+    var id = String(c && c.cls || '').toLowerCase().replace(/[^a-z]/g, '');
+    if (id === 'spiritmaster') id = 'elementalist';
+    return QL_CLASSES.indexOf(id) >= 0 ? id : '';
+  }
+
+  function skillById(game, id) {
+    return game.skills.filter(function (x) { return x[5] && x[5] === String(id); })[0] || null;
+  }
+
+  function qlEnabled() { return !!(Cloud && Cloud.enabled && Cloud.ready); }
+
+  function loadPicker(classId) {
+    picker.busy = true; picker.err = '';
+    renderOwnCharacter(active(), true);
+    Cloud.lookup({ ql: 'search', classId: classId, page: picker.page, q: picker.q }).then(function (d) {
+      picker.data = d;
+    }).catch(function (e) {
+      picker.err = e.code === 'rate_limited' ? 'Забагато запитів, спробуйте за хвилину.' : 'questlog.gg не відповів. Спробуйте пізніше.';
+    }).then(function () { picker.busy = false; renderOwnCharacter(active(), true); });
+  }
+
+  function chooseQlBuild(p, c, b) {
+    var classId = classIdOf(c);
+    picker.busy = true;
+    renderOwnCharacter(p, true);
+    Promise.all([
+      Cloud.lookup({ ql: 'build', slug: b.user.slug, id: b.id }),
+      Cloud.lookup({ ql: 'skills', classId: classId }),
+    ]).then(function (r) {
+      var bd = r[0].build, cat = {};
+      (r[1].skills || []).forEach(function (s) { cat[s.id] = s; });
+      p.qlBuild = {
+        classId: classId, id: bd.id, slug: b.user.slug, name: bd.name, author: bd.user.name || b.user.name,
+        publisher: bd.publisher, likes: b.likes, skills: bd.skills, priority: bd.priority, catalog: cat, t: Date.now(),
+      };
+      p.buildMode = 'ql';
+      picker.open = false;
+      touch(p);
+    }).catch(function () { toast('Не вдалося завантажити білд з questlog.gg.'); })
+      .then(function () { picker.busy = false; renderOwnCharacter(p, true); });
+  }
+
+  /* Вибір джерела білду + порівняння */
+  function buildArea(c, game, p) {
+    if (!game || !game.skills.length) return null;
+    var staticB = buildFor(c), classId = classIdOf(c);
+    var qb = p && p.qlBuild && p.qlBuild.classId === classId ? p.qlBuild : null;
+    var mode = p && p.buildMode === 'ql' && qb ? 'ql' : staticB ? 'static' : qb ? 'ql' : null;
+    if (!p) return staticB ? buildSection(c, game, null) : null; // чужа картка: лише вбудований білд
+
+    var wrap = h('div', { class: 'build-area' });
+    if (classId && (staticB || qlEnabled())) {
+      var sel = h('select', { 'aria-label': 'Білд для порівняння' });
+      if (staticB) sel.appendChild(h('option', { value: 'static', text: 'Рекомендований: ' + staticB.name }));
+      if (qb) sel.appendChild(h('option', { value: 'ql', text: 'questlog: ' + qb.name + ' (' + qb.author + ')' }));
+      sel.value = mode || '';
+      sel.addEventListener('change', function () { p.buildMode = sel.value; touch(p); });
+      var bar = h('div', { class: 'b-source' }, h('span', { class: 'muted small', text: 'Порівнювати з білдом:' }), sel.options.length ? sel : null);
+      if (qlEnabled()) bar.appendChild(h('button', { class: 'btn btn-sm', type: 'button', text: picker.open ? 'Сховати список' : 'Обрати білд блогера', onclick: function () {
+        picker.open = !picker.open;
+        if (picker.open && !picker.data) loadPicker(classId); else renderOwnCharacter(p, true);
+      } }));
+      wrap.appendChild(bar);
+    }
+    if (picker.open && qlEnabled() && classId) wrap.appendChild(pickerPanel(p, c, classId));
+    if (mode === 'ql') wrap.appendChild(qlSection(c, game, p, qb));
+    else if (mode === 'static') wrap.appendChild(buildSection(c, game, p));
+    else if (!picker.open && qlEnabled() && classId) wrap.appendChild(h('p', { class: 'muted small', text: 'Оберіть білд блогера для свого класу, щоб побачити, що підтягнути.' }));
+    return wrap.childNodes.length ? wrap : null;
+  }
+
+  function pickerPanel(p, c, classId) {
+    var box = h('div', { class: 'b-picker' });
+    var input = h('input', { type: 'search', placeholder: 'Пошук за назвою білду', value: picker.q, 'aria-label': 'Пошук білду' });
+    var form = h('form', { class: 'b-picker-form' }, input, h('button', { class: 'btn btn-sm', type: 'submit', text: 'Знайти' }));
+    form.addEventListener('submit', function (e) { e.preventDefault(); picker.q = input.value.trim(); picker.page = 1; loadPicker(classId); });
+    box.appendChild(form);
+    if (picker.busy) box.appendChild(h('p', { class: 'muted small', text: 'Завантажую з questlog.gg…' }));
+    if (picker.err) box.appendChild(h('p', { class: 'small warn-text', text: picker.err }));
+    var d = picker.data;
+    if (d && !picker.busy) {
+      box.appendChild(h('p', { class: 'muted small', text: 'Білдів для класу: ' + fmtNum(d.total) + '. Позначка NC — офіційні білди NCSOFT.' }));
+      var ul = h('ul', { class: 'b-list' });
+      d.builds.forEach(function (b) {
+        ul.appendChild(h('li', null,
+          h('div', null,
+            h('b', { lang: 'en', text: b.name }), b.publisher === 'nc' ? h('span', { class: 'b-nc', text: 'NC' }) : null,
+            h('span', { class: 'muted small', text: ' · ' + (b.user.name || '—') + ' · ♥ ' + b.likes + (b.updatedAt ? ' · ' + new Date(b.updatedAt).toLocaleDateString('uk-UA') : '') })),
+          h('button', { class: 'btn btn-sm', type: 'button', text: 'Порівняти', disabled: !b.user.slug, onclick: function () { chooseQlBuild(p, c, b); } })));
+      });
+      if (!d.builds.length) ul.appendChild(h('li', { class: 'muted', text: 'Нічого не знайдено.' }));
+      box.appendChild(ul);
+      var nav = h('div', { class: 'b-pages' });
+      if (picker.page > 1) nav.appendChild(h('button', { class: 'btn btn-sm btn-ghost', type: 'button', text: '← Назад', onclick: function () { picker.page--; loadPicker(classId); } }));
+      if (picker.page < d.pages) nav.appendChild(h('button', { class: 'btn btn-sm btn-ghost', type: 'button', text: 'Далі →', onclick: function () { picker.page++; loadPicker(classId); } }));
+      box.appendChild(nav);
+    }
+    return box;
+  }
+
+  /* Порівняння з білдом questlog: рівні, стигми, опції (номер і з якого рівня відкривається) */
+  function qlSection(c, game, p, qb) {
+    var picks = (p.buildPicks && p.buildPicks['ql:' + qb.id]) || {};
+    var order = {};
+    (qb.priority || []).forEach(function (id, i) { order[id] = i; });
+    var groups = { active: [], passive: [], stigma: [] }, actions = [], ok = 0, total = 0, picksDue = 0, picksDone = 0;
+    qb.skills.forEach(function (bs) {
+      var meta = qb.catalog[bs[0]] || { name: bs[0], sub: 'active', specs: [] };
+      var cur = skillById(game, bs[0]) || findSkill(game, [meta.name]);
+      var item = { id: bs[0], meta: meta, target: bs[1], specs: bs[2] || [], cur: cur, lv: cur ? cur[2] : 0, equip: cur ? !!cur[3] : false };
+      (groups[meta.sub] || groups.active).push(item);
+      total++;
+      var done = item.lv >= item.target && (meta.sub !== 'stigma' || item.equip);
+      if (done) ok++;
+      if (meta.sub === 'stigma' && !item.equip) actions.push({ w: 0, text: 'Екіпіруйте стигму ' + meta.name + '.' });
+      else if (item.lv < item.target) actions.push({ w: (meta.sub === 'stigma' ? 1 : meta.sub === 'active' ? 2 : 3) + (order[bs[0]] != null ? order[bs[0]] / 100 : 0.5), text: meta.name + ': ' + item.lv + ' → ' + item.target + '.' });
+      if (item.specs.length) { picksDue++; if (picks[bs[0]]) picksDone++; }
+    });
+    groups.active.sort(function (a, b) { return (order[a.id] != null ? order[a.id] : 99) - (order[b.id] != null ? order[b.id] : 99); });
+    if (picksDue > picksDone) actions.push({ w: 4, text: 'Виставте в грі опції вмінь за білдом і відмітьте (' + picksDone + ' з ' + picksDue + ').' });
+    actions.sort(function (x, y) { return x.w - y.w; });
+
+    function optChips(item) {
+      var box = h('div', { class: 'b-steps' });
+      item.specs.map(function (sid) {
+        var n = Math.round((sid - Number(item.id)) / 10);
+        var spec = (item.meta.specs || []).filter(function (s) { return s[0] === sid; })[0];
+        return { n: n, unlock: spec ? spec[1] : 0 };
+      }).sort(function (a, b) { return a.n - b.n; }).forEach(function (o) {
+        var open = !o.unlock || item.lv >= o.unlock;
+        box.appendChild(h('span', { class: 'b-step ' + (open ? 'reached' : 'future'), title: o.unlock ? 'Доступна з ' + o.unlock + ' рівня вміння' : '' },
+          'опція ', h('b', { text: String(o.n) }), o.unlock ? ' · з рів. ' + o.unlock : ''));
+      });
+      if (item.specs.length) {
+        var cb = h('input', { type: 'checkbox', 'aria-label': item.meta.name + ': опції виставлено' });
+        cb.checked = !!picks[item.id];
+        cb.addEventListener('change', function () {
+          p.buildPicks = p.buildPicks || {};
+          var k = 'ql:' + qb.id;
+          p.buildPicks[k] = p.buildPicks[k] || {};
+          if (cb.checked) p.buildPicks[k][item.id] = true; else delete p.buildPicks[k][item.id];
+          touch(p);
+        });
+        box.appendChild(h('label', { class: 'b-step reached' + (picks[item.id] ? ' done' : '') }, cb, ' виставлено'));
+      }
+      return box;
+    }
+
+    function table(list, withOpts) {
+      var t = h('table', { class: 'tbl b-skills' });
+      t.appendChild(h('thead', null, h('tr', null, h('th', { text: 'Вміння' }), h('th', { text: 'Зараз → ціль' }), withOpts ? h('th', { text: 'Опції за білдом' }) : null)));
+      var tb = h('tbody');
+      list.forEach(function (it) {
+        var state = it.lv >= it.target && (it.meta.sub !== 'stigma' || it.equip);
+        tb.appendChild(h('tr', null,
+          h('td', null, h('span', { class: 'sk-name' }, skillIcon(it.cur), h('span', { lang: 'en', text: it.meta.name }))),
+          h('td', { class: 'num ' + (state ? 'up' : 'warn-text'), text: (it.cur ? it.lv : '—') + ' → ' + it.target + (it.meta.sub === 'stigma' && !it.equip ? ' · не екіпіровано' : '') }),
+          withOpts ? h('td', null, optChips(it)) : null));
+      });
+      t.appendChild(tb);
+      return h('div', { class: 'table-scroll' }, t);
+    }
+
+    var next = h('ol', { class: 'b-next' });
+    actions.slice(0, 10).forEach(function (a) { next.appendChild(h('li', { text: a.text })); });
+    if (!actions.length) next.appendChild(h('li', { text: 'Усе відповідає білду.' }));
+
+    var url = 'https://questlog.gg/aion-2/en/skill-builder';
+    return h('section', { class: 'build-cmp' },
+      h('div', { class: 'b-head' },
+        h('h4', null, 'Порівняння з білдом ', h('span', { class: 'gold', lang: 'en', text: qb.name }), qb.publisher === 'nc' ? h('span', { class: 'b-nc', text: 'NC' }) : null),
+        h('p', { class: 'small muted' }, 'Автор: ' + qb.author + ' · ♥ ' + (qb.likes || 0) + ' · джерело: ', h('a', { href: url, target: '_blank', rel: 'noopener', text: 'questlog.gg' }),
+          '. Відповідає білду: ' + ok + ' з ' + total + ' вмінь. Опції гра не віддає, тому виставлені відмічайте вручну.'),
+        h('div', { class: 'bar' }, h('i', { style: 'width:' + Math.round(100 * ok / Math.max(1, total)) + '%' }))),
+      h('h5', { text: 'Наступні кроки' }), next,
+      groups.active.length ? h('h5', { text: 'Активні вміння (у порядку пріоритету білду)' }) : null, groups.active.length ? table(groups.active, true) : null,
+      groups.stigma.length ? h('h5', { text: 'Стигми' }) : null, groups.stigma.length ? table(groups.stigma, true) : null,
+      groups.passive.length ? h('h5', { text: 'Пасивки' }) : null, groups.passive.length ? table(groups.passive, false) : null);
   }
 
   /* ---------- Картка персонажа: усі дані з гри + підказки за правилами гайда ---------- */
@@ -972,7 +1330,7 @@
     return out;
   }
 
-  function characterCard(c, game) {
+  function characterCard(c, game, p) {
     var card = h('article', { class: 'char-card' });
     var head = h('div', { class: 'char-head' });
     head.appendChild(c.img ? h('img', { class: 'char-ava', src: c.img, alt: '', width: 72, height: 72, referrerpolicy: 'no-referrer', onerror: hideBroken }) : h('div', { class: 'char-ava' }));
@@ -993,6 +1351,9 @@
       card.appendChild(h('p', { class: 'muted small', text: 'Повні дані ще не підтягнуто: натисніть «Оновити» біля пошуку персонажа.' }));
       return card;
     }
+
+    var cmp = buildArea(c, game, p);
+    if (cmp) card.appendChild(cmp);
 
     var hints = gameHints(game);
     if (hints.length) {
@@ -1066,10 +1427,12 @@
     return card;
   }
 
-  function renderOwnCharacter(p) {
+  function renderOwnCharacter(p, force) {
     var box = $('characterBox');
+    var ae = document.activeElement;
+    if (!force && ae && box.contains(ae) && /^(INPUT|SELECT)$/.test(ae.tagName)) return; /* не збиваємо введення */
     box.textContent = '';
-    if (p.character) { box.appendChild(characterCard(p.character, p.game)); return; }
+    if (p.character) { box.appendChild(characterCard(p.character, p.game, p)); return; }
     box.appendChild(h('div', { class: 'panel char-empty' },
       h('p', null, 'Персонажа ще не прив’язано. ', Cloud && Cloud.enabled
         ? 'Введіть нік у «Мій прогрес» і натисніть «Підтягнути БМ»: тут з’являться спорядження, дошки Даеваніона, вміння та підказки за гайдом.'
@@ -1095,6 +1458,261 @@
     }).catch(function () { /* наступного разу */ });
   }
 
+  /* ---------- Збір у рідному регіоні (Оплоти, Запечатані підземелля) ---------- */
+  function setCollect(p, id, n) {
+    var def = G.collect.filter(function (c) { return c.id === id; })[0];
+    p.collect = p.collect || {};
+    p.collect[id] = clamp(toInt(n), 0, def.max);
+    touch(p);
+  }
+
+  function buildCollect(c) {
+    var out = h('output', { 'data-collect': c.id });
+    var name = h('span', { class: 'nm' }, rich(c.name), h('span', { class: 'hint' }, rich(c.reward)));
+    var ctl = h('div', { class: 'counter' },
+      h('button', { type: 'button', 'aria-label': 'Менше: ' + plain(c.name), text: '−', onclick: function () { var p = active(); setCollect(p, c.id, ((p.collect || {})[c.id] || 0) - 1); } }),
+      out,
+      h('button', { type: 'button', 'aria-label': 'Більше: ' + plain(c.name), text: '+', onclick: function () { var p = active(); setCollect(p, c.id, ((p.collect || {})[c.id] || 0) + 1); } }));
+    return h('li', null, name, ctl, h('div', { class: 'bar collect-bar' }, h('i', { 'data-collect-bar': c.id })));
+  }
+
+  function syncCollect(p) {
+    var race = p.character && p.character.r;
+    $('collectRegion').textContent = race
+      ? 'Рідний регіон: ' + (/asmod/i.test(race) ? 'Альтгард (Асмодіани)' : 'Вертерон (Елійці)') + '.'
+      : 'Рідний регіон: Вертерон для Елійців, Альтгард для Асмодіан.';
+    G.collect.forEach(function (c) {
+      var n = (p.collect || {})[c.id] || 0;
+      var out = document.querySelector('[data-collect="' + c.id + '"]');
+      if (out) { out.textContent = n + ' / ' + c.max; out.classList.toggle('full', n >= c.max); }
+      var bar = document.querySelector('[data-collect-bar="' + c.id + '"]');
+      if (bar) bar.style.width = (100 * n / c.max) + '%';
+    });
+  }
+
+  /* ---------- Запаси, що відновлюються з часом ---------- */
+  function stockRec(p, id) { return (p.stock || {})[id] || null; }
+  function stockCap(p, st) { return toInt((p.stockCap || {})[st.id]) || st.caps[0]; }
+
+  /* Оцінка зараз і момент, коли запас стане повним */
+  function stockState(st, rec, now) {
+    if (!rec) return null;
+    var cap = rec.cap || st.caps[0], v = rec.v, fullAt;
+    if (!(cap > 0)) return null;
+    if (st.daily) {
+      var resets = Math.max(0, Math.round((periodStart('day', now) - periodStart('day', rec.t)) / DAY_MS));
+      v = Math.min(cap, rec.v + resets * st.per);
+      var need = Math.ceil((cap - v) / st.per);
+      fullAt = need <= 0 ? now : nextReset('day', now) + (need - 1) * DAY_MS;
+    } else {
+      var P = st.every * 3600000, ticks = Math.max(0, Math.floor((now - rec.t) / P));
+      v = Math.min(cap, rec.v + ticks * st.per);
+      var k = Math.ceil((cap - v) / st.per);
+      fullAt = k <= 0 ? now : rec.t + (ticks + k) * P;
+    }
+    return { v: v, cap: cap, fullAt: fullAt, full: v >= cap };
+  }
+
+  function buildStock(st) {
+    var input = h('input', { type: 'number', inputmode: 'numeric', min: '0', max: String(Math.max.apply(null, st.caps)), step: '1', id: 'stock-' + st.id, 'aria-label': 'Зараз: ' + plain(st.name), placeholder: 'скільки зараз' });
+    input.addEventListener('change', function () {
+      var p = active(), cap = stockCap(p, st);
+      p.stock = p.stock || {};
+      if (input.value === '') { delete p.stock[st.id]; touch(p); return; }
+      p.stock[st.id] = { v: clamp(toInt(input.value), 0, cap), t: Date.now(), cap: cap };
+      touch(p);
+    });
+    var capSel = null;
+    if (st.caps.length > 1) {
+      capSel = h('select', { id: 'stockcap-' + st.id, 'aria-label': 'Ліміт: ' + plain(st.name) });
+      st.caps.forEach(function (c, i) { capSel.appendChild(h('option', { value: String(c), text: 'ліміт ' + c + (i && st.capNote ? ' (' + st.capNote + ')' : '') })); });
+      capSel.addEventListener('change', function () {
+        var p = active(), rec = stockRec(p, st.id), cap = toInt(capSel.value), now = Date.now();
+        p.stockCap = p.stockCap || {};
+        p.stockCap[st.id] = cap;
+        if (rec) p.stock[st.id] = { v: Math.min(cap, stockState(st, rec, now).v), t: now, cap: cap };
+        touch(p);
+      });
+    }
+    var info = h('span', { class: 'stock-info', 'data-stock-info': st.id });
+    var every = st.daily ? '+' + st.per + ' щодня о ресеті' : '+' + st.per + ' кожні ' + st.every + ' год';
+    return h('li', { class: 'stock' },
+      h('div', { class: 'stock-head' }, h('span', { class: 'nm' }, rich(st.name), h('span', { class: 'hint', text: every })),
+        h('div', { class: 'stock-ctl' }, input, capSel)),
+      info,
+      h('div', { class: 'bar' }, h('i', { 'data-stock-bar': st.id })));
+  }
+
+  function syncStocks(p) {
+    var now = Date.now();
+    G.stocks.forEach(function (st) {
+      var rec = stockRec(p, st.id), s = stockState(st, rec, now);
+      var input = $('stock-' + st.id), info = document.querySelector('[data-stock-info="' + st.id + '"]'), bar = document.querySelector('[data-stock-bar="' + st.id + '"]');
+      if (document.activeElement !== input) input.value = s ? String(s.v) : '';
+      var capSel = $('stockcap-' + st.id);
+      if (capSel) capSel.value = String(stockCap(p, st));
+      if (!s) { info.textContent = 'Введіть поточне значення з гри.'; info.className = 'stock-info muted'; bar.style.width = '0'; return; }
+      bar.style.width = (100 * s.v / s.cap) + '%';
+      var txt = 'Зараз ≈ ' + s.v + ' / ' + s.cap;
+      if (st.claim) txt += ' · вистачить на ' + Math.floor(s.v / st.claim) + ' нагород (по ' + st.claim + ')';
+      txt += s.full ? ' · ПОВНИЙ — витратьте, поки не згоріло' : ' · повний через ' + timeLeft(s.fullAt - now) + ' (' + new Date(s.fullAt).toLocaleString('uk-UA', { weekday: 'short', hour: '2-digit', minute: '2-digit' }) + ')';
+      info.textContent = txt;
+      info.className = 'stock-info' + (s.full ? ' warn' : '');
+    });
+  }
+
+  /* ---------- Склад: рейтинг і готовність до контенту ---------- */
+  var ilHistory = {};
+
+  function ilDelta(userId, il) {
+    var hist = (ilHistory[userId] || []).slice().sort(function (a, b) { return a.day < b.day ? -1 : 1; });
+    var today = new Date().toISOString().slice(0, 10);
+    var old = hist.filter(function (x) { return x.day < today; })[0];
+    return old ? il - old.il : null;
+  }
+
+  function renderInsights(rows) {
+    var chars = rows.filter(function (r) { return r.character && r.character.il > 0; });
+    // рейтинг
+    var t = $('ratingTable');
+    t.textContent = '';
+    t.appendChild(h('thead', null, h('tr', null, h('th', { text: '#' }), h('th', { text: 'Нік' }), h('th', { text: 'Рівень предм.' }), h('th', { text: 'За 7 днів' }), h('th', { text: 'Даеваніон' }))));
+    var body = h('tbody');
+    chars.slice().sort(function (a, b) { return b.character.il - a.character.il; }).forEach(function (r, i) {
+      var d = r.userId ? ilDelta(r.userId, r.character.il) : null;
+      var bp = r.character.bt ? Math.round(100 * r.character.bo / r.character.bt) : null;
+      body.appendChild(h('tr', { class: r.isActive ? 'active' : null },
+        h('td', { class: 'num', text: String(i + 1) }),
+        h('td', null, h('div', { class: 'nick' }, h('div', null, r.name, h('span', { class: 'sub', text: r.character.cls + ' · ' + r.character.lvl + ' рів.' })))),
+        h('td', { class: 'num', text: String(r.character.il) }),
+        h('td', { class: 'num ' + (d > 0 ? 'up' : d < 0 ? 'down' : 'muted'), text: d === null ? '—' : (d > 0 ? '+' : '') + d }),
+        h('td', { class: 'num', text: bp === null ? '—' : bp + '%' })));
+    });
+    if (!chars.length) body.appendChild(h('tr', null, h('td', { class: 'empty', colspan: 5, text: 'Ще ніхто не прив’язав персонажа («Підтягнути БМ»).' })));
+    t.appendChild(body);
+    $('ratingNote').textContent = rows.length && rows[0].userId
+      ? 'Зміна за 7 днів рахується з історії, яка поповнюється, коли учасник оновлює персонажа на сайті.'
+      : 'Після входу через Discord тут буде весь склад 1 HP і зміна рівня предметів за тиждень.';
+
+    // готовність за порогами
+    var ul = $('readyList');
+    ul.textContent = '';
+    G.thresholds.forEach(function (th) {
+      var ready = chars.filter(function (r) { return r.character.il >= th.cp; });
+      var li = h('li', { class: ready.length ? '' : 'none' },
+        h('div', { class: 'ready-head' }, h('b', { text: String(th.cp) }), h('span', null, rich(th.text)), h('span', { class: 'ready-n', text: ready.length + ' / ' + chars.length })));
+      if (ready.length) {
+        var names = h('div', { class: 'ready-names' });
+        ready.forEach(function (r) { names.appendChild(h('span', { class: 'chip-s', text: r.name })); });
+        li.appendChild(names);
+      }
+      ul.appendChild(li);
+    });
+
+    // класи
+    var byCls = {};
+    chars.forEach(function (r) { byCls[r.character.cls] = (byCls[r.character.cls] || 0) + 1; });
+    var box = $('classChips');
+    box.textContent = '';
+    Object.keys(byCls).sort(function (a, b) { return byCls[b] - byCls[a]; }).forEach(function (c) {
+      box.appendChild(h('span', { class: 'chip-s' }, c + ' ', h('b', { text: String(byCls[c]) })));
+    });
+    if (!chars.length) box.appendChild(h('span', { class: 'muted small', text: 'Немає даних.' }));
+  }
+
+  /* ---------- Збір групи ---------- */
+  var groups = [];
+  var groupsUnsub = null;
+  var ROLE_NAME = {};
+  G.groupRoles.forEach(function (r) { ROLE_NAME[r.id] = r.name; });
+
+  function toLocalInput(ms) {
+    var d = new Date(ms - new Date(ms).getTimezoneOffset() * 60000);
+    return d.toISOString().slice(0, 16);
+  }
+
+  function loadGroups() {
+    if (!(Cloud && Cloud.user)) return;
+    Cloud.fetchGroups().then(function (rows) {
+      groups = rows || [];
+      $('groupsStatus').textContent = groups.length ? '' : 'Поки немає оголошень. Створіть перше: усі в 1 HP його побачать.';
+      renderGroups();
+    }).catch(function (err) {
+      $('groupsStatus').textContent = 'Не вдалося завантажити групи (' + err.message + '). Чи виконано оновлений schema.sql?';
+    });
+  }
+
+  function renderGroups() {
+    var box = $('groupsList'), me = Cloud && Cloud.user, now = Date.now();
+    box.textContent = '';
+    groups.forEach(function (g) {
+      var starts = Date.parse(g.starts_at), members = g.group_members || [];
+      var mine = me && members.some(function (m) { return m.user_id === me.id; });
+      var own = me && g.created_by === me.id;
+      var full = members.length >= g.size;
+      var when = new Date(starts).toLocaleString('uk-UA', { weekday: 'short', day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' });
+      var status = starts <= now ? 'вже почалось' : 'через ' + timeLeft(starts - now);
+      var list = h('ul', { class: 'g-members' });
+      members.forEach(function (m) { list.appendChild(h('li', { class: 'chip-s' }, (m.name || '?') + ' ', h('b', { text: ROLE_NAME[m.role] || m.role }))); });
+      for (var i = members.length; i < g.size; i++) list.appendChild(h('li', { class: 'chip-s empty', text: 'вільно' }));
+      var acts = h('div', { class: 'g-acts' });
+      if (mine) {
+        acts.appendChild(h('button', { class: 'btn btn-ghost', type: 'button', text: 'Вийти', onclick: function () { Cloud.leaveGroup(g.id).then(loadGroups).catch(function (e) { toast('Помилка: ' + e.message); }); } }));
+      } else if (!full && starts > now - 3600000) {
+        var roleSel = h('select', { 'aria-label': 'Роль' });
+        G.groupRoles.forEach(function (r) { roleSel.appendChild(h('option', { value: r.id, text: r.name })); });
+        acts.appendChild(roleSel);
+        acts.appendChild(h('button', { class: 'btn', type: 'button', text: 'Записатися', onclick: function () { Cloud.joinGroup(g.id, roleSel.value).then(loadGroups).catch(function (e) { toast('Помилка: ' + e.message); }); } }));
+      }
+      if (own) acts.appendChild(h('button', { class: 'btn btn-ghost', type: 'button', text: 'Видалити', onclick: function () {
+        if (!window.confirm('Видалити оголошення «' + g.activity + '»?')) return;
+        Cloud.deleteGroup(g.id).then(loadGroups).catch(function (e) { toast('Помилка: ' + e.message); });
+      } }));
+      box.appendChild(h('article', { class: 'panel group' + (mine ? ' mine' : '') },
+        h('div', { class: 'g-head' }, h('h3', { lang: 'en', text: g.activity }), h('span', { class: 'g-when', text: when + ' · ' + status }), h('span', { class: 'g-count' + (full ? ' full' : ''), text: members.length + ' / ' + g.size })),
+        g.note ? h('p', { class: 'g-note', text: g.note }) : null,
+        h('p', { class: 'muted small', text: 'Збирає ' + (g.created_name || '—') }),
+        list, acts));
+    });
+  }
+
+  function initGroups() {
+    var act = $('groupActivity');
+    G.groupActivities.forEach(function (a) { act.appendChild(h('option', { value: a, text: a })); });
+    G.groupRoles.forEach(function (r) { $('groupRole').appendChild(h('option', { value: r.id, text: r.name })); });
+    $('groupStart').value = toLocalInput(Date.now() + 3600000 - (Date.now() % 900000));
+    act.addEventListener('change', function () { if (act.value === 'Ludra raid') $('groupSize').value = '10'; });
+    $('groupForm').addEventListener('submit', function (e) {
+      e.preventDefault();
+      var starts = Date.parse($('groupStart').value);
+      if (!starts || starts < Date.now() - 60000) { toast('Вкажіть час у майбутньому.'); return; }
+      var role = $('groupRole').value;
+      $('groupCreate').disabled = true;
+      Cloud.createGroup({ activity: act.value, startsAt: starts, size: toInt($('groupSize').value) || 5, note: $('groupNote').value.trim().slice(0, 160) })
+        .then(function (row) { return Cloud.joinGroup(row.id, role); })
+        .then(function () { $('groupNote').value = ''; toast('Оголошення створено'); loadGroups(); })
+        .catch(function (err) { toast('Не вдалося створити: ' + err.message); })
+        .then(function () { $('groupCreate').disabled = false; });
+    });
+    setInterval(function () { if (Cloud && Cloud.user && !document.hidden) renderGroups(); }, 30000);
+  }
+
+  function startGroupsSync() {
+    $('groupsLocked').hidden = true;
+    $('groupsBox').hidden = false;
+    loadGroups();
+    if (groupsUnsub) groupsUnsub();
+    try { groupsUnsub = Cloud.onGroupsChange(loadGroups); } catch (e) { groupsUnsub = null; }
+  }
+
+  function stopGroupsSync() {
+    if (groupsUnsub) groupsUnsub();
+    groupsUnsub = null;
+    groups = [];
+    $('groupsLocked').hidden = false;
+    $('groupsBox').hidden = true;
+  }
+
   /* ---------- Таймери: Розлом, ресети, польові боси ---------- */
   var BELL_SVG = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9"/><path d="M10.3 21a1.9 1.9 0 0 0 3.4 0"/></svg>';
   var cloudKills = null;      /* { bossId: { t, by } } після входу; інакше відмітки в state.kills */
@@ -1112,6 +1730,8 @@
   var notifyLead = prefGet('notifyLead', 5);          /* за скільки хвилин попереджати */
   var notifyAtSpawn = prefGet('notifyAtSpawn', true); /* ще й у момент появи / відкриття */
   var notifyRift = prefGet('notifyRift', false);
+  var notifyStocks = prefGet('notifyStocks', true);
+  var notifyGroups = prefGet('notifyGroups', true);
   var notifySound = prefGet('notifySound', true);     /* власний звуковий сигнал сторінки */
   var notifyVolume = prefGet('notifyVolume', 70);     /* 0–100 */
   var audioCtx = null;
@@ -1355,6 +1975,32 @@
         notify(b.name, 'може з’явитись зараз (' + b.area + ')');
       }
     });
+    if (notifyStocks) {
+      var sp = active();
+      G.stocks.forEach(function (st) {
+        var rec = stockRec(sp, st.id), s = stockState(st, rec, now);
+        if (!s) return;
+        var key = 'stock:' + st.id + ':' + rec.t + ':' + rec.v;
+        if (s.full && !notified[key + ':full']) {
+          notified[key + ':full'] = notified[key + ':soon'] = true;
+          notify(plain(st.name), 'запас повний (' + s.cap + '): витратьте, поки не згоріло');
+        } else if (!s.full && s.fullAt - now <= lead && !notified[key + ':soon']) {
+          notified[key + ':soon'] = true;
+          notify(plain(st.name), 'буде повний через ' + timeLeft(s.fullAt - now));
+        }
+      });
+    }
+    if (notifyGroups && Cloud && Cloud.user) {
+      groups.forEach(function (g) {
+        var starts = Date.parse(g.starts_at);
+        var mine = (g.group_members || []).some(function (m) { return m.user_id === Cloud.user.id; });
+        var key = 'group:' + g.id + ':' + starts;
+        if (mine && starts > now && starts - now <= lead && !notified[key]) {
+          notified[key] = true;
+          notify(g.activity, 'збір групи через ' + timeLeft(starts - now));
+        }
+      });
+    }
     if (notifyRift) {
       var r = riftInfo(now);
       if (r.open && notifyAtSpawn && !notified['rift:' + r.last + ':open']) {
@@ -1391,6 +2037,10 @@
     });
     $('notifyAtSpawn').checked = !!notifyAtSpawn;
     $('notifyAtSpawn').addEventListener('change', function (e) { notifyAtSpawn = e.target.checked; prefSet('notifyAtSpawn', notifyAtSpawn); });
+    $('notifyStocks').checked = !!notifyStocks;
+    $('notifyStocks').addEventListener('change', function (e) { notifyStocks = e.target.checked; prefSet('notifyStocks', notifyStocks); });
+    $('notifyGroups').checked = !!notifyGroups;
+    $('notifyGroups').addEventListener('change', function (e) { notifyGroups = e.target.checked; prefSet('notifyGroups', notifyGroups); });
     $('notifyRift').checked = !!notifyRift;
     $('notifyRift').addEventListener('change', function (e) {
       notifyRift = e.target.checked;
@@ -1446,7 +2096,7 @@
     syncBossSyncNote();
     renderTimerCards();
     renderBosses(true);
-    setInterval(function () { renderTimerCards(); renderBosses(false); checkNotify(); }, 15000);
+    setInterval(function () { renderTimerCards(); renderBosses(false); syncStocks(active()); checkNotify(); }, 15000);
   }
 
   /* ---------- Глосарій і перемикач англійських назв ---------- */
@@ -1539,6 +2189,7 @@
   initLookup();
   initCharacterDialog();
   initTimers();
+  initGroups();
   initGlossary();
   initMap();
   syncUI();

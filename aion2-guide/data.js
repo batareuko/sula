@@ -132,6 +132,91 @@ window.GUIDE = {
     { id: 'p-daily-dungeon', name: '[Щоденне підземелля|Daily Dungeon] за [Камені Покращення|Enhance Stones]', period: 'week', max: 7, hint: '7 / тиждень' },
     { id: 'p-ascension', name: '[Випробування Вознесіння|Ascension Trial]', period: 'week', max: 3, hint: '3 / тиждень' },
   ],
+  /* Тижневі входи Global (скидаються в середу). Джерела: Metabot, Aion 2 Timers (дані клієнта Global).
+     Кількість спроб рейду Лудри джерела називають по-різному, тому її тут немає. */
+  weekly: [
+    { id: 'p-ascension', name: '[Випробування Вознесіння|Ascension Trial]', max: 3 },
+    { id: 'p-daily-dungeon', name: '[Щоденне підземелля|Daily Dungeon]', max: 7, hint: '14 з підпискою' },
+    { id: 'w-subjugation', name: 'Квитки [Приборкання|Subjugation]', max: 3 },
+    { id: 'w-shugo', name: 'Ключі [Фестивалю Шуго|Shugo Festival]', max: 7, hint: '14 з підпискою' },
+    { id: 'w-ex-krao', name: '[Дослідження|Exploration]: [Печера Крау|Krao Cave]', max: 7 },
+    { id: 'w-ex-draupnir', name: '[Дослідження|Exploration]: [Драупнір|Draupnir]', max: 7 },
+    { id: 'w-ex-urugugu', name: '[Дослідження|Exploration]: [Каньйон Урюгю|Urugugu Canyon]', max: 7 },
+    { id: 'w-ex-vakron', name: '[Дослідження|Exploration]: [Вакрон|Vakron Sky Island]', max: 7 },
+    { id: 'w-ex-fire', name: '[Дослідження|Exploration]: [Вогненний храм|Fire Temple]', max: 7 },
+    { id: 'w-ex-horn', name: '[Дослідження|Exploration]: [Лігво Лютого Рогу|Ferocious Horn Den]', max: 7 },
+  ],
+
+  /* Запаси, що відновлюються з часом (Global). Джерело: Aion 2 Timers (клієнт Global), Metabot.
+     every — години між поповненнями; daily — поповнення в щоденний ресет. Час тіків невідомий, тож це оцінка. */
+  stocks: [
+    { id: 'odyle', name: '[Енергія Оділе|Odyle Energy]', per: 15, every: 3, caps: [560, 840], capNote: 'з підпискою', claim: 40 },
+    { id: 'conquest', name: 'Нагороди [Підкорення|Conquest]', per: 1, every: 8, caps: [21] },
+    { id: 'transcendence', name: '[Трансценденція|Transcendence]', per: 1, every: 12, caps: [14] },
+    { id: 'nightmare', name: 'Спроби [Кошмару|Nightmare]', per: 2, daily: true, caps: [14] },
+  ],
+
+  /* Білди класів для порівняння з персонажем (картка «Персонаж»).
+     active.steps: [рівень вміння, опції спеціалізації на цьому рівні] — опції API не віддає, їх відмічають вручну.
+     passives: групи в порядку пріоритету (ліве важливіше). aka — як вміння називається в API, якщо інакше. */
+  builds: [
+    {
+      id: 'cleric-silence-13798', cls: 'Cleric', name: 'The Silence of the Infernal Monster',
+      url: 'https://questlog.gg/aion-2/en/character-builder/TheSilenceOfTheInfernalMonster?build-id=13798',
+      active: [
+        { skill: 'Condemnation', steps: [[12, '2 4'], [20, '2 4 5']] },
+        { skill: 'Divine Aura', steps: [[12, '3 4'], [16, '2 5'], [20, '3 4 5']] },
+        { skill: 'Bolt', steps: [[16, '3 5'], [20, '3 4 5']] },
+        { skill: 'Judgement Thunder', aka: ['Judgment Thunder'], steps: [[12, '1 2']] },
+        { skill: 'Debilitating Mark', steps: [[12, '2 4']] },
+        { skill: 'Earth Retribution', aka: ["Earth's Retribution"], steps: [[12, '2 4']] },
+        { skill: 'Radiant Recovery', steps: [[12, '2 3']] },
+        { skill: 'Chain of Torment', steps: [[12, '2 4'], [16, '4 5']] },
+        { skill: 'Light of Regeneration', steps: [[12, '2 4']] },
+        { skill: 'Healing Light', steps: [[12, '1 3']] },
+        { skill: 'Lightning Strike', aka: ['Lightning Strike Scattershot'], steps: [[12, '3 4']] },
+      ],
+      passives: [
+        ["Empyrean Lord's Grace", "Earth's Grace"],
+        ['Healing Enhancement', 'Radiant Benediction', 'Warm Benediction', 'Immortal Veil'],
+      ],
+      stigmas: [
+        { skill: 'Earth Punishment', target: 20, note: 'до 20 першою' },
+        { skill: 'Prayer of Amplification' },
+        { skill: 'Light of Protection' },
+        { skill: 'Noble Aura' },
+      ],
+      stigmaNotes: [
+        'Поміняйте місцями слоти Earth Punishment і Prayer of Amplification.',
+        'Хочете Res / Yustiel (Summon Resurrection / Yustiel\'s Power) — замініть Noble Aura.',
+        'Якщо в групі є Chanter — замініть Light of Protection на Res / Yustiel.',
+      ],
+      board: [
+        'Активні вміння до 12',
+        'Помаранчеві атакувальні вузли: Combat Speed, CDR, Damage Boost, Crit Damage Boost, Multi Hit Chance',
+        'Пасивки: Empyrean Lord\'s Grace, Earth\'s Grace',
+        'Атакувальні вузли: Attack, Crit',
+        'Захисні: Damage Tolerance, Crit Damage Tolerance, HP, Defense',
+        'Решту заповнюйте будь-чим, крім MP +50',
+      ],
+    },
+  ],
+
+  /* Збір у рідному регіоні (Вертерон для Елійців, Альтгард для Асмодіан): кількість — з інтерактивної карти та гайдів */
+  collect: [
+    { id: 'strongholds', name: '[Оплоти|Strongholds]', max: 15, reward: 'по 2 [сувої Благородного Пояса|Noble Belt Enhance Scrolls], разом 30' },
+    { id: 'sealed', name: '[Запечатані підземелля|Sealed Dungeons]', max: 61, reward: '[Кристали Даеваніона|Daevanion Crystals] і [Камені Мудрості|Wisdom Stones]' },
+  ],
+
+  /* Активності для збору групи */
+  groupActivities: [
+    'Krao Cave', 'Draupnir', 'Urugugu Canyon', 'Vakron Sky Island', 'Fire Temple', 'Ferocious Horn Den',
+    'Transcendence', 'Ascension Trial', 'Nightmare', 'Ludra raid', 'Spacetime Rift', 'Field Boss', 'Abyss',
+  ],
+  groupRoles: [
+    { id: 'tank', name: 'Танк' }, { id: 'heal', name: 'Хіл' }, { id: 'dd', name: 'ДД' }, { id: 'support', name: 'Підтримка' },
+  ],
+
   /* Ресет Global-серверів: щодня о 07:00 UTC (16:00 за часом гри, UTC+9), щотижня — у середу.
      weeklyDay: 0 = неділя … 3 = середа. */
   reset: { utcHour: 7, weeklyDay: 3 },

@@ -33,7 +33,8 @@
       <a href="#progress">Мій прогрес</a>
       <a href="#character">Персонаж</a>
       <a href="#timers">Таймери</a>
-      <a href="#roadmap">Дорожня карта</a>
+      <a href="#groups">Групи</a>
+      <a href="#roadmap">Гайд</a>
       <a href="#thresholds">Пороги</a>
       <a href="#map">Карта</a>
       <a href="#glossary">Глосарій</a>
@@ -156,6 +157,8 @@
         </label>
         <label class="check"><input type="checkbox" id="notifyAtSpawn"><span class="box"></span><span class="txt">Також у момент появи</span></label>
         <label class="check"><input type="checkbox" id="notifyRift"><span class="box"></span><span class="txt">Розломи</span></label>
+        <label class="check"><input type="checkbox" id="notifyStocks"><span class="box"></span><span class="txt">Запаси (енергія тощо)</span></label>
+        <label class="check"><input type="checkbox" id="notifyGroups"><span class="box"></span><span class="txt">Мої групи</span></label>
         <label class="check"><input type="checkbox" id="notifySound"><span class="box"></span><span class="txt">Звук</span></label>
         <label class="field" id="notifyVolumeWrap">Гучність
           <input id="notifyVolume" type="range" min="0" max="100" step="5">
@@ -181,6 +184,56 @@
       <ul class="boss-list" id="bossList"></ul>
       <p class="muted small">Натисніть «Вбито», коли боса вбили: відлік до відродження почнеться з цієї миті. Якщо вбили раніше, кнопка «Раніше…» дозволяє вказати, скільки хвилин тому. Гра повертає боса протягом приблизно 10 хвилин після кінця циклу. Дзвіночок вмикає сповіщення для боса (час попередження — у «Сповіщеннях» вище). Цикли відродження для Global — за даними гравців (<a href="https://couga54.github.io/aion2-guides/en/bosses/" target="_blank" rel="noopener">AION 2 Guides</a>, <a href="https://www.aion2timers.com/world-boss-timer/" target="_blank" rel="noopener">Aion 2 Timers</a>).</p>
     </div>
+  
+    <div class="timer-panels">
+      <div class="panel" id="stocksPanel">
+        <h3 class="h-card">Запаси й енергія</h3>
+        <p class="muted small">Введіть, скільки зараз у грі: сайт рахує, коли буде повний запас, щоб нічого не згоріло. Поповнення для Global (за даними клієнта), час тіків приблизний.</p>
+        <ul class="stock-list" id="stockList"></ul>
+      </div>
+      <div class="panel" id="weeklyPanel">
+        <h3 class="h-card">Тижневі входи</h3>
+        <p class="muted small" id="weeklySummary"></p>
+        <ul class="prio" id="weeklyList"></ul>
+        <p class="muted small">Тижневі входи не переносяться: невикористані згорають у середу о 07:00 UTC.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- ===== Збір групи ===== -->
+  <section class="wrap" id="groups" aria-labelledby="groupsTitle">
+    <div class="sec-head">
+      <h2 id="groupsTitle">Збір групи</h2>
+      <span class="mono muted">Експедиції · рейд · Розлом</span>
+    </div>
+    <div class="panel" id="groupsLocked">
+      <p class="muted">Збір групи працює після входу через Discord: оголошення та учасників бачить увесь склад 1 HP.</p>
+    </div>
+    <div id="groupsBox" hidden>
+      <form class="panel group-form" id="groupForm" autocomplete="off">
+        <h3 class="h-card">Нове оголошення</h3>
+        <div class="notify-row">
+          <label class="field">Активність
+            <select id="groupActivity"></select>
+          </label>
+          <label class="field">Початок (ваш час)
+            <input id="groupStart" type="datetime-local" required>
+          </label>
+          <label class="field">Гравців
+            <select id="groupSize"><option value="5">5</option><option value="4">4</option><option value="10">10</option><option value="2">2</option><option value="3">3</option></select>
+          </label>
+          <label class="field">Ваша роль
+            <select id="groupRole"></select>
+          </label>
+          <label class="field grow">Примітка
+            <input id="groupNote" type="text" maxlength="160" placeholder="Напр. потрібен хіл, від 1600 рівня предметів">
+          </label>
+          <button class="btn" type="submit" id="groupCreate">Створити</button>
+        </div>
+      </form>
+      <p class="muted small" id="groupsStatus"></p>
+      <div class="groups-list" id="groupsList"></div>
+    </div>
   </section>
 
   <!-- ===== Стартова точка ===== -->
@@ -192,6 +245,12 @@
         <p class="muted" id="startGoal"></p>
       </div>
       <ul class="checklist cols-2" id="startList"></ul>
+    </div>
+    <div class="panel collect">
+      <h3 class="h-card">Збір у рідному регіоні</h3>
+      <p class="muted small" id="collectRegion"></p>
+      <ul class="prio" id="collectList"></ul>
+      <p class="muted small">Де шукати — на <a href="#map">інтерактивній карті</a>: категорії Stronghold і Sealed Dungeon.</p>
     </div>
   </section>
 
@@ -294,6 +353,20 @@
       <h3 class="h-card">Учасники (Discord) <button class="btn btn-sm" id="btnRefresh" type="button">Оновити</button></h3>
       <p class="muted small" id="cloudStatus"></p>
       <div class="table-scroll"><table class="tbl" id="cloudTable"></table></div>
+    </div>
+
+    <div class="team-insights">
+      <div class="panel">
+        <h3 class="h-card">Рейтинг 1 HP</h3>
+        <div class="table-scroll"><table class="tbl" id="ratingTable"></table></div>
+        <p class="muted small" id="ratingNote"></p>
+      </div>
+      <div class="panel">
+        <h3 class="h-card">Готовність до контенту</h3>
+        <ul class="ready-list" id="readyList"></ul>
+        <h4 class="sub-h">Склад за класами</h4>
+        <div class="class-chips" id="classChips"></div>
+      </div>
     </div>
 
     <div class="panel">
