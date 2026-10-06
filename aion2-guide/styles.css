@@ -362,6 +362,60 @@ img.broken { visibility: hidden; }
 .bell svg { width: 16px; height: 16px; }
 .bell[aria-pressed="true"] { color: var(--gold); border-color: var(--gold); }
 
+/* ---------- Stocks, weekly, collect ---------- */
+.timer-panels { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px; margin-top: 18px; }
+.timer-panels .panel + .panel { margin-top: 0; }
+.stock-list { display: grid; gap: 14px; margin-top: 10px; }
+.stock { display: grid; gap: 6px; }
+.stock-head { display: flex; justify-content: space-between; align-items: center; gap: 10px; flex-wrap: wrap; }
+.stock-head .nm { font-weight: 600; font-size: 14px; }
+.stock-head .hint { display: block; font: 400 11px var(--font-mono); color: var(--muted); }
+.stock-ctl { display: flex; flex-wrap: wrap; gap: 6px; min-width: 0; max-width: 100%; }
+.stock-ctl input, .stock-ctl select {
+  min-height: 32px; padding: 4px 8px; width: 110px; background: var(--bg-2); border: 1px solid var(--line);
+  border-radius: var(--radius); color: var(--text); font-family: var(--font-mono);
+}
+.stock-ctl select { width: auto; max-width: 100%; font-family: var(--font-body); font-size: 13px; }
+.stock-ctl input { width: 96px; }
+.stock-info { font-size: 13px; }
+.stock-info.warn { color: var(--gold); font-weight: 600; }
+.collect { margin-top: 16px; }
+.collect .prio li { flex-wrap: wrap; }
+.collect-bar { flex-basis: 100%; }
+#weeklySummary { color: var(--text); }
+
+/* ---------- Team insights ---------- */
+.team-insights { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px; margin-bottom: 16px; }
+.team-insights .panel + .panel { margin-top: 0; }
+.tbl .up { color: var(--green); }
+.tbl .down { color: var(--danger); }
+.ready-list { display: grid; gap: 8px; }
+.ready-list li { padding: 8px 0; border-bottom: 1px solid var(--line); }
+.ready-list li.none { opacity: .55; }
+.ready-head { display: grid; grid-template-columns: 52px minmax(0, 1fr) auto; gap: 10px; align-items: baseline; font-size: 14px; }
+.ready-head b { font: 600 18px var(--font-head); }
+.ready-n { font-family: var(--font-mono); font-size: 12px; color: var(--muted); }
+.ready-names, .class-chips, .g-members { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 6px; }
+.chip-s { display: inline-flex; gap: 4px; align-items: center; padding: 2px 9px; font-size: 12.5px; background: var(--bg-2); border: 1px solid var(--line); border-radius: 999px; }
+.chip-s b { color: var(--gold); font-weight: 600; }
+.chip-s.empty { color: var(--muted); border-style: dashed; }
+.sub-h { margin: 14px 0 4px; font: 400 11px var(--font-mono); letter-spacing: .12em; text-transform: uppercase; color: var(--muted); }
+
+/* ---------- Groups ---------- */
+.group-form .notify-row { margin-top: 4px; }
+.groups-list { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100%, 340px), 1fr)); gap: 12px; margin-top: 12px; }
+.groups-list .panel + .panel { margin-top: 0; }
+.group { display: grid; gap: 8px; align-content: start; }
+.group.mine { border-color: var(--gold); }
+.g-head { display: flex; flex-wrap: wrap; align-items: baseline; gap: 6px 12px; }
+.g-head h3 { font: 600 20px var(--font-head); }
+.g-when { font-size: 13px; color: var(--muted); }
+.g-count { margin-left: auto; font-family: var(--font-mono); font-size: 13px; }
+.g-count.full { color: var(--gold); }
+.g-note { font-size: 14px; }
+.g-acts { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+.g-acts select { min-height: 36px; padding: 4px 8px; background: var(--bg-2); border: 1px solid var(--line); border-radius: var(--radius); color: var(--text); }
+
 /* ---------- Thresholds timeline ---------- */
 .th-status { margin-bottom: 20px; color: var(--muted); }
 .th-status b { color: var(--gold); font-weight: 600; }
@@ -443,6 +497,7 @@ img.broken { visibility: hidden; }
   .rules-list li:nth-child(odd) { border-left: 0; padding-left: 0; }
   .start { grid-template-columns: 1fr; gap: 16px; }
   .timeline { grid-template-columns: repeat(5, minmax(0, 1fr)); row-gap: 22px; }
+  .timer-panels, .team-insights { grid-template-columns: minmax(0, 1fr); }
   .boss { grid-template-columns: 36px minmax(0, 1fr) 150px; }
   .boss-act { grid-column: 2 / -1; justify-content: flex-start; }
   .timeline::before { display: none; }

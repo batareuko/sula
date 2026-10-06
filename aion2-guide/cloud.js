@@ -9,7 +9,7 @@
   var client = null;
   var user = null;
   var listeners = [];
-  var noGameColumn = false; /* стара схема без колонки game: синхронізуємо без знімка */
+  var missingCols = {}; /* колонки, яких ще немає в базі (не виконано новий schema.sql): синхронізуємо без них */
 
   function emit() {
     listeners.forEach(function (fn) { fn(user); });
@@ -92,15 +92,67 @@
         character: row.character || null,
         updated_at: new Date().toISOString(),
       };
-      if (!noGameColumn) data.game = row.game || null;
-      return client.from('members').upsert(data).then(function (res) {
-        if (res.error && !noGameColumn && /game/.test(res.error.message || '')) {
-          noGameColumn = true;
-          delete data.game;
-          return client.from('members').upsert(data).then(check);
-        }
-        return check(res);
+      if (!missingCols.game) data.game = row.game || null;
+      if (!missingCols.extra) data.extra = row.extra || null;
+      var attempt = function () {
+        return client.from('members').upsert(data).then(function (res) {
+          var m = res.error && /'?(game|extra)'? column|column .*(game|extra)/i.exec(res.error.message || '');
+          var col = m && (m[1] || m[2]);
+          if (col && !missingCols[col]) {
+            missingCols[col] = true;
+            delete data[col];
+            return attempt();
+          }
+          return check(res);
+        });
+      };
+      return attempt();
+    },
+
+    /* Рівень предметів за сьогодні (UTC) для рейтингу; якщо таблиці ще немає — тихо пропускаємо */
+    saveIl: function (il) {
+      if (missingCols.il_history) return Promise.resolve();
+      return client.from('il_history').upsert({ user_id: user.id, day: new Date().toISOString().slice(0, 10), il: il }).then(function (res) {
+        if (res.error) missingCols.il_history = true;
       });
+    },
+
+    fetchIlHistory: function (sinceDay) {
+      return client.from('il_history').select('user_id,day,il').gte('day', sinceDay).then(function (res) {
+        return res.error ? [] : res.data;
+      });
+    },
+
+    /* ---- Збір групи ---- */
+    fetchGroups: function () {
+      return client.from('groups')
+        .select('id,activity,starts_at,size,note,created_by,created_name,created_at,group_members(user_id,name,role)')
+        .gte('starts_at', new Date(Date.now() - 2 * 3600000).toISOString())
+        .order('starts_at', { ascending: true })
+        .then(check);
+    },
+
+    createGroup: function (g) {
+      return client.from('groups').insert({
+        activity: g.activity, starts_at: new Date(g.startsAt).toISOString(), size: g.size, note: g.note || null,
+        created_by: user.id, created_name: user.name,
+      }).select('id').single().then(check);
+    },
+
+    deleteGroup: function (id) { return client.from('groups').delete().eq('id', id).then(check); },
+
+    joinGroup: function (id, role) {
+      return client.from('group_members').upsert({ group_id: id, user_id: user.id, name: user.name, role: role }).then(check);
+    },
+
+    leaveGroup: function (id) { return client.from('group_members').delete().eq('group_id', id).eq('user_id', user.id).then(check); },
+
+    onGroupsChange: function (fn) {
+      var ch = client.channel('groups')
+        .on('postgres_changes', { event: '*', schema: 'public', table: 'groups' }, function () { fn(); })
+        .on('postgres_changes', { event: '*', schema: 'public', table: 'group_members' }, function () { fn(); })
+        .subscribe();
+      return function () { client.removeChannel(ch); };
     },
 
     /* Повний знімок персонажа одного учасника (для картки зі складу) */
@@ -109,10 +161,14 @@
     },
 
     fetchAll: function () {
-      return client.from('members')
-        .select('user_id,name,avatar_url,cp,checks,character,updated_at')
-        .order('updated_at', { ascending: false })
-        .then(check);
+      var cols = 'user_id,name,avatar_url,cp,checks,character,updated_at';
+      var run = function (withExtra) {
+        return client.from('members').select(cols + (withExtra ? ',extra' : '')).order('updated_at', { ascending: false }).then(function (res) {
+          if (res.error && withExtra && /extra/.test(res.error.message || '')) { missingCols.extra = true; return run(false); }
+          return check(res);
+        });
+      };
+      return run(!missingCols.extra);
     },
 
     /* Пошук персонажа через Edge Function aion-lookup. Помилки мають поле .code:
