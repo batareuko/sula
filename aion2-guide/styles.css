@@ -216,7 +216,7 @@ main section.wrap { margin-top: 40px; }
 .sys p { color: var(--muted); font-size: 13.5px; margin-top: 2px; }
 .tiers { display: flex; flex-wrap: wrap; gap: 6px 14px; margin-top: 8px; font-size: 12.5px; color: var(--muted); }
 .tiers span::before { content: ""; display: inline-block; width: 9px; height: 9px; margin-right: 6px; border-radius: 1px; background: var(--c); }
-.tiers .green { --c: var(--green); } .tiers .blue { --c: var(--blue); } .tiers .gold { --c: var(--gold); }
+.tiers .green { --c: #52b35c; } .tiers .blue { --c: #3d94d8; } .tiers .gold { --c: #e9a43a; }
 
 .stats { display: grid; grid-template-columns: repeat(3, 1fr); border-bottom: 1px solid var(--line); margin-bottom: 12px; }
 .stats div { padding: 0 0 12px; }
@@ -297,10 +297,13 @@ body.hide-en .term .en { display: none; }
 .eq-name { font-size: 13.5px; font-weight: 600; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .eq-lv { font-size: 12px; color: var(--muted); }
 .eq.empty { opacity: .6; border-style: dashed; }
+.eq-lv em { font-style: normal; color: var(--gold); }
 img.broken { visibility: hidden; }
 .char-extra { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100%, 220px), 1fr)); gap: 8px; }
-.grade-common { --gc: #8bc34a; } .grade-rare { --gc: #4a9eff; } .grade-legend { --gc: #b07cff; }
-.grade-unique { --gc: #f5a623; } .grade-special { --gc: #2dd4bf; } .grade-epic { --gc: #ff7a45; }
+/* Кольори рідкостей — як на офіційному сайті Aion 2 (темна тема). Класи — за внутрішніми назвами з API. */
+.grade-common { --gc: rgba(255, 255, 255, .93); } .grade-rare { --gc: #52b35c; } .grade-legend { --gc: #3d94d8; }
+.grade-unique { --gc: #e9a43a; } .grade-epic { --gc: #ee6c2a; } .grade-mythic { --gc: #d33939; } .grade-special { --gc: #34b798; }
+.eq .eq-name { color: var(--gc, var(--text)); }
 .char-title, .titles-list b { color: var(--gc, var(--text)); }
 .boards { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100%, 200px), 1fr)); gap: 10px 18px; }
 .board { display: grid; grid-template-columns: 1fr auto; gap: 4px 8px; font-size: 14px; }

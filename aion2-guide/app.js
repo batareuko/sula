@@ -927,6 +927,15 @@
     return file ? h('img', { src: ICON_BASE + file, alt: '', width: 40, height: 40, loading: 'lazy', referrerpolicy: 'no-referrer', decoding: 'async', onerror: hideBroken }) : h('span', { class: 'noicon' });
   }
   function gradeClass(g) { return 'grade-' + String(g || 'none').toLowerCase().replace(/[^a-z]/g, ''); }
+
+  /* API гри віддає внутрішні назви рідкостей; англійський клієнт показує інші:
+     внутрішній Legend = «Epic» у грі, внутрішній Epic = «Heroic». Порядок у клієнті:
+     Common < Rare < Epic < Unique (жовте) < Heroic. */
+  var GRADE_EN = { Common: 'Common', Rare: 'Rare', Legend: 'Epic', Unique: 'Unique', Epic: 'Heroic', Mythic: 'Mythic', Special: 'Special' };
+  var GRADE_RANK = { Common: 1, Rare: 2, Legend: 3, Unique: 4, Epic: 5, Mythic: 6 };
+  function gradeName(g) { return GRADE_EN[g] || g || ''; }
+  /* Точити варто лише жовте (Unique) і вище: нижче все одно заміниться */
+  function isYellow(g) { return (GRADE_RANK[g] || 0) >= GRADE_RANK.Unique; }
   function fmtNum(n) { return Number(n || 0).toLocaleString('uk-UA'); }
 
   /* Підказки з правил гайда за реальним спорядженням */
@@ -945,12 +954,21 @@
       var e = by[x[0]];
       if (!e) return;
       var name = x[0] === 'Amulet' ? e[1] : x[1];
-      out.push({ ok: e[3] >= 10, text: name + ': +' + e[3] + ' (' + e[2] + '). ' + (e[3] >= 10 ? 'Готово до [морфу|Substance Morph] в наступну рідкість.' : 'Ціль +10, потім [морф|Substance Morph].') });
+      out.push({ ok: e[3] >= 10, text: name + ': +' + e[3] + ' (' + gradeName(e[2]) + '). ' + (e[3] >= 10 ? 'Готово до [морфу|Substance Morph] в наступну рідкість.' : 'Ціль +10, потім [морф|Substance Morph].') });
     });
-    var low = game.eq.filter(function (e) { return SPECIAL_SLOTS.indexOf(e[0]) < 0 && e[3] < 5; });
-    out.push({ ok: !low.length, text: low.length
-      ? 'Нижче +5: ' + low.length + ' (' + low.map(function (e) { return SLOT_UA[e[0]] || e[0]; }).join(', ') + '). Правило гайда: спершу все до +5.'
-      : 'Усе спорядження вже +5 або вище: можна вести ключові речі до +10.' });
+    var gear = game.eq.filter(function (e) { return SPECIAL_SLOTS.indexOf(e[0]) < 0; });
+    var slotList = function (list) { return list.map(function (e) { return SLOT_UA[e[0]] || e[0]; }).join(', '); };
+    var notYellow = gear.filter(function (e) { return !isYellow(e[2]); });
+    out.push({ ok: !notYellow.length, text: notYellow.length
+      ? 'Не жовте (нижче Unique): ' + notYellow.length + ' (' + slotList(notYellow) + '). Не точіть його: замініть на жовте (Unique), наприклад з [Експедицій|Expeditions].'
+      : 'Усе спорядження жовте (Unique) або вище.' });
+    var yellow = gear.filter(function (e) { return isYellow(e[2]); });
+    var low = yellow.filter(function (e) { return e[3] < 5; });
+    if (yellow.length) {
+      out.push({ ok: !low.length, text: low.length
+        ? 'Жовте нижче +5: ' + low.length + ' (' + slotList(low) + '). Правило гайда: спершу все до +5.'
+        : 'Усе жовте спорядження вже +5 або вище: можна вести ключові речі до +10.' });
+    }
     return out;
   }
 
@@ -990,17 +1008,18 @@
       SLOT_ORDER.concat(game.eq.map(function (e) { return e[0]; }).filter(function (s) { return SLOT_ORDER.indexOf(s) < 0; })).forEach(function (slot) {
         var e = by[slot];
         if (!e) { grid.appendChild(h('div', { class: 'eq empty' }, h('span', { class: 'noicon' }), h('div', null, h('small', { text: SLOT_UA[slot] || slot }), h('span', { text: 'порожньо' })))); return; }
-        grid.appendChild(h('div', { class: 'eq ' + gradeClass(e[2]), title: e[1] + ' · ' + e[2] + ' · +' + e[3] + (e[4] ? ' · exceed ' + e[4] : '') },
+        var replace = SPECIAL_SLOTS.indexOf(slot) < 0 && !isYellow(e[2]);
+        grid.appendChild(h('div', { class: 'eq ' + gradeClass(e[2]) + (replace ? ' replace' : ''), title: e[1] + ' · ' + gradeName(e[2]) + ' · +' + e[3] + (e[4] ? ' · exceed ' + e[4] : '') + (replace ? ' · не жовте: замінити, не точити' : '') },
           gameIcon(e[5]),
           h('div', null, h('small', { text: SLOT_UA[slot] || slot }), h('span', { class: 'eq-name', text: e[1] }),
-            h('span', { class: 'eq-lv', text: '+' + e[3] + (e[4] ? ' · ★' + e[4] : '') + ' · ' + e[2] }))));
+            h('span', { class: 'eq-lv' }, '+' + e[3] + (e[4] ? ' · ★' + e[4] : '') + ' · ' + gradeName(e[2]), replace ? h('em', { text: ' · замінити' }) : null))));
       });
       card.appendChild(h('section', null, h('h4', { text: 'Спорядження' }), grid));
     }
 
     var extra = h('div', { class: 'char-extra' });
     if (game.pet) extra.appendChild(h('div', { class: 'eq' }, gameIcon(game.pet[2]), h('div', null, h('small', { text: 'Пет' }), h('span', { class: 'eq-name', text: game.pet[0] }), h('span', { class: 'eq-lv', text: game.pet[1] + ' рів.' }))));
-    if (game.wing) extra.appendChild(h('div', { class: 'eq ' + gradeClass(game.wing[1]) }, gameIcon(game.wing[3]), h('div', null, h('small', { text: 'Крила' }), h('span', { class: 'eq-name', text: game.wing[0] }), h('span', { class: 'eq-lv', text: '+' + game.wing[2] + ' · ' + game.wing[1] }))));
+    if (game.wing) extra.appendChild(h('div', { class: 'eq ' + gradeClass(game.wing[1]) }, gameIcon(game.wing[3]), h('div', null, h('small', { text: 'Крила' }), h('span', { class: 'eq-name', text: game.wing[0] }), h('span', { class: 'eq-lv', text: '+' + game.wing[2] + ' · ' + gradeName(game.wing[1]) }))));
     if (extra.childNodes.length) card.appendChild(h('section', null, h('h4', { text: 'Пет і крила' }), extra));
 
     if (game.boards.length) {
