@@ -31,10 +31,9 @@
     <a class="brand" href="#top">1 HP <span>· AION 2</span></a>
     <nav class="nav" aria-label="Розділи">
       <a href="#progress">Мій прогрес</a>
+      <a href="#character">Персонаж</a>
       <a href="#timers">Таймери</a>
       <a href="#roadmap">Дорожня карта</a>
-      <a href="#systems">Системи</a>
-      <a href="#daily">Щоденні</a>
       <a href="#thresholds">Пороги</a>
       <a href="#map">Карта</a>
       <a href="#glossary">Глосарій</a>
@@ -111,6 +110,15 @@
     </div>
   </section>
 
+  <!-- ===== Персонаж ===== -->
+  <section class="wrap" id="character" aria-labelledby="characterTitle">
+    <div class="sec-head">
+      <h2 id="characterTitle">Персонаж</h2>
+      <span class="mono muted">дані з гри</span>
+    </div>
+    <div id="characterBox"></div>
+  </section>
+
   <!-- ===== Таймери ===== -->
   <section class="wrap" id="timers" aria-labelledby="timersTitle">
     <div class="sec-head">
@@ -148,9 +156,14 @@
         </label>
         <label class="check"><input type="checkbox" id="notifyAtSpawn"><span class="box"></span><span class="txt">Також у момент появи</span></label>
         <label class="check"><input type="checkbox" id="notifyRift"><span class="box"></span><span class="txt">Розломи</span></label>
+        <label class="check"><input type="checkbox" id="notifySound"><span class="box"></span><span class="txt">Звук</span></label>
+        <label class="field" id="notifyVolumeWrap">Гучність
+          <input id="notifyVolume" type="range" min="0" max="100" step="5">
+        </label>
         <button class="btn btn-ghost" type="button" id="notifyTest">Перевірити</button>
       </div>
-      <p class="muted small">Боси: увімкніть дзвіночок біля потрібних у списку нижче. Розломи: позначте «Розломи». Сповіщення приходять, поки сайт відкритий у вкладці (її можна згорнути).</p>
+      <p class="small" id="soundState"></p>
+      <p class="muted small">Боси: увімкніть дзвіночок біля потрібних у списку нижче. Розломи: позначте «Розломи». Сповіщення приходять, поки сайт відкритий у вкладці (її можна згорнути). «Звук» — власний сигнал сайту: він лунає, навіть якщо системні сповіщення браузера беззвучні.</p>
     </div>
 
     <div class="panel bosses">
@@ -304,6 +317,11 @@
     <p>Неофіційний фанатський гайд за інфографікою «Новачок 45 рівня — дорожня карта спорядження». Aion 2 — торгова марка NCSoft. Інтерактивна карта належить interactivemap.app. Дані персонажів беруться з офіційного сайту Aion 2 через неофіційний доступ і можуть тимчасово бути недоступні — бойову міць можна ввести вручну.</p>
   </div>
 </footer>
+
+<dialog class="char-dialog" id="charDialog" aria-label="Картка персонажа">
+  <button class="btn btn-ghost dialog-close" id="charDialogClose" type="button" aria-label="Закрити">✕</button>
+  <div id="charDialogBody"></div>
+</dialog>
 
 <div class="toast" id="toast" role="status" aria-live="polite"></div>
 

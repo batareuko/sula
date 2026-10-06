@@ -9,6 +9,7 @@
   var client = null;
   var user = null;
   var listeners = [];
+  var noGameColumn = false; /* стара схема без колонки game: синхронізуємо без знімка */
 
   function emit() {
     listeners.forEach(function (fn) { fn(user); });
@@ -82,7 +83,7 @@
     },
 
     saveMine: function (row) {
-      return client.from('members').upsert({
+      var data = {
         user_id: user.id,
         name: user.name,
         avatar_url: user.avatar || null,
@@ -90,7 +91,21 @@
         checks: row.checks,
         character: row.character || null,
         updated_at: new Date().toISOString(),
-      }).then(check);
+      };
+      if (!noGameColumn) data.game = row.game || null;
+      return client.from('members').upsert(data).then(function (res) {
+        if (res.error && !noGameColumn && /game/.test(res.error.message || '')) {
+          noGameColumn = true;
+          delete data.game;
+          return client.from('members').upsert(data).then(check);
+        }
+        return check(res);
+      });
+    },
+
+    /* Повний знімок персонажа одного учасника (для картки зі складу) */
+    fetchMemberGame: function (userId) {
+      return client.from('members').select('name,character,game').eq('user_id', userId).maybeSingle().then(check);
     },
 
     fetchAll: function () {
