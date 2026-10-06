@@ -15,6 +15,11 @@ alter table public.members
   add column if not exists character jsonb
   check (character is null or pg_column_size(character) < 1000);
 
+-- Повний знімок персонажа з гри: стати, дошки Даеваніона, спорядження, вміння тощо (кілька КБ)
+alter table public.members
+  add column if not exists game jsonb
+  check (game is null or pg_column_size(game) < 32768);
+
 alter table public.members enable row level security;
 
 drop policy if exists "members readable by signed-in users" on public.members;

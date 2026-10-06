@@ -210,10 +210,34 @@
     var o = {
       n: str(c.n, 24), s: str(c.s, 32), cls: str(c.cls, 32), rg: str(c.rg, 8), cid: str(c.cid, 200),
       sid: toInt(c.sid), lvl: clamp(toInt(c.lvl), 0, 99), il: clamp(toInt(c.il), 0, 99999),
-      cp: clamp(toInt(c.cp), 0, 99999999), t: toInt(c.t),
+      cp: clamp(toInt(c.cp), 0, 99999999), t: toInt(c.t), r: str(c.r, 20),
+      img: /^https:\/\/profileimg\.plaync\.com\/[A-Za-z0-9_\/?=&.%-]{1,200}$/.test(String(c.img || '')) ? String(c.img) : '',
     };
     if (!o.n || REGIONS.indexOf(o.rg) < 0 || !/^[A-Za-z0-9_.%-]{1,200}$/.test(o.cid) || o.sid <= 0) return null;
     return o;
+  }
+
+  /* Повний знімок з гри (з функції або з бази іншого учасника) — перевіряємо типи й довжини */
+  var ICON_RE = /^[A-Za-z0-9_.-]{1,80}\.png$/;
+  function sanitizeGame(g) {
+    if (!g || typeof g !== 'object' || g.v !== 1) return null;
+    var S = function (v, n) { return String(v == null ? '' : v).slice(0, n); };
+    var N = function (v) { var n = Number(v); return isFinite(n) ? Math.round(n) : 0; };
+    var I = function (v) { return ICON_RE.test(String(v || '')) ? String(v) : ''; };
+    var A = function (v, max, f) { return Array.isArray(v) ? v.slice(0, max).filter(Array.isArray).map(f) : []; };
+    return {
+      v: 1,
+      title: Array.isArray(g.title) ? [S(g.title[0], 40), S(g.title[1], 16)] : ['', ''],
+      gender: S(g.gender, 10),
+      stats: A(g.stats, 40, function (x) { return [S(x[0], 16), S(x[1], 40), N(x[2])]; }),
+      boards: A(g.boards, 12, function (x) { return [S(x[0], 24), N(x[1]), N(x[2])]; }),
+      titles: { owned: N(g.titles && g.titles.owned), cats: A(g.titles && g.titles.cats, 8, function (x) { return [S(x[0], 16), S(x[1], 40), S(x[2], 16), N(x[3]), N(x[4])]; }) },
+      eq: g.eq == null ? null : A(g.eq, 30, function (x) { return [S(x[0], 16), S(x[1], 60), S(x[2], 16), N(x[3]), N(x[4]), I(x[5])]; }),
+      skins: A(g.skins, 20, function (x) { return [S(x[0], 16), S(x[1], 60), S(x[2], 16), I(x[3])]; }),
+      pet: Array.isArray(g.pet) ? [S(g.pet[0], 40), N(g.pet[1]), I(g.pet[2])] : null,
+      wing: Array.isArray(g.wing) ? [S(g.wing[0], 40), S(g.wing[1], 16), N(g.wing[2]), I(g.wing[3])] : null,
+      skills: A(g.skills, 60, function (x) { return [S(x[0], 40), S(x[1], 10), N(x[2]), x[3] ? 1 : 0, I(x[4])]; }),
+    };
   }
 
   function parseCode(input) {
@@ -446,6 +470,7 @@
 
     syncThresholds(p);
     syncLookup(p);
+    renderOwnCharacter(p);
     syncAuthUI();
     renderTeam();
   }
@@ -504,7 +529,10 @@
     sortRows(rows).forEach(function (r) {
       var nick = h('div', { class: 'nick' });
       if (r.avatar && /^https:\/\//.test(r.avatar)) nick.appendChild(h('img', { src: r.avatar, alt: '', width: 24, height: 24, loading: 'lazy', referrerpolicy: 'no-referrer' }));
-      nick.appendChild(h('div', null, r.name, r.character ? h('span', { class: 'sub', text: r.character.cls + ' · ' + r.character.s }) : null));
+      var nameEl = r.character && opts.onOpen
+        ? h('button', { class: 'linkbtn', type: 'button', text: r.name, title: 'Відкрити картку персонажа', onclick: function () { opts.onOpen(r); } })
+        : document.createTextNode(r.name);
+      nick.appendChild(h('div', null, nameEl, r.character ? h('span', { class: 'sub', text: r.character.cls + ' · ' + r.character.s }) : null));
       var tr = h('tr', { class: r.isActive ? 'active' : null },
         h('td', null, nick),
         h('td', { class: 'num', text: r.cp > 0 ? String(r.cp) : '—' }),
@@ -527,6 +555,7 @@
     });
     renderTable($('localTable'), local, {
       empty: 'Профілів немає.',
+      onOpen: function (r) { openCharacterDialog(r.profile.character, r.profile.game, r.name); },
       actions: function (r) {
         var box = document.createDocumentFragment();
         box.appendChild(h('button', { class: 'btn', type: 'button', text: 'Відкрити', onclick: function () {
@@ -549,7 +578,16 @@
       rows = cloudRows.map(function (m) {
         return { userId: m.user_id, ts: Date.parse(m.updated_at) || 0, name: m.name, avatar: m.avatar_url, cp: m.cp, pct: bitsRoadPct(m.checks), updated: m.updated_at, isActive: m.user_id === Cloud.user.id, character: sanitizeCharacter(m.character) };
       });
-      renderTable($('cloudTable'), rows, { empty: 'Поки що нікого немає.', updated: true });
+      renderTable($('cloudTable'), rows, {
+        empty: 'Поки що нікого немає.',
+        updated: true,
+        onOpen: function (r) {
+          openCharacterDialog(r.character, null, r.name);
+          Cloud.fetchMemberGame(r.userId).then(function (row) {
+            if (row) openCharacterDialog(sanitizeCharacter(row.character), sanitizeGame(row.game), row.name);
+          }).catch(function () { /* показуємо те, що вже є */ });
+        },
+      });
     }
     var avg = rows.length ? Math.round(rows.reduce(function (s, r) { return s + r.pct; }, 0) / rows.length) : 0;
     $('teamSummary').textContent = rows.length ? rows.length + ' учасн. · середній прогрес ' + avg + '%' : '';
@@ -677,7 +715,7 @@
   function cloudPush() {
     var p = state.profiles.cloud;
     if (!p || !Cloud.user) return Promise.resolve();
-    return Cloud.saveMine({ cp: p.cp, checks: toBits(p.checks), character: p.character || null }).then(function () {
+    return Cloud.saveMine({ cp: p.cp, checks: toBits(p.checks), character: p.character || null, game: p.game || null }).then(function () {
       setSync('Синхронізовано о ' + new Date().toLocaleTimeString('uk-UA', { hour: '2-digit', minute: '2-digit' }));
       loadRoster();
     }).catch(function (err) { setSync('Помилка синхронізації: ' + err.message); });
@@ -712,11 +750,13 @@
         p.cp = row.cp;
         p.checks = fromBits(row.checks);
         p.character = sanitizeCharacter(row.character);
+        p.game = sanitizeGame(row.game);
       } else if (prev && !prev.cloud && countDone(prev.checks, ALL_IDS) + prev.cp > 0 &&
         window.confirm('Перенести прогрес профілю «' + prev.name + '» у ваш акаунт Discord?')) {
         p.cp = prev.cp;
         p.checks = Object.assign({}, prev.checks);
         p.character = prev.character || null;
+        p.game = prev.game || null;
       }
       state.active = 'cloud';
       saveState();
@@ -725,9 +765,16 @@
     }).then(function () {
       loadRoster();
       startKillsSync();
+      autoRefreshCharacter();
       clearInterval(cloudTimer);
       cloudTimer = setInterval(function () { if (!document.hidden) { loadRoster(); loadKills(); } }, 60000);
     }).catch(function (err) { setSync('Помилка: ' + err.message); });
+  }
+
+  function initCharacterDialog() {
+    var dlg = $('charDialog');
+    $('charDialogClose').addEventListener('click', function () { if (dlg.close) dlg.close(); else dlg.removeAttribute('open'); });
+    dlg.addEventListener('click', function (e) { if (e.target === dlg && dlg.close) dlg.close(); });
   }
 
   function initCloud() {
@@ -741,6 +788,7 @@
     if (!Cloud || !Cloud.enabled) return;
     Cloud.init().then(function (user) {
       syncUI();
+      if (!user) autoRefreshCharacter();
       Cloud.onChange(onCloudUser);
       if (user) onCloudUser(user); else onCloudUser(null);
     }).catch(function (err) {
@@ -785,8 +833,8 @@
     ['btnLookup', 'btnLookupRefresh', 'btnLookupUnlink'].forEach(function (id) { $(id).disabled = busy; });
   }
 
-  function runLookup(body, onData) {
-    if (lookupBusy || Date.now() - lookupLast < 3000) return;
+  function runLookup(body, onData, force) {
+    if (lookupBusy || (!force && Date.now() - lookupLast < 3000)) return;
     lookupBusy = true;
     lookupLast = Date.now();
     setLookupBusy(true);
@@ -800,23 +848,32 @@
     });
   }
 
-  function applyCharacter(ch) {
-    var c = sanitizeCharacter({ n: ch.name, s: ch.serverName, cls: ch.className, rg: ch.region, cid: ch.characterId, sid: ch.serverId, lvl: ch.level, il: ch.itemLevel, cp: ch.combatPower, t: Date.now() });
+  function applyCharacter(ch, game, p) {
+    var c = sanitizeCharacter({ n: ch.name, s: ch.serverName, cls: ch.className, rg: ch.region, cid: ch.characterId, sid: ch.serverId, lvl: ch.level, il: ch.itemLevel, cp: ch.combatPower, t: Date.now(), r: ch.raceName, img: ch.profileImage });
     if (!c) { lookupMsg(LOOKUP_ERR.upstream); return; }
-    var p = active();
+    p = p || active();
     p.character = c;
+    if (game) p.game = sanitizeGame(game);
     p.cp = clamp(c.il, 0, 9999);
-    $('lookupName').value = c.n;
-    $('lookupCandidates').hidden = true;
+    var isActive = p === active();
+    if (isActive) {
+      $('lookupName').value = c.n;
+      $('lookupCandidates').hidden = true;
+    }
     touch(p);
-    lookupMsg(describeCharacter(c));
+    if (isActive) lookupMsg(describeCharacter(c));
   }
 
   function showCandidates(list) {
     var ul = $('lookupCandidates');
     ul.textContent = '';
     list.forEach(function (ch) {
-      ul.appendChild(h('li', null, h('button', { type: 'button', onclick: function () { applyCharacter(ch); } },
+      ul.appendChild(h('li', null, h('button', { type: 'button', onclick: function () {
+        applyCharacter(ch);
+        runLookup({ characterId: ch.characterId, serverId: ch.serverId, region: ch.region }, function (data) {
+          if (data.character) applyCharacter(data.character, data.game);
+        }, true);
+      } },
         h('b', { text: ch.name }),
         h('span', { text: ch.serverName + ' · ' + ch.className + ' · ' + ch.level + ' рів.' }),
         h('span', { text: 'Рівень предметів ' + ch.itemLevel }))));
@@ -828,7 +885,7 @@
   function initLookup() {
     $('btnLookup').addEventListener('click', function () {
       runLookup({ name: $('lookupName').value.trim() }, function (data) {
-        if (data.character) applyCharacter(data.character);
+        if (data.character) applyCharacter(data.character, data.game);
         else if (data.matches) showCandidates(data.matches);
         else lookupMsg(LOOKUP_ERR.upstream);
       });
@@ -838,15 +895,185 @@
       var c = active().character;
       if (!c) return;
       runLookup({ characterId: c.cid, serverId: c.sid, region: c.rg }, function (data) {
-        if (data.character) applyCharacter(data.character); else lookupMsg(LOOKUP_ERR.upstream);
+        if (data.character) applyCharacter(data.character, data.game); else lookupMsg(LOOKUP_ERR.upstream);
       });
     });
     $('btnLookupUnlink').addEventListener('click', function () {
       var p = active();
       p.character = null;
+      p.game = null;
       lookupFor = null;
       touch(p);
     });
+  }
+
+  /* ---------- Картка персонажа: усі дані з гри + підказки за правилами гайда ---------- */
+  var ICON_BASE = 'https://assets.playnccdn.com/static-aion2-gamedata/resources/';
+  var AUTO_REFRESH_MS = 6 * 3600000;
+  var autoRefreshed = {};
+  var SLOT_ORDER = ['MainHand', 'SubHand', 'Helmet', 'Shoulder', 'Torso', 'Pants', 'Gloves', 'Boots', 'Cape',
+    'Necklace', 'Earring1', 'Earring2', 'Ring1', 'Ring2', 'Bracelet1', 'Bracelet2', 'Belt', 'Amulet', 'Rune1', 'Rune2'];
+  var SLOT_UA = {
+    MainHand: 'Основна зброя', SubHand: 'Друга рука', Helmet: 'Шолом', Shoulder: 'Наплічники', Torso: 'Нагрудник',
+    Pants: 'Поножі', Gloves: 'Рукавиці', Boots: 'Чоботи', Cape: 'Плащ', Necklace: 'Намисто', Earring1: 'Сережка 1',
+    Earring2: 'Сережка 2', Ring1: 'Каблучка 1', Ring2: 'Каблучка 2', Bracelet1: 'Браслет 1', Bracelet2: 'Браслет 2',
+    Belt: 'Пояс', Amulet: 'Амулет', Rune1: 'Руна 1', Rune2: 'Руна 2',
+  };
+  var SPECIAL_SLOTS = ['Belt', 'Amulet', 'Rune1', 'Rune2']; /* мають власний шлях покращення */
+
+  function hideBroken() { this.classList.add('broken'); }
+  /* Іконки декоративні (назва поруч), тому alt порожній; якщо CDN гри не відповів — лишається порожній квадрат */
+  function gameIcon(file) {
+    return file ? h('img', { src: ICON_BASE + file, alt: '', width: 40, height: 40, loading: 'lazy', referrerpolicy: 'no-referrer', decoding: 'async', onerror: hideBroken }) : h('span', { class: 'noicon' });
+  }
+  function gradeClass(g) { return 'grade-' + String(g || 'none').toLowerCase().replace(/[^a-z]/g, ''); }
+  function fmtNum(n) { return Number(n || 0).toLocaleString('uk-UA'); }
+
+  /* Підказки з правил гайда за реальним спорядженням */
+  function gameHints(game) {
+    if (!game || !game.eq) return [];
+    var by = {};
+    game.eq.forEach(function (e) { by[e[0]] = e; });
+    var out = [];
+    var runes = ['Rune1', 'Rune2'].filter(function (s) { return by[s]; });
+    out.push({ ok: runes.length === 2, text: '[Руни Зіткнення|Clash Runes]: ' + runes.length + ' з 2' +
+      (runes.length ? ' (' + runes.map(function (s) { return '+' + by[s][3]; }).join(', ') + ')' : '') +
+      (runes.length < 2 ? '. Гайд: екіпіруйте обидві.' : '. Покращуйте обережно: руни можуть зламатися.') });
+    var empty = SLOT_ORDER.filter(function (s) { return !by[s]; });
+    out.push({ ok: !empty.length, text: empty.length ? 'Порожні слоти: ' + empty.map(function (s) { return SLOT_UA[s]; }).join(', ') + '.' : 'Усі 20 слотів заповнені.' });
+    [['Belt', '[Благородний Пояс|Noble Belt]'], ['Amulet', 'Амулет']].forEach(function (x) {
+      var e = by[x[0]];
+      if (!e) return;
+      var name = x[0] === 'Amulet' ? e[1] : x[1];
+      out.push({ ok: e[3] >= 10, text: name + ': +' + e[3] + ' (' + e[2] + '). ' + (e[3] >= 10 ? 'Готово до [морфу|Substance Morph] в наступну рідкість.' : 'Ціль +10, потім [морф|Substance Morph].') });
+    });
+    var low = game.eq.filter(function (e) { return SPECIAL_SLOTS.indexOf(e[0]) < 0 && e[3] < 5; });
+    out.push({ ok: !low.length, text: low.length
+      ? 'Нижче +5: ' + low.length + ' (' + low.map(function (e) { return SLOT_UA[e[0]] || e[0]; }).join(', ') + '). Правило гайда: спершу все до +5.'
+      : 'Усе спорядження вже +5 або вище: можна вести ключові речі до +10.' });
+    return out;
+  }
+
+  function characterCard(c, game) {
+    var card = h('article', { class: 'char-card' });
+    var head = h('div', { class: 'char-head' });
+    head.appendChild(c.img ? h('img', { class: 'char-ava', src: c.img, alt: '', width: 72, height: 72, referrerpolicy: 'no-referrer', onerror: hideBroken }) : h('div', { class: 'char-ava' }));
+    var title = game && game.title && game.title[0] ? h('span', { class: 'char-title ' + gradeClass(game.title[1]), text: game.title[0] }) : null;
+    head.appendChild(h('div', { class: 'char-id' },
+      h('h3', { text: c.n }),
+      h('p', { text: [c.cls, c.lvl + ' рів.', c.s + ' (' + c.rg.toUpperCase() + ')', c.r, game && game.gender].filter(Boolean).join(' · ') }),
+      title));
+    card.appendChild(head);
+
+    var tiles = h('div', { class: 'char-tiles' },
+      h('div', null, h('b', { text: fmtNum(c.il) }), h('small', { text: 'рівень предметів · БМ гайда' })),
+      h('div', null, h('b', { text: fmtNum(c.cp) }), h('small', { text: 'бойова міць (API)' })));
+    if (game) tiles.appendChild(h('div', null, h('b', { text: fmtNum(game.titles.owned) }), h('small', { text: 'титулів' })));
+    card.appendChild(tiles);
+
+    if (!game) {
+      card.appendChild(h('p', { class: 'muted small', text: 'Повні дані ще не підтягнуто: натисніть «Оновити» біля пошуку персонажа.' }));
+      return card;
+    }
+
+    var hints = gameHints(game);
+    if (hints.length) {
+      var ul = h('ul', { class: 'char-hints' });
+      hints.forEach(function (x) { ul.appendChild(h('li', { class: x.ok ? 'ok' : 'todo' }, rich(x.text))); });
+      card.appendChild(h('section', null, h('h4', { text: 'Підказки за гайдом' }), ul));
+    }
+
+    if (game.eq) {
+      var by = {};
+      game.eq.forEach(function (e) { by[e[0]] = e; });
+      var grid = h('div', { class: 'eq-grid' });
+      SLOT_ORDER.concat(game.eq.map(function (e) { return e[0]; }).filter(function (s) { return SLOT_ORDER.indexOf(s) < 0; })).forEach(function (slot) {
+        var e = by[slot];
+        if (!e) { grid.appendChild(h('div', { class: 'eq empty' }, h('span', { class: 'noicon' }), h('div', null, h('small', { text: SLOT_UA[slot] || slot }), h('span', { text: 'порожньо' })))); return; }
+        grid.appendChild(h('div', { class: 'eq ' + gradeClass(e[2]), title: e[1] + ' · ' + e[2] + ' · +' + e[3] + (e[4] ? ' · exceed ' + e[4] : '') },
+          gameIcon(e[5]),
+          h('div', null, h('small', { text: SLOT_UA[slot] || slot }), h('span', { class: 'eq-name', text: e[1] }),
+            h('span', { class: 'eq-lv', text: '+' + e[3] + (e[4] ? ' · ★' + e[4] : '') + ' · ' + e[2] }))));
+      });
+      card.appendChild(h('section', null, h('h4', { text: 'Спорядження' }), grid));
+    }
+
+    var extra = h('div', { class: 'char-extra' });
+    if (game.pet) extra.appendChild(h('div', { class: 'eq' }, gameIcon(game.pet[2]), h('div', null, h('small', { text: 'Пет' }), h('span', { class: 'eq-name', text: game.pet[0] }), h('span', { class: 'eq-lv', text: game.pet[1] + ' рів.' }))));
+    if (game.wing) extra.appendChild(h('div', { class: 'eq ' + gradeClass(game.wing[1]) }, gameIcon(game.wing[3]), h('div', null, h('small', { text: 'Крила' }), h('span', { class: 'eq-name', text: game.wing[0] }), h('span', { class: 'eq-lv', text: '+' + game.wing[2] + ' · ' + game.wing[1] }))));
+    if (extra.childNodes.length) card.appendChild(h('section', null, h('h4', { text: 'Пет і крила' }), extra));
+
+    if (game.boards.length) {
+      var bl = h('div', { class: 'boards' });
+      game.boards.forEach(function (b) {
+        var pct = b[2] ? Math.round(100 * b[1] / b[2]) : 0;
+        bl.appendChild(h('div', { class: 'board' },
+          h('span', { lang: 'en', text: b[0] }),
+          h('span', { class: 'num', text: b[1] + ' / ' + b[2] }),
+          h('div', { class: 'bar' }, h('i', { style: 'width:' + pct + '%' }))));
+      });
+      card.appendChild(h('section', null, h('h4', null, rich('Дошки [Даеваніона|Daevanion Boards]')), bl));
+    }
+
+    if (game.skills.length) {
+      var sk = h('div', { class: 'skills' });
+      game.skills.slice().sort(function (a, b) { return b[3] - a[3] || b[2] - a[2]; }).forEach(function (x) {
+        sk.appendChild(h('span', { class: 'skill' + (x[3] ? ' on' : ''), title: x[1] + (x[3] ? ' · екіпіровано' : '') },
+          x[4] ? h('img', { src: ICON_BASE + x[4], alt: '', width: 20, height: 20, loading: 'lazy', referrerpolicy: 'no-referrer', onerror: hideBroken }) : null,
+          x[0] + ' ', h('b', { text: String(x[2]) })));
+      });
+      card.appendChild(h('section', null, h('h4', { text: 'Вміння (екіпіровані — першими)' }), sk));
+    }
+
+    var stats = game.stats.filter(function (x) { return x[0] !== 'ItemLevel'; });
+    if (stats.length) {
+      var st = h('dl', { class: 'stats-list' });
+      stats.forEach(function (x) { st.appendChild(h('div', null, h('dt', { text: x[1] }), h('dd', { text: String(x[2]) }))); });
+      card.appendChild(h('section', null, h('h4', { text: 'Характеристики' }), st));
+    }
+
+    if (game.titles.cats.length) {
+      var tl = h('ul', { class: 'titles-list' });
+      game.titles.cats.forEach(function (x) {
+        tl.appendChild(h('li', null, h('span', { text: x[0] + ': ' }), x[1] ? h('b', { class: gradeClass(x[2]), text: x[1] }) : h('span', { class: 'muted', text: 'не обрано' }), h('span', { class: 'muted', text: ' · ' + x[3] + ' / ' + x[4] })));
+      });
+      card.appendChild(h('section', null, h('h4', { text: 'Титули' }), tl));
+    }
+
+    if (game.skins.length) {
+      card.appendChild(h('p', { class: 'muted small', text: 'Скіни: ' + game.skins.map(function (x) { return x[1]; }).join(', ') + '.' }));
+    }
+    card.appendChild(h('p', { class: 'muted small', text: 'Дані з сайту Aion 2' + (c.t ? ', оновлено ' + new Date(c.t).toLocaleString('uk-UA', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' }) : '') + '.' }));
+    return card;
+  }
+
+  function renderOwnCharacter(p) {
+    var box = $('characterBox');
+    box.textContent = '';
+    if (p.character) { box.appendChild(characterCard(p.character, p.game)); return; }
+    box.appendChild(h('div', { class: 'panel char-empty' },
+      h('p', null, 'Персонажа ще не прив’язано. ', Cloud && Cloud.enabled
+        ? 'Введіть нік у «Мій прогрес» і натисніть «Підтягнути БМ»: тут з’являться спорядження, дошки Даеваніона, вміння та підказки за гайдом.'
+        : 'Прив’язка персонажа працює після налаштування Supabase (див. README).')));
+  }
+
+  function openCharacterDialog(c, game, name) {
+    var dlg = $('charDialog'), body = $('charDialogBody');
+    body.textContent = '';
+    body.appendChild(c ? characterCard(c, game) : h('p', { class: 'muted', text: (name || 'Учасник') + ' ще не прив’язав персонажа.' }));
+    if (!dlg.open) { if (dlg.showModal) dlg.showModal(); else dlg.setAttribute('open', ''); }
+  }
+
+  /* Тихе оновлення даних прив'язаного персонажа, якщо вони старші за 6 годин */
+  function autoRefreshCharacter() {
+    var p = active();
+    if (!p || !p.character || autoRefreshed[p.id] || !(Cloud && Cloud.ready)) return;
+    if (p.game && Date.now() - p.character.t < AUTO_REFRESH_MS) return;
+    autoRefreshed[p.id] = true;
+    var c = p.character;
+    Cloud.lookup({ characterId: c.cid, serverId: c.sid, region: c.rg }).then(function (data) {
+      if (data && data.character && state.profiles[p.id]) applyCharacter(data.character, data.game, state.profiles[p.id]);
+    }).catch(function () { /* наступного разу */ });
   }
 
   /* ---------- Таймери: Розлом, ресети, польові боси ---------- */
@@ -1291,6 +1518,7 @@
   ensureProfile();
   bindProfileControls();
   initLookup();
+  initCharacterDialog();
   initTimers();
   initGlossary();
   initMap();
