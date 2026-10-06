@@ -240,6 +240,33 @@ main section.wrap { margin-top: 40px; }
 .counter output.full { color: var(--gold); }
 .prio-note { margin-top: 10px; }
 
+/* ---------- English terms & glossary ---------- */
+:root { --en: #c6a76a; }
+.term .en { color: var(--en); font-size: .84em; font-weight: 400; text-transform: none; letter-spacing: 0; }
+.term .en > span::before { content: "("; }
+.term .en > span::after { content: ")"; }
+.check.done .term .en { color: var(--muted); }
+body.hide-en .term .en { display: none; }
+.hero-tools { display: flex; flex-wrap: wrap; gap: 10px 14px; align-items: center; margin-top: -12px; padding-bottom: 8px; }
+.hero-tools .btn[aria-pressed="false"] { color: var(--muted); }
+.gl-search { max-width: 360px; margin: 6px 0 16px; }
+.gl-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100%, 340px), 1fr)); gap: 16px; }
+.gl-group { background: var(--panel); border: 1px solid var(--line); border-radius: var(--radius); padding: 16px 18px; }
+.gl-group h3 { font: 600 18px var(--font-head); text-transform: uppercase; margin-bottom: 8px; }
+.gl-list { margin: 0; }
+.gl-row { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 12px; padding: 7px 0; border-top: 1px solid var(--line); }
+.gl-row:first-child { border-top: 0; }
+.gl-row dt { font-size: 14px; }
+.gl-row dd { margin: 0; color: var(--en); font-weight: 600; font-size: 14px; }
+
+/* ---------- Notify settings ---------- */
+.notify { margin-top: 18px; }
+.notify-row { display: flex; flex-wrap: wrap; gap: 10px 14px; align-items: flex-end; }
+.notify-row .field { min-width: 150px; }
+.notify-row .check { padding: 8px 6px; align-items: center; }
+.notify-row .check .box { margin-top: 0; }
+.notify .small { margin-top: 8px; }
+
 /* ---------- Timers ---------- */
 .timer-cards { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px; margin-bottom: 10px; }
 .tcard { display: grid; gap: 2px; padding: 16px 18px; background: var(--panel); border: 1px solid var(--line); border-radius: var(--radius); }
@@ -351,7 +378,7 @@ main section.wrap { margin-top: 40px; }
 
 /* ---------- Responsive ---------- */
 @media (max-width: 1000px) {
-  .grid { grid-template-columns: 1fr; }
+  .grid { grid-template-columns: minmax(0, 1fr); }
   .rules { grid-template-columns: 1fr; gap: 14px; }
   .rules-list { grid-template-columns: 1fr 1fr; row-gap: 20px; }
   .rules-list li:nth-child(odd) { border-left: 0; padding-left: 0; }

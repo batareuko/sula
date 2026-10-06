@@ -278,6 +278,25 @@
     }
   }
 
+  /* ---------- Терміни: «[українська|English]» у текстах data.js ---------- */
+  var TERM_RE = /\[([^\]|]+)\|([^\]]+)\]/g;
+
+  /* Текст із розміткою -> фрагмент: термін + англійська назва з гри в дужках (лише текстові вузли) */
+  function rich(str) {
+    var frag = document.createDocumentFragment();
+    var s = String(str), last = 0, m;
+    TERM_RE.lastIndex = 0;
+    while ((m = TERM_RE.exec(s))) {
+      if (m.index > last) frag.appendChild(document.createTextNode(s.slice(last, m.index)));
+      frag.appendChild(h('span', { class: 'term' }, m[1], h('span', { class: 'en', lang: 'en' }, ' ', h('span', { text: m[2] }))));
+      last = TERM_RE.lastIndex;
+    }
+    if (last < s.length) frag.appendChild(document.createTextNode(s.slice(last)));
+    return frag;
+  }
+  /* Той самий текст без англійських назв (для aria-label, сповіщень) */
+  function plain(str) { return String(str).replace(TERM_RE, '$1'); }
+
   /* ---------- Побудова статичних блоків ---------- */
   function checkbox(id, text, extraAttrs) {
     var input = h('input', Object.assign({ type: 'checkbox', 'data-id': id }, extraAttrs || {}));
@@ -286,11 +305,11 @@
       if (input.checked) p.checks[id] = true; else delete p.checks[id];
       touch(p);
     });
-    return h('label', { class: 'check' }, input, h('span', { class: 'box' }), text ? h('span', { class: 'txt', text: text }) : null);
+    return h('label', { class: 'check' }, input, h('span', { class: 'box' }), text ? h('span', { class: 'txt' }, rich(text)) : null);
   }
 
   function buildStatic() {
-    G.rules.forEach(function (t) { $('rules').appendChild(h('li', { text: t })); });
+    G.rules.forEach(function (t) { $('rules').appendChild(h('li', null, rich(t))); });
 
     $('startTitle').textContent = G.start.title;
     $('startGoal').textContent = G.start.goal;
@@ -305,14 +324,14 @@
         h('div', { class: 'bar' }, h('i')),
         h('div', { class: 'count', 'data-count': s.id }));
       var body = h('div', { class: 'stage-body' },
-        h('div', { class: 'stage-head' }, h('h3', { text: s.title }), h('span', { class: 'badge' + (s.badgeHot ? ' hot' : ''), text: s.badge })),
+        h('div', { class: 'stage-head' }, h('h3', null, rich(s.title)), h('span', { class: 'badge' + (s.badgeHot ? ' hot' : ''), text: s.badge })),
         list);
       s.el = h('article', { class: 'stage', id: 'stage-' + s.id }, side, body);
       $('stages').appendChild(s.el);
     });
 
     G.systems.forEach(function (sys) {
-      var el = h('div', { class: 'sys' }, h('h3', { text: sys.title }), h('p', { text: sys.text }));
+      var el = h('div', { class: 'sys' }, h('h3', null, rich(sys.title)), h('p', null, rich(sys.text)));
       if (sys.tiers) {
         var tiers = h('div', { class: 'tiers' });
         sys.tiers.forEach(function (t) { tiers.appendChild(h('span', { class: t.color, text: t.label })); });
@@ -324,13 +343,13 @@
     G.energy.stats.forEach(function (s) {
       $('energyStats').appendChild(h('div', null, h('b', { class: s.hot ? 'hot' : null, text: String(s.value) }), h('small', { text: s.label })));
     });
-    G.energy.bullets.forEach(function (t) { $('energyList').appendChild(h('li', { text: t })); });
+    G.energy.bullets.forEach(function (t) { $('energyList').appendChild(h('li', null, rich(t))); });
 
     G.priorities.forEach(function (it) { $('prioList').appendChild(buildPriority(it)); });
-    $('prioNote').textContent = G.prioritiesNote;
+    $('prioNote').appendChild(rich(G.prioritiesNote));
 
     G.thresholds.forEach(function (t) {
-      t.el = h('li', { class: t.final ? 'final' : null }, h('b', { text: String(t.cp) }), h('small', { text: t.text }));
+      t.el = h('li', { class: t.final ? 'final' : null }, h('b', { text: String(t.cp) }), h('small', null, rich(t.text)));
       $('timeline').appendChild(t.el);
     });
 
@@ -338,7 +357,7 @@
   }
 
   function buildPriority(it) {
-    var name = h('span', { class: 'nm' }, it.name, h('span', { class: 'hint', text: it.hint }));
+    var name = h('span', { class: 'nm' }, rich(it.name), h('span', { class: 'hint', text: it.hint }));
     var ctl;
     if (it.max === 1) {
       var input = h('input', { type: 'checkbox', 'data-prio': it.id });
@@ -347,9 +366,9 @@
     } else {
       var out = h('output', { 'data-prio': it.id });
       ctl = h('div', { class: 'counter' },
-        h('button', { type: 'button', 'aria-label': 'Менше: ' + it.name, text: '−', onclick: function () { setCounter(active(), it, counterValue(active(), it) - 1); } }),
+        h('button', { type: 'button', 'aria-label': 'Менше: ' + plain(it.name), text: '−', onclick: function () { setCounter(active(), it, counterValue(active(), it) - 1); } }),
         out,
-        h('button', { type: 'button', 'aria-label': 'Більше: ' + it.name, text: '+', onclick: function () { setCounter(active(), it, counterValue(active(), it) + 1); } }));
+        h('button', { type: 'button', 'aria-label': 'Більше: ' + plain(it.name), text: '+', onclick: function () { setCounter(active(), it, counterValue(active(), it) + 1); } }));
     }
     return h('li', null, name, ctl);
   }
@@ -446,7 +465,7 @@
     } else if (next) {
       next.el.classList.add('next');
       st.append('Ваша БМ: ', h('b', { text: String(p.cp) }), '. Наступний поріг — ', h('b', { text: String(next.cp) }),
-        ' (ще ' + (next.cp - p.cp) + '): ' + next.text + '.');
+        ' (ще ' + (next.cp - p.cp) + '): ', rich(next.text), '.');
     } else {
       st.textContent = 'Усі пороги досягнуто — ви готові до рейду Лудри.';
     }
@@ -832,7 +851,6 @@
 
   /* ---------- Таймери: Розлом, ресети, польові боси ---------- */
   var BELL_SVG = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9"/><path d="M10.3 21a1.9 1.9 0 0 0 3.4 0"/></svg>';
-  var NOTIFY_BEFORE_MS = 5 * 60000;
   var cloudKills = null;      /* { bossId: { t, by } } після входу; інакше відмітки в state.kills */
   var killsUnsub = null;
   var notified = {};
@@ -845,6 +863,12 @@
   var bossZone = prefGet('bossZone', G.bossZones[0].id);
   var bossSort = prefGet('bossSort', 'time');
   var bossBells = prefGet('bossBells', []);
+  var notifyLead = prefGet('notifyLead', 5);          /* за скільки хвилин попереджати */
+  var notifyAtSpawn = prefGet('notifyAtSpawn', true); /* ще й у момент появи / відкриття */
+  var notifyRift = prefGet('notifyRift', false);
+  var LEAD_PRESETS = [1, 2, 3, 5, 10, 15, 20, 30, 60];
+
+  function leadMs() { return clamp(toInt(notifyLead), 1, 180) * 60000; }
 
   function clock(t) { return new Date(t).toLocaleTimeString('uk-UA', { hour: '2-digit', minute: '2-digit' }); }
   function cycleText(min) {
@@ -1025,20 +1049,72 @@
   }
 
   function checkNotify() {
-    var now = Date.now();
+    var now = Date.now(), lead = leadMs();
     G.bosses.forEach(function (b) {
       if (bossBells.indexOf(b.id) < 0) return;
       var st = bossState(b, now);
       if (!st.k) return;
       var key = b.id + ':' + st.k.t;
-      if (st.s === 'dead' && st.at - now <= NOTIFY_BEFORE_MS && !notified[key + ':soon']) {
+      if (st.s === 'dead' && st.at - now <= lead && !notified[key + ':soon']) {
         notified[key + ':soon'] = true;
         notify(b.name, 'відродиться через ' + timeLeft(st.at - now) + ' (' + b.area + ')');
-      } else if (st.s === 'window' && !notified[key + ':up']) {
+      } else if (st.s === 'window' && notifyAtSpawn && !notified[key + ':up']) {
         notified[key + ':up'] = true;
         notify(b.name, 'може з’явитись зараз (' + b.area + ')');
       }
     });
+    if (notifyRift) {
+      var r = riftInfo(now);
+      if (r.open && notifyAtSpawn && !notified['rift:' + r.last + ':open']) {
+        notified['rift:' + r.last + ':open'] = true;
+        notify('Розлом відкрито', 'портал відкритий ще ' + timeLeft(r.closes - now));
+      } else if (!r.open && r.next - now <= lead && !notified['rift:' + r.next + ':soon']) {
+        notified['rift:' + r.next + ':soon'] = true;
+        notify('Розлом', 'відкриється через ' + timeLeft(r.next - now) + ', о ' + clock(r.next));
+      }
+    }
+  }
+
+  function initNotifySettings() {
+    var sel = $('notifyLead'), custom = $('notifyCustom');
+    LEAD_PRESETS.forEach(function (m) { sel.appendChild(h('option', { value: String(m), text: cycleText(m) })); });
+    sel.appendChild(h('option', { value: 'custom', text: 'Свій час…' }));
+    var isPreset = LEAD_PRESETS.indexOf(toInt(notifyLead)) >= 0;
+    sel.value = isPreset ? String(toInt(notifyLead)) : 'custom';
+    custom.value = String(toInt(notifyLead));
+    $('notifyCustomWrap').hidden = isPreset;
+    sel.addEventListener('change', function () {
+      var c = sel.value === 'custom';
+      $('notifyCustomWrap').hidden = !c;
+      if (c) { custom.focus(); return; }
+      notifyLead = toInt(sel.value);
+      prefSet('notifyLead', notifyLead);
+      notified = {};
+    });
+    custom.addEventListener('change', function () {
+      notifyLead = clamp(toInt(custom.value) || 5, 1, 180);
+      custom.value = String(notifyLead);
+      prefSet('notifyLead', notifyLead);
+      notified = {};
+    });
+    $('notifyAtSpawn').checked = !!notifyAtSpawn;
+    $('notifyAtSpawn').addEventListener('change', function (e) { notifyAtSpawn = e.target.checked; prefSet('notifyAtSpawn', notifyAtSpawn); });
+    $('notifyRift').checked = !!notifyRift;
+    $('notifyRift').addEventListener('change', function (e) {
+      notifyRift = e.target.checked;
+      prefSet('notifyRift', notifyRift);
+      if (notifyRift && notifyPermission() === 'default') askPermission();
+    });
+    $('notifyTest').addEventListener('click', function () {
+      if (notifyPermission() === 'default') { askPermission(function () { notify('1 HP', 'Сповіщення працюють'); }); return; }
+      notify('1 HP', 'Сповіщення працюють');
+      if (notifyPermission() !== 'granted') toast('Браузер не показує системні сповіщення: вони вимкнені або заблоковані для сайту.');
+    });
+  }
+
+  function askPermission(then) {
+    if (notifyPermission() !== 'default') return;
+    Notification.requestPermission().then(function () { syncNotifyButton(); if (then) then(); });
   }
 
   function initTimers() {
@@ -1052,17 +1128,48 @@
     $('bossSortTime').addEventListener('click', function () { bossSort = 'time'; prefSet('bossSort', 'time'); renderBosses(true); });
     $('bossSortMap').addEventListener('click', function () { bossSort = 'map'; prefSet('bossSort', 'map'); renderBosses(true); });
     $('bossNotify').addEventListener('click', function () {
-      if (notifyPermission() !== 'default') return;
-      Notification.requestPermission().then(function () {
-        syncNotifyButton();
-        if (notifyPermission() === 'granted' && !bossBells.length) toast('Тепер натисніть дзвіночок біля потрібних босів.');
+      askPermission(function () {
+        if (notifyPermission() === 'granted' && !bossBells.length && !notifyRift) toast('Тепер увімкніть дзвіночок біля потрібних босів або сповіщення про Розлом.');
       });
     });
+    initNotifySettings();
     syncNotifyButton();
     syncBossSyncNote();
     renderTimerCards();
     renderBosses(true);
     setInterval(function () { renderTimerCards(); renderBosses(false); checkNotify(); }, 15000);
+  }
+
+  /* ---------- Глосарій і перемикач англійських назв ---------- */
+  function setShowEn(on) {
+    document.body.classList.toggle('hide-en', !on);
+    $('btnEn').setAttribute('aria-pressed', on ? 'true' : 'false');
+    $('btnEn').textContent = on ? 'Англійські назви: показано' : 'Англійські назви: сховано';
+  }
+
+  function initGlossary() {
+    var box = $('glossaryList');
+    G.glossary.forEach(function (g) {
+      var dl = h('dl', { class: 'gl-list' });
+      g.items.forEach(function (it) {
+        dl.appendChild(h('div', { class: 'gl-row', 'data-q': (it[0] + ' ' + it[1]).toLowerCase() },
+          h('dt', { text: it[0] }), h('dd', { lang: 'en', text: it[1] })));
+      });
+      box.appendChild(h('section', { class: 'gl-group' }, h('h3', { text: g.group }), dl));
+    });
+    $('glossarySearch').addEventListener('input', function (e) {
+      var q = e.target.value.trim().toLowerCase(), shown = 0;
+      box.querySelectorAll('.gl-row').forEach(function (r) {
+        var on = !q || r.getAttribute('data-q').indexOf(q) >= 0;
+        r.hidden = !on;
+        if (on) shown++;
+      });
+      box.querySelectorAll('.gl-group').forEach(function (sec) { sec.hidden = !sec.querySelector('.gl-row:not([hidden])'); });
+      $('glossaryEmpty').hidden = shown > 0;
+    });
+    var showEn = prefGet('showEn', true);
+    setShowEn(showEn);
+    $('btnEn').addEventListener('click', function () { showEn = !showEn; prefSet('showEn', showEn); setShowEn(showEn); });
   }
 
   /* ---------- Інтерактивна карта ---------- */
@@ -1122,6 +1229,7 @@
   bindProfileControls();
   initLookup();
   initTimers();
+  initGlossary();
   initMap();
   syncUI();
   handleHash();
