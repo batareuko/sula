@@ -898,7 +898,10 @@
     if (!c) { lookupMsg(LOOKUP_ERR.upstream); return; }
     p = p || active();
     p.character = c;
-    if (game) p.game = sanitizeGame(game);
+    if (game) {
+      p.game = sanitizeGame(game);
+      dvForget(c); // дані з гри оновилися — вузли дошок теж перечитати
+    }
     var g = p.game;
     if (g && g.boards.length) {
       c.bo = g.boards.reduce(function (s, b) { return s + b[1]; }, 0);
@@ -998,7 +1001,7 @@
       if (on) stigOk++;
       var lv = s ? s[2] : 0;
       if (!on) actions.push({ w: 0, text: 'Екіпіруйте стигму ' + st.skill + '.' });
-      else if (st.target && lv < st.target) actions.push({ w: 1, text: st.skill + ': ' + lv + ' → ' + st.target + ' (' + (st.note || 'ціль білду') + ').' });
+      else if (st.target && lv < st.target) actions.push({ w: 1, text: st.skill + ': ' + lv + ' → ' + st.target + ' (' + (st.note || 'ціль білду') + ').' + dvSkillHint(c, st.skill) });
       stigRows.appendChild(h('li', { class: on ? 'ok' : 'todo' }, skillIcon(s), h('b', { lang: 'en', text: st.skill }),
         h('span', { class: 'muted', text: on ? ' · рів. ' + lv + (st.target ? ' / ціль ' + st.target : '') : ' · не екіпіровано' }),
         st.note ? h('span', { class: 'muted', text: ' · ' + st.note }) : null));
@@ -1036,7 +1039,7 @@
         }
         cell.appendChild(chip);
       });
-      if (next) actions.push({ w: 2 + (next[0] - lv) / 100, text: a.skill + ': ' + lv + ' → ' + next[0] + ', потім опції ' + next[1] + '.' });
+      if (next) actions.push({ w: 2 + (next[0] - lv) / 100, text: a.skill + ': ' + lv + ' → ' + next[0] + ', потім опції ' + next[1] + '.' + dvSkillHint(c, a.skill) });
       tb.appendChild(h('tr', null, h('td', null, h('span', { class: 'sk-name' }, skillIcon(s), h('span', { lang: 'en', text: a.skill }))), h('td', { class: 'num', text: s ? String(lv) : '—' }), cell));
     });
     tbl.appendChild(tb);
@@ -1060,7 +1063,7 @@
     var head = h('div', { class: 'b-head' },
       h('h4', null, 'Порівняння з білдом ', h('a', { href: b.url, target: '_blank', rel: 'noopener', lang: 'en', text: b.name })),
       h('p', { class: 'small muted', text: 'Пороги рівнів вмінь: ' + stepsDone + ' з ' + stepsTotal + ' · стигми ' + stigOk + ' з ' + b.stigmas.length +
-        (p ? ' · опції відмічено ' + picksDone + ' з ' + picksDue : '') + '. Опції вмінь і вузли дошок гра не віддає, тому їх звіряйте вручну.' }),
+        (p ? ' · опції відмічено ' + picksDone + ' з ' + picksDue : '') + '. Опції вмінь гра не віддає, тому їх звіряйте вручну.' }),
       h('div', { class: 'bar' }, h('i', { style: 'width:' + Math.round(100 * stepsDone / Math.max(1, stepsTotal)) + '%' })));
 
     var next = h('ol', { class: 'b-next' });
@@ -1128,11 +1131,17 @@
   }
 
   /* Вибір джерела білду + порівняння */
-  function buildArea(c, game, p) {
-    if (!game || !game.skills.length) return null;
+  /* З яким білдом порівнюємо: обраний білд блогера або вбудований для класу; у чужій картці — лише вбудований */
+  function buildChoice(c, p) {
     var staticB = buildFor(c), classId = classIdOf(c);
     var qb = p && p.qlBuild && p.qlBuild.classId === classId ? p.qlBuild : null;
-    var mode = p && p.buildMode === 'ql' && qb ? 'ql' : staticB ? 'static' : qb ? 'ql' : null;
+    var mode = !p ? (staticB ? 'static' : null) : p.buildMode === 'ql' && qb ? 'ql' : staticB ? 'static' : qb ? 'ql' : null;
+    return { staticB: staticB, classId: classId, qb: qb, mode: mode };
+  }
+
+  function buildArea(c, game, p) {
+    if (!game || !game.skills.length) return null;
+    var ch = buildChoice(c, p), staticB = ch.staticB, classId = ch.classId, qb = ch.qb, mode = ch.mode;
     if (!p) return staticB ? buildSection(c, game, null) : null; // чужа картка: лише вбудований білд
 
     var wrap = h('div', { class: 'build-area' });
@@ -1200,7 +1209,7 @@
       var done = item.lv >= item.target && (meta.sub !== 'stigma' || item.equip);
       if (done) ok++;
       if (meta.sub === 'stigma' && !item.equip) actions.push({ w: 0, text: 'Екіпіруйте стигму ' + meta.name + '.' });
-      else if (item.lv < item.target) actions.push({ w: (meta.sub === 'stigma' ? 1 : meta.sub === 'active' ? 2 : 3) + (order[bs[0]] != null ? order[bs[0]] / 100 : 0.5), text: meta.name + ': ' + item.lv + ' → ' + item.target + '.' });
+      else if (item.lv < item.target) actions.push({ w: (meta.sub === 'stigma' ? 1 : meta.sub === 'active' ? 2 : 3) + (order[bs[0]] != null ? order[bs[0]] / 100 : 0.5), text: meta.name + ': ' + item.lv + ' → ' + item.target + '.' + dvSkillHint(c, meta.name) });
       if (item.specs.length) { picksDue++; if (picks[bs[0]]) picksDone++; }
     });
     groups.active.sort(function (a, b) { return (order[a.id] != null ? order[a.id] : 99) - (order[b.id] != null ? order[b.id] : 99); });
@@ -1263,6 +1272,318 @@
       groups.active.length ? h('h5', { text: 'Активні вміння (у порядку пріоритету білду)' }) : null, groups.active.length ? table(groups.active, true) : null,
       groups.stigma.length ? h('h5', { text: 'Стигми' }) : null, groups.stigma.length ? table(groups.stigma, true) : null,
       groups.passive.length ? h('h5', { text: 'Пасивки' }) : null, groups.passive.length ? table(groups.passive, false) : null);
+  }
+
+  /* ---------- Дошки Даеваніона: сітка вузлів, що відкрити далі, зв'язок з білдом ----------
+     Вузли приходять з окремого режиму aion-lookup ({ daevanion: 1, ... }) і не зберігаються в базі:
+     власні дошки кешуються в браузері на 6 годин, чужі — лише до перезавантаження сторінки. */
+  var DV_TTL = 6 * 3600000;
+  var dvState = {};
+  var DV_ATK = ['combatspeed', 'cooldownreduction', 'damageboost', 'criticaldamageboost', 'multihitchance'];
+  var DV_DEF = ['damagetolerance', 'criticaldamagetolerance', 'multihitresist'];
+  var DV_SHORT = {
+    attack: 'ATK', criticalhit: 'CRT', criticalhitresist: 'CRR', defense: 'DEF', maxhp: 'HP', maxmp: 'MP',
+    combatspeed: 'SPD', cooldownreduction: 'CDR', damageboost: 'DMG', criticaldamageboost: 'CDB',
+    criticaldamagetolerance: 'CDT', damagetolerance: 'DT', multihitchance: 'MH', multihitresist: 'MHR',
+    statuseffectchance: 'SEC', statuseffectresist: 'SER',
+  };
+  var DV_GRADES = ['Common', 'Rare', 'Legend', 'Unique', 'Epic', 'None'];
+
+  function sanitizeBoards(list) {
+    if (!Array.isArray(list)) return [];
+    return list.slice(0, 8).map(function (b) {
+      b = b || {};
+      var nodes = (Array.isArray(b.nodes) ? b.nodes : []).slice(0, 300).filter(Array.isArray).map(function (n) {
+        return [toInt(n[0]), clamp(toInt(n[1]), 1, 15), clamp(toInt(n[2]), 1, 15), ['s', 't', 'k'].indexOf(n[3]) >= 0 ? n[3] : 't',
+          DV_GRADES.indexOf(n[4]) >= 0 ? n[4] : 'None', String(n[5] || '').slice(0, 60), String(n[6] || '').slice(0, 200), n[7] ? 1 : 0];
+      });
+      return { id: toInt(b.id), name: String(b.name || '').slice(0, 24), icon: /^[A-Za-z0-9_.-]{1,80}\.png$/.test(String(b.icon || '')) ? b.icon : '',
+        open: toInt(b.open), total: toInt(b.total), nodes: nodes };
+    }).filter(function (b) { return b.nodes.length; });
+  }
+
+  function dvGet(c) {
+    var st = dvState[c.cid];
+    if (!st) {
+      st = dvState[c.cid] = { busy: false, err: '', data: null, tab: 0, sel: null, auto: false };
+      try {
+        var raw = JSON.parse(localStorage.getItem('aion2-dv:' + c.cid) || 'null');
+        if (raw && raw.t && Date.now() - raw.t < DV_TTL) st.data = { t: raw.t, boards: sanitizeBoards(raw.boards) };
+      } catch (e) { /* немає кешу */ }
+    }
+    return st;
+  }
+
+  function dvForget(c) {
+    delete dvState[c.cid];
+    try { localStorage.removeItem('aion2-dv:' + c.cid); } catch (e) { /* немає доступу */ }
+  }
+
+  function dvLoad(c, own, done) {
+    var st = dvGet(c);
+    if (st.busy || !qlEnabled()) return;
+    st.busy = true; st.err = '';
+    done();
+    Cloud.lookup({ daevanion: 1, characterId: c.cid, serverId: c.sid, region: c.rg }).then(function (d) {
+      st.data = { t: Date.now(), boards: sanitizeBoards(d && d.boards) };
+      if (!st.data.boards.length) st.err = 'Гра не віддала вузли дошок. Можливо, функцію aion-lookup ще не оновлено.';
+      if (own) try { localStorage.setItem('aion2-dv:' + c.cid, JSON.stringify(st.data)); } catch (e) { /* немає місця */ }
+    }).catch(function (e) {
+      st.err = e.code === 'rate_limited' ? 'Забагато запитів, спробуйте за хвилину.' : 'Сайт Aion 2 не відповів. Спробуйте пізніше.';
+    }).then(function () { st.busy = false; done(); });
+  }
+
+  /* Відкривати можна вузол поруч (по горизонталі чи вертикалі) з уже відкритим; старт відкритий завжди.
+     Пошук у ширину від усіх відкритих вузлів дає, скільки вузлів треба відкрити, щоб дійти до кожного. */
+  function dvAnalyze(board) {
+    var at = {}, byId = {}, dist = {}, prev = {}, q = [];
+    board.nodes.forEach(function (n) { at[n[1] + ',' + n[2]] = n; byId[n[0]] = n; });
+    board.nodes.forEach(function (n) { if (n[7] || n[3] === 's') { dist[n[0]] = 0; q.push(n); } });
+    for (var i = 0; i < q.length; i++) {
+      var x = q[i];
+      [[1, 0], [-1, 0], [0, 1], [0, -1]].forEach(function (d) {
+        var y = at[(x[1] + d[0]) + ',' + (x[2] + d[1])];
+        if (y && dist[y[0]] == null) { dist[y[0]] = dist[x[0]] + 1; prev[y[0]] = x[0]; q.push(y); }
+      });
+    }
+    return { byId: byId, dist: dist, prev: prev };
+  }
+
+  function dvPath(an, id) {
+    var out = [];
+    while (id != null && an.dist[id] > 0) { out.push(id); id = an.prev[id]; }
+    return out;
+  }
+
+  function dvSkillName(n) { return String(n[6].split(';')[0] || '').replace(/\s*\+\d+(\.\d+)?%?\s*$/, '').trim(); }
+  function dvOpen(n) { return !!(n[7] || n[3] === 's'); }
+
+  /* Цінність вузла за порядком гайда: активні вміння до 12 → цілі білду → помаранчеві атакувальні →
+     вміння з білду → атака і крит → захист → решта; MP +50 і PvP — в кінці */
+  function dvValue(n, ctx) {
+    if (n[3] === 's') return { v: 0, why: '' };
+    if (n[3] === 'k') {
+      var sk = dvSkillName(n), key = normName(sk), s = findSkill(ctx.game, [sk]), lv = s ? s[2] : 0, tg = ctx.targets[key];
+      var inBuild = tg != null || !ctx.hasBuild; // без білду всі вміння класу рівноцінні
+      if (s && s[1] === 'Active' && lv < 12 && inBuild) return { v: 95, why: 'активні вміння до 12 (гайд): зараз ' + lv, key: key, need: Math.max(12, tg || 0) - lv };
+      if (tg != null && tg > lv) return { v: 80 + Math.min(5, tg - lv), why: 'ціль білду: ' + sk + ' ' + lv + ' → ' + tg, key: key, need: tg - lv };
+      if (tg != null) return { v: 50, why: 'вміння з білду' };
+      return { v: s ? 22 : 12, why: !s ? 'вміння ще не вивчене' : ctx.hasBuild ? 'немає в білді' : '' };
+    }
+    var name = normName(n[5]);
+    if (/^pvp/.test(name)) return { v: 8, why: 'PvP' };
+    if (DV_ATK.indexOf(name) >= 0) return { v: 85, why: 'помаранчевий атакувальний (гайд)' };
+    if (name === 'attack' || name === 'criticalhit') return { v: 45, why: 'атака' };
+    if (DV_DEF.indexOf(name) >= 0) return { v: 40, why: 'захисний' };
+    if (name === 'maxhp' || name === 'defense') return { v: 32, why: 'захисний' };
+    if (/statuseffect/.test(name)) return { v: 25, why: '' };
+    if (name === 'maxmp') return { v: 2, why: 'MP +50: найнижчий пріоритет' };
+    return { v: 15, why: '' };
+  }
+
+  /* Цілі рівнів вмінь з білду, з яким порівнюємо (той самий вибір, що й у порівнянні) */
+  function buildTargets(c, p) {
+    var ch = buildChoice(c, p), t = {};
+    function put(name, lv) { var k = normName(name); t[k] = Math.max(t[k] || 0, lv || 0); }
+    if (ch.mode === 'ql') ch.qb.skills.forEach(function (bs) { var m = ch.qb.catalog[bs[0]]; if (m) put(m.name, bs[1]); });
+    else if (ch.mode === 'static') {
+      ch.staticB.active.forEach(function (a) { put(a.skill, Math.max.apply(null, a.steps.map(function (s) { return s[0]; }).concat([0]))); });
+      ch.staticB.stigmas.forEach(function (s) { put(s.skill, s.target || 0); });
+      ch.staticB.passives.forEach(function (g) { g.forEach(function (n) { put(n, 0); }); });
+    }
+    return t;
+  }
+
+  /* Кандидати: закриті вузли, до яких можна дійти. Ефективність = середня цінність вузлів на шляху,
+     тож дальня ціль із «порожніми» вузлами дорогою стоїть нижче за сусідню корисну. */
+  function dvCandidates(board, an, ctx) {
+    var out = [];
+    board.nodes.forEach(function (n) {
+      var d = an.dist[n[0]];
+      if (dvOpen(n) || d == null || d > 6) return;
+      var val = dvValue(n, ctx);
+      if (val.v < 20) return;
+      var path = dvPath(an, n[0]), sum = 0;
+      path.forEach(function (id) { sum += dvValue(an.byId[id], ctx).v; });
+      out.push({ board: board, node: n, dist: d, val: val, eff: sum / d, path: path });
+    });
+    out.sort(function (a, b) { return b.eff - a.eff || b.val.v - a.val.v || a.dist - b.dist; });
+    return out;
+  }
+
+  function dvLabel(n, game) {
+    if (n[3] === 's') return h('span', { class: 'dv-t', text: '★' });
+    if (n[3] === 'k') {
+      var s = findSkill(game, [dvSkillName(n)]);
+      return s && s[4] ? h('img', { src: ICON_BASE + s[4], alt: '', loading: 'lazy', referrerpolicy: 'no-referrer', onerror: hideBroken }) : h('span', { class: 'dv-t', text: '+1' });
+    }
+    var k = normName(n[5]);
+    return h('span', { class: 'dv-t', text: /^pvp/.test(k) ? 'PvP' : DV_SHORT[k] || n[5].slice(0, 3).toUpperCase() });
+  }
+
+  function dvStatus(n, an) {
+    if (n[3] === 's') return 'старт';
+    if (n[7]) return 'відкрито';
+    var d = an.dist[n[0]];
+    return d === 1 ? 'можна відкрити зараз' : d != null ? 'через ' + d + ' вузл.' : 'недосяжно';
+  }
+
+  /* Підсумок бонусів відкритих вузлів усіх дошок: «Attack Bonus +3» × 10 → «Attack Bonus +30» */
+  function dvTotals(boards) {
+    var sums = {}, order = [];
+    boards.forEach(function (b) {
+      b.nodes.forEach(function (n) {
+        if (!n[7] || n[3] === 's') return;
+        n[6].split(';').forEach(function (e) {
+          var m = /^(.*?)\s*\+(\d+(?:\.\d+)?)(%?)\s*$/.exec(e.trim());
+          if (!m) return;
+          var key = m[1] + '|' + m[3];
+          if (!sums[key]) { sums[key] = { name: m[1], pct: m[3], v: 0, skill: n[3] === 'k' }; order.push(key); }
+          sums[key].v += Number(m[2]);
+        });
+      });
+    });
+    return order.map(function (k) { return sums[k]; });
+  }
+
+  /* Підказка для порівняння з білдом: де на дошках лежить +рівень потрібного вміння */
+  function dvSkillHint(c, skill) {
+    var st = c && c.cid ? dvState[c.cid] : null;
+    if (!st || !st.data) return '';
+    var best = null, key = normName(skill);
+    st.data.boards.forEach(function (b) {
+      var an = dvAnalyze(b);
+      b.nodes.forEach(function (n) {
+        if (n[3] !== 'k' || dvOpen(n) || normName(dvSkillName(n)) !== key) return;
+        var d = an.dist[n[0]];
+        if (d != null && (!best || d < best.d)) best = { d: d, b: b.name };
+      });
+    });
+    return best ? ' Дошка ' + best.b + ': +1 за ' + best.d + ' вузл.' : '';
+  }
+
+  function boardsSection(c, game, p) {
+    var sec = h('section', { class: 'dv' });
+    var own = !!p;
+    function paint() {
+      sec.textContent = '';
+      var st = dvGet(c);
+      sec.appendChild(h('h4', null, rich('Дошки [Даеваніона|Daevanion Boards]')));
+      if (game.boards.length) {
+        var bl = h('div', { class: 'boards' });
+        game.boards.forEach(function (b) {
+          var pct = b[2] ? Math.round(100 * b[1] / b[2]) : 0;
+          bl.appendChild(h('div', { class: 'board' }, h('span', { lang: 'en', text: b[0] }), h('span', { class: 'num', text: b[1] + ' / ' + b[2] }),
+            h('div', { class: 'bar' }, h('i', { style: 'width:' + pct + '%' }))));
+        });
+        sec.appendChild(bl);
+      }
+      if (!c.cid) return;
+      if (!st.data) {
+        if (own && !st.auto && !st.busy && qlEnabled()) { st.auto = true; setTimeout(function () { dvLoad(c, own, refresh); }, 0); }
+        if (st.busy) sec.appendChild(h('p', { class: 'muted small', text: 'Завантажую вузли дошок…' }));
+        else if (qlEnabled()) sec.appendChild(h('button', { class: 'btn btn-sm', type: 'button', text: 'Показати дошки', onclick: function () { dvLoad(c, own, refresh); } }));
+        if (st.err) sec.appendChild(h('p', { class: 'small warn-text', text: st.err }));
+        return;
+      }
+      var boards = st.data.boards;
+      if (!boards.length) { if (st.err) sec.appendChild(h('p', { class: 'small warn-text', text: st.err })); return; }
+      var targets = buildTargets(c, p);
+      var ctx = { game: game, targets: targets, hasBuild: Object.keys(targets).length > 0 };
+      var ans = boards.map(dvAnalyze);
+      if (st.tab >= boards.length) st.tab = 0;
+
+      // бонуси відкритих вузлів
+      var tot = dvTotals(boards);
+      if (tot.length) {
+        sec.appendChild(h('h5', { text: 'Бонуси відкритих вузлів' }));
+        [['Стати', function (x) { return !x.skill && !/^PvP/.test(x.name); }], ['PvP', function (x) { return !x.skill && /^PvP/.test(x.name); }],
+          ['Рівні вмінь', function (x) { return x.skill; }]].forEach(function (g) {
+          var list = tot.filter(g[1]);
+          if (!list.length) return;
+          var chips = h('div', { class: 'dv-tot' }, h('span', { class: 'muted small dv-tot-h', text: g[0] + ':' }));
+          list.forEach(function (x) {
+            chips.appendChild(h('span', { class: 'chip-s' + (x.skill ? ' sk' : ''), lang: 'en', text: x.name + ' +' + (Math.round(x.v * 10) / 10) + x.pct }));
+          });
+          sec.appendChild(chips);
+        });
+      }
+
+      // що відкрити далі на всіх дошках
+      var all = [];
+      boards.forEach(function (b, i) { all = all.concat(dvCandidates(b, ans[i], ctx).slice(0, 12).map(function (x) { x.i = i; return x; })); });
+      all.sort(function (a, b) { return b.eff - a.eff || b.val.v - a.val.v || a.dist - b.dist; });
+      /* Один і той самий +рівень вміння є на кількох дошках: показуємо не більше, ніж рівнів бракує */
+      function pickList(list, limit) {
+        var ol = h('ol', { class: 'dv-next' }), used = {};
+        list = list.filter(function (x) {
+          if (!x.val.key) return true;
+          used[x.val.key] = (used[x.val.key] || 0) + 1;
+          return used[x.val.key] <= Math.max(1, x.val.need || 1);
+        }).slice(0, limit);
+        list.forEach(function (x) {
+          var n = x.node;
+          ol.appendChild(h('li', null, h('button', { class: 'linkbtn', type: 'button', onclick: function () { st.tab = x.i; st.sel = n[0]; paint(); } },
+            h('b', { lang: 'en', text: n[6] || n[5] }), ' · ' + x.board.name),
+            h('span', { class: 'muted', text: ' · ' + (x.dist === 1 ? 'сусідній вузол' : 'шлях ' + x.dist + ' вузл.') + (x.val.why ? ' · ' + x.val.why : '') })));
+        });
+        if (!list.length) ol.appendChild(h('li', { text: 'Корисних закритих вузлів поруч немає: дошки майже заповнені.' }));
+        return ol;
+      }
+      sec.appendChild(h('h5', { text: 'Що відкрити далі' }));
+      sec.appendChild(pickList(all, 6));
+
+      // вкладки дошок
+      var tabs = h('div', { class: 'dv-tabs', role: 'tablist' });
+      boards.forEach(function (b, i) {
+        tabs.appendChild(h('button', { type: 'button', role: 'tab', class: 'dv-tab', 'aria-selected': i === st.tab ? 'true' : 'false', onclick: function () { st.tab = i; st.sel = null; paint(); } },
+          b.icon ? h('img', { src: ICON_BASE + b.icon, alt: '', width: 20, height: 20, referrerpolicy: 'no-referrer', onerror: hideBroken }) : null,
+          h('span', { lang: 'en', text: b.name }), h('small', { text: ' ' + b.open + '/' + b.total })));
+      });
+      sec.appendChild(tabs);
+
+      var board = boards[st.tab], an = ans[st.tab];
+      var cands = dvCandidates(board, an, ctx), top = {};
+      cands.slice(0, 5).forEach(function (x, k) { top[x.node[0]] = k + 1; });
+      var sel = st.sel != null ? an.byId[st.sel] : null;
+      var onPath = {};
+      if (sel) dvPath(an, sel[0]).forEach(function (id) { onPath[id] = true; });
+
+      var grid = h('div', { class: 'dv-grid', role: 'tabpanel', 'aria-label': 'Дошка ' + board.name });
+      board.nodes.forEach(function (n) {
+        var cls = 'dv-n ' + gradeClass(n[4]) + ' t-' + n[3] + (dvOpen(n) ? ' on' : an.dist[n[0]] === 1 ? ' reach' : ' off') +
+          (onPath[n[0]] ? ' path' : '') + (sel && sel[0] === n[0] ? ' sel' : '') + (top[n[0]] ? ' top' : '');
+        var b = h('button', { type: 'button', class: cls, style: 'grid-row:' + n[1] + ';grid-column:' + n[2],
+          title: (n[6] || n[5]) + ' · ' + dvStatus(n, an), 'aria-label': (n[5] || 'вузол') + ': ' + (n[6] || '') + ', ' + dvStatus(n, an),
+          onclick: function () { st.sel = st.sel === n[0] ? null : n[0]; paint(); } }, dvLabel(n, game));
+        if (top[n[0]]) b.appendChild(h('i', { class: 'dv-rank', text: String(top[n[0]]) }));
+        grid.appendChild(b);
+      });
+      sec.appendChild(h('div', { class: 'dv-wrap' }, grid));
+
+      if (sel) {
+        var val = dvValue(sel, ctx);
+        sec.appendChild(h('div', { class: 'dv-detail ' + gradeClass(sel[4]) },
+          h('b', { lang: 'en', text: sel[5] || 'Вузол' }), ' · ', h('span', { lang: 'en', text: sel[6] || '' }),
+          h('span', { class: 'muted', text: ' · ' + gradeName(sel[4]) + ' · ' + dvStatus(sel, an) + (val.why ? ' · ' + val.why : '') }),
+          !dvOpen(sel) && an.dist[sel[0]] > 1 ? h('span', { class: 'muted', text: ' · шлях підсвічено на дошці' }) : null));
+      }
+      sec.appendChild(h('p', { class: 'dv-legend muted small' },
+        h('span', { class: 'dv-key on' }), ' відкрито ', h('span', { class: 'dv-key reach' }), ' можна відкрити зараз ',
+        h('span', { class: 'dv-key off' }), ' закрито · цифри — найкращі наступні вузли · натисніть вузол, щоб побачити шлях'));
+      sec.appendChild(h('h5', { text: 'На дошці ' + board.name }));
+      sec.appendChild(pickList(cands.map(function (x) { x.i = st.tab; return x; }), 5));
+      sec.appendChild(h('p', { class: 'muted small' }, 'Порядок за гайдом' + (Object.keys(ctx.targets).length ? ' і білдом, з яким порівнюєте' : '') +
+        '. Вузли з сайту Aion 2, оновлено ' + new Date(st.data.t).toLocaleString('uk-UA', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' }) + '. ',
+        st.busy ? h('span', { text: 'Оновлюю…' }) : qlEnabled() ? h('button', { class: 'linkbtn', type: 'button', text: 'Оновити дошки', onclick: function () { dvLoad(c, own, refresh); } }) : null));
+      if (st.err) sec.appendChild(h('p', { class: 'small warn-text', text: st.err }));
+    }
+    function refresh() {
+      if (own && sec.isConnected) renderOwnCharacter(p); // оновити й підказки в порівнянні з білдом
+      if (sec.isConnected || !own) paint();
+    }
+    paint();
+    return sec;
   }
 
   /* ---------- Картка персонажа: усі дані з гри + підказки за правилами гайда ---------- */
@@ -1383,17 +1704,7 @@
     if (game.wing) extra.appendChild(h('div', { class: 'eq ' + gradeClass(game.wing[1]) }, gameIcon(game.wing[3]), h('div', null, h('small', { text: 'Крила' }), h('span', { class: 'eq-name', text: game.wing[0] }), h('span', { class: 'eq-lv', text: '+' + game.wing[2] + ' · ' + gradeName(game.wing[1]) }))));
     if (extra.childNodes.length) card.appendChild(h('section', null, h('h4', { text: 'Пет і крила' }), extra));
 
-    if (game.boards.length) {
-      var bl = h('div', { class: 'boards' });
-      game.boards.forEach(function (b) {
-        var pct = b[2] ? Math.round(100 * b[1] / b[2]) : 0;
-        bl.appendChild(h('div', { class: 'board' },
-          h('span', { lang: 'en', text: b[0] }),
-          h('span', { class: 'num', text: b[1] + ' / ' + b[2] }),
-          h('div', { class: 'bar' }, h('i', { style: 'width:' + pct + '%' }))));
-      });
-      card.appendChild(h('section', null, h('h4', null, rich('Дошки [Даеваніона|Daevanion Boards]')), bl));
-    }
+    if (game.boards.length) card.appendChild(boardsSection(c, game, p));
 
     if (game.skills.length) {
       var sk = h('div', { class: 'skills' });

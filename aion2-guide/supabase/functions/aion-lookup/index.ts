@@ -7,6 +7,7 @@
 //
 // POST { name }                             -> { character, game } | { matches } | { error }
 // POST { characterId, serverId, region }    -> { character, game } | { error }   (оновлення без пошуку)
+// POST { daevanion: 1, characterId, serverId, region } -> { boards }   (усі вузли дошок Даеваніона, відкриті й ні)
 // `game` — компактний повний знімок: стати, дошки Даеваніона, титули, спорядження, скіни, пет, крила, вміння.
 // Білди вмінь з questlog.gg (публічні білди гравців і NCSOFT; сайт без CORS, тому через цю функцію):
 // POST { ql: 'search', classId, page?, q? }   -> { total, pages, builds: [...] }
@@ -16,6 +17,7 @@
 const SEARCH_URL = 'https://api-search.plaync.com/aion2global/search/v2/character';
 const INFO_URL = 'https://aion2.plaync.com/api/character/info';
 const EQUIP_URL = 'https://aion2.plaync.com/api/character/equipment';
+const BOARD_URL = 'https://aion2.plaync.com/api/character/daevanion/detail';
 const ICON_BASE = 'https://assets.playnccdn.com/static-aion2-gamedata/resources/';
 const QL_TRPC = 'https://questlog.gg/aion-2/api/trpc/';
 const QL_CLASSES = ['gladiator', 'templar', 'assassin', 'ranger', 'sorcerer', 'elementalist', 'cleric', 'chanter'];
@@ -59,6 +61,11 @@ interface Game {
   wing: [string, string, number, string] | null;             // назва, рідкість, заточка, іконка
   skills: [string, string, number, number, string, string][]; // назва, категорія, рівень, екіпіровано, іконка, id вміння
 }
+
+/* Вузол дошки: id, рядок, колонка (сітка 15×15), тип (s старт, t стат, k +рівень вміння), рідкість, назва, ефекти, відкрито */
+type BoardNode = [number, number, number, string, string, string, string, number];
+interface Board { id: number; name: string; icon: string; open: number; total: number; nodes: BoardNode[] }
+const NODE_TYPE: Record<string, string> = { Start: 's', Stat: 't', SkillLevel: 'k' };
 
 const cache = new Map<string, { t: number; v: unknown }>();
 const hits = new Map<string, { t: number; n: number }>();
@@ -114,6 +121,28 @@ const provider = {
   rawEquipment(characterId: string, serverId: number, region: string): Promise<any> {
     return cached(`e:${region}:${serverId}:${encId(characterId)}`, () =>
       getJson(`${EQUIP_URL}?lang=en-US&characterId=${encId(characterId)}&serverId=${serverId}&region=${region}`));
+  },
+
+  rawBoard(characterId: string, serverId: number, region: string, boardId: number): Promise<any> {
+    return cached(`d:${region}:${serverId}:${encId(characterId)}:${boardId}`, () =>
+      getJson(`${BOARD_URL}?lang=en-US&characterId=${encId(characterId)}&serverId=${serverId}&region=${region}&boardId=${boardId}`));
+  },
+
+  /** Дошки Даеваніона повністю: список дошок береться з info, вузли — окремим запитом на кожну дошку */
+  async daevanion(characterId: string, serverId: number, region: string): Promise<Board[]> {
+    const d = await this.rawInfo(characterId, serverId, region);
+    return Promise.all((d.daevanion?.boardList ?? []).slice(0, 8).map(async (b: any) => {
+      const id = num(b.id);
+      const det = await this.rawBoard(characterId, serverId, region, id).catch(() => null);
+      const nodes: BoardNode[] = (det?.nodeList ?? [])
+        .filter((n: any) => NODE_TYPE[n.type]) // порожні клітинки сітки (None) не потрібні
+        .slice(0, 300)
+        .map((n: any) => [
+          num(n.nodeId), num(n.row), num(n.col), NODE_TYPE[n.type], str(n.grade, 10), str(n.name, 60),
+          (n.effectList ?? []).map((e: any) => str(e.desc, 60)).filter(Boolean).slice(0, 4).join('; '), n.open ? 1 : 0,
+        ]);
+      return { id, name: str(b.name, 24), icon: icon(b.icon), open: num(b.openNodeCount), total: num(b.totalNodeCount), nodes };
+    }));
   },
 
   async info(characterId: string, serverId: number, region: string): Promise<Character> {
@@ -266,6 +295,7 @@ export async function handler(req: Request): Promise<Response> {
       const region = String(body.region ?? '');
       if (!Number.isInteger(serverId) || !REGIONS.includes(region) || String(body.characterId).length > 200) return json({ error: 'bad_request' }, 400);
       const id = String(body.characterId);
+      if (body.daevanion) return json({ boards: await provider.daevanion(id, serverId, region) });
       const [character, game] = await Promise.all([provider.info(id, serverId, region), provider.game(id, serverId, region)]);
       return json({ character, game });
     }
