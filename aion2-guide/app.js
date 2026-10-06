@@ -866,6 +866,51 @@
   var notifyLead = prefGet('notifyLead', 5);          /* за скільки хвилин попереджати */
   var notifyAtSpawn = prefGet('notifyAtSpawn', true); /* ще й у момент появи / відкриття */
   var notifyRift = prefGet('notifyRift', false);
+  var notifySound = prefGet('notifySound', true);     /* власний звуковий сигнал сторінки */
+  var notifyVolume = prefGet('notifyVolume', 70);     /* 0–100 */
+  var audioCtx = null;
+
+  /* Браузер дозволяє звук лише після дії користувача на сторінці: «розблоковуємо» звук першим кліком або клавішею */
+  function unlockAudio() {
+    try {
+      if (!audioCtx) {
+        var AC = window.AudioContext || window.webkitAudioContext;
+        if (!AC) return;
+        audioCtx = new AC();
+      }
+      if (audioCtx.state === 'suspended') audioCtx.resume().then(syncSoundState, syncSoundState);
+    } catch (e) { /* без звуку */ }
+    syncSoundState();
+  }
+
+  function syncSoundState() {
+    var el = $('soundState');
+    if (!el) return;
+    if (!notifySound) { el.textContent = ''; return; }
+    var ready = audioCtx && audioCtx.state === 'running';
+    el.textContent = ready ? 'Звук готовий.' : 'Щоб звук спрацював, клацніть будь-де на сторінці один раз після відкриття.';
+    el.classList.toggle('warn', !ready);
+  }
+
+  /* Короткий триразовий сигнал, згенерований у браузері (без аудіофайлів) */
+  function chime() {
+    if (!notifySound) return;
+    unlockAudio();
+    if (!audioCtx || audioCtx.state !== 'running') return;
+    var t = audioCtx.currentTime, peak = Math.max(0.0002, 0.5 * clamp(toInt(notifyVolume), 0, 100) / 100);
+    [[880, 0], [1175, 0.18], [1568, 0.36]].forEach(function (n) {
+      var o = audioCtx.createOscillator(), g = audioCtx.createGain();
+      o.type = 'sine';
+      o.frequency.value = n[0];
+      g.gain.setValueAtTime(0.0001, t + n[1]);
+      g.gain.exponentialRampToValueAtTime(peak, t + n[1] + 0.02);
+      g.gain.exponentialRampToValueAtTime(0.0001, t + n[1] + 0.5);
+      o.connect(g);
+      g.connect(audioCtx.destination);
+      o.start(t + n[1]);
+      o.stop(t + n[1] + 0.55);
+    });
+  }
   var LEAD_PRESETS = [1, 2, 3, 5, 10, 15, 20, 30, 60];
 
   function leadMs() { return clamp(toInt(notifyLead), 1, 180) * 60000; }
@@ -1044,6 +1089,7 @@
 
   function notify(title, body) {
     toast(title + ': ' + body);
+    chime();
     if (notifyPermission() !== 'granted') return;
     try { new Notification(title, { body: body, icon: 'favicon.svg', tag: title }); } catch (e) { /* деякі браузери вимагають service worker */ }
   }
@@ -1105,6 +1151,23 @@
       prefSet('notifyRift', notifyRift);
       if (notifyRift && notifyPermission() === 'default') askPermission();
     });
+    $('notifySound').checked = !!notifySound;
+    $('notifySound').addEventListener('change', function (e) {
+      notifySound = e.target.checked;
+      prefSet('notifySound', notifySound);
+      $('notifyVolumeWrap').hidden = !notifySound;
+      if (notifySound) chime();
+      syncSoundState();
+    });
+    $('notifyVolumeWrap').hidden = !notifySound;
+    $('notifyVolume').value = String(clamp(toInt(notifyVolume), 0, 100));
+    $('notifyVolume').addEventListener('change', function (e) {
+      notifyVolume = clamp(toInt(e.target.value), 0, 100);
+      prefSet('notifyVolume', notifyVolume);
+      chime();
+    });
+    ['pointerdown', 'keydown'].forEach(function (ev) { document.addEventListener(ev, unlockAudio, true); });
+    syncSoundState();
     $('notifyTest').addEventListener('click', function () {
       if (notifyPermission() === 'default') { askPermission(function () { notify('1 HP', 'Сповіщення працюють'); }); return; }
       notify('1 HP', 'Сповіщення працюють');

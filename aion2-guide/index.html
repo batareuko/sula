@@ -148,9 +148,14 @@
         </label>
         <label class="check"><input type="checkbox" id="notifyAtSpawn"><span class="box"></span><span class="txt">Також у момент появи</span></label>
         <label class="check"><input type="checkbox" id="notifyRift"><span class="box"></span><span class="txt">Розломи</span></label>
+        <label class="check"><input type="checkbox" id="notifySound"><span class="box"></span><span class="txt">Звук</span></label>
+        <label class="field" id="notifyVolumeWrap">Гучність
+          <input id="notifyVolume" type="range" min="0" max="100" step="5">
+        </label>
         <button class="btn btn-ghost" type="button" id="notifyTest">Перевірити</button>
       </div>
-      <p class="muted small">Боси: увімкніть дзвіночок біля потрібних у списку нижче. Розломи: позначте «Розломи». Сповіщення приходять, поки сайт відкритий у вкладці (її можна згорнути).</p>
+      <p class="small" id="soundState"></p>
+      <p class="muted small">Боси: увімкніть дзвіночок біля потрібних у списку нижче. Розломи: позначте «Розломи». Сповіщення приходять, поки сайт відкритий у вкладці (її можна згорнути). «Звук» — власний сигнал сайту: він лунає, навіть якщо системні сповіщення браузера беззвучні.</p>
     </div>
 
     <div class="panel bosses">

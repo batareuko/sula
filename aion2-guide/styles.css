@@ -266,6 +266,9 @@ body.hide-en .term .en { display: none; }
 .notify-row .check { padding: 8px 6px; align-items: center; }
 .notify-row .check .box { margin-top: 0; }
 .notify .small { margin-top: 8px; }
+#soundState { color: var(--muted); }
+#soundState.warn { color: var(--gold); }
+.notify-row input[type="range"] { width: 140px; accent-color: var(--gold); padding: 0; min-height: 36px; background: transparent; border: 0; }
 
 /* ---------- Timers ---------- */
 .timer-cards { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px; margin-bottom: 10px; }
