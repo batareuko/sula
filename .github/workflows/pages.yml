@@ -33,7 +33,9 @@ jobs:
         run: |
           mkdir _site
           cp -r aion2-guide/. _site/
-          rm -rf _site/supabase _site/schema.sql _site/README.md
+          rm -rf _site/supabase _site/schema.sql _site/cron.sql _site/README.md _site/tools
+          # Короткі сторінки пачноутів /p/<id>/ з прев'ю для Discord
+          node aion2-guide/tools/patch-pages.mjs _site
 
       - uses: actions/upload-pages-artifact@v3
         with:
