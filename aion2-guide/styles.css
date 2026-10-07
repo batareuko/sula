@@ -649,3 +649,8 @@ img.broken { visibility: hidden; }
 .patch-raw li.b::before { content: '•'; position: absolute; left: 4px; color: var(--gold); }
 .patch-raw li.hd { font-weight: 600; margin-top: 6px; }
 .news-list { margin: 0; padding: 0; list-style: none; display: grid; gap: 6px; font-size: 14px; }
+.patch-open { display: flex; gap: 8px; margin: 10px 0 0; }
+.patch-open input { flex: 1; min-width: 0; padding: 7px 10px; background: var(--bg-2); color: var(--text); border: 1px solid var(--line); border-radius: var(--radius); font: inherit; font-size: 14px; }
+.patch.flash, .patch-new.flash { animation: patchFlash 2.4s ease-out; }
+@keyframes patchFlash { 0%, 30% { border-color: var(--gold); box-shadow: 0 0 0 3px var(--gold-dim); } 100% { box-shadow: none; } }
+#patches .panel { scroll-margin-top: 80px; }
