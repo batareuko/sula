@@ -9,6 +9,9 @@
 // POST { characterId, serverId, region }    -> { character, game } | { error }   (оновлення без пошуку)
 // POST { daevanion: 1, characterId, serverId, region } -> { boards }   (усі вузли дошок Даеваніона, відкриті й ні)
 // `game` — компактний повний знімок: стати, дошки Даеваніона, титули, спорядження, скіни, пет, крила, вміння.
+// Новини з офіційного сайту (пачноути й оголошення англійською):
+// POST { news: 'list' }                       -> { updates: [...], notices: [...] }
+// POST { news: 'article', board, id }         -> { article: { id, title, at, lines } }
 // Білди вмінь з questlog.gg (публічні білди гравців і NCSOFT; сайт без CORS, тому через цю функцію):
 // POST { ql: 'search', classId, page?, q? }   -> { total, pages, builds: [...] }
 // POST { ql: 'build', slug, id }              -> { build }
@@ -19,6 +22,8 @@ const INFO_URL = 'https://aion2.plaync.com/api/character/info';
 const EQUIP_URL = 'https://aion2.plaync.com/api/character/equipment';
 const BOARD_URL = 'https://aion2.plaync.com/api/character/daevanion/detail';
 const ICON_BASE = 'https://assets.playnccdn.com/static-aion2-gamedata/resources/';
+const NEWS_API = 'https://api-global-community.plaync.com/aion2_global/board/';
+const NEWS_BOARDS: Record<string, string> = { update: 'update_en', notice: 'notice_en' };
 const QL_TRPC = 'https://questlog.gg/aion-2/api/trpc/';
 const QL_CLASSES = ['gladiator', 'templar', 'assassin', 'ranger', 'sorcerer', 'elementalist', 'cleric', 'chanter'];
 // Коди регіонів API: Північна Америка схід/захід, Європа, Азія (as), Південна Америка (la)
@@ -248,6 +253,41 @@ const questlog = {
   },
 };
 
+// ----- новини: публічний API спільноти, який використовує сам сайт Aion 2 -----
+const newsItem = (c: any) => ({
+  id: /^[a-f0-9]{24}$/.test(String(c?.id ?? '')) ? String(c.id) : '',
+  title: str(c?.title, 140),
+  at: str(c?.timestamps?.postedAt, 30),
+});
+
+/** HTML статті → рядки простого тексту (без розмітки; на сайті показуються як текст) */
+function htmlLines(html: string): string[] {
+  return String(html ?? '')
+    .replace(/<br\s*\/?>/gi, '\n').replace(/<\/(p|div|li|h\d|tr)>/gi, '\n').replace(/<li[^>]*>/gi, '• ')
+    .replace(/<[^>]+>/g, '')
+    .replace(/&nbsp;/g, ' ').replace(/&lt;/g, '<').replace(/&gt;/g, '>').replace(/&quot;/g, '"').replace(/&#39;/g, "'").replace(/&amp;/g, '&')
+    .replace(/[\u200b\u00a0]/g, ' ')
+    .split('\n').map((l) => l.trim()).filter(Boolean).slice(0, 300).map((l) => l.slice(0, 600));
+}
+
+const news = {
+  list() {
+    return cached('n:list', async () => {
+      const [u, n] = await Promise.all(['update', 'notice'].map((b) =>
+        getJson(NEWS_API + NEWS_BOARDS[b] + '/article').then((d) => (d.contentList ?? []).slice(0, 10).map(newsItem).filter((x: any) => x.id)).catch(() => [])));
+      return { updates: u, notices: n };
+    });
+  },
+  article(board: string, id: string) {
+    return cached(`n:a:${board}:${id}`, async () => {
+      const d = await getJson(`${NEWS_API}${NEWS_BOARDS[board]}/article/${id}`);
+      const a = d?.article;
+      if (!a?.content) return null;
+      return { ...newsItem({ id, title: a.contentMeta?.title, timestamps: a.contentMeta?.timestamps }), lines: htmlLines(a.content.content) };
+    });
+  },
+};
+
 function json(body: unknown, status = 200) {
   return new Response(JSON.stringify(body), { status, headers: { ...cors, 'Content-Type': 'application/json' } });
 }
@@ -269,6 +309,14 @@ export async function handler(req: Request): Promise<Response> {
   try { body = await req.json(); } catch { return json({ error: 'bad_request' }, 400); }
 
   try {
+    if (body.news) {
+      if (body.news === 'list') return json(await news.list());
+      const board = String(body.board ?? ''), id = String(body.id ?? '');
+      if (body.news !== 'article' || !NEWS_BOARDS[board] || !/^[a-f0-9]{24}$/.test(id)) return json({ error: 'bad_request' }, 400);
+      const article = await news.article(board, id);
+      return article ? json({ article }) : json({ error: 'not_found' }, 404);
+    }
+
     if (body.ql) {
       const classId = String(body.classId ?? '');
       if (body.ql === 'search') {

@@ -611,3 +611,41 @@ img.broken { visibility: hidden; }
 .dv-key.reach { border-style: dashed; }
 .dv-key.off { opacity: .4; }
 .dv-tot-h { align-self: center; min-width: 74px; }
+
+/* ---------- Пачноути ---------- */
+#patches .panel { margin-top: 12px; }
+.h-sub { margin: 14px 0 6px; font: 600 13px/1.3 var(--font-mono); letter-spacing: .06em; text-transform: uppercase; color: var(--muted); }
+.patch > summary { cursor: pointer; list-style: none; display: flex; flex-wrap: wrap; align-items: baseline; gap: 4px; }
+.patch > summary::-webkit-details-marker { display: none; }
+.patch > summary::before { content: '▸'; color: var(--gold); margin-right: 6px; }
+.patch[open] > summary::before { content: '▾'; }
+.patch-body { display: grid; gap: 6px; margin-top: 8px; }
+.patch-body h4 { margin: 10px 0 2px; }
+.patch-tldr { margin: 0; padding-left: 20px; display: grid; gap: 3px; }
+.patch-items { list-style: none; margin: 0; padding: 0; display: grid; gap: 10px; }
+.pi { padding: 10px 12px; background: var(--bg-2); border: 1px solid var(--line); border-left: 3px solid var(--muted); border-radius: var(--radius); display: grid; gap: 6px; }
+.pi > p { margin: 0; }
+.pi.k-plus { border-left-color: var(--green); }
+.pi.k-minus { border-left-color: var(--danger); }
+.pi.k-fix { border-left-color: var(--blue); }
+.pi.not-mine { opacity: .5; }
+.pi-tags { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; }
+.pi-kind { font: 600 11px/1 var(--font-mono); text-transform: uppercase; letter-spacing: .06em; padding: 4px 7px; border-radius: 3px; background: var(--panel-2); }
+.pi-kind.k-plus { color: var(--green); }
+.pi-kind.k-minus { color: var(--danger); }
+.pi-kind.k-fix { color: var(--blue); }
+.pi-mine { font-size: 12px; color: var(--muted); font-style: italic; }
+.pi-why, .pi-act { font-size: 14px; }
+.pi-why { color: #c9cdd8; }
+.pi-act b { color: var(--gold); }
+.pi-en summary { cursor: pointer; font-size: 12.5px; color: var(--muted); }
+.pi-en p { margin: 6px 0 0; font-size: 13.5px; color: var(--muted); }
+.patch-personal { border-color: rgba(245, 166, 35, .4); }
+.patch-acts { margin: 6px 0; padding-left: 20px; display: grid; gap: 6px; }
+.pi-count { margin-left: 8px; font: 600 12px/1 var(--font-mono); color: var(--gold); white-space: nowrap; }
+.pi-count.full { color: var(--green); }
+.patch-raw { margin: 8px 0 0; padding-left: 0; list-style: none; display: grid; gap: 3px; font-size: 14px; }
+.patch-raw li.b { padding-left: 16px; position: relative; }
+.patch-raw li.b::before { content: '•'; position: absolute; left: 4px; color: var(--gold); }
+.patch-raw li.hd { font-weight: 600; margin-top: 6px; }
+.news-list { margin: 0; padding: 0; list-style: none; display: grid; gap: 6px; font-size: 14px; }
