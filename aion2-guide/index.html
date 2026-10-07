@@ -30,6 +30,7 @@
   <div class="wrap topbar-in">
     <a class="brand" href="#top">1 HP <span>· AION 2</span></a>
     <nav class="nav" aria-label="Розділи">
+      <a href="#today">Сьогодні</a>
       <a href="#progress">Мій прогрес</a>
       <a href="#character">Персонаж</a>
       <a href="#timers">Таймери</a>
@@ -57,9 +58,21 @@
     </div>
   </section>
 
-  <section class="wrap rules" aria-labelledby="rulesTitle">
-    <h2 id="rulesTitle" class="h-side">Основні правила</h2>
-    <ol id="rules" class="rules-list"></ol>
+  <!-- ===== Сьогодні: головне на одному екрані ===== -->
+  <section class="wrap" id="today" aria-labelledby="todayTitle">
+    <div class="sec-head">
+      <h2 id="todayTitle">Сьогодні</h2>
+      <span class="mono muted" id="todayClock"></span>
+    </div>
+    <div id="onboard"></div>
+    <div class="today-grid" id="todayBox"></div>
+  </section>
+
+  <section class="wrap">
+    <details class="rules-box" id="rulesBox" open>
+      <summary><h2 id="rulesTitle" class="h-side">Основні правила</h2><span class="muted small rules-hint">4 правила гайда · натисніть, щоб згорнути або розгорнути</span></summary>
+      <ol id="rules" class="rules-list"></ol>
+    </details>
   </section>
 
   <!-- ===== Мій прогрес / профілі / вхід ===== -->
@@ -338,13 +351,13 @@
     </div>
     <p class="muted small">Якщо карта не відображається (блокувальник реклами/трекерів, обмеження мережі) — відкрийте її в новій вкладці. <a id="routeGuide" href="#" target="_blank" rel="noopener">Гайд зі маршрутів ↗</a></p>
 
-    <div class="panel mapcheck">
-      <h3 class="h-card">Що шукати на карті · мій прогрес по зонах</h3>
+    <details class="panel mapcheck collapsible" data-wide-open>
+      <summary><h3 class="h-card">Що шукати на карті · мій прогрес по зонах</h3></summary>
       <p class="muted small">Назви категорій — як у бічній панелі карти (англ.). Відмічайте, де ви вже все зачистили. Набір категорій може відрізнятись між зонами.</p>
       <div class="table-scroll">
         <table class="tbl" id="mapMatrix"></table>
       </div>
-    </div>
+    </details>
   </section>
 
   <!-- ===== Глосарій ===== -->
@@ -357,6 +370,7 @@
     <label class="field gl-search">Пошук терміна
       <input id="glossarySearch" type="search" placeholder="Напр. пояс або Belt" autocomplete="off">
     </label>
+    <button class="btn btn-sm btn-ghost gl-toggle" id="glossaryToggle" type="button" hidden></button>
     <div class="gl-grid" id="glossaryList"></div>
     <p class="muted" id="glossaryEmpty" hidden>Нічого не знайдено.</p>
   </section>
@@ -409,6 +423,22 @@
     <p>Неофіційний фанатський гайд за інфографікою «Новачок 45 рівня — дорожня карта спорядження». Aion 2 — торгова марка NCSoft. Інтерактивна карта належить interactivemap.app. Дані персонажів беруться з офіційного сайту Aion 2 через неофіційний доступ і можуть тимчасово бути недоступні — бойову міць можна ввести вручну.</p>
   </div>
 </footer>
+
+<!-- Нижня панель на телефоні -->
+<nav class="tabbar" id="tabbar" aria-label="Швидка навігація">
+  <a href="#today" data-sec="today"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 11l9-7 9 7v9a1 1 0 0 1-1 1h-5v-6H9v6H4a1 1 0 0 1-1-1z"/></svg><span>Сьогодні</span></a>
+  <a href="#character" data-sec="character"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="8" r="4"/><path d="M4 21c0-4.4 3.6-7 8-7s8 2.6 8 7"/></svg><span>Персонаж</span></a>
+  <a href="#timers" data-sec="timers"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="13" r="8"/><path d="M12 9v4l3 2M9 2h6"/></svg><span>Таймери</span></a>
+  <a href="#groups" data-sec="groups"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="9" cy="8" r="3.5"/><circle cx="17" cy="9" r="2.5"/><path d="M2.5 20c0-3.6 2.9-6 6.5-6s6.5 2.4 6.5 6M15 14.5c3.4 0 6.5 1.6 6.5 5.5"/></svg><span>Групи</span></a>
+  <button type="button" id="tabMore" aria-expanded="false" aria-controls="moreSheet"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 6h16M4 12h16M4 18h16"/></svg><span>Ще</span></button>
+</nav>
+<div class="sheet" id="moreSheet" hidden>
+  <div class="sheet-in" role="dialog" aria-label="Усі розділи">
+    <p class="eyebrow">Розділи</p>
+    <ul class="sheet-list" id="sheetList"></ul>
+  </div>
+</div>
+<button class="totop" id="toTop" type="button" aria-label="Нагору" hidden>↑</button>
 
 <dialog class="char-dialog" id="charDialog" aria-label="Картка персонажа">
   <button class="btn btn-ghost dialog-close" id="charDialogClose" type="button" aria-label="Закрити">✕</button>
