@@ -185,7 +185,7 @@
   /* Усі лічильники: пріоритети з інфографіки + тижневі входи (однаковий id = той самий лічильник) */
   var COUNTERS = (function () {
     var seen = {}, out = [];
-    G.priorities.concat(G.weekly.map(function (w) {
+    G.priorities.concat(G.weekly.concat(G.weeklyLimits || []).map(function (w) {
       return Object.assign({ period: 'week', hint: w.hint || w.max + ' / тиждень' }, w);
     })).forEach(function (it) { if (!seen[it.id]) { seen[it.id] = true; out.push(it); } });
     return out;
@@ -506,6 +506,7 @@
     syncThresholds(p);
     syncLookup(p);
     renderOwnCharacter(p);
+    syncPatches(p);
     syncAuthUI();
     renderTeam();
   }
@@ -2491,6 +2492,145 @@
     }
   }
 
+  /* ---------- Пачноути: переклад з тлумаченням (data.js → patches) + свіжі новини з офіційного сайту ---------- */
+  var WHO_UA = { all: 'Усім', founder: 'Founder\'s Pack', stones: 'Камені заточки', craft: 'Ремесло', raid: 'Рейди й боси', asmodians: 'Асмодіани', elyos: 'Елійці', qol: 'Зручність' };
+  var KIND_UA = { plus: 'на користь', minus: 'обмеження', fix: 'виправлення' };
+  var NEWS_URL = { update: 'https://aion2.plaync.com/en-us/board/update/view?articleId=', notice: 'https://aion2.plaync.com/en-us/board/notice/view?articleId=' };
+  var news = { busy: false, done: false, err: '', data: null, art: {} };
+
+  function fmtDay(s) {
+    var d = new Date(s);
+    return isNaN(d) ? '' : d.toLocaleDateString('uk-UA', { day: 'numeric', month: 'long', year: 'numeric' });
+  }
+
+  /* Пункт не стосується персонажа, якщо він лише для іншої раси */
+  function patchRelevant(it, c) {
+    var race = c && c.r ? String(c.r).toLowerCase() : '';
+    if (!race) return true;
+    if (it.who.indexOf('asmodians') >= 0 && it.who.length === 1) return race.indexOf('asmod') === 0;
+    if (it.who.indexOf('elyos') >= 0 && it.who.length === 1) return race.indexOf('elyos') === 0;
+    return true;
+  }
+
+  function patchCard(pt, open) {
+    var body = h('div', { class: 'patch-body' });
+    body.appendChild(h('p', { class: 'muted small' }, pt.maint ? pt.maint + ' ' : '', h('a', { href: NEWS_URL.update + pt.id, target: '_blank', rel: 'noopener', text: 'Оригінал на сайті Aion 2 ↗' })));
+    var tl = h('ul', { class: 'patch-tldr' });
+    pt.tldr.forEach(function (t) { tl.appendChild(h('li', { text: t })); });
+    body.appendChild(h('h4', { text: 'Коротко' }));
+    body.appendChild(tl);
+    pt.groups.forEach(function (g) {
+      body.appendChild(h('h4', { text: g.title }));
+      var ul = h('ul', { class: 'patch-items' });
+      g.items.forEach(function (it) {
+        var tags = h('div', { class: 'pi-tags' }, h('span', { class: 'pi-kind k-' + it.kind, text: KIND_UA[it.kind] || it.kind }));
+        it.who.forEach(function (w) { tags.appendChild(h('span', { class: 'chip-s', text: WHO_UA[w] || w })); });
+        tags.appendChild(h('span', { class: 'pi-mine', 'data-mine': '' }));
+        it.el = h('li', { class: 'pi k-' + it.kind }, tags,
+          h('p', { class: 'pi-ua' }, rich(it.ua)),
+          h('p', { class: 'pi-why' }, h('b', { text: 'Що це означає: ' }), it.why),
+          it.act ? h('p', { class: 'pi-act' }, h('b', { text: 'Що зробити: ' }), it.act) : null,
+          h('details', { class: 'pi-en' }, h('summary', { text: 'Оригінал англійською' }), h('p', { lang: 'en', text: it.en })));
+        ul.appendChild(it.el);
+      });
+      body.appendChild(ul);
+    });
+    var d = h('details', { class: 'panel patch', open: open ? '' : null },
+      h('summary', null, h('span', { class: 'h-card', text: pt.title }), h('span', { class: 'muted small', text: ' · ' + fmtDay(pt.date) })), body);
+    return d;
+  }
+
+  function initPatches() {
+    (G.patches || []).forEach(function (pt, i) { $('patchList').appendChild(patchCard(pt, i === 0)); });
+    (G.weeklyLimits || []).forEach(function (w) { $('weeklyLimits').appendChild(buildPriority(COUNTER_BY_ID[w.id])); });
+  }
+
+  /* Блок «Для вашого персонажа»: дії з останнього пачноуту з урахуванням раси й тижневих лімітів */
+  function syncPatches(p) {
+    var c = p.character, pt = (G.patches || [])[0];
+    (G.patches || []).forEach(function (x) {
+      x.groups.forEach(function (g) {
+        g.items.forEach(function (it) {
+          if (!it.el) return;
+          var rel = patchRelevant(it, c);
+          it.el.classList.toggle('not-mine', !rel);
+          it.el.querySelector('[data-mine]').textContent = c && !rel ? 'не стосується вашої раси' : '';
+        });
+      });
+    });
+    var box = $('patchPersonal');
+    box.textContent = '';
+    if (pt) {
+      var acts = [];
+      pt.groups.forEach(function (g) { g.items.forEach(function (it) { if (it.act && patchRelevant(it, c)) acts.push(it); }); });
+      var ul = h('ul', { class: 'patch-acts' });
+      acts.forEach(function (it) {
+        var pre = it.who.indexOf('founder') >= 0 ? 'Якщо купували Founder\'s Pack: ' : !c && it.who.length === 1 && (it.who[0] === 'asmodians' || it.who[0] === 'elyos') ? WHO_UA[it.who[0]] + ': ' : '';
+        var li = h('li', null, pre ? h('span', { class: 'muted', text: pre }) : null, it.act);
+        if (it.counter && COUNTER_BY_ID[it.counter]) {
+          var cn = COUNTER_BY_ID[it.counter], n = counterValue(p, cn);
+          li.appendChild(h('a', { class: 'pi-count' + (n >= cn.max ? ' full' : ''), href: '#weeklyPanel', text: n + ' / ' + cn.max + ' цього тижня' }));
+        }
+        ul.appendChild(li);
+      });
+      var who = c ? c.n + ' (' + [c.r, c.cls].filter(Boolean).join(', ') + ')' : null;
+      box.appendChild(h('div', { class: 'panel patch-personal' },
+        h('h3', { class: 'h-card', text: 'Для вашого персонажа' + (who ? ': ' + who : '') }),
+        c ? null : h('p', { class: 'muted small', text: 'Прив’яжіть персонажа в «Мій прогрес», щоб приховати пункти не для вашої раси.' }),
+        h('p', { class: 'small muted', text: 'Що зробити після «' + pt.title + '»:' }), ul,
+        h('p', { class: 'muted small', text: 'До тижневого ресету: ' + timeLeft(nextReset('week', Date.now()) - Date.now()) + '. Лічильники — у «Тижневих лімітах» розділу «Таймери».' })));
+    }
+    if (!news.done && !news.busy && qlEnabled()) loadNews();
+  }
+
+  function loadNews() {
+    news.busy = true;
+    Cloud.lookup({ news: 'list' }).then(function (d) { news.data = d; }).catch(function () { news.err = 'Не вдалося отримати новини з сайту Aion 2.'; })
+      .then(function () { news.busy = false; news.done = true; renderNews(); });
+  }
+
+  function loadArticle(board, id) {
+    var a = news.art[id] = { busy: true };
+    renderNews();
+    Cloud.lookup({ news: 'article', board: board, id: id }).then(function (d) { a.lines = (d.article && d.article.lines) || []; })
+      .catch(function () { a.err = 'Текст не завантажився. Відкрийте оригінал на сайті.'; })
+      .then(function () { a.busy = false; renderNews(); });
+  }
+
+  function renderNews() {
+    var box = $('patchLive');
+    box.textContent = '';
+    if (news.err) { box.appendChild(h('p', { class: 'small muted', text: news.err })); return; }
+    var d = news.data;
+    if (!d) return;
+    var known = {};
+    (G.patches || []).forEach(function (pt) { known[pt.id] = true; });
+    (d.updates || []).filter(function (u) { return u.id && !known[u.id]; }).forEach(function (u) {
+      var a = news.art[u.id];
+      var panel = h('div', { class: 'panel patch-new' },
+        h('h3', { class: 'h-card' }, 'Новий пачноут ', h('span', { class: 'b-nc', text: 'EN' })),
+        h('p', null, h('b', { lang: 'en', text: u.title }), h('span', { class: 'muted', text: ' · ' + fmtDay(u.at) })),
+        h('p', { class: 'muted small' }, 'Переклад і пояснення ще не додано. ', h('a', { href: NEWS_URL.update + u.id, target: '_blank', rel: 'noopener', text: 'Оригінал ↗' })));
+      if (!a) panel.appendChild(h('button', { class: 'btn btn-sm', type: 'button', text: 'Показати текст тут', onclick: function () { loadArticle('update', u.id); } }));
+      else if (a.busy) panel.appendChild(h('p', { class: 'muted small', text: 'Завантажую…' }));
+      else if (a.err) panel.appendChild(h('p', { class: 'small warn-text', text: a.err }));
+      else {
+        var ul = h('ul', { class: 'patch-raw', lang: 'en' });
+        a.lines.forEach(function (l) { ul.appendChild(h('li', { class: /^•/.test(l) ? 'b' : /^\[.*\]$/.test(l) ? 'hd' : null, text: l.replace(/^•\s*/, '') })); });
+        panel.appendChild(ul);
+      }
+      box.appendChild(panel);
+    });
+    if ((d.notices || []).length) {
+      var ul = h('ul', { class: 'news-list' });
+      d.notices.slice(0, 6).forEach(function (n) {
+        ul.appendChild(h('li', null, h('span', { class: 'muted mono small', text: fmtDay(n.at) }), ' ',
+          h('a', { href: NEWS_URL.notice + n.id, target: '_blank', rel: 'noopener', lang: 'en', text: n.title })));
+      });
+      box.appendChild(h('div', { class: 'panel' }, h('h3', { class: 'h-card', text: 'Оголошення з офіційного сайту' }), ul));
+    }
+  }
+
   /* ---------- Старт ---------- */
   buildStatic();
   renderResetInfo();
@@ -2502,6 +2642,7 @@
   initTimers();
   initGroups();
   initGlossary();
+  initPatches();
   initMap();
   syncUI();
   handleHash();

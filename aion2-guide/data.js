@@ -147,6 +147,130 @@ window.GUIDE = {
     { id: 'w-ex-horn', name: '[Дослідження|Exploration]: [Лігво Лютого Рогу|Ferocious Horn Den]', max: 7 },
   ],
 
+  /* Тижневі ліміти з пачноутів (не входи, тому не рахуються в «Використано X з N тижневих входів») */
+  weeklyLimits: [
+    { id: 'w-wing-morph', name: '[Морф Запечатаних Крил|Sealed Wings → Enhance Stones]', max: 20, hint: '20 / тиждень на сервер, з 7.10' },
+    { id: 'w-res-stone', name: '[Камінь Воскресіння|Resurrection Spiritstone] за кінари', max: 10, hint: '10 / тиждень по 25 000, до 16.12' },
+  ],
+
+  /* Пачноути Global: переклад, тлумачення і для кого це важливо.
+     who: all — усім; founder — покупцям Founder's Pack; stones — хто фармить камені заточки;
+     craft — ремесло; raid — рейди й PvP; asmodians / elyos — лише ця раса; qol — зручність.
+     kind: plus — на користь гравцям, minus — обмеження, fix — виправлення.
+     act — що зробити; counter — id лічильника в «Тижневих лімітах». Новий пачноут — новий об'єкт зверху. */
+  patches: [
+    {
+      id: '6ac5e6e8d97eae18cc40e34e',
+      date: '2026-10-07',
+      title: 'Пачноут 7 жовтня',
+      en: '[Notice] Patch Notes | Oct. 6 (PDT) / Oct. 7 (CEST)',
+      maint: 'Техобслуговування 7 жовтня з 06:30 UTC (09:30 за Києвом), 3 год 30 хв; азійські сервери — 5 год 30 хв.',
+      tldr: [
+        'Founder\'s Pack тепер на всіх персонажах і серверах + безкоштовний магазин для покупців пакета.',
+        'Морф Запечатаних Крил у камені заточки: ліміт 20 на тиждень.',
+        'Більше Raw Leather у Вертероні, Альтгарді й Хаотичній Нижній Решанті.',
+        'Камінь Воскресіння за 25 000 кінар, 10 на тиждень, до 16 грудня.',
+        'Асмодіанам знову зараховується тижнева місія «Daeva of Glorious Deeds».',
+      ],
+      groups: [
+        {
+          title: 'Покращення',
+          items: [
+            {
+              en: 'Founder\'s Pack purchasers will be able to use Skins, Titles, and other items on other characters and servers.',
+              ua: 'Покупці [Пакета засновника|Founder\'s Pack] зможуть користуватися скінами, титулами та іншими предметами з пакета на інших персонажах і серверах.',
+              why: 'Раніше бонуси пакета були прив\'язані до одного персонажа. Тепер їх отримують і твінки, і персонажі на інших серверах. Титули в Aion 2 (категорії Attack, Defense, Etc) дають бонуси до характеристик, тож для твінків це ще й невелике посилення.',
+              who: ['founder'], kind: 'plus', act: 'Зайдіть кожним персонажем і перевірте скіни та титули.',
+            },
+            {
+              en: 'Founder\'s Pack purchasers will be able to use the dedicated Shop to purchase items they do not yet own for free, based on their Founder\'s Pack tier.',
+              ua: 'Покупці пакета отримають окремий магазин, де безкоштовно «купують» предмети свого рівня пакета, яких у них ще немає.',
+              why: 'Так видають вміст пакета на кожного персонажа: заходите в магазин і забираєте те, чого бракує.',
+              who: ['founder'], kind: 'plus', act: 'Відкрийте магазин пакета на кожному персонажі й заберіть предмети.',
+            },
+            {
+              en: 'The free Founder\'s Pack-dedicated Shop will be available for all characters on all servers until a closure notice is issued.',
+              ua: 'Безкоштовний магазин пакета працюватиме для всіх персонажів на всіх серверах, доки не оголосять про його закриття.',
+              why: 'Термін не обмежений, але магазин можуть закрити з попередженням. Новим твінкам краще забрати все одразу.',
+              who: ['founder'], kind: 'plus',
+            },
+            {
+              en: 'Items you already own from your Founder\'s Pack will not be purchased again; if you end up with duplicate items that remain in your inventory, we plan to add a feature allowing you to discard them at a later date.',
+              ua: 'Предмети з пакета, які у вас уже є, повторно не купуються. Якщо в інвентарі залишаться дублікати, пізніше додадуть можливість їх викинути.',
+              why: 'Дублікати поки займатимуть місце в інвентарі. Не продавайте й не руйнуйте їх навмання, дочекайтеся офіційної функції.',
+              who: ['founder'], kind: 'fix',
+            },
+            {
+              en: 'Skins obtained in duplicate through the Founder\'s Pack-dedicated Shop will not affect the purchase limit for paid Skins, and a fix to prevent duplicate entries will be planned for a future update.',
+              ua: 'Скіни-дублікати з магазину пакета не зменшують ліміт покупки платних скінів. Виправлення, щоб дублікати не з\'являлися, заплановане на наступні оновлення.',
+              why: 'Якщо отримали скін двічі, ліміт на платні скіни від цього не постраждає.',
+              who: ['founder'], kind: 'fix',
+            },
+            {
+              en: 'If you are unable to complete a purchase while buying the Founder\'s Pack, please close the client and try again.',
+              ua: 'Якщо покупка пакета не завершується, закрийте клієнт гри і спробуйте ще раз.',
+              why: 'Відома проблема з оплатою: перезапуск клієнта її обходить.',
+              who: ['founder'], kind: 'fix',
+            },
+            {
+              en: 'A weekly limit of 20 Morphs per server will be added to the Substance Morph formula for morphing Sealed Wings into Enhance Stones.',
+              ua: 'Рецепт [морфу|Substance Morph] «[Запечатані Крила|Sealed Wings] → [Камені заточки|Enhance Stones]» отримує ліміт: 20 морфів на тиждень на сервер.',
+              why: 'Це був популярний спосіб швидко добути камені заточки. Тепер дохід обмежений: максимум 20 морфів між тижневими ресетами (середа, 07:00 UTC). Камені заточки стануть дефіцитнішими, і їх ціна на ринку, ймовірно, зросте. Ще більше причин точити лише жовте спорядження.',
+              who: ['stones'], kind: 'minus', act: 'Робіть 20 морфів щотижня до ресету й відмічайте їх у «Тижневих лімітах».', counter: 'w-wing-morph',
+            },
+            {
+              en: 'The drop rate for "Raw Leather," obtainable from monsters in the "Chaotic Lower Reshanta," will be increased.',
+              ua: 'Збільшено шанс випадіння «[Сирої шкіри|Raw Leather]» з монстрів у [Хаотичній Нижній Решанті|Chaotic Lower Reshanta].',
+              why: 'Raw Leather — матеріал для ремесла. Фарм у Решанті тепер вигідніший.',
+              who: ['craft'], kind: 'plus',
+            },
+            {
+              en: 'The drop rate for "Raw Leather," obtainable from monsters in "Verteron" and "Altgard," will be increased.',
+              ua: 'Збільшено шанс випадіння Raw Leather з монстрів у [Вертероні|Verteron] та [Альтгарді|Altgard].',
+              why: 'Шкіру тепер легше фармити в рідному регіоні, поруч з Оплотами та Запечатаними підземеллями. Ціна на ринку, найімовірніше, впаде, тож купувати її стане дешевше, а продавати — менш вигідно.',
+              who: ['craft', 'all'], kind: 'plus',
+            },
+            {
+              en: 'New Kina items will be added to the Wind Breeze Merchants. Item: Resurrection Spiritstone (Season 1) – Limited to 10 purchases per server per week. Price: 25,000 Kina. Sales period: after the maintenance on October 6, 2026 (PDT) through before the maintenance on December 15, 2026 (PST).',
+              ua: 'У [Торговців Вітерця|Wind Breeze Merchants] нові товари за кінари: [Камінь Воскресіння (Сезон 1)|Resurrection Spiritstone (Season 1)], 10 штук на тиждень на сервер, 25 000 кінар за штуку. Де: Меню → Магазин → Wind Breeze Merchants → Special. Продаж з техобслуговування 7 жовтня до техобслуговування 16 грудня (за європейським часом).',
+              why: 'Судячи з назви, це камінь для воскресіння на місці смерті без забігу від точки відродження. Найкорисніший у рейдах і на польових босах. «Season 1» означає, що він для першого сезону. Повний тижневий ліміт коштує 250 000 кінар. Хто ходить у рейди, хай купує щотижня, поки продаж не закінчився.',
+              who: ['raid', 'all'], kind: 'plus', act: 'Купуйте до 10 каменів щотижня до 16 грудня.', counter: 'w-res-stone',
+            },
+          ],
+        },
+        {
+          title: 'Виправлення',
+          items: [
+            {
+              en: 'The issue where the maximum number of Map Pins that can be placed on the map is incorrectly displayed will be fixed. You will be able to place up to 30 Map Pins.',
+              ua: 'Виправлено неправильне відображення максимальної кількості міток на карті. Тепер можна поставити до 30 міток.',
+              why: 'Зручно для маршрутів фарму: позначте Оплоти, Запечатані підземелля й точки босів.',
+              who: ['qol', 'all'], kind: 'fix',
+            },
+            {
+              en: '[Asmodian] Challenge Season Missions > The issue where the "Daeva of Glorious Deeds" mission in the Weekly Missions cannot be completed properly will be fixed.',
+              ua: '[Асмодіани] Місії сезону випробувань: тижнева місія «[Даева славних звершень|Daeva of Glorious Deeds]» знову зараховується.',
+              why: 'Асмодіани втрачали нагороду сезону за цю місію. Цього тижня її можна виконати, тож закрийте до ресету.',
+              who: ['asmodians'], kind: 'fix', act: 'Виконайте тижневу місію «Daeva of Glorious Deeds» до середи.',
+            },
+            {
+              en: 'The issue where the "Movement Controls" option appears multiple times under Settings > Key Settings > General will be fixed.',
+              ua: 'Виправлено повтор пункту «Movement Controls» у Налаштування → Клавіші → Загальні.',
+              why: 'Лише інтерфейс налаштувань.',
+              who: ['qol'], kind: 'fix',
+            },
+            {
+              en: 'An issue where certain Emote commands do not function properly in chat will be fixed.',
+              ua: 'Виправлено деякі команди емоцій у чаті, які не спрацьовували.',
+              why: 'Косметика, на силу персонажа не впливає.',
+              who: ['qol'], kind: 'fix',
+            },
+          ],
+        },
+      ],
+    },
+  ],
+
   /* Запаси, що відновлюються з часом (Global). Джерело: Aion 2 Timers (клієнт Global), Metabot.
      every — години між поповненнями; daily — поповнення в щоденний ресет. Час тіків невідомий, тож це оцінка. */
   stocks: [
