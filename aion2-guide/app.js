@@ -509,6 +509,7 @@
     syncLookup(p);
     renderOwnCharacter(p);
     syncPatches(p);
+    renderToday();
     syncAuthUI();
     renderTeam();
   }
@@ -1959,6 +1960,7 @@
   function renderGroups() {
     var box = $('groupsList'), me = Cloud && Cloud.user, now = Date.now();
     box.textContent = '';
+    renderToday();
     groups.forEach(function (g) {
       var starts = Date.parse(g.starts_at), members = g.group_members || [];
       var mine = me && members.some(function (m) { return m.user_id === me.id; });
@@ -2040,6 +2042,7 @@
 
   var bossZone = prefGet('bossZone', G.bossZones[0].id);
   var bossSort = prefGet('bossSort', 'time');
+  var bossAll = prefGet('bossAll', false);           /* показувати всіх босів зони, а не 8 найближчих */
   var bossBells = prefGet('bossBells', []);
   var notifyLead = prefGet('notifyLead', 5);          /* за скільки хвилин попереджати */
   var notifyAtSpawn = prefGet('notifyAtSpawn', true); /* ще й у момент появи / відкриття */
@@ -2148,10 +2151,17 @@
       });
     }
     list.textContent = '';
-    items.forEach(function (it) { list.appendChild(bossRow(it.b, it.st, now)); });
+    var total = items.length, LIMIT = 8;
+    (bossAll ? items : items.slice(0, LIMIT)).forEach(function (it) { list.appendChild(bossRow(it.b, it.st, now)); });
+    if (total > LIMIT) {
+      list.appendChild(h('li', { class: 'boss-more' }, h('button', { class: 'btn btn-ghost btn-sm', type: 'button',
+        text: bossAll ? 'Згорнути до ' + LIMIT : 'Показати всіх босів зони (' + total + ')',
+        onclick: function () { bossAll = !bossAll; prefSet('bossAll', bossAll); renderBosses(true); } })));
+    }
     $('bossTabs').querySelectorAll('.tab').forEach(function (t) { t.setAttribute('aria-selected', t.dataset.zone === bossZone ? 'true' : 'false'); });
     $('bossSortTime').setAttribute('aria-pressed', bossSort === 'time' ? 'true' : 'false');
     $('bossSortMap').setAttribute('aria-pressed', bossSort === 'map' ? 'true' : 'false');
+    renderToday();
   }
 
   function bossRow(b, st, now) {
@@ -2225,6 +2235,7 @@
       cloudKills = m;
       $('bossSync').textContent = 'Спільні відмітки 1 HP: їх бачать і змінюють усі, хто увійшов через Discord. Оновлюються автоматично.';
       renderBosses(true);
+      renderToday();
     }).catch(function (err) {
       $('bossSync').textContent = 'Не вдалося завантажити спільні відмітки (' + err.message + '). Чи виконано оновлений schema.sql?';
     });
@@ -2410,7 +2421,7 @@
     syncBossSyncNote();
     renderTimerCards();
     renderBosses(true);
-    setInterval(function () { renderTimerCards(); renderBosses(false); syncStocks(active()); checkNotify(); }, 15000);
+    setInterval(function () { renderTimerCards(); renderBosses(false); syncStocks(active()); renderToday(); checkNotify(); }, 15000);
   }
 
   /* ---------- Глосарій і перемикач англійських назв ---------- */
@@ -2430,6 +2441,16 @@
       });
       box.appendChild(h('section', { class: 'gl-group' }, h('h3', { text: g.group }), dl));
     });
+    var glOpen = window.innerWidth >= 900, terms = box.querySelectorAll('.gl-row').length;
+    function syncGl() {
+      var q = $('glossarySearch').value.trim();
+      box.hidden = !glOpen && !q;
+      $('glossaryToggle').hidden = !!q;
+      $('glossaryToggle').textContent = glOpen ? 'Згорнути глосарій' : 'Показати весь глосарій (' + terms + ' ' + plural(terms, ['термін', 'терміни', 'термінів']) + ')';
+    }
+    $('glossaryToggle').addEventListener('click', function () { glOpen = !glOpen; syncGl(); });
+    $('glossarySearch').addEventListener('input', syncGl);
+    syncGl();
     $('glossarySearch').addEventListener('input', function (e) {
       var q = e.target.value.trim().toLowerCase(), shown = 0;
       box.querySelectorAll('.gl-row').forEach(function (r) {
@@ -2515,14 +2536,14 @@
   }
 
   function patchCard(pt, open) {
+    var wide = window.innerWidth >= 900; // на телефоні пояснення згорнуті: пункт займає кілька рядків, а не екран
     var body = h('div', { class: 'patch-body' });
     body.appendChild(h('p', { class: 'muted small' }, pt.maint ? pt.maint + ' ' : '', h('a', { href: NEWS_URL.update + pt.id, target: '_blank', rel: 'noopener', text: 'Оригінал на сайті Aion 2 ↗' }), ' · ', shareBtn(pt.id, true)));
     var tl = h('ul', { class: 'patch-tldr' });
     pt.tldr.forEach(function (t) { tl.appendChild(h('li', { text: t })); });
     body.appendChild(h('h4', { text: 'Коротко' }));
     body.appendChild(tl);
-    pt.groups.forEach(function (g) {
-      body.appendChild(h('h4', { text: g.title }));
+    pt.groups.forEach(function (g, gi) {
       var ul = h('ul', { class: 'patch-items' });
       g.items.forEach(function (it) {
         var tags = h('div', { class: 'pi-tags' }, h('span', { class: 'pi-kind k-' + it.kind, text: KIND_UA[it.kind] || it.kind }));
@@ -2530,12 +2551,15 @@
         tags.appendChild(h('span', { class: 'pi-mine', 'data-mine': '' }));
         it.el = h('li', { class: 'pi k-' + it.kind }, tags,
           h('p', { class: 'pi-ua' }, rich(it.ua)),
-          h('p', { class: 'pi-why' }, h('b', { text: 'Що це означає: ' }), it.why),
           it.act ? h('p', { class: 'pi-act' }, h('b', { text: 'Що зробити: ' }), it.act) : null,
-          h('details', { class: 'pi-en' }, h('summary', { text: 'Оригінал англійською' }), h('p', { lang: 'en', text: it.en })));
+          h('details', { class: 'pi-more', open: wide ? '' : null }, h('summary', { text: 'Що це означає' }),
+            h('p', { class: 'pi-why', text: it.why }),
+            h('p', { class: 'pi-en' }, h('span', { text: 'Оригінал: ' }), h('span', { lang: 'en', text: it.en }))));
         ul.appendChild(it.el);
       });
-      body.appendChild(ul);
+      // на телефоні розгорнута лише перша група (зазвичай «Покращення»), решта — одним рядком
+      body.appendChild(h('details', { class: 'patch-group', open: wide || gi === 0 ? '' : null },
+        h('summary', null, h('h4', { text: g.title + ' · ' + g.items.length })), ul));
     });
     var d = pt.card = h('details', { class: 'panel patch', id: 'patch-' + pt.id, open: open ? '' : null },
       h('summary', null, h('span', { class: 'h-card', text: pt.title }), h('span', { class: 'muted small', text: ' · ' + fmtDay(pt.date) })), body);
@@ -2634,6 +2658,7 @@
   /* Відкрити пачноут з посилання: перекладений — розгорнути картку, інакше показати англійський текст */
   function openPatch(id) {
     var pt = (G.patches || []).filter(function (x) { return x.id === id; })[0];
+    if (pt && G.patches[0] === pt) prefSet('seenPatch', id);
     if (pt) {
       (G.patches || []).forEach(function (x) { if (x.card) x.card.open = x === pt; });
       focusPanel(id);
@@ -2699,6 +2724,169 @@
     });
   }
 
+  /* ---------- «Сьогодні»: головне з усіх розділів на одному екрані ---------- */
+  function plural(n, f) {
+    var a = Math.abs(n) % 100, b = a % 10;
+    return f[a > 10 && a < 20 ? 2 : b === 1 ? 0 : b >= 2 && b <= 4 ? 1 : 2];
+  }
+
+  function todayCard(href, label, value, sub, cls, extra) {
+    return h('a', { class: 'tcard today-card' + (cls ? ' ' + cls : '') + (extra || String(sub || '').length > 60 ? ' span2' : ''), href: href },
+      h('span', { class: 'tlabel', text: label }), h('b', { class: 'tvalue', text: value }), sub ? h('span', { class: 'tsub', text: sub }) : null, extra || null);
+  }
+
+  function renderToday() {
+    var box = $('todayBox');
+    if (!box) return;
+    var p = active(), now = Date.now();
+    box.textContent = '';
+    $('todayClock').textContent = new Date(now).toLocaleDateString('uk-UA', { weekday: 'long', day: 'numeric', month: 'long' }) + ' · ' + clock(now);
+
+    // Розлом
+    var r = riftInfo(now);
+    box.appendChild(todayCard('#timers', 'Розлом', r.open ? 'відкритий ще ' + timeLeft(r.closes - now) : 'через ' + timeLeft(r.next - now),
+      r.open ? 'портал закриється о ' + clock(r.closes) : 'о ' + clock(r.next), r.open ? 'open' : ''));
+
+    // Найближчі боси: спершу з дзвіночком
+    var bs = G.bosses.map(function (b) { return { b: b, st: bossState(b, now), bell: bossBells.indexOf(b.id) >= 0 }; })
+      .filter(function (x) { return x.st.s === 'dead' || x.st.s === 'window'; })
+      .sort(function (x, y) { return (y.bell - x.bell) || x.st.order - y.st.order || x.st.at - y.st.at; }).slice(0, 3);
+    var bl = null;
+    if (bs.length) {
+      bl = h('ul', { class: 'today-list' });
+      bs.forEach(function (x) {
+        bl.appendChild(h('li', { class: x.st.s === 'window' ? 'hot' : null }, h('span', { text: (x.bell ? '🔔 ' : '') + x.b.name }),
+          h('b', { text: x.st.s === 'window' ? 'може з’явитись' : 'через ' + timeLeft(x.st.at - now) })));
+      });
+    }
+    box.appendChild(todayCard('#timers', 'Польові боси', bs.length ? '' : 'немає відміток', bs.length ? '' : 'Натисніть «Вбито» в таймерах, і тут з’явиться відлік.', bs.length && bs[0].st.s === 'window' ? 'open' : '', bl));
+
+    // Ресети
+    var day = nextReset('day', now), week = nextReset('week', now);
+    box.appendChild(todayCard('#timers', 'Ресет', 'щоденний через ' + timeLeft(day - now), 'тижневий через ' + timeLeft(week - now) + ' (' + new Date(week).toLocaleDateString('uk-UA', { weekday: 'short' }) + ' о ' + clock(week) + ')'));
+
+    // Запаси
+    var sl = h('ul', { class: 'today-list' }), anyStock = false, anyFull = false;
+    G.stocks.map(function (st) { return { st: st, s: stockState(st, stockRec(p, st.id), now) }; }).filter(function (x) { return x.s; })
+      .sort(function (a, b) { return a.s.fullAt - b.s.fullAt; }).slice(0, 3).forEach(function (x) {
+        anyStock = true;
+        if (x.s.full) anyFull = true;
+        sl.appendChild(h('li', { class: x.s.full ? 'hot' : null }, h('span', { text: plain(x.st.name) + ' ' + x.s.v + '/' + x.s.cap }),
+          h('b', { text: x.s.full ? 'повний' : 'повний через ' + timeLeft(x.s.fullAt - now) })));
+      });
+    box.appendChild(todayCard('#stocksPanel', 'Запаси', anyStock ? '' : 'не введено', anyStock ? '' : 'Введіть енергію Odyle тощо, і сайт підкаже, коли витратити.', anyFull ? 'warn' : '', anyStock ? sl : null));
+
+    // Тиждень
+    var used = weeklyUsedFromProfile(p);
+    var lim = (G.weeklyLimits || []).map(function (w) { var c = COUNTER_BY_ID[w.id]; return plain(w.name).replace(/\s*\(.*?\)/g, '') + ' ' + counterValue(p, c) + '/' + c.max; });
+    box.appendChild(todayCard('#weeklyPanel', 'Тиждень', 'входи ' + used + ' з ' + WEEKLY_TOTAL, lim.join(' · ')));
+
+    // Групи
+    if (Cloud && Cloud.user) {
+      var me = Cloud.user.id, upcoming = groups.filter(function (g) { return Date.parse(g.starts_at) > now - 1800000; });
+      var mine = upcoming.filter(function (g) { return (g.group_members || []).some(function (m) { return m.user_id === me; }); })
+        .sort(function (a, b) { return Date.parse(a.starts_at) - Date.parse(b.starts_at); })[0];
+      box.appendChild(mine
+        ? todayCard('#groups', 'Моя група', mine.activity, Date.parse(mine.starts_at) > now ? 'старт через ' + timeLeft(Date.parse(mine.starts_at) - now) : 'вже почалась', 'open')
+        : todayCard('#groups', 'Групи', upcoming.length ? upcoming.length + ' ' + plural(upcoming.length, ['збір', 'збори', 'зборів']) : 'зборів немає', upcoming.length ? 'Записатися можна в розділі «Групи».' : 'Створіть збір: усі в 1 HP побачать.'));
+    } else {
+      box.appendChild(todayCard('#groups', 'Групи', 'після входу', 'Увійдіть через Discord, щоб бачити збори 1 HP.'));
+    }
+
+    // Персонаж і поріг
+    if (p.cp > 0) {
+      var next = G.thresholds.filter(function (t) { return t.cp > p.cp; })[0];
+      box.appendChild(todayCard(p.character ? '#character' : '#thresholds', p.character ? p.character.n : 'Бойова міць', 'БМ ' + fmtNum(p.cp),
+        next ? 'до порогу ' + next.cp + ' лишилось ' + (next.cp - p.cp) + ': ' + plain(next.text) : 'усі пороги гайда пройдено'));
+    }
+
+    // Пачноут
+    var pt = (G.patches || [])[0];
+    if (pt) {
+      var fresh = prefGet('seenPatch', '') !== pt.id;
+      var pc = todayCard('#patch=' + pt.id, 'Пачноут', pt.title, (fresh ? 'Новий! ' : '') + pt.tldr[0], fresh ? 'warn' : '');
+      pc.addEventListener('click', function () { prefSet('seenPatch', pt.id); });
+      box.appendChild(pc);
+    }
+    renderOnboard(p);
+  }
+
+  /* Перші кроки: зникають, коли все зроблено або їх сховали */
+  function renderOnboard(p) {
+    var box = $('onboard');
+    box.textContent = '';
+    if (prefGet('onboardHidden', false)) return;
+    var cloudOn = !!(Cloud && Cloud.enabled);
+    var steps = [
+      cloudOn ? { done: !!(Cloud && Cloud.user), text: 'Увійдіть через Discord: прогрес, групи й відмітки босів спільні для 1 HP.', btn: 'Увійти', on: function () { $('btnLogin').click(); } } : null,
+      { done: !!p.character || p.cp > 0, text: cloudOn ? 'Знайдіть свого персонажа за ніком: підтягнемо БМ, спорядження й дошки.' : 'Вкажіть свою БМ у «Мій прогрес».', href: '#progress' },
+      { done: notifyPermission() === 'granted', text: 'Увімкніть сповіщення про босів, Розлом і запаси.', btn: 'Увімкнути', on: function () { $('bossNotify').click(); } },
+      { done: bossBells.length > 0, text: 'Позначте дзвіночком босів, яких фармите.', href: '#timers' },
+    ].filter(Boolean);
+    var done = steps.filter(function (s) { return s.done; }).length;
+    if (done === steps.length) return;
+    var ol = h('ol', { class: 'onboard-list' });
+    steps.forEach(function (s) {
+      ol.appendChild(h('li', { class: s.done ? 'done' : null }, h('span', { text: s.text }),
+        s.done ? h('b', { class: 'ok-mark', text: '✓' }) : s.btn ? h('button', { class: 'btn btn-sm', type: 'button', text: s.btn, onclick: s.on }) : h('a', { class: 'btn btn-sm', href: s.href, text: 'Перейти' })));
+    });
+    box.appendChild(h('div', { class: 'panel onboard' },
+      h('div', { class: 'onboard-head' }, h('h3', { class: 'h-card' }, 'Перші кроки ', h('span', { class: 'onboard-count', text: done + ' / ' + steps.length })),
+        h('button', { class: 'linkbtn', type: 'button', text: 'Сховати', onclick: function () { prefSet('onboardHidden', true); renderOnboard(p); } })),
+      ol));
+  }
+
+  /* ---------- Навігація: активний розділ, нижня панель, «Ще», «Нагору», режим для своїх ---------- */
+  function initNav() {
+    document.querySelectorAll('details[data-wide-open]').forEach(function (d) { d.open = window.innerWidth >= 900; });
+    var links = Array.prototype.slice.call(document.querySelectorAll('.nav a'));
+    var ids = links.map(function (a) { return a.getAttribute('href').slice(1); });
+    var tabs = Array.prototype.slice.call(document.querySelectorAll('#tabbar a'));
+    var tabIds = tabs.map(function (a) { return a.dataset.sec; });
+    var more = $('tabMore'), sheet = $('moreSheet');
+
+    links.forEach(function (a) {
+      $('sheetList').appendChild(h('li', null, h('a', { href: a.getAttribute('href'), text: a.textContent, onclick: function () { setSheet(false); } })));
+    });
+    function setSheet(open) {
+      sheet.hidden = !open;
+      more.setAttribute('aria-expanded', open ? 'true' : 'false');
+    }
+    more.addEventListener('click', function () { setSheet(sheet.hidden); });
+    sheet.addEventListener('click', function (e) { if (e.target === sheet) setSheet(false); });
+    document.addEventListener('keydown', function (e) { if (e.key === 'Escape' && !sheet.hidden) setSheet(false); });
+
+    function setActive(id) {
+      links.forEach(function (a) {
+        var on = a.getAttribute('href') === '#' + id;
+        if (on) a.setAttribute('aria-current', 'location'); else a.removeAttribute('aria-current');
+        if (on && a.parentNode.scrollWidth > a.parentNode.clientWidth) a.parentNode.scrollLeft = a.offsetLeft - 40;
+      });
+      tabs.forEach(function (a) { if (a.dataset.sec === id) a.setAttribute('aria-current', 'location'); else a.removeAttribute('aria-current'); });
+      more.classList.toggle('active', !!id && tabIds.indexOf(id) < 0);
+      $('sheetList').querySelectorAll('a').forEach(function (a) { a.classList.toggle('active', a.getAttribute('href') === '#' + id); });
+    }
+    if ('IntersectionObserver' in window) {
+      var visible = {};
+      var io = new IntersectionObserver(function (entries) {
+        entries.forEach(function (e) { visible[e.target.id] = e.isIntersecting; });
+        setActive(ids.filter(function (id) { return visible[id]; })[0] || '');
+      }, { rootMargin: '-40% 0px -55% 0px' });
+      ids.forEach(function (id) { var el = $(id); if (el) io.observe(el); });
+    }
+
+    var top = $('toTop');
+    var onScroll = function () { top.hidden = window.scrollY < window.innerHeight * 1.5; };
+    window.addEventListener('scroll', onScroll, { passive: true });
+    onScroll();
+    top.addEventListener('click', function () { window.scrollTo({ top: 0, behavior: 'smooth' }); });
+
+    // Хто вже бував на сайті: правила згорнуті, обкладинка компактна
+    var visits = toInt(prefGet('visits', 0));
+    if (visits > 0) { $('rulesBox').open = false; document.body.classList.add('returning'); }
+    prefSet('visits', visits + 1);
+  }
+
   /* ---------- Старт ---------- */
   buildStatic();
   renderResetInfo();
@@ -2712,6 +2900,7 @@
   initGlossary();
   initPatches();
   initPatchOpen();
+  initNav();
   initMap();
   syncUI();
   handleHash();
