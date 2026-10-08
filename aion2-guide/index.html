@@ -393,6 +393,16 @@
         <p class="muted small">Параметри додаються в кінець команди, наприклад <code>… aion2-netcheck.ps1 -LoadTest -Seconds 120</code>.</p>
       </details>
     </div>
+    <div class="panel netcheck">
+      <h3 class="h-card">Оверлей 1 HP для Windows</h3>
+      <p>DPS-метр поверх гри: урон групи наживо, HP боса, розбір по скілах, історія боїв, таймери польових босів. Унизу — <b>пінг і втрати пакетів</b> саме з’єднання гри, Розлом і ресет. Інтерфейс українською.</p>
+      <ol class="netcheck-steps">
+        <li>Встановіть <a href="https://npcap.com/#download" target="_blank" rel="noopener">Npcap</a> з налаштуваннями за замовчуванням.</li>
+        <li>Завантажте <a href="https://github.com/batareuko/sula/releases/latest" target="_blank" rel="noopener">останній реліз</a> (файл <code>1HP-Overlay-v…-win-x64.zip</code>), розпакуйте й запустіть <code>1HP-Overlay.exe</code>.</li>
+        <li><kbd>Ctrl</kbd>+<kbd>Shift</kbd>+<kbd>D</kbd> — показати/сховати, <kbd>Ctrl</kbd>+<kbd>Shift</kbd>+<kbd>L</kbd> — кліки крізь оверлей.</li>
+      </ol>
+      <p class="muted small">Оверлей лише слухає ваше з’єднання (пам’ять гри не читає, у гру нічого не надсилає), але NCSOFT не схвалює сторонні програми — ризик для акаунта ваш. Основа — відкритий <a href="https://github.com/cyberbadger6969/aion2-dps-meter" target="_blank" rel="noopener">aion2-dps-meter</a> (GPL-3.0), <a href="https://github.com/batareuko/sula/tree/main/overlay" target="_blank" rel="noopener">наш код</a>.</p>
+    </div>
   </section>
 
   <section class="wrap" id="glossary" aria-labelledby="glossaryTitle">
