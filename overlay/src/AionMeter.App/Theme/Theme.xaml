@@ -47,7 +47,7 @@
 
     <FontFamily x:Key="NumberFont">Bahnschrift</FontFamily>
     <FontFamily x:Key="UiFont">Segoe UI</FontFamily>
-    <FontFamily x:Key="TitleFont">Palatino Linotype, Constantia, Georgia</FontFamily>
+    <FontFamily x:Key="TitleFont">Segoe UI Variable Display, Segoe UI Semibold, Segoe UI</FontFamily>
     <!-- 1 HP modern headings (Windows 11's variable Segoe; Segoe UI on Windows 10) -->
     <FontFamily x:Key="HeadFont">Segoe UI Variable Display, Segoe UI</FontFamily>
     <FontFamily x:Key="IconFont">Segoe Fluent Icons, Segoe MDL2 Assets</FontFamily>
