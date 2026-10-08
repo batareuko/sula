@@ -2900,6 +2900,7 @@
   initGlossary();
   initPatches();
   initPatchOpen();
+  $('netcheckCopy').addEventListener('click', function () { copyText($('netcheckCmd').textContent, 'Команду скопійовано: вставте її в PowerShell'); });
   initNav();
   initMap();
   syncUI();
