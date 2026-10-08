@@ -1,0 +1,66 @@
+name: Build 1 HP Overlay
+
+# Збірка оверлея для Windows: тести, self-contained публікація, zip.
+# Коли версія в AionMeter.App.csproj нова (тегу vX.Y.Z ще немає), створюється реліз — з нього оновлюється програма.
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'overlay/**'
+      - '.github/workflows/overlay.yml'
+  pull_request:
+    paths:
+      - 'overlay/**'
+      - '.github/workflows/overlay.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: overlay-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build:
+    runs-on: windows-latest
+    defaults:
+      run:
+        shell: pwsh
+        working-directory: overlay
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '10.0.x'
+
+      - name: Test
+        run: dotnet test tests/AionMeter.Tests -c Release
+
+      - name: Publish
+        id: publish
+        run: |
+          $version = ([xml](Get-Content src/AionMeter.App/AionMeter.App.csproj)).Project.PropertyGroup.Version | Where-Object { $_ } | Select-Object -First 1
+          $name = "1HP-Overlay-v$version-win-x64"
+          dotnet publish src/AionMeter.App -c Release -r win-x64 --self-contained -p:DebugType=None -o "dist/$name"
+          Copy-Item LICENSE, README.md, README.upstream.md "dist/$name/"
+          Compress-Archive -Path "dist/$name/*" -DestinationPath "dist/$name.zip"
+          "version=$version" >> $env:GITHUB_OUTPUT
+          "name=$name" >> $env:GITHUB_OUTPUT
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: ${{ steps.publish.outputs.name }}
+          path: overlay/dist/${{ steps.publish.outputs.name }}.zip
+
+      - name: Release
+        if: github.event_name != 'pull_request' && github.ref == 'refs/heads/main'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          $PSNativeCommandUseErrorActionPreference = $false
+          $tag = "v${{ steps.publish.outputs.version }}"
+          gh release view $tag 2>$null
+          if ($LASTEXITCODE -eq 0) { Write-Host "Release $tag already exists: bump <Version> to publish a new one."; exit 0 }
+          gh release create $tag "dist/${{ steps.publish.outputs.name }}.zip" --title "1 HP Overlay $tag" --notes "Оверлей і DPS-метр 1 HP для Aion 2 (Windows). Потрібен Npcap: https://npcap.com/#download. Розпакуйте zip і запустіть 1HP-Overlay.exe. Опис: https://github.com/batareuko/sula/tree/main/overlay"
