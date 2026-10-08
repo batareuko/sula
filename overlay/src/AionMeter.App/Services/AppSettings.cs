@@ -85,6 +85,11 @@ public sealed class AppSettings
     public string HotkeyClickThrough { get; set; } = "Ctrl+Shift+L";
     public string HotkeyTimers { get; set; } = "Ctrl+Shift+T";
 
+    // 1 HP: link to guide.sulaslova.com (see OneHpCloud)
+    public string OneHpKey { get; set; } = "";
+    public bool OneHpUpload { get; set; } = true;
+    public bool OneHpGear { get; set; } = true;
+
     /// <summary>Bumped when the overlay layout changes enough that saved sizes no longer fit.</summary>
     public int LayoutVersion { get; set; } // 0 when missing from an older settings file; new installs get it in Load()
     private const int CurrentLayout = 4;

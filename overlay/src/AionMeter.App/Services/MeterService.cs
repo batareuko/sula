@@ -29,6 +29,7 @@ public sealed class MeterService : IDisposable
         Updates = new Updater(settings);
         // 1 HP: ping / packet-loss strip; reads the game stream counters of whatever capture is running
         Net = new NetMonitor(() => _capture is LiveCapture live ? live.Pipeline.Health : null);
+        Cloud = new OneHpCloud(settings);
         Tracker.EncounterFinished += OnEncounterFinished;
         // A recording's or the demo's bosses must not move the live respawn timers.
         Tracker.BossNoticed += n =>
@@ -73,6 +74,8 @@ public sealed class MeterService : IDisposable
     public Updater Updates { get; }
     /// <summary>1 HP: live ping to the game server and router, packet loss of the game stream.</summary>
     public NetMonitor Net { get; }
+    /// <summary>1 HP: party gear lookups and the guild DPS rating (guide.sulaslova.com).</summary>
+    public OneHpCloud Cloud { get; }
     public Func<GameData, IEventSource>? CaptureFactory { get; }
 
     public CaptureStatus CaptureStatus =>
@@ -258,6 +261,8 @@ public sealed class MeterService : IDisposable
 
     private void OnEncounterFinished(FightRecord record)
     {
+        // 1 HP: your own result of a boss kill goes to the guild rating (only with a key from the site)
+        if (!_replaying && !DemoRunning) _ = Cloud.UploadAsync(record);
         if (!ShouldSave(record.Summary)) return;
         if (_exiting) Save(); // the process is about to end: a worker thread would not get to it
         else ThreadPool.QueueUserWorkItem(_ => Save());
@@ -291,6 +296,7 @@ public sealed class MeterService : IDisposable
         }
         Updates.Dispose();
         Net.Dispose();
+        Cloud.Dispose();
     }
 
     /// <summary>Placeholder source that only reports why capture could not start.</summary>

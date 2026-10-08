@@ -64,6 +64,9 @@ public partial class SettingsWindow : Window
         LanguageBox.SelectedIndex = Math.Max(0, Array.IndexOf(UiText.Languages, UiText.Normalize(s.Language)));
         Icons.IsChecked = s.DownloadIcons;
         CheckUpdates.IsChecked = s.CheckUpdates;
+        OneHpKey.Text = s.OneHpKey;
+        OneHpUpload.IsChecked = s.OneHpUpload;
+        OneHpGear.IsChecked = s.OneHpGear;
         AutoInstallUpdates.IsChecked = s.AutoInstallUpdates;
         AutoInstallUpdates.IsEnabled = Updater.IsInstalled; // a portable copy cannot replace itself
         VersionText.Text = string.Format(Updater.IsInstalled ? T.VersionInstalled : T.VersionPortable, _meter.Updates.Current.ToString(3));
@@ -104,6 +107,9 @@ public partial class SettingsWindow : Window
         var language = (LanguageBox.SelectedItem as ComboBoxItem)?.Tag as string ?? "uk";
         s.DownloadIcons = Icons.IsChecked == true;
         s.CheckUpdates = CheckUpdates.IsChecked == true;
+        s.OneHpKey = OneHpKey.Text.Trim();
+        s.OneHpUpload = OneHpUpload.IsChecked == true;
+        s.OneHpGear = OneHpGear.IsChecked == true;
         s.AutoInstallUpdates = AutoInstallUpdates.IsChecked == true;
         s.HotkeyToggleOverlay = HkToggle.Text.Trim();
         s.HotkeyReset = HkReset.Text.Trim();
@@ -129,6 +135,16 @@ public partial class SettingsWindow : Window
     }
 
     /// <summary>Asks GitHub right away; a newer version also opens the update window.</summary>
+    private async void OneHpCheck_Click(object sender, RoutedEventArgs e)
+    {
+        OneHpCheckButton.IsEnabled = false;
+        OneHpKeyState.Visibility = Visibility.Visible;
+        OneHpKeyState.Text = T.UpdateChecking;
+        var ok = await _meter.Cloud.CheckKeyAsync(OneHpKey.Text);
+        OneHpKeyState.Text = ok switch { true => T.OneHpKeyOk, false => T.OneHpKeyBad, null => T.OneHpKeyOffline };
+        OneHpCheckButton.IsEnabled = true;
+    }
+
     private async void CheckNow_Click(object sender, RoutedEventArgs e)
     {
         CheckNowButton.IsEnabled = false;

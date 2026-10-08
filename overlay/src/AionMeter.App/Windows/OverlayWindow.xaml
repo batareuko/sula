@@ -222,8 +222,13 @@
                     <c:ClassGlyph Grid.Column="1" Class="{Binding Class}" OnBar="True" Width="{DynamicResource RowGlyphSize}"
                                   Height="{DynamicResource RowGlyphSize}" HorizontalAlignment="Left" />
 
-                    <TextBlock x:Name="NameText" Grid.Column="2" Text="{Binding Name}" FontSize="{DynamicResource RowNameFont}" FontWeight="Bold"
-                               Foreground="White" TextTrimming="CharacterEllipsis" VerticalAlignment="Center" Margin="4,0,8,1" />
+                    <DockPanel Grid.Column="2" LastChildFill="True" Margin="4,0,8,1">
+                        <!-- 1 HP: item level of the player (site lookup) -->
+                        <TextBlock DockPanel.Dock="Right" Text="{Binding Gear}" FontFamily="{StaticResource NumberFont}" FontSize="11"
+                                   Foreground="#C9D2E0" Opacity="0.8" VerticalAlignment="Center" Margin="6,1,0,0" />
+                        <TextBlock x:Name="NameText" Text="{Binding Name}" FontSize="{DynamicResource RowNameFont}" FontWeight="Bold"
+                                   Foreground="White" TextTrimming="CharacterEllipsis" VerticalAlignment="Center" />
+                    </DockPanel>
 
                     <TextBlock Grid.Column="3" Text="{Binding Dps}" Style="{StaticResource RowNumber}" />
                     <TextBlock Grid.Column="4" Text="{Binding Damage}" Style="{StaticResource RowNumber}" />
@@ -379,6 +384,17 @@
                                 <TextBlock Text="{Binding SelfPlace}" FontFamily="{StaticResource NumberFont}" FontSize="11.5" FontWeight="Bold"
                                            Foreground="{Binding SelfPlaceForeground}" />
                             </StackPanel>
+                        </Border>
+                        <!-- 1 HP: your record on this boss, your place in the guild rating -->
+                        <Border Margin="6,0,0,0" Padding="6,1,7,1" CornerRadius="5" VerticalAlignment="Center" Background="#2A3DD68C"
+                                BorderBrush="#803DD68C" BorderThickness="1" ToolTip="{Binding RecordTip}"
+                                Visibility="{Binding Record, Converter={StaticResource VisibleIf}}">
+                            <TextBlock Text="{Binding Record}" FontSize="11.5" FontWeight="Bold" Foreground="#BFF5D6" />
+                        </Border>
+                        <Border Margin="6,0,0,0" Padding="6,1,7,1" CornerRadius="5" VerticalAlignment="Center" Background="#33E9A93C"
+                                BorderBrush="{StaticResource GoldDim}" BorderThickness="1" ToolTip="{Binding GuildTip}"
+                                Visibility="{Binding Guild, Converter={StaticResource VisibleIf}}">
+                            <TextBlock Text="{Binding Guild}" FontSize="11.5" FontWeight="Bold" Foreground="#FFE3A6" />
                         </Border>
                     </StackPanel>
                 </StackPanel>

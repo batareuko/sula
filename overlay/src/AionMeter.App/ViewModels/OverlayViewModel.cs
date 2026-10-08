@@ -29,6 +29,9 @@ public sealed class RowViewModel : ObservableObject
     /// <summary>0..1 width of the coloured bar.</summary>
     public double Fill { get => _fill; set => Set(ref _fill, value); }
     public string Tooltip { get => _tooltip; set => Set(ref _tooltip, value); }
+    private string _gear = "";
+    /// <summary>1 HP: item level from the site lookup ("2155"), empty while unknown.</summary>
+    public string Gear { get => _gear; set => Set(ref _gear, value); }
 
     public bool IsSelf
     {
@@ -239,6 +242,13 @@ public sealed class OverlayViewModel : ObservableObject
 
     /// <summary>"3 / 19" — the local player's place in the current ranking; empty when we are not in it.</summary>
     public string SelfPlace { get => _selfPlace; set => Set(ref _selfPlace, value); }
+
+    // 1 HP badges next to your place: personal record on this boss, place in the guild rating
+    private string _record = "", _recordTip = "", _guild = "", _guildTip = "";
+    public string Record { get => _record; set => Set(ref _record, value); }
+    public string RecordTip { get => _recordTip; set => Set(ref _recordTip, value); }
+    public string Guild { get => _guild; set => Set(ref _guild, value); }
+    public string GuildTip { get => _guildTip; set => Set(ref _guildTip, value); }
     public Brush SelfPlaceBrush { get => _selfPlaceBrush; set => Set(ref _selfPlaceBrush, value); }
     public Brush SelfPlaceForeground { get => _selfPlaceForeground; set => Set(ref _selfPlaceForeground, value); }
 

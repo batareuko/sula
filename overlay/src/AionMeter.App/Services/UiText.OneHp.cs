@@ -23,6 +23,25 @@ public sealed partial class UiText
     public string TraySite { get; init; } = "1 HP guide (site)";
     public string TrayNetCheck { get; init; } = "Network check…";
 
+    public string RecordBest { get; init; } = "best {0}";
+    public string RecordTip { get; init; } = "Your best DPS on this boss: {0}/s ({1}). This fight: {2}/s, {3}.";
+    public string RecordNew { get; init; } = "new record!";
+    public string GuildBadge { get; init; } = "1 HP {0}/{1}";
+    public string GuildTip { get; init; } = "Your place among 1 HP members on this boss (each member's best kill): {0} of {1}.";
+    public string GuildTop { get; init; } = " Top {0}%.";
+    public string GuildPersonalBest { get; init; } = " New personal best on this boss!";
+    public string GuildError { get; init; } = "Not sent to the 1 HP rating: {0}";
+    public string GearTip { get; init; } = "Item level {0} · combat power {1}";
+    public string SecOneHp { get; init; } = "1 HP";
+    public string OneHpKeyLabel { get; init; } = "Overlay key";
+    public string OneHpKeyHint { get; init; } = "Create it on guide.sulaslova.com → DPS rating and paste it here. Only your own boss kills are sent: character, class, DPS, damage, fight length and your place in the party.";
+    public string OneHpUpload { get; init; } = "Send my boss kills to the 1 HP DPS rating";
+    public string OneHpGear { get; init; } = "Show players' item level (looked up on the 1 HP site by name)";
+    public string OneHpCheck { get; init; } = "Check key";
+    public string OneHpKeyOk { get; init; } = "The key works.";
+    public string OneHpKeyBad { get; init; } = "The site does not know this key: create a new one.";
+    public string OneHpKeyOffline { get; init; } = "Could not reach the site.";
+
     /// <summary>"2:05" for an hour and more, "17 min" below.</summary>
     public string Countdown(TimeSpan d) =>
         d.TotalHours >= 1 ? $"{(int)d.TotalHours}:{d.Minutes:00}" : $"{Math.Max(1, (int)Math.Ceiling(d.TotalMinutes))} {MinutesShort}";
