@@ -234,6 +234,10 @@ public sealed class OverlayViewModel : ObservableObject
     private string _partyLabel = "";
     /// <summary>1 HP: the toolbar chip for "only my party" / "everyone around".</summary>
     public string PartyLabel { get => _partyLabel; set => Set(ref _partyLabel, value); }
+
+    private string _partyTip = "";
+    /// <summary>1 HP: what the party filter is doing (who counts as your party, or why it is not filtering).</summary>
+    public string PartyTip { get => _partyTip; set => Set(ref _partyTip, value); }
     /// <summary>"Krao Cave · Kill"</summary>
     public string Detail { get => _detail; set => Set(ref _detail, value); }
     /// <summary>Biggest single hit of the fight, "1,052,914".</summary>

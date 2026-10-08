@@ -677,6 +677,8 @@ public sealed class CombatTracker
     private void OnPartyRoster(PartyRosterEvent roster)
     {
         var names = roster.Names.Select(n => n.Trim()).Where(n => n.Length > 0).ToList();
+        // Your own roster always lists you: one without you is another party's (or bytes that only look like a roster).
+        if (_entities.Self?.Name is { Length: > 0 } me && !names.Contains(me.Trim(), StringComparer.OrdinalIgnoreCase)) return;
         if (roster.Complete) _party.Clear();
         foreach (var name in names) _party.Add(name);
         if (roster.Complete && _party.Count <= 1) _party.Clear();
@@ -693,11 +695,22 @@ public sealed class CombatTracker
     private Func<Combatant, bool>? PartyFilter(Encounter enc)
     {
         if (!Options.PartyOnly || enc.InDungeon || _entities.SelfId is null) return null;
-        if (_party.Count == 0) return c => c.IsSelf || c.ActorId == Combatant.UnknownSummonsId;
-        var unmatched = _party.Count(name =>
-            !enc.Combatants.Values.Any(c => IsNamed(c) && string.Equals(c.Name.Trim(), name, StringComparison.OrdinalIgnoreCase)));
-        return c => c.IsSelf || c.ActorId == Combatant.UnknownSummonsId ||
-                    (IsNamed(c) ? _party.Contains(c.Name.Trim()) : unmatched > 0);
+        // Strictly by name: a player the meter has no name for yet, and pets nobody could be tied to, may be anyone's.
+        return c => c.IsSelf || (IsNamed(c) && _party.Contains(c.Name.Trim()));
+    }
+
+    /// <summary>1 HP: what the party filter is doing right now, for the overlay's PARTY chip.</summary>
+    public PartyFilterStatus PartyStatus()
+    {
+        lock (_gate)
+        {
+            var state = !Options.PartyOnly ? PartyFilterState.Off
+                : _current is { IsActive: true, InDungeon: true } || GameData.IsDungeonMap(_entities.MapId) ? PartyFilterState.Instance
+                : _entities.SelfId is null ? PartyFilterState.SelfUnknown
+                : _party.Count == 0 ? PartyFilterState.Solo
+                : PartyFilterState.Party;
+            return new PartyFilterStatus(state, _party.OrderBy(n => n).ToList());
+        }
     }
 
     private EncounterSnapshot BuildSnapshot(Encounter enc, long nowMs)

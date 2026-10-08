@@ -204,6 +204,17 @@ public partial class OverlayWindow : Window
         var r = _meter.Net.Report();
         string Pct(double v) => v.ToString("0.#", c);
 
+        // 1 HP: the PARTY chip says who counts as your party, or why nothing is filtered
+        var party = _meter.Tracker.PartyStatus();
+        _vm.PartyTip = t.TipPartyOnly + "\n\n" + party.State switch
+        {
+            Core.Combat.PartyFilterState.Off => t.PartyStateOff,
+            Core.Combat.PartyFilterState.SelfUnknown => t.PartyStateSelfUnknown,
+            Core.Combat.PartyFilterState.Instance => t.PartyStateInstance,
+            Core.Combat.PartyFilterState.Solo => t.PartyStateSolo,
+            _ => string.Format(t.PartyStateParty, string.Join(", ", party.Party)),
+        };
+
         var parts = new List<string>();
         if (r.Server is null)
             parts.Add(r.Link switch
@@ -345,8 +356,8 @@ public partial class OverlayWindow : Window
         Resources["FooterFont"] = on ? 11.0 : 12.0;
     }
 
-    /// <summary>Roughly the height the compact layout saves with ten rows (header, boss bar, margins, rows).</summary>
-    public const double CompactSaves = 110;
+    /// <summary>Roughly the height the compact layout saves with ten rows (header, boss bar, margins, slim rows).</summary>
+    public const double CompactSaves = 260;
 
     /// <summary>
     /// Row size in percent of the original. The height follows it exactly; text, emblems and the number columns shrink
@@ -354,11 +365,13 @@ public partial class OverlayWindow : Window
     /// </summary>
     public void ApplyRowSize(int percent)
     {
-        var k = Math.Clamp(percent, AppSettings.MinRowSize, AppSettings.MaxRowSize) / 100.0 * (_settings.Compact ? 0.85 : 1);
+        // 1 HP: compact rows are slim single lines (~26 px at 100 %), like the small meters players know
+        var compact = _settings.Compact;
+        var k = Math.Clamp(percent, AppSettings.MinRowSize, AppSettings.MaxRowSize) / 100.0 * (compact ? 0.62 : 1);
         var f = Math.Sqrt(k);
         var height = Math.Round(42 * k);
         Resources["RowHeight"] = height;
-        Resources["RowMargin"] = new Thickness(0, 0, 0, Math.Max(2, Math.Round(6 * k)));
+        Resources["RowMargin"] = new Thickness(0, 0, 0, compact ? 2 : Math.Max(2, Math.Round(6 * k)));
         Resources["RowGlossHeight"] = Math.Round(19 * k);
         Resources["RowNameFont"] = Math.Round(16.5 * f, 1);
         Resources["RowNumberFont"] = Math.Round(16 * f, 1);

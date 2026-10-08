@@ -107,7 +107,7 @@ public sealed class AppSettings
 
     /// <summary>Bumped when the overlay layout changes enough that saved sizes no longer fit.</summary>
     public int LayoutVersion { get; set; } // 0 when missing from an older settings file; new installs get it in Load()
-    private const int CurrentLayout = 5;
+    private const int CurrentLayout = 6;
 
     public static AppSettings Load()
     {
@@ -132,6 +132,11 @@ public sealed class AppSettings
                 {
                     // v5 = 1 HP compact layout, on by default: the card keeps its place and gets shorter by what it saves.
                     s.OverlayHeight = Math.Max(220, s.OverlayHeight - AionMeter.App.Windows.OverlayWindow.CompactSaves);
+                }
+                else if (s.LayoutVersion == 5 && s.Compact)
+                {
+                    // v6 = slimmer compact rows (~26 px): a card already made compact in v5 gets shorter by what ten rows save.
+                    s.OverlayHeight = Math.Max(220, s.OverlayHeight - 150);
                 }
                 s.Language = UiText.Normalize(s.Language);
                 s.LayoutVersion = CurrentLayout;

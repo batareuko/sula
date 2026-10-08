@@ -33,3 +33,9 @@ public sealed class MeterOptions
     /// <summary>How many finished segments to keep in memory for the segment picker.</summary>
     public int MaxSegments { get; set; } = 30;
 }
+
+/// <summary>1 HP: the party filter at a glance — off, not possible yet (who you are is not known), an instance (no
+/// filter needed), on your own, or with these party members.</summary>
+public enum PartyFilterState { Off, SelfUnknown, Instance, Solo, Party }
+
+public sealed record PartyFilterStatus(PartyFilterState State, IReadOnlyList<string> Party);
