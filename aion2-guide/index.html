@@ -39,6 +39,7 @@
       <a href="#roadmap">Гайд</a>
       <a href="#thresholds">Пороги</a>
       <a href="#map">Карта</a>
+      <a href="#netcheck">Мережа</a>
       <a href="#glossary">Глосарій</a>
       <a href="#team">Склад 1 HP</a>
     </nav>
@@ -361,6 +362,39 @@
   </section>
 
   <!-- ===== Глосарій ===== -->
+  <!-- ===== Мережа: діагностика пінгу і втрат пакетів ===== -->
+  <section class="wrap" id="netcheck" aria-labelledby="netcheckTitle">
+    <div class="sec-head">
+      <h2 id="netcheckTitle">Мережа</h2>
+      <span class="mono muted">пінг · втрати пакетів · Windows</span>
+    </div>
+    <div class="panel netcheck">
+      <p>Лагає, скіли спрацьовують із запізненням, персонаж «телепортується»? Скрипт за хвилину покаже, <b>де саме губляться пакети</b>: вдома (Wi-Fi, кабель, роутер), у провайдера чи на маршруті до сервера гри. Він нічого не змінює в грі й не читає її пам’ять, лише вимірює мережу Windows.</p>
+      <ol class="netcheck-steps">
+        <li>Запустіть Aion 2 і зайдіть персонажем у світ.</li>
+        <li>Натисніть <kbd>Win</kbd> + <kbd>X</kbd> → «Термінал» (або «Windows PowerShell»), вставте команду і натисніть <kbd>Enter</kbd>:
+          <div class="cmd"><code id="netcheckCmd">[Net.ServicePointManager]::SecurityProtocol = 3072; irm https://guide.sulaslova.com/netcheck/aion2-netcheck.ps1 -OutFile $env:TEMP\aion2-netcheck.ps1; powershell -NoProfile -ExecutionPolicy Bypass -File $env:TEMP\aion2-netcheck.ps1</code>
+          <button class="btn btn-sm" type="button" id="netcheckCopy">Копіювати</button></div>
+        </li>
+        <li>На питання про адміністратора відповідайте <b>Y</b>: тоді видно втрати саме на з’єднанні гри. Поки йде тест (60 с), грайте як завжди.</li>
+        <li>Звіт з’явиться на Робочому столі (<code>aion2-netcheck-….txt</code>). Висновок унизу звіту, його можна скинути в Discord 1 HP.</li>
+      </ol>
+      <p class="muted small">Або <a href="netcheck/aion2-netcheck.ps1" download>завантажте скрипт</a>: права кнопка → «Виконати за допомогою PowerShell».</p>
+      <details class="netcheck-more">
+        <summary>Що перевіряє і що вміє «оптимізатор»</summary>
+        <ul>
+          <li><b>Перевірки:</b> кабель чи Wi-Fi і сила сигналу; помилки мережевої карти; ping одночасно до роутера, кожного вузла маршруту, 1.1.1.1, 8.8.8.8 і сервера гри; повторні передачі (ретрансляції) TCP на з’єднанні гри; програми, що можуть забирати канал.</li>
+          <li><b>Як читати:</b> втрата, яка з’являється на якомусь вузлі й тягнеться до кінця маршруту, справжня. Втрата лише на одному проміжному вузлі — це роутер економить відповіді на ping, її можна ігнорувати.</li>
+          <li><b><code>-LoadTest</code></b>: перевірка, чи росте пінг, коли щось качається (bufferbloat). Лікується QoS / SQM у роутері.</li>
+          <li><b><code>-ApplyTweaks</code></b> (адміністратор): вимикає затримку дрібних TCP-пакетів (TcpAckFrequency, TCPNoDelay) та енергозбереження мережевої карти. Перед змінами зберігає резервну копію, <b><code>-Revert</code></b> повертає все назад. Запускайте не під час гри: карта на мить перепідключиться.</li>
+          <li><b>Чесно:</b> жодна програма на ПК не прибере втрати, які виникають у провайдера чи на магістралі. Якщо звіт показує саме це, допомагає скарга провайдеру (звіт можна показати) або сервіс маршрутизації для ігор, що веде трафік іншим шляхом.</li>
+          <li>Сервер у далекому регіоні (наприклад, азійський з Європи) завжди дає пінг 250+ мс, а довгі маршрути частіше гублять пакети.</li>
+        </ul>
+        <p class="muted small">Параметри додаються в кінець команди, наприклад <code>… aion2-netcheck.ps1 -LoadTest -Seconds 120</code>.</p>
+      </details>
+    </div>
+  </section>
+
   <section class="wrap" id="glossary" aria-labelledby="glossaryTitle">
     <div class="sec-head">
       <h2 id="glossaryTitle">Глосарій</h2>
