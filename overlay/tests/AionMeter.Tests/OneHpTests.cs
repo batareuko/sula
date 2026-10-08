@@ -150,3 +150,45 @@ public class PersonalRecordTests
         Assert.Null(Core.OneHp.PersonalRecords.Compare(History, Snap(777, 1500, Core.Combat.EncounterEndReason.Kill)));
     }
 }
+
+public class GuildDataTests
+{
+    [Fact]
+    public void ParseGearPicksTheServerFromMatches()
+    {
+        const string json = """{"matches":[{"name":"Whelps","serverId":2308,"itemLevel":1765,"combatPower":79823},{"name":"Whelps","serverId":1501,"itemLevel":2155,"combatPower":86209}]}""";
+        Assert.Equal(new Core.OneHp.GearInfo(2155, 86209), Core.OneHp.GuildData.ParseGear(json, 1501));
+        Assert.Null(Core.OneHp.GuildData.ParseGear(json, 9999));
+        Assert.Null(Core.OneHp.GuildData.ParseGear(json, 0)); // two matches, server unknown: no guess
+        const string single = """{"character":{"name":"Sula","serverId":2303,"itemLevel":1401,"combatPower":72283},"game":{}}""";
+        Assert.Equal(1401, Core.OneHp.GuildData.ParseGear(single, 0)!.ItemLevel);
+        Assert.Null(Core.OneHp.GuildData.ParseGear("""{"error":"not_found"}""", 1501));
+    }
+
+    private static Core.Combat.EncounterSnapshot Fight(Core.Combat.EncounterEndReason reason, string selfName, long combatMs = 120_000) =>
+        new(Guid.NewGuid(), "Kernon", "Fire Temple", new DateTimeOffset(2026, 10, 8, 18, 0, 0, TimeSpan.Zero), combatMs, combatMs, false, reason,
+            300_000, 2500, new Core.Combat.BossSnapshot(9, 2100050, "Kernon", 0, 1_000_000),
+            [
+                new Core.Combat.CombatantSnapshot(1, "Tank", Core.Events.GameClass.Templar, false, 200_000, 1666, 0.66, 50, 0.1, 9000, 0, 1501),
+                new Core.Combat.CombatantSnapshot(2, selfName, Core.Events.GameClass.Cleric, true, 100_000, 833.3, 0.33, 30, 0.2, 5000, 0, 1501),
+                new Core.Combat.CombatantSnapshot(Core.Combat.Combatant.UnknownSummonsId, "", default, false, 1, 0, 0, 1, 0, 1, 0),
+            ]);
+
+    [Fact]
+    public void RecordHasOnlyYourOwnNumbersAndOnlyForKills()
+    {
+        var json = System.Text.Json.JsonSerializer.Serialize(Core.OneHp.GuildData.BuildRecord(Fight(Core.Combat.EncounterEndReason.Kill, "Whelps")));
+        using var doc = System.Text.Json.JsonDocument.Parse(json);
+        var r = doc.RootElement;
+        Assert.Equal("Whelps", r.GetProperty("character").GetString());
+        Assert.Equal("Cleric", r.GetProperty("class").GetString());
+        Assert.Equal(2100050, r.GetProperty("bossCode").GetInt32());
+        Assert.Equal(1501, r.GetProperty("serverId").GetInt32());
+        Assert.Equal(2, r.GetProperty("place").GetInt32());
+        Assert.Equal(2, r.GetProperty("partySize").GetInt32()); // the unknown-summons row is not a player
+        Assert.DoesNotContain("Tank", json);
+        Assert.Null(Core.OneHp.GuildData.BuildRecord(Fight(Core.Combat.EncounterEndReason.Wipe, "Whelps")));
+        Assert.Null(Core.OneHp.GuildData.BuildRecord(Fight(Core.Combat.EncounterEndReason.Kill, "#4242")));
+        Assert.Null(Core.OneHp.GuildData.BuildRecord(Fight(Core.Combat.EncounterEndReason.Kill, "Whelps", combatMs: 3_000)));
+    }
+}

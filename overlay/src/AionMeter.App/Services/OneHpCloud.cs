@@ -3,10 +3,9 @@ using System.Net.Http;
 using System.Net.Http.Json;
 using System.Text.Json;
 using AionMeter.Core.Combat;
+using AionMeter.Core.OneHp;
 
 namespace AionMeter.App.Services;
-
-public sealed record GearInfo(int ItemLevel, long CombatPower);
 
 /// <summary>Place among 1 HP members on this boss (each member's best kill), or why the upload failed.</summary>
 public sealed record UploadResult(int Place, int Total, int? TopPct, bool PersonalBest, string? Error);
@@ -75,7 +74,7 @@ public sealed class OneHpCloud : IDisposable
             {
                 using var res = await _http.PostAsJsonAsync(SupabaseUrl + "/functions/v1/aion-lookup", new { name = job.Name }, ct).ConfigureAwait(false);
                 if (res.IsSuccessStatusCode)
-                    info = ParseGear(await res.Content.ReadAsStringAsync(ct).ConfigureAwait(false), job.Server);
+                    info = GuildData.ParseGear(await res.Content.ReadAsStringAsync(ct).ConfigureAwait(false), job.Server);
                 else if ((int)res.StatusCode == 429)
                 {
                     _queued.TryRemove(key, out _); // try again later
@@ -91,55 +90,12 @@ public sealed class OneHpCloud : IDisposable
         }
     }
 
-    /// <summary>
-    /// aion-lookup answers { character, game } for a single match or { matches: [...] } for several:
-    /// pick the one on the player's server (any, when the server is unknown and there is only one).
-    /// </summary>
-    public static GearInfo? ParseGear(string json, int serverId)
-    {
-        using var doc = JsonDocument.Parse(json);
-        var root = doc.RootElement;
-        var candidates = new List<JsonElement>();
-        if (root.TryGetProperty("character", out var single) && single.ValueKind == JsonValueKind.Object) candidates.Add(single);
-        if (root.TryGetProperty("matches", out var list) && list.ValueKind == JsonValueKind.Array) candidates.AddRange(list.EnumerateArray());
-        static int Int(JsonElement e, string p) => e.TryGetProperty(p, out var v) && v.TryGetInt32(out var n) ? n : 0;
-        static long Long(JsonElement e, string p) => e.TryGetProperty(p, out var v) && v.TryGetInt64(out var n) ? n : 0;
-        var pick = serverId != 0
-            ? candidates.Where(c => Int(c, "serverId") == serverId).Cast<JsonElement?>().FirstOrDefault()
-            : candidates.Count == 1 ? candidates[0] : null;
-        return pick is { } c2 && Int(c2, "itemLevel") > 0 ? new GearInfo(Int(c2, "itemLevel"), Long(c2, "combatPower")) : null;
-    }
-
     public UploadResult? ResultFor(Guid encounterId) => _results.TryGetValue(encounterId, out var r) ? r : null;
-
-    /// <summary>The 1 HP payload of a finished fight: only the local player's own numbers, only for a killed boss.</summary>
-    public static object? BuildRecord(EncounterSnapshot s)
-    {
-        if (s.Reason != EncounterEndReason.Kill || s.Boss is not { NpcCode: > 0 } boss) return null;
-        var players = s.Combatants.Where(c => !c.IsUnknownSummons).ToList();
-        var self = players.FirstOrDefault(c => c.IsSelf);
-        if (self is null || self.Damage <= 0 || self.Name.StartsWith('#') || s.CombatMs < 5_000) return null;
-        return new
-        {
-            character = self.Name,
-            @class = self.Class.ToString(),
-            serverId = self.ServerId,
-            bossCode = boss.NpcCode,
-            bossName = string.IsNullOrWhiteSpace(boss.Name) ? s.Title : boss.Name,
-            zone = s.Zone,
-            dps = Math.Round(self.Dps, 1),
-            damage = self.Damage,
-            durationMs = s.CombatMs,
-            partySize = players.Count,
-            place = players.IndexOf(self) + 1,
-            foughtAt = s.StartedAt.ToUniversalTime().ToString("o"),
-        };
-    }
 
     public async Task UploadAsync(FightRecord record)
     {
         var key = _settings.OneHpKey?.Trim();
-        if (!_settings.OneHpUpload || string.IsNullOrEmpty(key) || BuildRecord(record.Summary) is not { } payload) return;
+        if (!_settings.OneHpUpload || string.IsNullOrEmpty(key) || GuildData.BuildRecord(record.Summary) is not { } payload) return;
         try
         {
             using var res = await _http.PostAsJsonAsync(SupabaseUrl + "/functions/v1/dps-upload", new { key, record = payload }).ConfigureAwait(false);
