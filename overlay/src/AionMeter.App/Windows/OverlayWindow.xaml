@@ -55,9 +55,6 @@
         <sys:Double x:Key="RowRankFont">13</sys:Double>
         <sys:Double x:Key="ColHeaderFont">11</sys:Double>
 
-        <!-- Dense dark halo under every text so it stays readable over any game scene -->
-        <DropShadowEffect x:Key="TextShadow" BlurRadius="5" ShadowDepth="1.5" Direction="300" Opacity="1" Color="Black" />
-
         <Style x:Key="ColHeader" TargetType="TextBlock">
             <Setter Property="FontSize" Value="{DynamicResource ColHeaderFont}" />
             <Setter Property="FontWeight" Value="Bold" />
@@ -76,37 +73,37 @@
             <Setter Property="TextAlignment" Value="Right" />
         </Style>
 
-        <SolidColorBrush x:Key="Cream" Color="#F3E6C8" />
-        <SolidColorBrush x:Key="Soft" Color="#C3CAD8" />
+        <!-- 1 HP modern style: cool slate card, indigo → teal accent, flat surfaces, no shadows or glows -->
+        <SolidColorBrush x:Key="Cream" Color="#EEF2F8" />
+        <SolidColorBrush x:Key="Soft" Color="#A8B2C6" />
+        <SolidColorBrush x:Key="Accent" Color="#6E8BFF" />
+        <SolidColorBrush x:Key="Accent2" Color="#2DD4BF" />
 
-        <LinearGradientBrush x:Key="CardFrame" StartPoint="0,0" EndPoint="0,1">
-            <GradientStop Color="#6E5B36" Offset="0" />
-            <GradientStop Color="#2E2A26" Offset="0.35" />
-            <GradientStop Color="#24252C" Offset="1" />
+        <SolidColorBrush x:Key="CardFrame" Color="#26FFFFFF" />
+        <LinearGradientBrush x:Key="AccentLine" StartPoint="0,0" EndPoint="1,0">
+            <GradientStop Color="#006E8BFF" Offset="0" />
+            <GradientStop Color="#6E8BFF" Offset="0.3" />
+            <GradientStop Color="#2DD4BF" Offset="0.7" />
+            <GradientStop Color="#002DD4BF" Offset="1" />
         </LinearGradientBrush>
 
-        <LinearGradientBrush x:Key="TopHitBrush" StartPoint="0,0" EndPoint="0,1">
-            <GradientStop Color="#FFF0BF" Offset="0" />
-            <GradientStop Color="#F2C25A" Offset="0.55" />
-            <GradientStop Color="#D99A2E" Offset="1" />
-        </LinearGradientBrush>
+        <SolidColorBrush x:Key="TopHitBrush" Color="#5EEAD4" />
 
-        <LinearGradientBrush x:Key="HpFill" StartPoint="0,0" EndPoint="0,1">
-            <GradientStop Color="#F67A6C" Offset="0" />
-            <GradientStop Color="#E0473F" Offset="0.5" />
-            <GradientStop Color="#B8202A" Offset="1" />
+        <LinearGradientBrush x:Key="HpFill" StartPoint="0,0" EndPoint="1,0">
+            <GradientStop Color="#E11D48" Offset="0" />
+            <GradientStop Color="#FB7185" Offset="1" />
         </LinearGradientBrush>
 
         <TextDecorationCollection x:Key="SelfUnderline">
             <TextDecoration Location="Underline" PenOffset="3">
                 <TextDecoration.Pen>
-                    <Pen Brush="#ECCB82" Thickness="1.6" />
+                    <Pen Brush="#A5B8FF" Thickness="1.6" />
                 </TextDecoration.Pen>
             </TextDecoration>
         </TextDecorationCollection>
 
         <Style x:Key="FooterLink" TargetType="Button">
-            <Setter Property="Foreground" Value="#D9B56A" />
+            <Setter Property="Foreground" Value="#9DB0FF" />
             <Setter Property="FontSize" Value="12" />
             <Setter Property="Cursor" Value="Hand" />
             <Setter Property="Focusable" Value="False" />
@@ -117,7 +114,7 @@
                         <ContentPresenter x:Name="P" VerticalAlignment="Center" />
                         <ControlTemplate.Triggers>
                             <Trigger Property="IsMouseOver" Value="True">
-                                <Setter Property="Foreground" Value="#FFE3A6" />
+                                <Setter Property="Foreground" Value="White" />
                             </Trigger>
                         </ControlTemplate.Triggers>
                     </ControlTemplate>
@@ -125,9 +122,9 @@
             </Setter>
         </Style>
 
-        <!-- The footer's boss timer button: a filled gold pill so it reads as a button, not a link -->
+        <!-- The footer's boss timer button: a filled accent pill so it reads as a button, not a link -->
         <Style x:Key="TimersPill" TargetType="Button">
-            <Setter Property="Foreground" Value="#1A140A" />
+            <Setter Property="Foreground" Value="White" />
             <Setter Property="FontSize" Value="12" />
             <Setter Property="FontWeight" Value="SemiBold" />
             <Setter Property="FontFamily" Value="{StaticResource NumberFont}" />
@@ -136,21 +133,12 @@
             <Setter Property="Template">
                 <Setter.Value>
                     <ControlTemplate TargetType="Button">
-                        <Border x:Name="Bd" CornerRadius="11" Padding="10,3,11,3" BorderThickness="1" BorderBrush="#FFE3A6">
-                            <Border.Background>
-                                <LinearGradientBrush StartPoint="0,0" EndPoint="0,1">
-                                    <GradientStop Color="#F3D58F" Offset="0" />
-                                    <GradientStop Color="#C99A45" Offset="1" />
-                                </LinearGradientBrush>
-                            </Border.Background>
-                            <Border.Effect>
-                                <DropShadowEffect BlurRadius="8" ShadowDepth="0" Opacity="0.55" Color="#E9A93C" />
-                            </Border.Effect>
+                        <Border x:Name="Bd" CornerRadius="11" Padding="10,3,11,3" BorderThickness="1" BorderBrush="Transparent" Background="#6E8BFF">
                             <ContentPresenter VerticalAlignment="Center" />
                         </Border>
                         <ControlTemplate.Triggers>
                             <Trigger Property="IsMouseOver" Value="True">
-                                <Setter TargetName="Bd" Property="BorderBrush" Value="White" />
+                                <Setter TargetName="Bd" Property="Background" Value="#8299FF" />
                             </Trigger>
                         </ControlTemplate.Triggers>
                     </ControlTemplate>
@@ -189,39 +177,19 @@
             <Grid Height="{DynamicResource RowHeight}" Margin="{DynamicResource RowMargin}" Cursor="Hand" ToolTip="{Binding Tooltip}"
                   Background="Transparent" MouseLeftButtonUp="Row_Click" MouseRightButtonUp="Row_RightClick">
                 <!-- track -->
-                <Border CornerRadius="7">
-                    <Border.Background>
-                        <LinearGradientBrush StartPoint="0,0" EndPoint="0,1">
-                            <GradientStop Color="#2A3046" Offset="0" />
-                            <GradientStop Color="#20253A" Offset="1" />
-                        </LinearGradientBrush>
-                    </Border.Background>
-                </Border>
+                <Border CornerRadius="6" Background="#14FFFFFF" />
                 <!-- fill -->
-                <Border CornerRadius="7" Background="{Binding FillBrush}" RenderTransformOrigin="0,0.5">
+                <Border CornerRadius="6" Background="{Binding FillBrush}" RenderTransformOrigin="0,0.5">
                     <Border.RenderTransform>
                         <ScaleTransform ScaleX="{Binding Fill}" />
                     </Border.RenderTransform>
                 </Border>
-                <!-- gloss on the upper half -->
-                <Border CornerRadius="7,7,0,0" Height="{DynamicResource RowGlossHeight}" VerticalAlignment="Top" IsHitTestVisible="False">
-                    <Border.Background>
-                        <LinearGradientBrush StartPoint="0,0" EndPoint="0,1">
-                            <GradientStop Color="#22FFFFFF" Offset="0" />
-                            <GradientStop Color="#05FFFFFF" Offset="1" />
-                        </LinearGradientBrush>
-                    </Border.Background>
-                </Border>
-                <Border x:Name="Hover" CornerRadius="7" BorderThickness="1" BorderBrush="Transparent" />
+                <Border x:Name="Hover" CornerRadius="6" BorderThickness="1" BorderBrush="Transparent" />
                 <!-- your own row -->
-                <Border CornerRadius="7" BorderThickness="1.6" BorderBrush="{StaticResource GoldBright}"
-                        Visibility="{Binding IsSelf, Converter={StaticResource VisibleIf}}">
-                    <Border.Effect>
-                        <DropShadowEffect BlurRadius="8" ShadowDepth="0" Opacity="0.8" Color="#E7C67F" />
-                    </Border.Effect>
-                </Border>
+                <Border CornerRadius="6" BorderThickness="1.5" BorderBrush="{StaticResource Accent}"
+                        Visibility="{Binding IsSelf, Converter={StaticResource VisibleIf}}" />
 
-                <Grid Margin="8,0,14,0" Effect="{StaticResource TextShadow}">
+                <Grid Margin="8,0,14,0">
                     <Grid.ColumnDefinitions>
                         <ColumnDefinition Width="{DynamicResource ColRankWidth}" />
                         <ColumnDefinition Width="{DynamicResource ColGlyphWidth}" />
@@ -258,7 +226,7 @@
             </Grid>
             <DataTemplate.Triggers>
                 <Trigger Property="IsMouseOver" Value="True">
-                    <Setter TargetName="Hover" Property="BorderBrush" Value="#66FFFFFF" />
+                    <Setter TargetName="Hover" Property="BorderBrush" Value="#44FFFFFF" />
                 </Trigger>
                 <DataTrigger Binding="{Binding IsSelf}" Value="True">
                     <Setter TargetName="NameText" Property="TextDecorations" Value="{StaticResource SelfUnderline}" />
@@ -267,25 +235,14 @@
         </DataTemplate>
     </Window.Resources>
 
-    <Grid Margin="10">
+    <Grid Margin="4">
         <!-- Card -->
-        <Border x:Name="Frame" CornerRadius="18" BorderThickness="1" BorderBrush="{StaticResource CardFrame}">
+        <Border x:Name="Frame" CornerRadius="12" BorderThickness="1" BorderBrush="{StaticResource CardFrame}">
             <Border.Background>
-                <SolidColorBrush x:Name="FrameBackground" Color="#0D111A" Opacity="0.92" />
-            </Border.Background>
-            <Border.Effect>
-                <DropShadowEffect BlurRadius="18" ShadowDepth="0" Opacity="0.6" Color="Black" />
-            </Border.Effect>
-        </Border>
-        <Border CornerRadius="18" IsHitTestVisible="False">
-            <Border.Background>
-                <LinearGradientBrush StartPoint="0,0" EndPoint="0,1">
-                    <GradientStop Color="#0DFFFFFF" Offset="0" />
-                    <GradientStop Color="#00FFFFFF" Offset="0.4" />
-                </LinearGradientBrush>
+                <SolidColorBrush x:Name="FrameBackground" Color="#0E1320" Opacity="0.92" />
             </Border.Background>
         </Border>
-        <Border Height="2" VerticalAlignment="Top" Margin="70,0" Background="{StaticResource GoldTopLine}" IsHitTestVisible="False" />
+        <Border Height="1.5" VerticalAlignment="Top" Margin="24,0" Background="{StaticResource AccentLine}" IsHitTestVisible="False" />
 
         <Grid Margin="{DynamicResource CardPadding}">
             <Grid.RowDefinitions>
@@ -298,7 +255,7 @@
 
             <!-- Label row (toolbar appears on hover) + timer -->
             <Grid x:Name="Header" Background="Transparent" Height="{DynamicResource HeaderHeight}">
-                <StackPanel x:Name="LabelPanel" Orientation="Horizontal" VerticalAlignment="Center" Effect="{StaticResource TextShadow}">
+                <StackPanel x:Name="LabelPanel" Orientation="Horizontal" VerticalAlignment="Center">
                     <Ellipse Width="8" Height="8" Margin="1,0,9,0" Fill="{Binding HeaderBrush}">
                         <Ellipse.Style>
                             <Style TargetType="Ellipse">
@@ -340,7 +297,7 @@
 
                 <TextBlock HorizontalAlignment="Right" VerticalAlignment="Center" Text="{Binding Clock}"
                            FontFamily="{StaticResource NumberFont}" FontWeight="Bold" FontSize="{DynamicResource ClockFont}" Foreground="{StaticResource Cream}"
-                           Effect="{StaticResource TextShadow}" />
+                           />
             </Grid>
 
             <!-- Portrait, title, top hit -->
@@ -353,48 +310,29 @@
                 </Grid.ColumnDefinitions>
 
                 <Grid Width="{DynamicResource PortraitBox}" Height="{DynamicResource PortraitBox}" VerticalAlignment="Center">
-                    <Ellipse Fill="#221F1B" />
-                    <Ellipse Width="{DynamicResource PortraitRing}" Height="{DynamicResource PortraitRing}" Stroke="#D7AE5C" StrokeThickness="2.5">
-                        <Ellipse.Fill>
-                            <RadialGradientBrush GradientOrigin="0.45,0.35">
-                                <GradientStop Color="#3C3426" Offset="0" />
-                                <GradientStop Color="#14120E" Offset="1" />
-                            </RadialGradientBrush>
-                        </Ellipse.Fill>
-                        <Ellipse.Effect>
-                            <DropShadowEffect BlurRadius="10" ShadowDepth="0" Opacity="0.55" Color="#D7AE5C" />
-                        </Ellipse.Effect>
-                    </Ellipse>
+                    <Ellipse Width="{DynamicResource PortraitRing}" Height="{DynamicResource PortraitRing}" Stroke="#556E8BFF" StrokeThickness="1.5"
+                             Fill="#1A2133" />
                     <Path Data="M12 3 C7 3 4 6.5 4 11 C4 14 5.5 15.5 7 16.5 L7 19 L9.5 19 L9.5 17.5 L11 17.5 L11 19 L13 19 L13 17.5 L14.5 17.5 L14.5 19 L17 19 L17 16.5 C18.5 15.5 20 14 20 11 C20 6.5 17 3 12 3 Z M8.8 9.8 A1.9 1.9 0 1 0 8.81 9.8 Z M15.2 9.8 A1.9 1.9 0 1 0 15.21 9.8 Z"
-                          Fill="#ECCB82" Stretch="Uniform" Width="{DynamicResource SkullSize}" Height="{DynamicResource SkullSize}"
+                          Fill="#8FA3FF" Stretch="Uniform" Width="{DynamicResource SkullSize}" Height="{DynamicResource SkullSize}"
                           Visibility="{Binding HasPortrait, Converter={StaticResource VisibleIf}, ConverterParameter=!}" />
                     <!-- Boss portrait in a gold ring -->
                     <Grid Width="{DynamicResource PortraitImage}" Height="{DynamicResource PortraitImage}" Visibility="{Binding HasPortrait, Converter={StaticResource VisibleIf}}">
-                        <Ellipse Fill="#14120E">
-                            <Ellipse.Effect>
-                                <DropShadowEffect BlurRadius="12" ShadowDepth="0" Opacity="0.6" Color="#D7AE5C" />
-                            </Ellipse.Effect>
-                        </Ellipse>
+                        <Ellipse Fill="#1A2133" />
                         <Ellipse Margin="2">
                             <Ellipse.Fill>
                                 <ImageBrush ImageSource="{Binding Portrait}" Stretch="UniformToFill" AlignmentY="Top" />
                             </Ellipse.Fill>
                         </Ellipse>
-                        <Ellipse Stroke="#D7AE5C" StrokeThickness="2.5" />
-                        <Ellipse Margin="2.5" Stroke="#66000000" StrokeThickness="1" />
+                        <Ellipse Stroke="{StaticResource Accent}" StrokeThickness="1.5" />
                     </Grid>
                 </Grid>
 
                 <StackPanel Grid.Column="1" Margin="{DynamicResource TitleTextMargin}" VerticalAlignment="Center">
-                    <TextBlock Text="{Binding Title}" FontFamily="{StaticResource TitleFont}" FontSize="{DynamicResource TitleFontSize}" FontWeight="SemiBold"
-                               Typography.Capitals="SmallCaps" Foreground="{StaticResource Cream}" TextTrimming="CharacterEllipsis">
-                        <TextBlock.Effect>
-                            <DropShadowEffect BlurRadius="6" ShadowDepth="1" Opacity="0.6" Color="Black" />
-                        </TextBlock.Effect>
-                    </TextBlock>
+                    <TextBlock Text="{Binding Title}" FontFamily="{StaticResource HeadFont}" FontSize="{DynamicResource TitleFontSize}" FontWeight="SemiBold"
+                               Foreground="{StaticResource Cream}" TextTrimming="CharacterEllipsis" />
                     <StackPanel Orientation="Horizontal" Margin="1,2,0,0">
                         <TextBlock Text="{Binding Detail}" FontSize="{DynamicResource DetailFont}" Foreground="{StaticResource Soft}" TextTrimming="CharacterEllipsis"
-                                   Effect="{StaticResource TextShadow}"
+                                  
                                    VerticalAlignment="Center" />
                         <!-- Your place in the ranking -->
                         <Border Margin="8,0,0,0" Padding="6,1,7,1" CornerRadius="5" VerticalAlignment="Center"
@@ -410,14 +348,14 @@
                         </Border>
                         <!-- 1 HP: your record on this boss, your place in the guild rating -->
                         <Border Margin="6,0,0,0" Padding="6,1,7,1" CornerRadius="5" VerticalAlignment="Center" Background="#2A3DD68C"
-                                BorderBrush="#803DD68C" BorderThickness="1" ToolTip="{Binding RecordTip}"
+                                BorderBrush="Transparent" BorderThickness="1" ToolTip="{Binding RecordTip}"
                                 Visibility="{Binding Record, Converter={StaticResource VisibleIf}}">
                             <TextBlock Text="{Binding Record}" FontSize="11.5" FontWeight="Bold" Foreground="#BFF5D6" />
                         </Border>
-                        <Border Margin="6,0,0,0" Padding="6,1,7,1" CornerRadius="5" VerticalAlignment="Center" Background="#33E9A93C"
-                                BorderBrush="{StaticResource GoldDim}" BorderThickness="1" ToolTip="{Binding GuildTip}"
+                        <Border Margin="6,0,0,0" Padding="6,1,7,1" CornerRadius="5" VerticalAlignment="Center" Background="#336E8BFF"
+                                BorderBrush="Transparent" BorderThickness="1" ToolTip="{Binding GuildTip}"
                                 Visibility="{Binding Guild, Converter={StaticResource VisibleIf}}">
-                            <TextBlock Text="{Binding Guild}" FontSize="11.5" FontWeight="Bold" Foreground="#FFE3A6" />
+                            <TextBlock Text="{Binding Guild}" FontSize="11.5" FontWeight="Bold" Foreground="#C7D2FF" />
                         </Border>
                     </StackPanel>
                 </StackPanel>
@@ -426,28 +364,21 @@
                             Visibility="{Binding TopHit, Converter={StaticResource VisibleIf}}">
                     <TextBlock Text="{Binding TopHit}" FontFamily="{StaticResource NumberFont}" FontWeight="Bold" FontSize="{DynamicResource TopHitFont}"
                                Foreground="{StaticResource TopHitBrush}" HorizontalAlignment="Center">
-                        <TextBlock.Effect>
-                            <DropShadowEffect BlurRadius="16" ShadowDepth="0" Opacity="0.85" Color="#E9A93C" />
-                        </TextBlock.Effect>
                     </TextBlock>
-                    <TextBlock Text="{Binding T.TopHit}" FontSize="{DynamicResource TopHitLabelFont}" FontWeight="Bold" Foreground="#D9B56A" HorizontalAlignment="Center"
+                    <TextBlock Text="{Binding T.TopHit}" FontSize="{DynamicResource TopHitLabelFont}" FontWeight="Bold" Foreground="#7FD9CB" HorizontalAlignment="Center"
                                Margin="0,-2,0,0" />
                 </StackPanel>
             </Grid>
 
             <!-- Boss HP -->
             <Grid Grid.Row="2" Height="{DynamicResource BossBarHeight}" Margin="{DynamicResource BossBarMargin}" Visibility="{Binding HasBoss, Converter={StaticResource VisibleIf}}">
-                <Border CornerRadius="8" Background="#230C0F" BorderBrush="#5E1F24" BorderThickness="1" />
-                <Border CornerRadius="8" Background="{StaticResource HpFill}" RenderTransformOrigin="0,0.5" Margin="1">
+                <Border CornerRadius="6" Background="#2A1420" />
+                <Border CornerRadius="6" Background="{StaticResource HpFill}" RenderTransformOrigin="0,0.5">
                     <Border.RenderTransform>
                         <ScaleTransform ScaleX="{Binding BossHpFraction}" />
                     </Border.RenderTransform>
                 </Border>
-                <Border CornerRadius="8,8,0,0" Height="15" VerticalAlignment="Top" Margin="1,1,1,0" Background="#14FFFFFF" IsHitTestVisible="False" />
                 <Grid Margin="14,0">
-                    <Grid.Effect>
-                        <DropShadowEffect BlurRadius="4" ShadowDepth="1" Opacity="0.9" Color="Black" />
-                    </Grid.Effect>
                     <TextBlock Text="{Binding BossHpText}" FontFamily="{StaticResource NumberFont}" FontWeight="SemiBold" FontSize="{DynamicResource BossFont}"
                                Foreground="White" VerticalAlignment="Center" />
                     <TextBlock Text="{Binding BossPercent}" FontFamily="{StaticResource NumberFont}" FontWeight="SemiBold" FontSize="{DynamicResource BossFont}"
@@ -464,7 +395,7 @@
 
                 <!-- Column labels (same widths as the rows below) -->
                 <Grid Margin="8,0,14,5" Visibility="{Binding HasData, Converter={StaticResource VisibleIf}}"
-                      Effect="{StaticResource TextShadow}">
+                     >
                     <Grid.ColumnDefinitions>
                         <ColumnDefinition Width="{DynamicResource ColRankWidth}" />
                         <ColumnDefinition Width="{DynamicResource ColGlyphWidth}" />
@@ -518,7 +449,7 @@
                     <StackPanel Orientation="Horizontal" VerticalAlignment="Center" ToolTip="{Binding Status}">
                         <Ellipse Width="6" Height="6" Fill="{Binding StatusBrush}" Margin="0,0,7,0" />
                         <TextBlock x:Name="FooterText" FontSize="{DynamicResource FooterFont}" Foreground="#B4BCCB" TextTrimming="CharacterEllipsis"
-                                   Effect="{StaticResource TextShadow}" />
+                                   />
                     </StackPanel>
                     <StackPanel Grid.Column="1" Orientation="Horizontal" Margin="0,0,12,0">
                         <!-- Boss timers: always visible, shows the next respawn -->
@@ -528,8 +459,8 @@
                                 <TextBlock Text="{Binding TimersLabel}" VerticalAlignment="Center" />
                             </StackPanel>
                         </Button>
-                        <Button Style="{StaticResource FooterLink}" Content="{Binding T.OpenFight}" Click="Details_Click" Effect="{StaticResource TextShadow}" />
-                        <Button Style="{StaticResource FooterLink}" Click="Segments_Click" Effect="{StaticResource TextShadow}">
+                        <Button Style="{StaticResource FooterLink}" Content="{Binding T.OpenFight}" Click="Details_Click" />
+                        <Button Style="{StaticResource FooterLink}" Click="Segments_Click">
                             <TextBlock><Run Text="{Binding T.Fights, Mode=OneWay}" /><Run Text=" " /><Run Text="&#xE70D;" FontFamily="{StaticResource IconFont}" FontSize="9" /></TextBlock>
                         </Button>
                     </StackPanel>
@@ -543,10 +474,10 @@
                     <StackPanel x:Name="NetPanel" Orientation="Horizontal" VerticalAlignment="Center" Background="Transparent">
                         <Ellipse x:Name="NetDot" Width="6" Height="6" Fill="{StaticResource TextMute}" Margin="0,0,7,0" />
                         <TextBlock x:Name="NetText" FontSize="{DynamicResource FooterFont}" Foreground="#B4BCCB" TextTrimming="CharacterEllipsis"
-                                   Effect="{StaticResource TextShadow}" />
+                                   />
                     </StackPanel>
                     <TextBlock x:Name="ScheduleText" Grid.Column="1" FontSize="{DynamicResource FooterFont}" Foreground="#B4BCCB" Margin="10,0,0,0"
-                               Background="Transparent" Effect="{StaticResource TextShadow}" />
+                               Background="Transparent" />
                 </Grid>
             </StackPanel>
         </Grid>
@@ -557,7 +488,7 @@
             <Thumb.Template>
                 <ControlTemplate TargetType="Thumb">
                     <Border Background="Transparent">
-                        <Path Data="M12 2 L2 12 M12 6 L6 12 M12 10 L10 12" Stroke="{StaticResource GoldDim}" StrokeThickness="1.3" />
+                        <Path Data="M12 2 L2 12 M12 6 L6 12 M12 10 L10 12" Stroke="#556E8BFF" StrokeThickness="1.3" />
                     </Border>
                 </ControlTemplate>
             </Thumb.Template>
