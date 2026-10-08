@@ -110,6 +110,7 @@ public static class SampleRenderer
         var settings = new AppSettings
         {
             Transient = true, SaveHistory = false, MaxRows = 10, LayoutVersion = 99, Language = language, RowSize = rowSize,
+            PartyOnly = false, // the scripted party sends no roster: show everyone, as in an instance
         };
         UiText.Use(settings.Language);
         var meter = new MeterService(settings, _ => new QuietSource());

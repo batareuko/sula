@@ -2,14 +2,14 @@
                     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
 
     <!-- Classic gold palette (AionFlex-like) -->
-    <Color x:Key="Bg0Color">#0B0F17</Color>
-    <Color x:Key="Bg1Color">#111726</Color>
-    <Color x:Key="Bg2Color">#19203A</Color>
-    <Color x:Key="LineColor">#2A3350</Color>
-    <Color x:Key="GoldColor">#C9A45C</Color>
-    <Color x:Key="GoldBrightColor">#ECCB82</Color>
-    <Color x:Key="GoldDimColor">#6E5A33</Color>
-    <Color x:Key="TextColor">#F1E9D8</Color>
+    <Color x:Key="Bg0Color">#0E1320</Color>
+    <Color x:Key="Bg1Color">#141A2A</Color>
+    <Color x:Key="Bg2Color">#1B2236</Color>
+    <Color x:Key="LineColor">#262E44</Color>
+    <Color x:Key="GoldColor">#6E8BFF</Color>
+    <Color x:Key="GoldBrightColor">#A5B8FF</Color>
+    <Color x:Key="GoldDimColor">#3A4670</Color>
+    <Color x:Key="TextColor">#E8ECF4</Color>
     <Color x:Key="TextDimColor">#A3ACBF</Color>
     <Color x:Key="TextMuteColor">#6B7590</Color>
     <Color x:Key="RedColor">#EF4D56</Color>
@@ -47,7 +47,9 @@
 
     <FontFamily x:Key="NumberFont">Bahnschrift</FontFamily>
     <FontFamily x:Key="UiFont">Segoe UI</FontFamily>
-    <FontFamily x:Key="TitleFont">Palatino Linotype, Constantia, Georgia</FontFamily>
+    <FontFamily x:Key="TitleFont">Segoe UI Variable Display, Segoe UI Semibold, Segoe UI</FontFamily>
+    <!-- 1 HP modern headings (Windows 11's variable Segoe; Segoe UI on Windows 10) -->
+    <FontFamily x:Key="HeadFont">Segoe UI Variable Display, Segoe UI</FontFamily>
     <FontFamily x:Key="IconFont">Segoe Fluent Icons, Segoe MDL2 Assets</FontFamily>
 
     <!-- Glyph button used in title bars -->

@@ -93,9 +93,9 @@ public sealed class RowViewModel : ObservableObject
 
             var v = ClassVisuals.BarColorOf(value);
             var fill = new LinearGradientBrush { StartPoint = new System.Windows.Point(0, 0), EndPoint = new System.Windows.Point(1, 0) };
-            fill.GradientStops.Add(new GradientStop(Lighten(v, 0.08), 0));
-            fill.GradientStops.Add(new GradientStop(v, 0.55));
-            fill.GradientStops.Add(new GradientStop(Color.FromArgb(0xC8, (byte)(v.R * 0.72), (byte)(v.G * 0.72), (byte)(v.B * 0.72)), 1));
+            // 1 HP modern style: a flat class colour, a touch darker towards the end of the bar
+            fill.GradientStops.Add(new GradientStop(Color.FromArgb(0xE6, v.R, v.G, v.B), 0));
+            fill.GradientStops.Add(new GradientStop(Color.FromArgb(0xB4, (byte)(v.R * 0.8), (byte)(v.G * 0.8), (byte)(v.B * 0.8)), 1));
             FillBrush = Freeze(fill);
             DpsBrush = Freeze(new SolidColorBrush(Lighten(v, 0.55)));
             Raise(nameof(FillBrush));
@@ -129,13 +129,14 @@ public static class RankBrushes
 {
     private static readonly (Brush Bg, Brush Fg, Brush Border)[] Medals =
     [
-        (Gradient(0xF6, 0xDB, 0x8E, 0xC9, 0x9A, 0x45), Solid(0x1A, 0x14, 0x0A), Solid(0xFF, 0xEB, 0xB0)), // gold
-        (Gradient(0xEE, 0xF2, 0xF7, 0xA7, 0xB2, 0xC1), Solid(0x12, 0x16, 0x1F), Solid(0xFF, 0xFF, 0xFF)), // silver
-        (Gradient(0xE9, 0xA8, 0x7A, 0xA8, 0x63, 0x3B), Solid(0x1A, 0x0F, 0x08), Solid(0xF5, 0xC3, 0x9E)), // bronze
+        // 1 HP modern style: flat discs, no rims
+        (Solid(0xF5, 0xC4, 0x51), Solid(0x1A, 0x14, 0x0A), Solid(0xF5, 0xC4, 0x51)), // gold
+        (Solid(0xCB, 0xD5, 0xE1), Solid(0x12, 0x16, 0x1F), Solid(0xCB, 0xD5, 0xE1)), // silver
+        (Solid(0xD9, 0x91, 0x5F), Solid(0x1A, 0x0F, 0x08), Solid(0xD9, 0x91, 0x5F)), // bronze
     ];
 
     private static readonly (Brush Bg, Brush Fg, Brush Border) Plain =
-        (Solid(0x1A, 0x20, 0x30), Solid(0xF3, 0xE6, 0xC8), Solid(0x6B, 0x75, 0x90));
+        (Solid(0x0E, 0x13, 0x20, 0xB0), Solid(0xE8, 0xEC, 0xF4), Solid(0x0E, 0x13, 0x20, 0x00));
 
     public static (Brush Bg, Brush Fg, Brush Border) For(int rank) => rank is >= 1 and <= 3 ? Medals[rank - 1] : Plain;
 
@@ -157,7 +158,7 @@ public static class RankBrushes
 public sealed class OverlayViewModel : ObservableObject
 {
     private static readonly Brush LiveRed = Frozen(Color.FromRgb(0xEF, 0x4D, 0x56));
-    private static readonly Brush SavedGold = Frozen(Color.FromRgb(0xC9, 0xA4, 0x5C));
+    private static readonly Brush SavedGold = Frozen(Color.FromRgb(0x6E, 0x8B, 0xFF)); // 1 HP: accent, was gold
     private static readonly Brush Dim = Frozen(Color.FromRgb(0x8A, 0x93, 0xA8));
 
     private string _title = UiText.Current.WaitingTitle;
