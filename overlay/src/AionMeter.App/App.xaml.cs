@@ -510,7 +510,8 @@ public partial class App : Application
         try
         {
             Log.Info($"Installing update {update.Tag}");
-            _meter.Updates.InstallDownloaded();
+            // 1 HP: with the game closed and "start with AION 2" on, the updated meter waits for the next game to start it.
+            _meter.Updates.InstallDownloaded(restart: !_meter.Settings.WithGame || GameProcessLocator.FindGameProcessIds().Length > 0);
             Shutdown(); // the installer replaces our files and starts the new version
         }
         catch (Exception ex) when (ex is IOException or InvalidDataException or InvalidOperationException
@@ -533,7 +534,7 @@ public partial class App : Application
             return;
         }
         _updateWindow?.Close();
-        var w = new UpdateWindow(_meter.Updates, release, Updater.IsInstalled);
+        var w = new UpdateWindow(_meter.Updates, release, Updater.CanSelfUpdate);
         w.Closed += (_, _) =>
         {
             if (_updateWindow == w) _updateWindow = null;

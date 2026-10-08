@@ -19,8 +19,11 @@ public enum UpdateCheckResult
 /// New versions of the meter. Asks GitHub shortly after start and every few hours (Settings → Updates) and raises
 /// <see cref="Changed"/> for the tray, the overlay and the update window. A copy installed by the installer updates
 /// itself: it downloads the new installer in the background (<see cref="Downloaded"/>), and the app runs it at a quiet
-/// moment without any window; the installer replaces this copy and starts the new one. A portable copy gets the
-/// download page.
+/// moment without any window; the installer replaces this copy and starts the new one.
+/// 1 HP: an unzipped copy updates itself the same way when 1HP-Watcher.exe sits next to it and its folder is writable:
+/// it downloads the release zip (checked against GitHub's size and SHA-256), and at the quiet moment a temporary copy
+/// of the watcher (--apply) waits for the meter to exit, swaps the files (rolling back on any failure) and starts it
+/// again. Other copies get the download page.
 /// </summary>
 public sealed class Updater : IDisposable
 {
@@ -55,8 +58,18 @@ public sealed class Updater : IDisposable
     /// <summary>True when this copy runs from the folder the installer put it in (it can update itself).</summary>
     public static bool IsInstalled { get; } = DetectInstalled();
 
-    /// <summary>This copy fetches and installs new versions by itself (installed copies, unless turned off).</summary>
-    public bool AutoInstall => IsInstalled && _settings.AutoInstallUpdates;
+    /// <summary>1 HP: an unzipped copy that can replace its own files (1HP-Watcher.exe next to it, folder writable).</summary>
+    public static bool CanUpdateZip { get; } = !IsInstalled && DetectZipUpdate();
+
+    /// <summary>This copy can install a new version by itself, one way or the other.</summary>
+    public static bool CanSelfUpdate => IsInstalled || CanUpdateZip;
+
+    /// <summary>This copy fetches and installs new versions by itself (unless turned off).</summary>
+    public bool AutoInstall => CanSelfUpdate && _settings.AutoInstallUpdates;
+
+    /// <summary>The release file this copy installs from: the installer, or the zip for an unzipped copy.</summary>
+    public static ReleaseAsset? UpdateAsset(ReleaseInfo release) =>
+        IsInstalled ? release.Installer : CanUpdateZip ? release.Portable : null;
 
     /// <summary>The update whose installer is downloaded and checked, waiting for a quiet moment to be installed.</summary>
     public ReleaseInfo? Downloaded { get; private set; }
@@ -105,7 +118,7 @@ public sealed class Updater : IDisposable
             Latest = await _feed.GetLatestAsync();
             LastError = null;
             Log.Info($"Update check: newest release {Latest?.Tag ?? "none"}, this copy {Current.ToString(3)}.");
-            if (Available is { Installer: not null } update && AutoInstall) _ = PrepareAsync(update);
+            if (Available is { } update && UpdateAsset(update) is not null && AutoInstall) _ = PrepareAsync(update);
             return Latest is { } r && r.Version > Current ? UpdateCheckResult.Available : UpdateCheckResult.UpToDate;
         }
         catch (Exception ex) when (ex is HttpRequestException or TaskCanceledException or JsonException or InvalidOperationException)
@@ -128,11 +141,11 @@ public sealed class Updater : IDisposable
         Changed?.Invoke();
     }
 
-    /// <summary>Downloads the release's installer to the temp folder, checked against GitHub's size and SHA-256.</summary>
-    public Task<string> DownloadInstallerAsync(ReleaseInfo release, IProgress<double>? progress, CancellationToken ct) =>
-        release.Installer is { } installer
-            ? _feed.DownloadAsync(installer, DownloadFolder, progress, ct)
-            : throw new InvalidOperationException($"Release {release.Tag} has no installer");
+    /// <summary>Downloads the release's installer (or zip) to the temp folder, checked against GitHub's size and SHA-256.</summary>
+    public Task<string> DownloadUpdateAsync(ReleaseInfo release, IProgress<double>? progress, CancellationToken ct) =>
+        UpdateAsset(release) is { } asset
+            ? _feed.DownloadAsync(asset, DownloadFolder, progress, ct)
+            : throw new InvalidOperationException($"Release {release.Tag} has nothing this copy can install");
 
     /// <summary>Fetches the update in the background, so it can go in at the next quiet moment.</summary>
     private async Task PrepareAsync(ReleaseInfo release)
@@ -142,7 +155,7 @@ public sealed class Updater : IDisposable
         DownloadFailed = false;
         try
         {
-            _downloadedPath = await DownloadInstallerAsync(release, null, CancellationToken.None);
+            _downloadedPath = await DownloadUpdateAsync(release, null, CancellationToken.None);
             Downloaded = release;
             Log.Info($"Update {release.Tag} downloaded: {_downloadedPath}");
         }
@@ -159,11 +172,58 @@ public sealed class Updater : IDisposable
         }
     }
 
-    /// <summary>Runs the downloaded installer without any window; the caller exits right after.</summary>
-    public void InstallDownloaded()
+    /// <summary>
+    /// Installs the downloaded update without any window; the caller exits right after. <paramref name="restart"/>:
+    /// start the meter again afterwards (an unzipped copy can also stay closed until the game starts it).
+    /// </summary>
+    public void InstallDownloaded(bool restart = true)
     {
         if (_downloadedPath is null) throw new InvalidOperationException("No update downloaded");
-        LaunchInstaller(_downloadedPath, quiet: true);
+        Install(_downloadedPath, quiet: true, restart);
+    }
+
+    /// <summary>Starts installing a downloaded installer or release zip; the caller exits right after.</summary>
+    public static void Install(string path, bool quiet, bool restart = true)
+    {
+        if (path.EndsWith(".zip", StringComparison.OrdinalIgnoreCase)) LaunchZipUpdate(path, restart);
+        else LaunchInstaller(path, quiet);
+    }
+
+    private const string WatcherFile = "1HP-Watcher.exe";
+
+    /// <summary>
+    /// 1 HP: a temporary copy of 1HP-Watcher.exe replaces this unzipped copy's files once it has exited (see
+    /// Core/Updates/PortableInstall.cs). The copy runs from the temp folder, so nothing in the overlay folder is in use.
+    /// </summary>
+    private static void LaunchZipUpdate(string zip, bool restart)
+    {
+        var appDir = Path.GetFullPath(AppContext.BaseDirectory).TrimEnd(Path.DirectorySeparatorChar);
+        var exe = Path.GetFileName(Environment.ProcessPath) ?? "1HP-Overlay.exe";
+        Directory.CreateDirectory(DownloadFolder);
+        var updater = Path.Combine(DownloadFolder, $"1HP-Updater-{Guid.NewGuid().ToString("N")[..8]}.exe");
+        File.Copy(Path.Combine(appDir, WatcherFile), updater, overwrite: true);
+        var start = new ProcessStartInfo(updater) { UseShellExecute = false };
+        foreach (var arg in new[] { "--apply", zip, appDir, Environment.ProcessId.ToString(), exe, restart ? "restart" : "stay-closed" })
+            start.ArgumentList.Add(arg);
+        using (Process.Start(start)) { }
+        Log.Info($"Zip update handed to {updater} (restart: {restart})");
+    }
+
+    private static bool DetectZipUpdate()
+    {
+        try
+        {
+            var dir = AppContext.BaseDirectory;
+            if (!File.Exists(Path.Combine(dir, WatcherFile))) return false;
+            var probe = Path.Combine(dir, ".write-test-" + Guid.NewGuid().ToString("N"));
+            File.WriteAllText(probe, "");
+            File.Delete(probe);
+            return true;
+        }
+        catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
+        {
+            return false; // e.g. unzipped into Program Files: it cannot change its own files
+        }
     }
 
     /// <summary>
