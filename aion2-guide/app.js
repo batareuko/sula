@@ -2045,7 +2045,15 @@
   var bossZone = prefGet('bossZone', G.bossZones[0].id);
   var bossSort = prefGet('bossSort', 'time');
   var bossAll = prefGet('bossAll', false);           /* показувати всіх босів зони, а не 8 найближчих */
-  var bossBells = prefGet('bossBells', []);
+  /* Пріоритетні боси (data.js → bossPriority): дзвіночок увімкнений одразу, і раз — для тих, хто вже налаштовував дзвіночки */
+  var PRIO = (G.bossPriority && G.bossPriority.ids) || [];
+  function isPrio(b) { return PRIO.indexOf(b.id) >= 0; }
+  var bossBells = prefGet('bossBells', PRIO.slice());
+  if (!prefGet('prioBellsAdded', false)) {
+    PRIO.forEach(function (id) { if (bossBells.indexOf(id) < 0) bossBells.push(id); });
+    prefSet('bossBells', bossBells);
+    prefSet('prioBellsAdded', true);
+  }
   var notifyLead = prefGet('notifyLead', 5);          /* за скільки хвилин попереджати */
   var notifyAtSpawn = prefGet('notifyAtSpawn', true); /* ще й у момент появи / відкриття */
   var notifyRift = prefGet('notifyRift', false);
@@ -2149,12 +2157,14 @@
     });
     if (bossSort === 'time') {
       items.sort(function (x, y) {
-        return x.st.order - y.st.order || (x.st.at || 0) - (y.st.at || 0) || x.i - y.i;
+        return x.st.order - y.st.order || (x.st.at || 0) - (y.st.at || 0) || (isPrio(y.b) - isPrio(x.b)) || x.i - y.i;
       });
     }
     list.textContent = '';
     var total = items.length, LIMIT = 8;
-    (bossAll ? items : items.slice(0, LIMIT)).forEach(function (it) { list.appendChild(bossRow(it.b, it.st, now)); });
+    /* у згорнутому списку пріоритетні боси видно завжди */
+    (bossAll ? items : items.filter(function (it, n) { return n < LIMIT || isPrio(it.b); }))
+      .forEach(function (it) { list.appendChild(bossRow(it.b, it.st, now)); });
     if (total > LIMIT) {
       list.appendChild(h('li', { class: 'boss-more' }, h('button', { class: 'btn btn-ghost btn-sm', type: 'button',
         text: bossAll ? 'Згорнути до ' + LIMIT : 'Показати всіх босів зони (' + total + ')',
@@ -2174,9 +2184,10 @@
     });
     bell.innerHTML = BELL_SVG;
 
+    var prio = isPrio(b);
     var main = h('div', { class: 'boss-main' },
-      h('b', { text: b.name }),
-      h('span', { class: 'meta', text: b.area + ' · рів. ' + b.lv + ' · відродження ' + cycleText(b.min) }));
+      h('b', null, prio ? h('span', { class: 'prio-star', title: 'Пріоритетний: ' + G.bossPriority.loot, text: '★ ' }) : null, b.name),
+      h('span', { class: 'meta', text: b.area + ' · рів. ' + b.lv + ' · відродження ' + cycleText(b.min) + (prio ? ' · ' + G.bossPriority.loot : '') }));
 
     var big, small;
     if (st.s === 'unknown') { big = 'немає відмітки'; small = ''; }
@@ -2191,7 +2202,7 @@
       h('button', { class: 'btn btn-ghost', type: 'button', text: 'Раніше…', 'aria-label': 'Вказати час вбивства: ' + b.name, onclick: function () { askKillTime(b); } }),
       st.k ? h('button', { class: 'btn btn-ghost', type: 'button', text: '✕', title: 'Скасувати відмітку', 'aria-label': 'Скасувати відмітку: ' + b.name, onclick: function () { clearKill(b); } }) : null);
 
-    return h('li', { class: 'boss is-' + st.s }, bell, main, status, act);
+    return h('li', { class: 'boss is-' + st.s + (prio ? ' is-prio' : '') }, bell, main, status, act);
   }
 
   function askKillTime(b) {
@@ -2258,6 +2269,7 @@
   }
 
   function syncBossSyncNote() {
+    if ($('bossPrioNote') && G.bossPriority) $('bossPrioNote').textContent = G.bossPriority.note;
     if (Cloud && Cloud.user) return;
     $('bossSync').textContent = Cloud && Cloud.enabled
       ? 'Зараз відмітки зберігаються лише в цьому браузері. Увійдіть через Discord, щоб бачити спільні відмітки всього складу 1 HP.'
@@ -2294,12 +2306,14 @@
       var st = bossState(b, now);
       if (!st.k) return;
       var key = b.id + ':' + st.k.t;
+      var title = isPrio(b) ? '★ ' + b.name : b.name;
+      var loot = isPrio(b) ? ' · ' + G.bossPriority.loot : '';
       if (st.s === 'dead' && st.at - now <= lead && !notified[key + ':soon']) {
         notified[key + ':soon'] = true;
-        notify(b.name, 'відродиться через ' + timeLeft(st.at - now) + ' (' + b.area + ')');
+        notify(title, 'відродиться через ' + timeLeft(st.at - now) + ' (' + b.area + ')' + loot);
       } else if (st.s === 'window' && notifyAtSpawn && !notified[key + ':up']) {
         notified[key + ':up'] = true;
-        notify(b.name, 'може з’явитись зараз (' + b.area + ')');
+        notify(title, 'може з’явитись зараз (' + b.area + ')' + loot);
       }
     });
     if (notifyStocks) {

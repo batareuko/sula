@@ -46,6 +46,9 @@ public sealed class AppSettings
     // Boss respawn timers
     /// <summary>Tray notification this many minutes before a tracked boss respawns; 0 = off.</summary>
     public int BossAlertMinutes { get; set; } = 2;
+    /// <summary>1 HP: notify about priority field bosses (★, data/priority_bosses.json) without a bell, this early.</summary>
+    public bool PriorityBossAlerts { get; set; } = true;
+    public const int PriorityAlertMinutes = 10;
 
     // Meter
     public TargetMode TargetMode { get; set; } = TargetMode.BossOnly;

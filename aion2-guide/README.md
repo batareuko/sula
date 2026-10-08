@@ -227,12 +227,29 @@ API Aion 2 немає. Адреси недокументовані й можут
 1. Discord: Налаштування каналу → Інтеграції → Вебхуки → Новий вебхук → «Копіювати URL вебхука».
 2. Supabase → Edge Functions → Deploy a new function → Via Editor, назва `discord-alerts`, вставте
    `supabase/functions/discord-alerts/index.ts`, Deploy.
-3. На сторінці функції → Secrets: додайте `DISCORD_WEBHOOK_URL` (URL з кроку 1). Необов'язково: `ALERT_LEAD_MIN`
-   (5), `ALERT_MIN_CYCLE_MIN` (60 — сповіщати лише про босів з циклом від години, щоб не спамити),
-   `ALERT_RIFT` (1 або 0), `ALERT_GROUP_LEAD_MIN` (15).
+3. На сторінці функції → Secrets: додайте `DISCORD_WEBHOOK_URL` (URL з кроку 1). Необов'язково:
+   `ALERT_BOSSES` (`priority` — за замовчуванням, лише пріоритетні боси ★; `all` — усі з циклом від
+   `ALERT_MIN_CYCLE_MIN`, 60 хв), `ALERT_PRIORITY_LEAD_MIN` (10), `ALERT_PRIORITY_MENTION` (`@here` або `<@&ID ролі>`,
+   щоб кликати людей про пріоритетних; за замовчуванням без пінгу), `ALERT_LEAD_MIN` (5, для `all`), `ALERT_RIFT`
+   (1 або 0), `ALERT_GROUP_LEAD_MIN` (15).
 4. SQL Editor: виконайте `cron.sql` (вмикає щохвилинний запуск). Вимкнути: `select cron.unschedule('1hp-discord-alerts');`
 
 Боси у функції — копія списку з `data.js`; якщо змінюєте цикли там, змініть і у функції.
+
+### Пріоритетні боси (★)
+
+Боси 48–51 рівня: Silent Dartan, Soul Ruler Kashapa, High Commander Lagta, Eternal / Immortal Gartua (обидві
+зони). З кожного падає свій іменний Unique-сет: рукавиці, чоботи, плащ, сережки, кільце по ~12,9 %, шолом і
+наплічники 10,3 %, поножі 8,6 %, нагрудник 6,4 %. У середньому це ~1 Unique-предмет за вбивство, а з Gartua ще
+Legend-артворк (25 %). З босів 45 рівня Unique (Wisdom / Fantasy) падають з шансом 0,1–0,2 %. Шанси — з metabot.gg
+(2026-10-08).
+
+Список у `data.js → bossPriority`, копії — у `discord-alerts` (`PRIORITY`) та в оверлеї
+(`overlay/data/priority_bosses.json`). Що з ним роблять:
+- **сайт**: позначка ★, дзвіночок увімкнений сам (і раз — для тих, хто вже налаштовував дзвіночки), у згорнутому
+  списку пріоритетні видно завжди, у сповіщенні браузера — здобич;
+- **Discord**: за 10 хв до відродження і ще раз, коли відкривається вікно появи;
+- **оверлей**: сповіщення в треї за 10 хв без дзвіночка (Налаштування → 1 HP).
 
 ## Англійські назви термінів
 
