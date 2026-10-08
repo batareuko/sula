@@ -17,6 +17,7 @@ public partial class SettingsWindow : Window
     {
         _meter = meter;
         InitializeComponent();
+        WindowMemory.Track(this, "settings");
         Controls.DragAnywhere.Attach(this);
         Load();
         // The row size slider previews on the overlay; closing without saving puts the saved size back.
@@ -67,6 +68,8 @@ public partial class SettingsWindow : Window
         OneHpKey.Text = s.OneHpKey;
         OneHpUpload.IsChecked = s.OneHpUpload;
         OneHpGear.IsChecked = s.OneHpGear;
+        OneHpWithGame.IsChecked = s.WithGame;
+        OneHpCompact.IsChecked = s.Compact;
         AutoInstallUpdates.IsChecked = s.AutoInstallUpdates;
         AutoInstallUpdates.IsEnabled = Updater.IsInstalled; // a portable copy cannot replace itself
         VersionText.Text = string.Format(Updater.IsInstalled ? T.VersionInstalled : T.VersionPortable, _meter.Updates.Current.ToString(3));
@@ -110,6 +113,13 @@ public partial class SettingsWindow : Window
         s.OneHpKey = OneHpKey.Text.Trim();
         s.OneHpUpload = OneHpUpload.IsChecked == true;
         s.OneHpGear = OneHpGear.IsChecked == true;
+        s.Compact = OneHpCompact.IsChecked == true;
+        if ((OneHpWithGame.IsChecked == true) != s.WithGame)
+        {
+            s.WithGame = OneHpWithGame.IsChecked == true;
+            var on = s.WithGame;
+            ThreadPool.QueueUserWorkItem(_ => GameAutostart.Apply(on));
+        }
         s.AutoInstallUpdates = AutoInstallUpdates.IsChecked == true;
         s.HotkeyToggleOverlay = HkToggle.Text.Trim();
         s.HotkeyReset = HkReset.Text.Trim();

@@ -51,6 +51,7 @@ public partial class BossTimersWindow : Window
     {
         _meter = meter;
         InitializeComponent();
+        WindowMemory.Track(this, "timers");
         Controls.DragAnywhere.Attach(this);
         List.ItemsSource = _rows;
         UpdateAlertButton();

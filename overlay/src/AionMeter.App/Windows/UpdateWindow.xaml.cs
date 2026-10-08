@@ -24,6 +24,7 @@ public partial class UpdateWindow : Window
         _updater = updater;
         Release = release;
         InitializeComponent();
+        WindowMemory.Track(this, "update");
         Controls.DragAnywhere.Attach(this);
 
         var t = UiText.Current;

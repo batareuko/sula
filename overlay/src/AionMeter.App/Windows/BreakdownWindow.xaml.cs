@@ -59,6 +59,7 @@ public partial class BreakdownWindow : Window
         _icons = icons;
         _portraits = portraits;
         InitializeComponent();
+        WindowMemory.Track(this, "breakdown");
         ShowSortHeads();
         DragAnywhere.Attach(this);
         _timer = new DispatcherTimer { Interval = TimeSpan.FromSeconds(1) };

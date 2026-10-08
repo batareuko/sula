@@ -50,6 +50,7 @@ public partial class HistoryWindow : Window
     {
         _meter = meter;
         InitializeComponent();
+        WindowMemory.Track(this, "history");
         _drag = Controls.DragAnywhere.Attach(this);
         Loaded += (_, _) => Reload();
         Store.Changed += OnStoreChanged;

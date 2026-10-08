@@ -191,4 +191,31 @@ public class GuildDataTests
         Assert.Null(Core.OneHp.GuildData.BuildRecord(Fight(Core.Combat.EncounterEndReason.Kill, "#4242")));
         Assert.Null(Core.OneHp.GuildData.BuildRecord(Fight(Core.Combat.EncounterEndReason.Kill, "Whelps", combatMs: 3_000)));
     }
+
+    [Theory]
+    [InlineData("Marsh Moss Potcrab", "marsh-moss-potcrab")]
+    [InlineData("Mau Sentry's Soul", "mau-sentrys-soul")]
+    [InlineData("32nd Division Fanatic Uraga", "32nd-division-fanatic-uraga")]
+    [InlineData("Decaying Durvati (Specimen)", "decaying-durvati-specimen")]
+    [InlineData("  Hard  Kalgolem ", "hard-kalgolem")]
+    public void Monster_page_address_from_the_english_name(string name, string slug) =>
+        Assert.Equal(slug, MonsterPages.Slug(name));
+
+    [Theory]
+    [InlineData("???")]
+    [InlineData("")]
+    [InlineData("A")]
+    public void Nameless_monsters_have_no_page(string name) => Assert.Null(MonsterPages.Slug(name));
+
+    [Fact]
+    public void Portrait_file_is_read_from_the_page_head()
+    {
+        const string page = "<meta property=\"og:image\" content=\"https://metabot.gg/web/aion2/npcs/f/mob_bigman_01.webp\"/>" +
+                            "<meta property=\"og:image\" content=\"https://metabot.gg/web/aion2/brand/og-1200x630.jpg\"/>";
+        Assert.Equal("f/mob_bigman_01", MonsterPages.PortraitFile(page));
+        Assert.Equal("r/mob_phaini_01", MonsterPages.PortraitFile(
+            "<meta property=\"og:image\" content=\"https://metabot.gg/web/aion2/npcs-large/r/mob_phaini_01.webp\"/>"));
+        // a missing monster: the site's generic card
+        Assert.Null(MonsterPages.PortraitFile("<meta property=\"og:image\" content=\"https://metabot.gg/web/shared/metabot_og_card.png\"/>"));
+    }
 }
