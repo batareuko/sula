@@ -120,4 +120,36 @@ public class PartyTests
         t.ImportCache(cache);
         Assert.Equal(["Ilvane", "Borgrim"], t.PartyNames.Order().Reverse());
     }
+
+    [Fact]
+    public void A_roster_without_you_is_someone_elses_party()
+    {
+        var t = Fight(partyOnly: true, ["Ilvane", "Borgrim"]);
+        t.Process(new PartyRosterEvent(3_000, ["Passerby", "Stranger"], Complete: true));
+        Assert.Equal(["Borgrim", "Ilvane"], Names(t));
+        t.Process(new PartyRosterEvent(3_000, ["Passerby"], Complete: false));
+        Assert.Equal(["Borgrim", "Ilvane"], Names(t));
+    }
+
+    [Fact]
+    public void Unnamed_players_and_ownerless_pets_stay_out_even_when_a_party_member_has_not_hit()
+    {
+        var t = new CombatTracker(GameData.Empty, new MeterOptions { TargetMode = TargetMode.All, PartyOnly = true });
+        t.Process(new SelfIdentifiedEvent(0, Me, "Ilvane", 1304, GameClass.Elementalist));
+        t.Process(new NpcSeenEvent(0, Boss, 2000002, 50_000_000));
+        t.Process(new PartyRosterEvent(0, ["Ilvane", "Healer"], Complete: true)); // the healer never hits
+        t.Process(new DamageEvent(1_000, Me, Boss, 16040000, 1_000_000, HitFlags.None));
+        t.Process(new DamageEvent(2_000, 777, Boss, 14020000, 6_000_000, HitFlags.None)); // "#777": a stranger not named yet
+        Assert.Equal(["Ilvane"], Names(t));
+    }
+
+    [Fact]
+    public void The_chip_can_tell_what_the_filter_does()
+    {
+        Assert.Equal(PartyFilterState.Party, Fight(partyOnly: true, ["Ilvane", "Borgrim"]).PartyStatus().State);
+        Assert.Equal(PartyFilterState.Solo, Fight(partyOnly: true, roster: null).PartyStatus().State);
+        Assert.Equal(PartyFilterState.Off, Fight(partyOnly: false, roster: null).PartyStatus().State);
+        Assert.Equal(PartyFilterState.SelfUnknown,
+            new CombatTracker(GameData.Empty, new MeterOptions { PartyOnly = true }).PartyStatus().State);
+    }
 }

@@ -60,6 +60,11 @@ public sealed partial class UiText
     public string PriorityLoot { get; init; } = "★ Priority: level 48–51 field boss with its own Unique set, about one piece per kill.";
     public string OneHpPartyOnly { get; init; } = "Only me and my party (players around who are not in it are hidden)";
     public string TipPartyOnly { get; init; } = "Outside dungeons only you and your party are listed: players nearby who hit the same monster are left out of the rows, the totals and the places. In dungeons and raids everyone is your group anyway.";
+    public string PartyStateOff { get; init; } = "Now: everyone around is listed (EVERYONE).";
+    public string PartyStateSelfUnknown { get; init; } = "Now: not filtering yet — the meter does not know your character. Change zone or teleport once.";
+    public string PartyStateInstance { get; init; } = "Now: in an instance, where everyone is your group.";
+    public string PartyStateSolo { get; init; } = "Now: on your own — only you are listed.";
+    public string PartyStateParty { get; init; } = "Now: your party — {0}.";
     public string PartyOnlyChip { get; init; } = "PARTY";
     public string EveryoneChip { get; init; } = "EVERYONE";
     public string OneHpCompact { get; init; } = "Compact overlay (smaller header and rows)";

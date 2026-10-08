@@ -280,7 +280,7 @@
                     <Button Style="{StaticResource Chip}" Content="{Binding ModeLabel}" Click="Mode_Click" Margin="0,0,6,0"
                             ToolTip="Boss only / everything you hit" />
                     <Button Style="{StaticResource Chip}" Content="{Binding PartyLabel}" Click="Party_Click" Margin="0,0,6,0"
-                            ToolTip="{Binding T.TipPartyOnly}" />
+                            ToolTip="{Binding PartyTip}" />
                     <Button Style="{StaticResource Chip}" Content="{Binding LanguageCode}" Click="Language_Click" Margin="0,0,6,0"
                             ToolTip="{Binding T.SwitchLanguage}" />
                     <Button Style="{StaticResource IconButton}" Content="&#xE81C;" Click="Segments_Click" ToolTip="Fight segments" />

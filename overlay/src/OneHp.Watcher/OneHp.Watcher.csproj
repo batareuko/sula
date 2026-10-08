@@ -14,7 +14,7 @@
     <AssemblyName>1HP-Watcher</AssemblyName>
     <RootNamespace>OneHp.Watcher</RootNamespace>
     <Product>1 HP Overlay</Product>
-    <Version>1.2.4</Version>
+    <Version>1.2.5</Version>
     <InvariantGlobalization>true</InvariantGlobalization>
     <UseSystemResourceKeys>true</UseSystemResourceKeys>
   </PropertyGroup>
