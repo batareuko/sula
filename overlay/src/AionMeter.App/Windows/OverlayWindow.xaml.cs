@@ -258,6 +258,7 @@ public partial class OverlayWindow : Window
         _vm.LanguageChanged();
         ShowUpdateBanner();
         ApplyHotkeyTips();
+        UpdateModeLabel();
         Refresh();
     }
 
@@ -400,8 +401,11 @@ public partial class OverlayWindow : Window
         ResizeGrip.Visibility = _settings.Locked ? Visibility.Collapsed : Visibility.Visible;
     }
 
-    private void UpdateModeLabel() =>
+    private void UpdateModeLabel()
+    {
         _vm.ModeLabel = _settings.TargetMode == TargetMode.BossOnly ? "BOSS" : "ALL";
+        _vm.PartyLabel = _settings.PartyOnly ? UiText.Current.PartyOnlyChip : UiText.Current.EveryoneChip;
+    }
 
     private void EnsureOnScreen()
     {
@@ -499,6 +503,15 @@ public partial class OverlayWindow : Window
         if (_vm.Rows.Count == 0) return;
         var target = _vm.Rows.FirstOrDefault(r => r.IsSelf) ?? _vm.Rows[0];
         OpenBreakdown(target.ActorId);
+    }
+
+    /// <summary>1 HP: only my party ⇄ everyone around (outside instances).</summary>
+    private void Party_Click(object sender, RoutedEventArgs e)
+    {
+        _settings.PartyOnly = !_settings.PartyOnly;
+        _meter.ApplySettings();
+        UpdateModeLabel();
+        Refresh();
     }
 
     private void Mode_Click(object sender, RoutedEventArgs e)

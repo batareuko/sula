@@ -87,12 +87,17 @@ public sealed class PacketParser
             case Opcodes.BattleToggle:
                 ParseBattleToggle(body);
                 break;
+            case Opcodes.PartyRoster:
+                if (PartyRoster.TryParse(body, 0) is { } roster) EmitRoster(roster);
+                else ScanForRosters(body);
+                break;
             default:
                 // Identity records also ride inside other packets: mid-packet, and inside LZ4 bundles embedded in a
                 // larger packet (the self record repeats that way every few minutes after a zone load).
                 if (body.Length >= 16)
                 {
                     ScanForIdentities(body);
+                    ScanForRosters(body);
                     ScanEmbeddedBundles(body);
                 }
                 break;
@@ -119,6 +124,7 @@ public sealed class PacketParser
                     if (decoded <= 0) continue;
                     EmbeddedBundles++;
                     ScanForIdentities(target.AsSpan(0, decoded));
+                    ScanForRosters(target.AsSpan(0, decoded));
                 }
                 finally
                 {
@@ -505,6 +511,18 @@ public sealed class PacketParser
             ParseIdentity(b, i + 2, op == 0x33);
         }
     }
+
+    // ------------------------------------------------------------------ party roster (02 97)
+
+    /// <summary>1 HP: rosters also ride inside other packets and bundles, so they are looked for by opcode.</summary>
+    private void ScanForRosters(ReadOnlySpan<byte> b)
+    {
+        if (b.Length < 32 || b.IndexOf((ReadOnlySpan<byte>)[0x02, 0x97]) < 0) return;
+        foreach (var roster in PartyRoster.FindAll(b)) EmitRoster(roster);
+    }
+
+    private void EmitRoster(PartyRoster roster) =>
+        Emit(new PartyRosterEvent(TimeMs, roster.Members.Select(m => m.Name).ToList(), roster.Complete));
 
     // ------------------------------------------------------------------ spawns (41 36)
 

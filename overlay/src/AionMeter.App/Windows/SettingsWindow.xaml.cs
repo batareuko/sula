@@ -70,6 +70,7 @@ public partial class SettingsWindow : Window
         OneHpGear.IsChecked = s.OneHpGear;
         OneHpWithGame.IsChecked = s.WithGame;
         OneHpCompact.IsChecked = s.Compact;
+        OneHpPartyOnly.IsChecked = s.PartyOnly;
         AutoInstallUpdates.IsChecked = s.AutoInstallUpdates;
         AutoInstallUpdates.IsEnabled = Updater.CanSelfUpdate; // a copy in a read-only folder cannot replace itself
         VersionText.Text = string.Format(Updater.IsInstalled ? T.VersionInstalled : T.VersionPortable, _meter.Updates.Current.ToString(3));
@@ -114,6 +115,7 @@ public partial class SettingsWindow : Window
         s.OneHpUpload = OneHpUpload.IsChecked == true;
         s.OneHpGear = OneHpGear.IsChecked == true;
         s.Compact = OneHpCompact.IsChecked == true;
+        s.PartyOnly = OneHpPartyOnly.IsChecked == true;
         if ((OneHpWithGame.IsChecked == true) != s.WithGame)
         {
             s.WithGame = OneHpWithGame.IsChecked == true;

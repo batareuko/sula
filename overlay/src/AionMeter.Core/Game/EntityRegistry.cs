@@ -18,7 +18,9 @@ public sealed record CachedPlayer(uint Id, string Name, GameClass Class, int Ser
 public sealed record CachedNpc(uint Id, int Code, long MaxHp);
 
 /// <summary>What a meter restarted in the same zone needs: who is who, and the bosses around with their real max HP.</summary>
-public sealed record SessionState(uint? SelfId, int MapId, IReadOnlyList<CachedPlayer> Players, IReadOnlyList<CachedNpc> Npcs);
+/// <param name="Party">1 HP: the party roster's names (null in caches from older versions).</param>
+public sealed record SessionState(uint? SelfId, int MapId, IReadOnlyList<CachedPlayer> Players, IReadOnlyList<CachedNpc> Npcs,
+    IReadOnlyList<string>? Party = null);
 
 /// <summary>A spawned pet / spirit / skill effect whose owner is not known yet.</summary>
 public sealed record UnownedEntity(long SpawnMs, int NpcCode, string? OwnerName);

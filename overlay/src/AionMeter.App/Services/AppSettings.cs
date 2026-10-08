@@ -49,6 +49,8 @@ public sealed class AppSettings
 
     // Meter
     public TargetMode TargetMode { get; set; } = TargetMode.BossOnly;
+    /// <summary>1 HP: outside instances list only you and your party (MeterOptions.PartyOnly).</summary>
+    public bool PartyOnly { get; set; } = true;
     /// <summary>True: the leader's bar is full and the rest are sized against it. False: bars show share of party damage.</summary>
     public bool BarsRelativeToTop { get; set; } = true;
     public int MaxRows { get; set; } = 10;
@@ -154,6 +156,7 @@ public sealed class AppSettings
     public void ApplyTo(MeterOptions options)
     {
         options.TargetMode = TargetMode;
+        options.PartyOnly = PartyOnly;
         options.IdleTimeoutMs = Math.Clamp(IdleTimeoutSec, 3, 120) * 1000;
         options.BossIdleTimeoutMs = Math.Clamp(BossIdleTimeoutSec, 5, 300) * 1000;
     }

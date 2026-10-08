@@ -11,6 +11,13 @@ public sealed class MeterOptions
 {
     public TargetMode TargetMode { get; set; } = TargetMode.BossOnly;
 
+    /// <summary>
+    /// 1 HP: in the open world list only the local player and their party (the 02 97 roster); players around who are
+    /// not in it stay out of the rows, the totals and the places. Instances hold only the party, so they are never
+    /// filtered. Off by default here; the overlay turns it on (AppSettings.PartyOnly).
+    /// </summary>
+    public bool PartyOnly { get; set; }
+
     /// <summary>End the segment after this long without outgoing damage (no boss alive).</summary>
     public int IdleTimeoutMs { get; set; } = 10_000;
 
