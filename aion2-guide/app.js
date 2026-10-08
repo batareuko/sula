@@ -2033,7 +2033,8 @@
 
   /* ---------- Таймери: Розлом, ресети, польові боси ---------- */
   var BELL_SVG = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9"/><path d="M10.3 21a1.9 1.9 0 0 0 3.4 0"/></svg>';
-  var cloudKills = null;      /* { bossId: { t, by } } після входу; інакше відмітки в state.kills */
+  var cloudKills = null;      /* { bossId: { t, by, respawn, alive, game } } після входу; інакше відмітки в state.kills */
+  var killsServer = 0;        /* сервер, чиї спільні відмітки завантажено */
   var killsUnsub = null;
   var notified = {};
 
@@ -2139,10 +2140,18 @@
     return state.kills || (state.kills = {});
   }
 
+  /* Таймери в кожного сервера свої: беремо сервер персонажа активного профілю (0 — не вказано) */
+  function bossServer() {
+    var p = active(), c = p && p.character;
+    return c && c.sid > 0 ? { id: c.sid, name: c.s || String(c.sid) } : { id: 0, name: '' };
+  }
+
   function bossState(b, now) {
     var k = killsMap()[b.id];
     if (!k) return { s: 'unknown', order: 3 };
-    var at = k.t + b.min * 60000, end = at + G.bossWindowMin * 60000;
+    /* точний час з гри (оверлей): живий з … або повернеться о …; інакше відмітка «Вбито» + цикл */
+    if (k.alive && k.respawn) return { s: 'up', at: k.respawn, end: k.respawn, k: k, order: 2 };
+    var at = k.respawn || k.t + b.min * 60000, end = at + G.bossWindowMin * 60000;
     if (now < at) return { s: 'dead', at: at, end: end, k: k, order: 1 };
     if (now < end) return { s: 'window', at: at, end: end, k: k, order: 0 };
     return { s: 'up', at: at, end: end, k: k, order: 2 };
@@ -2150,6 +2159,7 @@
 
   function renderBosses(force) {
     var list = $('bossList');
+    if (Cloud && Cloud.user && cloudKills && bossServer().id !== killsServer) loadKills(); /* змінився персонаж профілю */
     if (!force && list.contains(document.activeElement)) return; /* не збиваємо фокус клавіатури */
     var now = Date.now();
     var items = G.bosses.filter(function (b) { return b.zone === bossZone; }).map(function (b, i) {
@@ -2193,8 +2203,10 @@
     if (st.s === 'unknown') { big = 'немає відмітки'; small = ''; }
     else if (st.s === 'dead') { big = 'через ' + timeLeft(st.at - now); small = 'о ' + clock(st.at); }
     else if (st.s === 'window') { big = 'може з’явитись'; small = 'вікно до ' + clock(st.end); }
+    else if (st.k && st.k.alive) { big = 'живий'; small = 'з ' + clock(st.at); }
     else { big = 'має бути живий'; small = 'з ' + clock(st.at); }
-    if (st.k) small += (small ? ' · ' : '') + 'вбито о ' + clock(st.k.t) + (st.k.by ? ' (' + st.k.by + ')' : '');
+    if (st.k && st.k.game) small += (small ? ' · ' : '') + 'з гри' + (st.k.by ? ' (' + st.k.by + ')' : '');
+    else if (st.k) small += (small ? ' · ' : '') + 'вбито о ' + clock(st.k.t) + (st.k.by ? ' (' + st.k.by + ')' : '');
     var status = h('div', { class: 'boss-st', 'aria-live': 'off' }, h('b', { text: big }), small ? h('span', { text: small }) : null);
 
     var act = h('div', { class: 'boss-act' },
@@ -2217,7 +2229,7 @@
     if (Cloud && Cloud.user && cloudKills) {
       cloudKills[b.id] = { t: t, by: Cloud.user.name };
       renderBosses(true);
-      Cloud.markKill(b.id, t).catch(function (err) { toast('Не вдалося зберегти відмітку: ' + err.message); loadKills(); });
+      Cloud.markKill(killsServer, b.id, t).catch(function (err) { toast('Не вдалося зберегти відмітку: ' + err.message); loadKills(); });
     } else {
       killsMap()[b.id] = { t: t };
       saveState();
@@ -2229,7 +2241,7 @@
     if (Cloud && Cloud.user && cloudKills) {
       delete cloudKills[b.id];
       renderBosses(true);
-      Cloud.clearKill(b.id).catch(function (err) { toast('Не вдалося скасувати: ' + err.message); loadKills(); });
+      Cloud.clearKill(killsServer, b.id).catch(function (err) { toast('Не вдалося скасувати: ' + err.message); loadKills(); });
     } else {
       delete killsMap()[b.id];
       saveState();
@@ -2239,14 +2251,19 @@
 
   function loadKills() {
     if (!(Cloud && Cloud.user)) return;
-    Cloud.fetchKills().then(function (rows) {
+    var srv = bossServer();
+    killsServer = srv.id;
+    Cloud.fetchKills(srv.id).then(function (rows) {
+      if (srv.id !== killsServer) return; /* поки вантажилось, профіль змінився */
       var m = {};
       (rows || []).forEach(function (r) {
         var t = Date.parse(r.killed_at);
-        if (t) m[r.boss_id] = { t: t, by: r.by_name || '' };
+        if (t) m[r.boss_id] = { t: t, by: r.by_name || '', respawn: Date.parse(r.respawn_at) || 0, alive: !!r.alive, game: r.source === 'game' };
       });
       cloudKills = m;
-      $('bossSync').textContent = 'Спільні відмітки 1 HP: їх бачать і змінюють усі, хто увійшов через Discord. Оновлюються автоматично.';
+      $('bossSync').textContent = srv.id
+        ? 'Сервер ' + srv.name + ': спільні відмітки 1 HP. Оверлей сам надсилає точний час з гри; кнопка «Вбито» — для тих, хто без оверлея. Оновлюються автоматично.'
+        : 'Спільні відмітки 1 HP без сервера. Вкажіть свого персонажа в розділі «Персонаж», щоб бачити таймери саме вашого сервера (у кожного сервера свої).';
       renderBosses(true);
       renderToday();
     }).catch(function (err) {

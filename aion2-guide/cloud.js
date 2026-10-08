@@ -186,22 +186,27 @@
       });
     },
 
-    /* ---- Спільні відмітки вбивств польових босів (таблиця boss_kills) ---- */
-    fetchKills: function () {
-      return client.from('boss_kills').select('boss_id,killed_at,by_name').then(check);
+    /* ---- Спільні відмітки польових босів (таблиця boss_kills), окремо для кожного сервера гри ---- */
+    fetchKills: function (serverId) {
+      return client.from('boss_kills').select('boss_id,killed_at,by_name,respawn_at,alive,source')
+        .eq('server_id', serverId || 0).then(check);
     },
 
-    markKill: function (bossId, atMs) {
+    markKill: function (serverId, bossId, atMs) {
       return client.from('boss_kills').upsert({
+        server_id: serverId || 0,
         boss_id: bossId,
         killed_at: new Date(atMs).toISOString(),
+        respawn_at: null,
+        alive: false,
+        source: 'site',
         by_name: user.name,
         by_user: user.id,
       }).then(check);
     },
 
-    clearKill: function (bossId) {
-      return client.from('boss_kills').delete().eq('boss_id', bossId).then(check);
+    clearKill: function (serverId, bossId) {
+      return client.from('boss_kills').delete().eq('server_id', serverId || 0).eq('boss_id', bossId).then(check);
     },
 
     /* Підписка на зміни в реальному часі; повертає функцію відписки */

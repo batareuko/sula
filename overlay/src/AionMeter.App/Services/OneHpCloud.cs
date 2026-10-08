@@ -123,6 +123,78 @@ public sealed class OneHpCloud : IDisposable
         }
     }
 
+    // ------------------------------------------------------------ field boss times → the site (per server)
+
+    private readonly object _bossGate = new();
+    private string? _bossSent;            // what the site last got: nothing is sent twice
+    private object? _bossPending;
+    private string? _bossPendingSig;
+    private long _bossLastMs;
+    private bool _bossScheduled;
+
+    /// <summary>
+    /// 1 HP: the in-game boss list's times for this server go to the site (boss_kills, source 'game'), so the site's
+    /// and Discord's timers follow the game instead of "killed + cycle". Only bosses the list itself describes; at
+    /// most once a minute, and only when something changed.
+    /// </summary>
+    public void SyncBosses(int server, string? by, IReadOnlyList<BossTimer> timers)
+    {
+        var key = _settings.OneHpKey?.Trim();
+        if (!_settings.OneHpBossSync || string.IsNullOrEmpty(key) || server < 1000) return;
+        var list = timers
+            .Where(t => t.NpcCode > 0 && t.FromGame)
+            .Select(t => t.ListedAlive
+                ? t.ListedTime is { } since ? new { code = t.NpcCode, alive = true, at = since.ToUnixTimeMilliseconds() } : null
+                : t.NextSpawn is { } back ? new { code = t.NpcCode, alive = false, at = back.ToUnixTimeMilliseconds() } : null)
+            .Where(x => x is not null)
+            .OrderBy(x => x!.code)
+            .Take(120)
+            .ToList();
+        if (list.Count == 0) return;
+        var sig = server + ":" + string.Join(",", list.Select(x => $"{x!.code}{(x.alive ? "+" : "-")}{x.at / 60_000}"));
+        lock (_bossGate)
+        {
+            if (sig == _bossSent || sig == _bossPendingSig) return;
+            _bossPending = new { key, bosses = new { serverId = server, by, list } };
+            _bossPendingSig = sig;
+            if (_bossScheduled) return;
+            _bossScheduled = true;
+        }
+        _ = SendBossesAsync();
+    }
+
+    private async Task SendBossesAsync()
+    {
+        try
+        {
+            var wait = 60_000 - (Environment.TickCount64 - _bossLastMs);
+            if (wait > 0) await Task.Delay(TimeSpan.FromMilliseconds(wait), _cts.Token).ConfigureAwait(false);
+            object? body;
+            string? sig;
+            lock (_bossGate)
+            {
+                body = _bossPending;
+                sig = _bossPendingSig;
+                _bossPending = null;
+                _bossPendingSig = null;
+                _bossScheduled = false;
+            }
+            if (body is null) return;
+            _bossLastMs = Environment.TickCount64;
+            using var res = await _http.PostAsJsonAsync(SupabaseUrl + "/functions/v1/dps-upload", body, _cts.Token).ConfigureAwait(false);
+            if (res.IsSuccessStatusCode) lock (_bossGate) _bossSent = sig;
+            else Log.Info("1 HP boss times: " + (int)res.StatusCode + " " + await res.Content.ReadAsStringAsync().ConfigureAwait(false));
+        }
+        catch (OperationCanceledException)
+        {
+        }
+        catch (Exception ex)
+        {
+            Log.Info("1 HP boss times not sent: " + ex.Message);
+            lock (_bossGate) _bossScheduled = false;
+        }
+    }
+
     /// <summary>Settings → "Check": does the site know this key?</summary>
     public async Task<bool?> CheckKeyAsync(string key)
     {

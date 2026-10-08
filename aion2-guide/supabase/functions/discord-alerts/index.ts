@@ -10,6 +10,8 @@
 //   ALERT_PRIORITY_LEAD_MIN — за скільки хвилин попереджати про пріоритетних (за замовчуванням 10); ще одне
 //                           повідомлення — коли відкривається вікно появи
 //   ALERT_PRIORITY_MENTION — кого кликати в повідомленнях про пріоритетних: '@here', '<@&ID ролі>' або порожньо (за замовчуванням)
+//   ALERT_SERVER_ID       — id сервера гри 1 HP (як у профілі персонажа на сайті): таймери в кожного сервера свої;
+//                           порожньо — відмітки всіх серверів
 //   ALERT_RIFT            — '1' сповіщати про Розлом, '0' ні (за замовчуванням 1)
 //   ALERT_GROUP_LEAD_MIN  — за скільки хвилин нагадати про збір групи (за замовчуванням 15)
 //   SITE_URL              — посилання в повідомленнях (за замовчуванням https://guide.sulaslova.com/)
@@ -23,6 +25,7 @@ const MIN_CYCLE = Number(Deno.env.get('ALERT_MIN_CYCLE_MIN') ?? 60);
 const ALL_BOSSES = (Deno.env.get('ALERT_BOSSES') ?? 'priority') === 'all';
 const PRIO_LEAD_MIN = Number(Deno.env.get('ALERT_PRIORITY_LEAD_MIN') ?? 10);
 const MENTION = (Deno.env.get('ALERT_PRIORITY_MENTION') ?? '').trim();
+const SERVER_ID = Number(Deno.env.get('ALERT_SERVER_ID') ?? 0) || 0;
 const RIFT = (Deno.env.get('ALERT_RIFT') ?? '1') === '1';
 const GROUP_LEAD_MIN = Number(Deno.env.get('ALERT_GROUP_LEAD_MIN') ?? 15);
 const SITE = Deno.env.get('SITE_URL') ?? 'https://guide.sulaslova.com/';
@@ -130,24 +133,26 @@ export async function collect(now: number, kills: any[], groups: any[], opts = {
   for (const k of kills) {
     const b = BOSS.get(String(k.boss_id));
     const killed = Date.parse(k.killed_at);
-    if (!b || !killed) continue;
-    const at = killed + b[2] * 60_000;
-    const by = k.by_name ? ` Вбивство відмітив ${k.by_name}.` : '';
+    if (!b || !killed || k.alive) continue;
+    // точний час з гри (оверлей), інакше відмітка «Вбито» + цикл
+    const fromGame = k.source === 'game' && Date.parse(k.respawn_at);
+    const at = fromGame || killed + b[2] * 60_000;
+    const by = fromGame ? ' Час з гри.' : k.by_name ? ` Вбивство відмітив ${k.by_name}.` : '';
     if (PRIORITY.has(b[0])) {
       // ★ пріоритетні: заздалегідь і ще раз, коли відкривається вікно появи
       const tag = opts.mention ? `${opts.mention} ` : '';
       if (now >= at - PRIO_LEAD_MIN * 60_000 && now < at) {
-        out.push({ key: `boss:${b[0]}:${killed}`, ping: !!opts.mention,
+        out.push({ key: `boss:${b[0]}:${at}`, ping: !!opts.mention,
           text: `${tag}★ **${b[1]}** (${b[3]}) відродиться ${when(at)} · ${PRIORITY_LOOT}.` + by });
       } else if (now >= at && now < at + WINDOW_MIN * 60_000) {
-        out.push({ key: `boss-up:${b[0]}:${killed}`, ping: !!opts.mention,
+        out.push({ key: `boss-up:${b[0]}:${at}`, ping: !!opts.mention,
           text: `${tag}★ **${b[1]}** (${b[3]}) може з'явитися зараз (вікно до ${when(at + WINDOW_MIN * 60_000)}) · ${PRIORITY_LOOT}.` });
       }
       continue;
     }
     if (!opts.all || b[2] < MIN_CYCLE) continue;
     if (now >= at - lead && now < at) {
-      out.push({ key: `boss:${b[0]}:${killed}`, text: `**${b[1]}** (${b[3]}) відродиться ${when(at)}.` + by });
+      out.push({ key: `boss:${b[0]}:${at}`, text: `**${b[1]}** (${b[3]}) відродиться ${when(at)}.` + by });
     }
   }
 
@@ -177,7 +182,8 @@ export async function handler(_req: Request): Promise<Response> {
   try {
     const since = new Date(now - 26 * 3600_000).toISOString();
     const [kills, groups] = await Promise.all([
-      rest(`boss_kills?select=boss_id,killed_at,by_name&killed_at=gte.${encodeURIComponent(since)}`),
+      rest(`boss_kills?select=boss_id,killed_at,by_name,respawn_at,alive,source&killed_at=gte.${encodeURIComponent(since)}` +
+        (SERVER_ID ? `&server_id=eq.${SERVER_ID}` : '')),
       rest(`groups?select=id,activity,starts_at,size,note,created_name,created_at,group_members(name,role)&starts_at=gte.${encodeURIComponent(new Date(now).toISOString())}&starts_at=lte.${encodeURIComponent(new Date(now + 7 * 86400_000).toISOString())}`),
     ]);
     let sent = 0;

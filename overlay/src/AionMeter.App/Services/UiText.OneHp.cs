@@ -11,6 +11,13 @@ public sealed partial class UiText
     public string NetPing { get; init; } = "ping {0} ms";
     public string NetPingNoReply { get; init; } = "server ignores ping";
     public string NetLoss { get; init; } = "loss {0}%";
+    public string NetLossBoth { get; init; } = "loss ↓{0}% ↑{1}%";
+    public string NetStalls { get; init; } = "freezes {0}";
+    public string NetTipUpstream { get; init; } = "Your packets to the server, last minute: {0}, sent again {1} ({2}%): skills that reach the server late";
+    public string NetTipStalls { get; init; } = "Server stream froze {0} times for 0.5 s or more (together {1} s) in the last minute";
+    public string NetTipNoStalls { get; init; } = "No freezes of the server stream in the last minute";
+    public string NetAdviceStalls { get; init; } = "Freezes without packet loss: a delay spike on the route or the server itself is busy. Run the network check during the lag; the ping test shows delay spikes per hop.";
+    public string NetAdviceUpstream { get; init; } = "Your packets get lost on the way to the server: usually Wi-Fi or an upload-saturated line (cloud sync, streaming). Try a cable and pause uploads.";
     public string NetRouterLoss { get; init; } = "to router {0}%";
     public string NetTipServer { get; init; } = "Game server {0}: {1}";
     public string NetTipPing { get; init; } = "ping {0} ms (min {1}, max {2}, jitter {3} ms), lost pings {4}%";
@@ -48,6 +55,7 @@ public sealed partial class UiText
     public string OneHpWithGame { get; init; } = "Start with AION 2 and close after it";
     public string OneHpWithGameHint { get; init; } = "A tiny helper starts with Windows and opens the overlay when the game starts; the overlay closes about 15 seconds after the game.";
     public string UpdateZipHint { get; init; } = "The overlay closes, its files are replaced with the new version and it starts again. Settings, fight history and timers stay.";
+    public string OneHpBossSync { get; init; } = "Send field boss times from the game to the 1 HP site (your server only)";
     public string OneHpPriorityBosses { get; init; } = "Notify about priority field bosses (★) 10 minutes ahead, without a bell";
     public string PriorityLoot { get; init; } = "★ Priority: level 48–51 field boss with its own Unique set, about one piece per kill.";
     public string OneHpPartyOnly { get; init; } = "Only me and my party (players around who are not in it are hidden)";

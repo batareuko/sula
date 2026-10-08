@@ -48,14 +48,34 @@ public sealed class NetStats(long windowMs = 60_000)
 /// <summary>1 HP: share of lost (re-sent) segments of the game stream over a sliding window, from <see cref="Capture.StreamCounters"/>.</summary>
 public sealed class StreamLossWindow(long windowMs = 60_000)
 {
-    private readonly Queue<(long T, long Segments, long Holes)> _points = new();
+    private readonly Queue<(long T, long Segments, long Holes, long Up, long Resends, long Stalls, long StallMs)> _points = new();
 
-    public void Add(long timeMs, long segments, long holes)
+    public void Add(long timeMs, long segments, long holes, long upstream = 0, long resends = 0, long stalls = 0, long stallMs = 0)
     {
         // A capture restart starts the counters over: forget the old points.
-        if (_points.Count > 0 && segments < _points.Last().Segments) _points.Clear();
-        _points.Enqueue((timeMs, segments, holes));
+        if (_points.Count > 0 && (segments < _points.Last().Segments || upstream < _points.Last().Up)) _points.Clear();
+        _points.Enqueue((timeMs, segments, holes, upstream, resends, stalls, stallMs));
         while (_points.Count > 1 && timeMs - _points.Peek().T > windowMs) _points.Dequeue();
+    }
+
+    /// <summary>Our segments to the server inside the window and the share sent again; percent null until enough.</summary>
+    public (long Segments, long Resends, double? ResendPct) Upstream(int minSegments = 30)
+    {
+        if (_points.Count < 2) return (0, 0, null);
+        var a = _points.Peek();
+        var b = _points.Last();
+        var seg = b.Up - a.Up;
+        var resends = b.Resends - a.Resends;
+        return (seg, resends, seg >= minSegments ? Math.Round(100.0 * resends / seg, 2) : null);
+    }
+
+    /// <summary>Stalls of the server's stream inside the window (count and total length).</summary>
+    public (long Count, long TotalMs) Stalls()
+    {
+        if (_points.Count < 2) return (0, 0);
+        var a = _points.Peek();
+        var b = _points.Last();
+        return (b.Stalls - a.Stalls, b.StallMs - a.StallMs);
     }
 
     /// <summary>Segments and holes inside the window; percent is null until there is enough traffic to judge.</summary>
@@ -75,16 +95,16 @@ public enum NetQuality { Unknown, Good, Fair, Bad }
 public static class NetGrade
 {
     /// <summary>
-    /// Bad: ≥ 2 % of the game stream lost (or of pings to the server); fair: ≥ 0.5 % or jitter ≥ 30 ms; otherwise good.
-    /// Unknown until there is either game traffic or ping replies from the server.
+    /// Bad: ≥ 2 % of the game stream lost either way (or of pings to the server), or 3+ stalls a minute; fair: ≥ 0.5 %,
+    /// a stall, or jitter ≥ 30 ms; otherwise good. Unknown until there is either game traffic or ping replies.
     /// </summary>
-    public static NetQuality Of(double? streamLossPct, NetSummary server)
+    public static NetQuality Of(double? streamLossPct, NetSummary server, double? upstreamResendPct = null, long stalls = 0)
     {
         var loss = streamLossPct ?? (server.AnyReply && server.Samples >= 10 ? server.LossPct : (double?)null);
-        if (loss is null && !server.AnyReply) return NetQuality.Unknown;
-        var l = loss ?? 0;
-        if (l >= 2) return NetQuality.Bad;
-        if (l >= 0.5 || server.JitterMs >= 30) return NetQuality.Fair;
+        if (loss is null && upstreamResendPct is null && !server.AnyReply) return NetQuality.Unknown;
+        var l = Math.Max(loss ?? 0, upstreamResendPct ?? 0);
+        if (l >= 2 || stalls >= 3) return NetQuality.Bad;
+        if (l >= 0.5 || stalls >= 1 || server.JitterMs >= 30) return NetQuality.Fair;
         return NetQuality.Good;
     }
 }

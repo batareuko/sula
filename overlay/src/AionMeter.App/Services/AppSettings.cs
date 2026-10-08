@@ -96,6 +96,8 @@ public sealed class AppSettings
     public string OneHpKey { get; set; } = "";
     public bool OneHpUpload { get; set; } = true;
     public bool OneHpGear { get; set; } = true;
+    /// <summary>Send the in-game field boss list's times for your server to the site (OneHpCloud.SyncBosses).</summary>
+    public bool OneHpBossSync { get; set; } = true;
     /// <summary>Started by the watcher when AION 2 starts (Services/GameAutostart.cs) and closed after the game.</summary>
     public bool WithGame { get; set; } = true;
     /// <summary>Smaller header, rows and strip (Settings → 1 HP).</summary>

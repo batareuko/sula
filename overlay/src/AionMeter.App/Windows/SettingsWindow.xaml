@@ -215,6 +215,8 @@
                                       Content="{Binding OneHpUpload, Source={x:Static s:UiText.Current}}" />
                             <CheckBox x:Name="OneHpGear" Style="{StaticResource DarkCheck}" Margin="0,4,0,0"
                                       Content="{Binding OneHpGear, Source={x:Static s:UiText.Current}}" />
+                            <CheckBox x:Name="OneHpBossSync" Style="{StaticResource DarkCheck}" Margin="0,4,0,0"
+                                      Content="{Binding OneHpBossSync, Source={x:Static s:UiText.Current}}" />
                             <CheckBox x:Name="OneHpPriorityBosses" Style="{StaticResource DarkCheck}" Margin="0,4,0,0"
                                       Content="{Binding OneHpPriorityBosses, Source={x:Static s:UiText.Current}}"
                                       ToolTip="{Binding PriorityLoot, Source={x:Static s:UiText.Current}}" />

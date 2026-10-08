@@ -25,6 +25,13 @@ public sealed class PacketPipeline
     private static readonly byte[][] HeartbeatSignatures = [[0x0E, 0x00, 0x36], [0x06, 0x00, 0x36]];
 
     private readonly Dictionary<FlowKey, Flow> _flows = new();
+    // 1 HP: client→server direction of each game stream → the highest sequence end sent so far (null until the first)
+    private readonly Dictionary<FlowKey, uint?> _upstream = new();
+
+    /// <summary>A pause in the server's stream this long counts as a stall (it sends ~19 frames a second).</summary>
+    public const int StallMs = 500;
+    /// <summary>Longer silences are a loading screen, a disconnect or the PC asleep, not lag.</summary>
+    private const int MaxStallMs = 10_000;
     private readonly PacketParser _parser;
     private long _lastPruneMs;
 
@@ -54,6 +61,17 @@ public sealed class PacketPipeline
     {
         Segments++;
         if (timeMs - _lastPruneMs > 10_000) Prune(timeMs);
+
+        // 1 HP: our own packets to the game server: a segment that ends at or before what was already sent is a resend.
+        if (_upstream.TryGetValue(key, out var sentEnd))
+        {
+            if (payload.IsEmpty) return;
+            var end = seq + (uint)payload.Length;
+            var resend = sentEnd is { } hi && (int)(end - hi) <= 0;
+            if (sentEnd is not { } h || (int)(end - h) > 0) _upstream[key] = end;
+            Health.AddUpstream(resend);
+            return;
+        }
 
         if (!_flows.TryGetValue(key, out var flow))
         {
@@ -110,6 +128,8 @@ public sealed class PacketPipeline
         var decoder = flow.Decoder;
         flow.Reassembler = new TcpReassembler(d => decoder.Feed(d.Span), decoder.Reset, Health);
         flow.Reassembler.Start(first.Seq);
+        _upstream[new FlowKey(flow.Key.Dst, flow.Key.DstPort, flow.Key.Src, flow.Key.SrcPort)] = null;
+        _flows.Remove(new FlowKey(flow.Key.Dst, flow.Key.DstPort, flow.Key.Src, flow.Key.SrcPort)); // its buffered bytes are not game data
 
         var buffered = flow.PreLock;
         flow.PreLock = new();
@@ -122,7 +142,8 @@ public sealed class PacketPipeline
     {
         _parser.TimeMs = timeMs;
         GameBytes += payload.Length;
-        LastGameDataMs = timeMs;
+        if (LastGameDataMs > 0 && timeMs - LastGameDataMs is >= StallMs and <= MaxStallMs) Health.AddStall(timeMs - LastGameDataMs);
+        if (timeMs > LastGameDataMs) LastGameDataMs = timeMs;
         flow.Reassembler!.Push(seq, payload, timeMs);
     }
 
@@ -156,7 +177,11 @@ public sealed class PacketPipeline
         foreach (var (k, f) in _flows)
             if (nowMs - f.LastSeenMs > FlowIdleMs) (dead ??= new()).Add(k);
         if (dead is not null)
-            foreach (var k in dead) _flows.Remove(k);
+            foreach (var k in dead)
+            {
+                _flows.Remove(k);
+                _upstream.Remove(new FlowKey(k.Dst, k.DstPort, k.Src, k.SrcPort));
+            }
     }
 
     private sealed class Flow(FlowKey key)
