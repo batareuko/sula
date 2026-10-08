@@ -664,6 +664,10 @@ public sealed partial class UiText
 
         // 1 HP
         NetNoGame = "нет соединения с игрой",
+        NetGameNotRunning = "игра не найдена",
+        NetGameNoConnection = "игра ещё не подключена",
+        NetViaAccelerator = "через ускоритель пинга",
+        NetTipAccelerator = "Игра идёт через локальный ускоритель пинга (ExitLag, LagoFast …): пинг до сервера видит только он. Потери считаются по потоку игры.",
         NetPing = "пинг {0} мс",
         NetPingNoReply = "сервер не отвечает на ping",
         NetLoss = "потери {0}%",

@@ -28,7 +28,8 @@ public sealed class MeterService : IDisposable
         Timers = new BossTimers(Path.Combine(AppSettings.AppDataDir, "boss-timers.json"), Data, DataDirectory, persistent: !settings.Transient);
         Updates = new Updater(settings);
         // 1 HP: ping / packet-loss strip; reads the game stream counters of whatever capture is running
-        Net = new NetMonitor(() => _capture is LiveCapture live ? live.Pipeline.Health : null);
+        Net = new NetMonitor(() => _capture is LiveCapture live ? live.Pipeline.Health : null,
+            () => _capture is LiveCapture live ? live.Pipeline.LockedFlows.ToList() : []);
         Cloud = new OneHpCloud(settings);
         Tracker.EncounterFinished += OnEncounterFinished;
         // A recording's or the demo's bosses must not move the live respawn timers.
