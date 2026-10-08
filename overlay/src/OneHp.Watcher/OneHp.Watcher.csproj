@@ -1,0 +1,27 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <!--
+    1 HP: a tiny helper that runs at Windows sign-in and starts the overlay when AION 2 starts.
+    Published as one self-contained file (CI: -r win-x64 -p:PublishSingleFile=true -p:PublishTrimmed=true); the overlay
+    copies it to %LOCALAPPDATA%\1HP-Overlay so the unpacked overlay folder stays free to be replaced by a new version.
+  -->
+  <PropertyGroup>
+    <OutputType>WinExe</OutputType>
+    <TargetFramework>net10.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+    <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
+    <AssemblyName>1HP-Watcher</AssemblyName>
+    <RootNamespace>OneHp.Watcher</RootNamespace>
+    <Product>1 HP Overlay</Product>
+    <Version>1.2.0</Version>
+    <InvariantGlobalization>true</InvariantGlobalization>
+    <UseSystemResourceKeys>true</UseSystemResourceKeys>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <!-- The same list of game process names as the overlay itself. -->
+    <Compile Include="..\AionMeter.Core\Capture\GameProcessLocator.cs" Link="GameProcessLocator.cs" />
+  </ItemGroup>
+
+</Project>

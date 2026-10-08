@@ -704,6 +704,9 @@ public sealed partial class UiText
         OneHpKeyOk = "Ключ работает.",
         OneHpKeyBad = "Сайт не знает этот ключ: создайте новый.",
         OneHpKeyOffline = "Не удалось связаться с сайтом.",
+        OneHpWithGame = "Запускать вместе с AION 2 и закрывать после игры",
+        OneHpWithGameHint = "Маленький помощник стартует с Windows и открывает оверлей, когда запускается игра; оверлей закрывается примерно через 15 секунд после игры.",
+        OneHpCompact = "Компактный оверлей (меньше шапка и строки)",
     };
 
     private static string RuPlural(int n, string one, string few, string many)

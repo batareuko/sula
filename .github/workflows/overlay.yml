@@ -44,6 +44,9 @@ jobs:
           $version = ([xml](Get-Content src/AionMeter.App/AionMeter.App.csproj)).Project.PropertyGroup.Version | Where-Object { $_ } | Select-Object -First 1
           $name = "1HP-Overlay-v$version-win-x64"
           dotnet publish src/AionMeter.App -c Release -r win-x64 --self-contained -p:DebugType=None -o "dist/$name"
+          # 1HP-Watcher.exe: one small file that starts the overlay with the game (Services/GameAutostart.cs)
+          dotnet publish src/OneHp.Watcher -c Release -r win-x64 --self-contained -p:PublishSingleFile=true -p:PublishTrimmed=true -p:DebugType=None -o dist/watcher
+          Copy-Item dist/watcher/1HP-Watcher.exe "dist/$name/"
           Copy-Item LICENSE, README.md, README.upstream.md "dist/$name/"
           Compress-Archive -Path "dist/$name/*" -DestinationPath "dist/$name.zip"
           "version=$version" >> $env:GITHUB_OUTPUT

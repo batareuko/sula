@@ -12,6 +12,8 @@ public enum HistoryMode
     All,
 }
 
+public sealed record WindowBounds(double Left, double Top, double Width, double Height);
+
 public sealed class AppSettings
 {
     public static string AppDataDir { get; } =
@@ -89,10 +91,16 @@ public sealed class AppSettings
     public string OneHpKey { get; set; } = "";
     public bool OneHpUpload { get; set; } = true;
     public bool OneHpGear { get; set; } = true;
+    /// <summary>Started by the watcher when AION 2 starts (Services/GameAutostart.cs) and closed after the game.</summary>
+    public bool WithGame { get; set; } = true;
+    /// <summary>Smaller header, rows and strip (Settings → 1 HP).</summary>
+    public bool Compact { get; set; } = true;
+    /// <summary>Last place of the other windows (history, breakdown, settings …) by window kind.</summary>
+    public Dictionary<string, WindowBounds> WindowPlaces { get; set; } = new();
 
     /// <summary>Bumped when the overlay layout changes enough that saved sizes no longer fit.</summary>
     public int LayoutVersion { get; set; } // 0 when missing from an older settings file; new installs get it in Load()
-    private const int CurrentLayout = 4;
+    private const int CurrentLayout = 5;
 
     public static AppSettings Load()
     {
@@ -112,6 +120,11 @@ public sealed class AppSettings
                     // v4 = English / Russian switch. Earlier builds picked the language from Windows on their own;
                     // the default is now English until the user chooses.
                     s.Language = "en";
+                }
+                if (s.LayoutVersion < 5 && s.Compact)
+                {
+                    // v5 = 1 HP compact layout, on by default: the card keeps its place and gets shorter by what it saves.
+                    s.OverlayHeight = Math.Max(220, s.OverlayHeight - AionMeter.App.Windows.OverlayWindow.CompactSaves);
                 }
                 s.Language = UiText.Normalize(s.Language);
                 s.LayoutVersion = CurrentLayout;

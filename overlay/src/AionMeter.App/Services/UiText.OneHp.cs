@@ -45,6 +45,9 @@ public sealed partial class UiText
     public string OneHpKeyOk { get; init; } = "The key works.";
     public string OneHpKeyBad { get; init; } = "The site does not know this key: create a new one.";
     public string OneHpKeyOffline { get; init; } = "Could not reach the site.";
+    public string OneHpWithGame { get; init; } = "Start with AION 2 and close after it";
+    public string OneHpWithGameHint { get; init; } = "A tiny helper starts with Windows and opens the overlay when the game starts; the overlay closes about 15 seconds after the game.";
+    public string OneHpCompact { get; init; } = "Compact overlay (smaller header and rows)";
 
     /// <summary>"2:05" for an hour and more, "17 min" below.</summary>
     public string Countdown(TimeSpan d) =>

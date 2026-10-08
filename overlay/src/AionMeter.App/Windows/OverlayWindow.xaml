@@ -25,6 +25,27 @@
         <GridLength x:Key="ColDamageWidth">74</GridLength>
         <GridLength x:Key="ColShareWidth">68</GridLength>
         <sys:Double x:Key="RowHeight">42</sys:Double>
+        <!-- 1 HP: header, boss bar and footer sizes; the compact layout replaces them (OverlayWindow.ApplyCompact) -->
+        <Thickness x:Key="CardPadding">20,14,20,10</Thickness>
+        <sys:Double x:Key="HeaderHeight">30</sys:Double>
+        <sys:Double x:Key="ClockFont">27</sys:Double>
+        <Thickness x:Key="TitleRowMargin">0,8,0,0</Thickness>
+        <sys:Double x:Key="PortraitBox">74</sys:Double>
+        <sys:Double x:Key="PortraitRing">58</sys:Double>
+        <sys:Double x:Key="PortraitImage">68</sys:Double>
+        <sys:Double x:Key="SkullSize">26</sys:Double>
+        <Thickness x:Key="TitleTextMargin">14,0,8,0</Thickness>
+        <sys:Double x:Key="TitleFontSize">25</sys:Double>
+        <sys:Double x:Key="DetailFont">12.5</sys:Double>
+        <sys:Double x:Key="TopHitFont">25</sys:Double>
+        <sys:Double x:Key="TopHitLabelFont">9.5</sys:Double>
+        <sys:Double x:Key="BossBarHeight">34</sys:Double>
+        <Thickness x:Key="BossBarMargin">0,14,0,0</Thickness>
+        <sys:Double x:Key="BossFont">14.5</sys:Double>
+        <Thickness x:Key="PartyMargin">0,12,0,0</Thickness>
+        <Thickness x:Key="FooterMargin">0,8,0,0</Thickness>
+        <Thickness x:Key="NetMargin">0,6,12,0</Thickness>
+        <sys:Double x:Key="FooterFont">12</sys:Double>
         <Thickness x:Key="RowMargin">0,0,0,6</Thickness>
         <sys:Double x:Key="RowGlossHeight">19</sys:Double>
         <sys:Double x:Key="RowNameFont">16.5</sys:Double>
@@ -266,7 +287,7 @@
         </Border>
         <Border Height="2" VerticalAlignment="Top" Margin="70,0" Background="{StaticResource GoldTopLine}" IsHitTestVisible="False" />
 
-        <Grid Margin="20,14,20,10">
+        <Grid Margin="{DynamicResource CardPadding}">
             <Grid.RowDefinitions>
                 <RowDefinition Height="Auto" />
                 <RowDefinition Height="Auto" />
@@ -276,7 +297,7 @@
             </Grid.RowDefinitions>
 
             <!-- Label row (toolbar appears on hover) + timer -->
-            <Grid x:Name="Header" Background="Transparent" Height="30">
+            <Grid x:Name="Header" Background="Transparent" Height="{DynamicResource HeaderHeight}">
                 <StackPanel x:Name="LabelPanel" Orientation="Horizontal" VerticalAlignment="Center" Effect="{StaticResource TextShadow}">
                     <Ellipse Width="8" Height="8" Margin="1,0,9,0" Fill="{Binding HeaderBrush}">
                         <Ellipse.Style>
@@ -316,12 +337,12 @@
                 </StackPanel>
 
                 <TextBlock HorizontalAlignment="Right" VerticalAlignment="Center" Text="{Binding Clock}"
-                           FontFamily="{StaticResource NumberFont}" FontWeight="Bold" FontSize="27" Foreground="{StaticResource Cream}"
+                           FontFamily="{StaticResource NumberFont}" FontWeight="Bold" FontSize="{DynamicResource ClockFont}" Foreground="{StaticResource Cream}"
                            Effect="{StaticResource TextShadow}" />
             </Grid>
 
             <!-- Portrait, title, top hit -->
-            <Grid Grid.Row="1" Margin="0,8,0,0" Background="Transparent"
+            <Grid Grid.Row="1" Margin="{DynamicResource TitleRowMargin}" Background="Transparent"
                   MouseWheel="Title_MouseWheel" ToolTip="Scroll to step through fights">
                 <Grid.ColumnDefinitions>
                     <ColumnDefinition Width="Auto" />
@@ -329,9 +350,9 @@
                     <ColumnDefinition Width="Auto" />
                 </Grid.ColumnDefinitions>
 
-                <Grid Width="74" Height="74" VerticalAlignment="Center">
+                <Grid Width="{DynamicResource PortraitBox}" Height="{DynamicResource PortraitBox}" VerticalAlignment="Center">
                     <Ellipse Fill="#221F1B" />
-                    <Ellipse Width="58" Height="58" Stroke="#D7AE5C" StrokeThickness="2.5">
+                    <Ellipse Width="{DynamicResource PortraitRing}" Height="{DynamicResource PortraitRing}" Stroke="#D7AE5C" StrokeThickness="2.5">
                         <Ellipse.Fill>
                             <RadialGradientBrush GradientOrigin="0.45,0.35">
                                 <GradientStop Color="#3C3426" Offset="0" />
@@ -343,10 +364,10 @@
                         </Ellipse.Effect>
                     </Ellipse>
                     <Path Data="M12 3 C7 3 4 6.5 4 11 C4 14 5.5 15.5 7 16.5 L7 19 L9.5 19 L9.5 17.5 L11 17.5 L11 19 L13 19 L13 17.5 L14.5 17.5 L14.5 19 L17 19 L17 16.5 C18.5 15.5 20 14 20 11 C20 6.5 17 3 12 3 Z M8.8 9.8 A1.9 1.9 0 1 0 8.81 9.8 Z M15.2 9.8 A1.9 1.9 0 1 0 15.21 9.8 Z"
-                          Fill="#ECCB82" Stretch="Uniform" Width="26" Height="26"
+                          Fill="#ECCB82" Stretch="Uniform" Width="{DynamicResource SkullSize}" Height="{DynamicResource SkullSize}"
                           Visibility="{Binding HasPortrait, Converter={StaticResource VisibleIf}, ConverterParameter=!}" />
                     <!-- Boss portrait in a gold ring -->
-                    <Grid Width="68" Height="68" Visibility="{Binding HasPortrait, Converter={StaticResource VisibleIf}}">
+                    <Grid Width="{DynamicResource PortraitImage}" Height="{DynamicResource PortraitImage}" Visibility="{Binding HasPortrait, Converter={StaticResource VisibleIf}}">
                         <Ellipse Fill="#14120E">
                             <Ellipse.Effect>
                                 <DropShadowEffect BlurRadius="12" ShadowDepth="0" Opacity="0.6" Color="#D7AE5C" />
@@ -362,15 +383,15 @@
                     </Grid>
                 </Grid>
 
-                <StackPanel Grid.Column="1" Margin="14,0,8,0" VerticalAlignment="Center">
-                    <TextBlock Text="{Binding Title}" FontFamily="{StaticResource TitleFont}" FontSize="25" FontWeight="SemiBold"
+                <StackPanel Grid.Column="1" Margin="{DynamicResource TitleTextMargin}" VerticalAlignment="Center">
+                    <TextBlock Text="{Binding Title}" FontFamily="{StaticResource TitleFont}" FontSize="{DynamicResource TitleFontSize}" FontWeight="SemiBold"
                                Typography.Capitals="SmallCaps" Foreground="{StaticResource Cream}" TextTrimming="CharacterEllipsis">
                         <TextBlock.Effect>
                             <DropShadowEffect BlurRadius="6" ShadowDepth="1" Opacity="0.6" Color="Black" />
                         </TextBlock.Effect>
                     </TextBlock>
                     <StackPanel Orientation="Horizontal" Margin="1,2,0,0">
-                        <TextBlock Text="{Binding Detail}" FontSize="12.5" Foreground="{StaticResource Soft}" TextTrimming="CharacterEllipsis"
+                        <TextBlock Text="{Binding Detail}" FontSize="{DynamicResource DetailFont}" Foreground="{StaticResource Soft}" TextTrimming="CharacterEllipsis"
                                    Effect="{StaticResource TextShadow}"
                                    VerticalAlignment="Center" />
                         <!-- Your place in the ranking -->
@@ -401,19 +422,19 @@
 
                 <StackPanel Grid.Column="2" VerticalAlignment="Center" HorizontalAlignment="Right" ToolTip="{Binding TopHitBy}"
                             Visibility="{Binding TopHit, Converter={StaticResource VisibleIf}}">
-                    <TextBlock Text="{Binding TopHit}" FontFamily="{StaticResource NumberFont}" FontWeight="Bold" FontSize="25"
+                    <TextBlock Text="{Binding TopHit}" FontFamily="{StaticResource NumberFont}" FontWeight="Bold" FontSize="{DynamicResource TopHitFont}"
                                Foreground="{StaticResource TopHitBrush}" HorizontalAlignment="Center">
                         <TextBlock.Effect>
                             <DropShadowEffect BlurRadius="16" ShadowDepth="0" Opacity="0.85" Color="#E9A93C" />
                         </TextBlock.Effect>
                     </TextBlock>
-                    <TextBlock Text="{Binding T.TopHit}" FontSize="9.5" FontWeight="Bold" Foreground="#D9B56A" HorizontalAlignment="Center"
+                    <TextBlock Text="{Binding T.TopHit}" FontSize="{DynamicResource TopHitLabelFont}" FontWeight="Bold" Foreground="#D9B56A" HorizontalAlignment="Center"
                                Margin="0,-2,0,0" />
                 </StackPanel>
             </Grid>
 
             <!-- Boss HP -->
-            <Grid Grid.Row="2" Height="34" Margin="0,14,0,0" Visibility="{Binding HasBoss, Converter={StaticResource VisibleIf}}">
+            <Grid Grid.Row="2" Height="{DynamicResource BossBarHeight}" Margin="{DynamicResource BossBarMargin}" Visibility="{Binding HasBoss, Converter={StaticResource VisibleIf}}">
                 <Border CornerRadius="8" Background="#230C0F" BorderBrush="#5E1F24" BorderThickness="1" />
                 <Border CornerRadius="8" Background="{StaticResource HpFill}" RenderTransformOrigin="0,0.5" Margin="1">
                     <Border.RenderTransform>
@@ -425,15 +446,15 @@
                     <Grid.Effect>
                         <DropShadowEffect BlurRadius="4" ShadowDepth="1" Opacity="0.9" Color="Black" />
                     </Grid.Effect>
-                    <TextBlock Text="{Binding BossHpText}" FontFamily="{StaticResource NumberFont}" FontWeight="SemiBold" FontSize="14.5"
+                    <TextBlock Text="{Binding BossHpText}" FontFamily="{StaticResource NumberFont}" FontWeight="SemiBold" FontSize="{DynamicResource BossFont}"
                                Foreground="White" VerticalAlignment="Center" />
-                    <TextBlock Text="{Binding BossPercent}" FontFamily="{StaticResource NumberFont}" FontWeight="SemiBold" FontSize="14.5"
+                    <TextBlock Text="{Binding BossPercent}" FontFamily="{StaticResource NumberFont}" FontWeight="SemiBold" FontSize="{DynamicResource BossFont}"
                                Foreground="White" VerticalAlignment="Center" HorizontalAlignment="Right" />
                 </Grid>
             </Grid>
 
             <!-- Party -->
-            <Grid Grid.Row="3" Margin="0,12,0,0">
+            <Grid Grid.Row="3" Margin="{DynamicResource PartyMargin}">
                 <Grid.RowDefinitions>
                     <RowDefinition Height="Auto" />
                     <RowDefinition Height="*" />
@@ -471,7 +492,7 @@
             </Grid>
 
             <!-- Footer -->
-            <StackPanel Grid.Row="4" Margin="0,8,0,0">
+            <StackPanel Grid.Row="4" Margin="{DynamicResource FooterMargin}">
                 <!-- New version on GitHub: a slim banner until it is installed, skipped or closed for this session -->
                 <Grid x:Name="UpdateBanner" Margin="0,0,0,8" Visibility="Collapsed">
                     <Grid.ColumnDefinitions>
@@ -494,7 +515,7 @@
                     </Grid.ColumnDefinitions>
                     <StackPanel Orientation="Horizontal" VerticalAlignment="Center" ToolTip="{Binding Status}">
                         <Ellipse Width="6" Height="6" Fill="{Binding StatusBrush}" Margin="0,0,7,0" />
-                        <TextBlock x:Name="FooterText" FontSize="12" Foreground="#B4BCCB" TextTrimming="CharacterEllipsis"
+                        <TextBlock x:Name="FooterText" FontSize="{DynamicResource FooterFont}" Foreground="#B4BCCB" TextTrimming="CharacterEllipsis"
                                    Effect="{StaticResource TextShadow}" />
                     </StackPanel>
                     <StackPanel Grid.Column="1" Orientation="Horizontal" Margin="0,0,12,0">
@@ -512,17 +533,17 @@
                     </StackPanel>
                 </Grid>
                 <!-- 1 HP: ping / packet loss of the game connection, Rift and daily reset -->
-                <Grid Margin="0,6,12,0">
+                <Grid Margin="{DynamicResource NetMargin}">
                     <Grid.ColumnDefinitions>
                         <ColumnDefinition Width="*" />
                         <ColumnDefinition Width="Auto" />
                     </Grid.ColumnDefinitions>
                     <StackPanel x:Name="NetPanel" Orientation="Horizontal" VerticalAlignment="Center" Background="Transparent">
                         <Ellipse x:Name="NetDot" Width="6" Height="6" Fill="{StaticResource TextMute}" Margin="0,0,7,0" />
-                        <TextBlock x:Name="NetText" FontSize="12" Foreground="#B4BCCB" TextTrimming="CharacterEllipsis"
+                        <TextBlock x:Name="NetText" FontSize="{DynamicResource FooterFont}" Foreground="#B4BCCB" TextTrimming="CharacterEllipsis"
                                    Effect="{StaticResource TextShadow}" />
                     </StackPanel>
-                    <TextBlock x:Name="ScheduleText" Grid.Column="1" FontSize="12" Foreground="#B4BCCB" Margin="10,0,0,0"
+                    <TextBlock x:Name="ScheduleText" Grid.Column="1" FontSize="{DynamicResource FooterFont}" Foreground="#B4BCCB" Margin="10,0,0,0"
                                Background="Transparent" Effect="{StaticResource TextShadow}" />
                 </Grid>
             </StackPanel>

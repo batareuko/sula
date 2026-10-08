@@ -94,7 +94,10 @@ public partial class App : Application
 
         var settings = AppSettings.Load();
         settings.Save(); // persist any migration done while loading
+        WindowMemory.Use(settings);
         UiText.Use(settings.Language);
+        var withGame = settings.WithGame;
+        ThreadPool.QueueUserWorkItem(_ => GameAutostart.Apply(withGame)); // may wait a moment for an old watcher to stop
         Func<Core.Game.GameData, IEventSource> factory = data => new LiveCapture(data, new LiveCaptureOptions
         {
             DeviceName = settings.CaptureDevice,
@@ -208,6 +211,7 @@ public partial class App : Application
             CheckGameStart();
             CheckPendingUpdate();
         }
+        if (_ticks % 25 == 0) CheckGameExit();
     }
 
     // ------------------------------------------------------------ automatic show / hide
@@ -268,6 +272,33 @@ public partial class App : Application
         if (game.Length == 0 || game.SequenceEqual(_gameShownFor)) return;
         _gameShownFor = game;
         ShowByItself();
+    }
+
+    private bool _gameSeen;
+    private long _gameGoneSince;
+
+    /// <summary>
+    /// 1 HP: with "start with AION 2" on, the meter leaves once the game has been closed for 15 s (a client restart or
+    /// the launcher swapping processes takes less). Only after the game was seen in this run, so a meter started by hand
+    /// before the game waits for it.
+    /// </summary>
+    private void CheckGameExit()
+    {
+        if (!_meter.Settings.WithGame || _meter.DemoRunning || _installing) return;
+        var now = Environment.TickCount64;
+        if (GameProcessLocator.FindGameProcessIds().Length > 0)
+        {
+            _gameSeen = true;
+            _gameGoneSince = 0;
+            return;
+        }
+        if (!_gameSeen) return;
+        if (_gameGoneSince == 0) _gameGoneSince = now;
+        else if (now - _gameGoneSince >= 15_000)
+        {
+            Log.Info("The game was closed: exiting with it");
+            Shutdown();
+        }
     }
 
     private void RegisterHotkeys()
@@ -579,6 +610,7 @@ public partial class App : Application
         _tray?.Dispose();
         if (_meter is not null)
         {
+            _overlay?.SavePlacement();
             _meter.Settings.Save();
             _meter.Dispose();
         }

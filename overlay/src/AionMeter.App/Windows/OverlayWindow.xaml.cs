@@ -47,6 +47,7 @@ public partial class OverlayWindow : Window
         OpacitySlider.Value = _settings.BackgroundOpacity;
         FrameBackground.Opacity = _settings.BackgroundOpacity;
         ApplyLock();
+        ApplyCompact();
         ApplyRowSize(_settings.RowSize);
         UpdateModeLabel();
         ApplyHotkeyTips();
@@ -293,9 +294,52 @@ public partial class OverlayWindow : Window
     {
         OpacitySlider.Value = _settings.BackgroundOpacity;
         FrameBackground.Opacity = _settings.BackgroundOpacity;
+        ApplyCompact();
         ApplyRowSize(_settings.RowSize);
         UpdateModeLabel();
     }
+
+    private bool? _compact;
+
+    /// <summary>
+    /// 1 HP: the compact layout (Settings → 1 HP, on by default) — a small portrait, title and clock, a slim boss bar,
+    /// tighter margins and rows at 85 %. Switching it later also changes the card's height by about what it saves.
+    /// </summary>
+    private void ApplyCompact()
+    {
+        var on = _settings.Compact;
+        if (_compact == on) return;
+        if (_compact is not null)
+        {
+            Height = Math.Max(MinHeight, Height + (on ? -CompactSaves : CompactSaves));
+            _settings.OverlayHeight = Height; // also while hidden (SavePlacement skips a window never shown)
+            _settings.Save();
+        }
+        _compact = on;
+        Resources["CardPadding"] = on ? new Thickness(12, 8, 12, 6) : new Thickness(20, 14, 20, 10);
+        Resources["HeaderHeight"] = on ? 22.0 : 30.0;
+        Resources["ClockFont"] = on ? 18.0 : 27.0;
+        Resources["TitleRowMargin"] = on ? new Thickness(0, 2, 0, 0) : new Thickness(0, 8, 0, 0);
+        Resources["PortraitBox"] = on ? 44.0 : 74.0;
+        Resources["PortraitRing"] = on ? 34.0 : 58.0;
+        Resources["PortraitImage"] = on ? 40.0 : 68.0;
+        Resources["SkullSize"] = on ? 16.0 : 26.0;
+        Resources["TitleTextMargin"] = on ? new Thickness(10, 0, 6, 0) : new Thickness(14, 0, 8, 0);
+        Resources["TitleFontSize"] = on ? 17.0 : 25.0;
+        Resources["DetailFont"] = on ? 11.0 : 12.5;
+        Resources["TopHitFont"] = on ? 16.0 : 25.0;
+        Resources["TopHitLabelFont"] = on ? 8.0 : 9.5;
+        Resources["BossBarHeight"] = on ? 22.0 : 34.0;
+        Resources["BossBarMargin"] = on ? new Thickness(0, 6, 0, 0) : new Thickness(0, 14, 0, 0);
+        Resources["BossFont"] = on ? 12.0 : 14.5;
+        Resources["PartyMargin"] = on ? new Thickness(0, 6, 0, 0) : new Thickness(0, 12, 0, 0);
+        Resources["FooterMargin"] = on ? new Thickness(0, 4, 0, 0) : new Thickness(0, 8, 0, 0);
+        Resources["NetMargin"] = on ? new Thickness(0, 3, 12, 0) : new Thickness(0, 6, 12, 0);
+        Resources["FooterFont"] = on ? 11.0 : 12.0;
+    }
+
+    /// <summary>Roughly the height the compact layout saves with ten rows (header, boss bar, margins, rows).</summary>
+    public const double CompactSaves = 110;
 
     /// <summary>
     /// Row size in percent of the original. The height follows it exactly; text, emblems and the number columns shrink
@@ -303,7 +347,7 @@ public partial class OverlayWindow : Window
     /// </summary>
     public void ApplyRowSize(int percent)
     {
-        var k = Math.Clamp(percent, AppSettings.MinRowSize, AppSettings.MaxRowSize) / 100.0;
+        var k = Math.Clamp(percent, AppSettings.MinRowSize, AppSettings.MaxRowSize) / 100.0 * (_settings.Compact ? 0.85 : 1);
         var f = Math.Sqrt(k);
         var height = Math.Round(42 * k);
         Resources["RowHeight"] = height;
@@ -388,8 +432,10 @@ public partial class OverlayWindow : Window
         Log.Info($"Overlay placed at {Left:0},{Top:0} {Width:0}x{Height:0} DIP; monitor work area {left:0},{top:0}-{right:0},{bottom:0} DIP (scale {dpi.DpiScaleX})");
     }
 
-    private void SavePlacement()
+    /// <summary>After a drag or resize, and once more on exit (1 HP: so the last place is never lost).</summary>
+    public void SavePlacement()
     {
+        if (double.IsNaN(Left) || double.IsNaN(Top) || ActualWidth < 1) return;
         _settings.OverlayLeft = Left;
         _settings.OverlayTop = Top;
         _settings.OverlayWidth = Width;
