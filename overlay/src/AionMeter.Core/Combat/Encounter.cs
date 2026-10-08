@@ -149,6 +149,8 @@ public sealed class Encounter
     public bool IsActive => Reason == EncounterEndReason.None;
     public EncounterEndReason Reason { get; set; }
     public string? Zone { get; set; }
+    /// <summary>Fought in an instance (dungeon, raid): everyone there is in the party.</summary>
+    public bool InDungeon { get; set; }
 
     public uint? BossId { get; set; }
     public int BossCode { get; set; }

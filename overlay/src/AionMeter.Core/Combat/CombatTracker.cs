@@ -16,6 +16,9 @@ public sealed class CombatTracker
     private readonly List<Encounter> _justFinished = new();
     private Encounter? _current;
     private bool _viewCleared;
+    // 1 HP: the party roster's names (Options.PartyOnly); empty = on your own.
+    private readonly HashSet<string> _party = new(StringComparer.OrdinalIgnoreCase);
+    private int _partyVersion;
 
     public CombatTracker(GameData data, MeterOptions options)
     {
@@ -56,18 +59,29 @@ public sealed class CombatTracker
     /// <summary>Changes whenever something in <see cref="ExportCache"/> does.</summary>
     public int CacheVersion
     {
-        get { lock (_gate) return _entities.CacheVersion; }
+        get { lock (_gate) return _entities.CacheVersion + _partyVersion; }
+    }
+
+    /// <summary>1 HP: the names in the last party roster (empty when on your own).</summary>
+    public IReadOnlyList<string> PartyNames
+    {
+        get { lock (_gate) return _party.ToList(); }
     }
 
     /// <summary>Players' names and the bosses around: what a meter restarted in this zone could not learn again.</summary>
     public SessionState ExportCache()
     {
-        lock (_gate) return _entities.Export();
+        lock (_gate) return _entities.Export() with { Party = _party.ToList() };
     }
 
     public void ImportCache(SessionState state)
     {
-        lock (_gate) _entities.Import(state);
+        lock (_gate)
+        {
+            _entities.Import(state);
+            if (state.Party is { } party)
+                foreach (var name in party) _party.Add(name);
+        }
     }
 
     public void Process(GameEvent e)
@@ -124,6 +138,9 @@ public sealed class CombatTracker
                     break;
                 case BattleStateEvent b:
                     OnBattleState(b);
+                    break;
+                case PartyRosterEvent roster:
+                    OnPartyRoster(roster);
                     break;
                 case ZoneChangedEvent z:
                     if (z.IsTeleport) break;
@@ -475,7 +492,10 @@ public sealed class CombatTracker
 
     private void StartEncounter(long timeMs)
     {
-        _current = new Encounter { StartMs = timeMs, LastDamageMs = timeMs, Zone = _entities.ZoneName };
+        _current = new Encounter
+        {
+            StartMs = timeMs, LastDamageMs = timeMs, Zone = _entities.ZoneName, InDungeon = GameData.IsDungeonMap(_entities.MapId),
+        };
         _viewCleared = false;
     }
 
@@ -650,15 +670,48 @@ public sealed class CombatTracker
 
     private static DateTimeOffset ToTime(long unixMs) => DateTimeOffset.FromUnixTimeMilliseconds(unixMs).ToLocalTime();
 
+    /// <summary>
+    /// 1 HP: a complete roster replaces the party (one name: on your own again); a partial one only adds the members
+    /// it could read, so a record the parser trips over never drops someone from the party.
+    /// </summary>
+    private void OnPartyRoster(PartyRosterEvent roster)
+    {
+        var names = roster.Names.Select(n => n.Trim()).Where(n => n.Length > 0).ToList();
+        if (roster.Complete) _party.Clear();
+        foreach (var name in names) _party.Add(name);
+        if (roster.Complete && _party.Count <= 1) _party.Clear();
+        _partyVersion++;
+    }
+
+    private static bool IsNamed(Combatant c) => c.Name.Length > 0 && c.Name[0] != '#';
+
+    /// <summary>
+    /// 1 HP: who is listed with <see cref="MeterOptions.PartyOnly"/>: you, your party (by name) and the pets nobody
+    /// could be tied to (listed last, never ranked). A party member the meter has no name for yet still counts while
+    /// a roster name has no row. Null: everyone (the option is off, an instance, or the meter does not know you yet).
+    /// </summary>
+    private Func<Combatant, bool>? PartyFilter(Encounter enc)
+    {
+        if (!Options.PartyOnly || enc.InDungeon || _entities.SelfId is null) return null;
+        if (_party.Count == 0) return c => c.IsSelf || c.ActorId == Combatant.UnknownSummonsId;
+        var unmatched = _party.Count(name =>
+            !enc.Combatants.Values.Any(c => IsNamed(c) && string.Equals(c.Name.Trim(), name, StringComparison.OrdinalIgnoreCase)));
+        return c => c.IsSelf || c.ActorId == Combatant.UnknownSummonsId ||
+                    (IsNamed(c) ? _party.Contains(c.Name.Trim()) : unmatched > 0);
+    }
+
     private EncounterSnapshot BuildSnapshot(Encounter enc, long nowMs)
     {
         var combatMs = enc.CombatMs;
         var seconds = combatMs / 1000.0;
-        var total = Math.Max(1, enc.TotalDamage);
-        var rows = new List<CombatantSnapshot>(enc.Combatants.Count);
-        foreach (var c in enc.Combatants.Values)
+        foreach (var c in enc.Combatants.Values) RefreshIdentity(c);
+        var filter = PartyFilter(enc);
+        var shown = filter is null ? enc.Combatants.Values.ToList() : enc.Combatants.Values.Where(filter).ToList();
+        var shownDamage = filter is null ? enc.TotalDamage : shown.Sum(c => c.Total.Damage);
+        var total = Math.Max(1, shownDamage);
+        var rows = new List<CombatantSnapshot>(shown.Count);
+        foreach (var c in shown)
         {
-            RefreshIdentity(c);
             var t = c.Total;
             rows.Add(new CombatantSnapshot(
                 c.ActorId, c.Name, c.Class, c.IsSelf,
@@ -690,7 +743,7 @@ public sealed class CombatTracker
 
         return new EncounterSnapshot(
             enc.Id, Title(enc), enc.Zone, ToTime(enc.StartMs), enc.ClockMs(nowMs), combatMs, enc.IsActive, enc.Reason,
-            enc.TotalDamage, enc.TotalDamage / seconds, boss, rows, MainTargetCode(enc));
+            shownDamage, shownDamage / seconds, boss, rows, MainTargetCode(enc));
     }
 
     private CombatantDetail BuildDetail(Encounter enc, Combatant c, int maxCasts)

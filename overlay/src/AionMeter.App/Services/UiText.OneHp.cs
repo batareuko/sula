@@ -48,6 +48,10 @@ public sealed partial class UiText
     public string OneHpWithGame { get; init; } = "Start with AION 2 and close after it";
     public string OneHpWithGameHint { get; init; } = "A tiny helper starts with Windows and opens the overlay when the game starts; the overlay closes about 15 seconds after the game.";
     public string UpdateZipHint { get; init; } = "The overlay closes, its files are replaced with the new version and it starts again. Settings, fight history and timers stay.";
+    public string OneHpPartyOnly { get; init; } = "Only me and my party (players around who are not in it are hidden)";
+    public string TipPartyOnly { get; init; } = "Outside dungeons only you and your party are listed: players nearby who hit the same monster are left out of the rows, the totals and the places. In dungeons and raids everyone is your group anyway.";
+    public string PartyOnlyChip { get; init; } = "PARTY";
+    public string EveryoneChip { get; init; } = "EVERYONE";
     public string OneHpCompact { get; init; } = "Compact overlay (smaller header and rows)";
 
     /// <summary>"2:05" for an hour and more, "17 min" below.</summary>

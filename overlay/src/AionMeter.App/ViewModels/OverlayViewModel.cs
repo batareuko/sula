@@ -229,6 +229,10 @@ public sealed class OverlayViewModel : ObservableObject
     public string Status { get => _status; set => Set(ref _status, value); }
     public Brush StatusBrush { get => _statusBrush; set => Set(ref _statusBrush, value); }
     public string ModeLabel { get => _modeLabel; set => Set(ref _modeLabel, value); }
+
+    private string _partyLabel = "";
+    /// <summary>1 HP: the toolbar chip for "only my party" / "everyone around".</summary>
+    public string PartyLabel { get => _partyLabel; set => Set(ref _partyLabel, value); }
     /// <summary>"Krao Cave · Kill"</summary>
     public string Detail { get => _detail; set => Set(ref _detail, value); }
     /// <summary>Biggest single hit of the fight, "1,052,914".</summary>

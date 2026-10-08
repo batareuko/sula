@@ -215,6 +215,9 @@
                                       Content="{Binding OneHpUpload, Source={x:Static s:UiText.Current}}" />
                             <CheckBox x:Name="OneHpGear" Style="{StaticResource DarkCheck}" Margin="0,4,0,0"
                                       Content="{Binding OneHpGear, Source={x:Static s:UiText.Current}}" />
+                            <CheckBox x:Name="OneHpPartyOnly" Style="{StaticResource DarkCheck}" Margin="0,4,0,0"
+                                      Content="{Binding OneHpPartyOnly, Source={x:Static s:UiText.Current}}"
+                                      ToolTip="{Binding TipPartyOnly, Source={x:Static s:UiText.Current}}" />
                             <CheckBox x:Name="OneHpCompact" Style="{StaticResource DarkCheck}" Margin="0,4,0,0"
                                       Content="{Binding OneHpCompact, Source={x:Static s:UiText.Current}}" />
                             <CheckBox x:Name="OneHpWithGame" Style="{StaticResource DarkCheck}" Margin="0,4,0,0"
