@@ -10,8 +10,8 @@ using AionMeter.Core.Updates;
 namespace AionMeter.App.Windows;
 
 /// <summary>
-/// "A new version is out": what changed, then Update / Later / Skip this version. An installed copy downloads the
-/// installer here (with progress), starts it and exits; a portable copy opens the release page instead.
+/// "A new version is out": what changed, then Update / Later / Skip this version. A copy that can update itself downloads
+/// the installer or the zip here (with progress), starts the update and exits; any other copy opens the release page.
 /// </summary>
 public partial class UpdateWindow : Window
 {
@@ -34,9 +34,9 @@ public partial class UpdateWindow : Window
             ? string.Format(t.UpdateReleased, current, FormatDate(at))
             : string.Format(t.UpdateYouHave, current);
         ShowNotes(release.Notes);
-        _canInstall = installed && release.Installer is not null;
+        _canInstall = installed && Updater.UpdateAsset(release) is not null;
         UpdateButton.Content = _canInstall ? t.UpdateNow : t.UpdateOpenPage;
-        Hint.Text = _canInstall ? t.UpdateInstalledHint : t.UpdatePortableHint;
+        Hint.Text = !_canInstall ? t.UpdatePortableHint : Updater.IsInstalled ? t.UpdateInstalledHint : t.UpdateZipHint;
     }
 
     public ReleaseInfo Release { get; }
@@ -65,11 +65,11 @@ public partial class UpdateWindow : Window
         });
         try
         {
-            var installer = await _updater.DownloadInstallerAsync(Release, progress, _download.Token);
+            var download = await _updater.DownloadUpdateAsync(Release, progress, _download.Token);
             State.Text = t.UpdateStarting;
-            Log.Info($"Updating to {Release.Tag} with {installer}");
-            Updater.LaunchInstaller(installer);
-            Application.Current.Shutdown(); // the installer replaces our files and starts the new version
+            Log.Info($"Updating to {Release.Tag} with {download}");
+            Updater.Install(download, quiet: false);
+            Application.Current.Shutdown(); // the installer (or, for a zip copy, 1HP-Watcher) replaces our files and starts the new version
         }
         catch (OperationCanceledException) when (_download.IsCancellationRequested)
         {

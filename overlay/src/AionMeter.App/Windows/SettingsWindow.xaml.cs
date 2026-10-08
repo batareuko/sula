@@ -71,7 +71,7 @@ public partial class SettingsWindow : Window
         OneHpWithGame.IsChecked = s.WithGame;
         OneHpCompact.IsChecked = s.Compact;
         AutoInstallUpdates.IsChecked = s.AutoInstallUpdates;
-        AutoInstallUpdates.IsEnabled = Updater.IsInstalled; // a portable copy cannot replace itself
+        AutoInstallUpdates.IsEnabled = Updater.CanSelfUpdate; // a copy in a read-only folder cannot replace itself
         VersionText.Text = string.Format(Updater.IsInstalled ? T.VersionInstalled : T.VersionPortable, _meter.Updates.Current.ToString(3));
 
         CaptureState.Text = T.StatusPrefix + _meter.CaptureStatus.Message;

@@ -14,7 +14,7 @@
     <AssemblyName>1HP-Watcher</AssemblyName>
     <RootNamespace>OneHp.Watcher</RootNamespace>
     <Product>1 HP Overlay</Product>
-    <Version>1.2.0</Version>
+    <Version>1.2.1</Version>
     <InvariantGlobalization>true</InvariantGlobalization>
     <UseSystemResourceKeys>true</UseSystemResourceKeys>
   </PropertyGroup>
@@ -22,6 +22,8 @@
   <ItemGroup>
     <!-- The same list of game process names as the overlay itself. -->
     <Compile Include="..\AionMeter.Core\Capture\GameProcessLocator.cs" Link="GameProcessLocator.cs" />
+    <!-- The apply mode replaces the overlay's files with a downloaded release (Services/Updater.cs starts it). -->
+    <Compile Include="..\AionMeter.Core\Updates\PortableInstall.cs" Link="PortableInstall.cs" />
   </ItemGroup>
 
 </Project>
