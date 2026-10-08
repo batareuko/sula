@@ -108,6 +108,21 @@ function Get-LossOrigin([object[]]$Path) {
   return [pscustomobject]@{ Origin = $origin; FinalLoss = $final.LossPct; Final = $final.Name }
 }
 
+<# Домашня приватна адреса (не CGNAT провайдера 100.64/10) #>
+function Test-HomeIp([string]$Ip) { return $Ip -match '^(10\.|192\.168\.|172\.(1[6-9]|2\d|3[01])\.)' }
+
+<#
+  Додатковий пристрій-шлюз між ПК і роутером (Raspberry Pi з Pi-hole як шлюз, другий роутер, mesh-точка в режимі роутера):
+  два перші вузли маршруту — обидва домашні, і другий схожий на домашній роутер (192.168.x). Провайдерські 10.x другим
+  вузлом не рахуються: у багатьох провайдерів внутрішня мережа саме така.
+#>
+function Get-ExtraGateway([object[]]$Hops) {
+  if ($Hops.Count -lt 2) { return $null }
+  $a = $Hops[0].Ip; $b = $Hops[1].Ip
+  if ((Test-HomeIp $a) -and $b -match '^192\.168\.') { return ($a + ' → ' + $b) }
+  return $null
+}
+
 <# Висновки: масив { Level (ok|warn|bad); Text } #>
 function Get-Verdict($d) {
   $v = New-Object System.Collections.Generic.List[object]
@@ -160,6 +175,19 @@ function Get-Verdict($d) {
   if ($d.BloatMs -ne $null -and $d.BloatMs -ge 80) {
     Add 'bad' ('Під навантаженням пінг росте на ' + $d.BloatMs + ' мс (bufferbloat): коли хтось удома качає чи стрімить, гра лагає. Увімкніть у роутері QoS / SQM (Smart Queue) або обмежте швидкість завантажень.')
   }
+  if ($d.Accel) {
+    if ($d.Accel.Running.Count -gt 0) {
+      Add 'warn' ('Запущено прискорювач / VPN: ' + ($d.Accel.Running -join ', ') + '. Гра може йти через нього, тож пінг і втрати залежать від його сервера. Для чесної перевірки закрийте його і запустіть тест знову.')
+    } elseif ($d.Accel.Services.Count -gt 0 -or $d.Accel.Adapters.Count -gt 0) {
+      Add 'warn' ('Знайдено залишки прискорювача / VPN: ' + (@($d.Accel.Services) + @($d.Accel.Adapters) -join ', ') + '. Якщо ним більше не користуєтесь (наприклад, закінчилась підписка ExitLag), видаліть програму повністю (Параметри → Програми) і перезавантажте ПК: її мережевий драйвер може й далі перехоплювати трафік і губити пакети.')
+    }
+  }
+  if ($d.GameViaLoopback) {
+    Add 'warn' 'Гра підключена до 127.0.0.1, тобто через локальний проксі прискорювача пінгу. Якщо прискорювач уже не потрібен — вийдіть з нього або видаліть, і гра піде напряму.'
+  }
+  if ($d.ExtraGateway) {
+    Add 'warn' ('Між ПК та інтернетом два домашні пристрої (' + $d.ExtraGateway + '): трафік іде через окремий пристрій (наприклад, Raspberry Pi з Pi-hole) або через два роутери (модем провайдера + свій роутер), а вже потім в інтернет. Кожен зайвий пристрій — ще одне місце, де губляться пакети. Pi-hole краще лишити лише DNS-сервером, а шлюзом на ПК зробити роутер; модем провайдера — перевести в режим моста (bridge).')
+  }
   if ($d.Hogs -and $d.Hogs.Count -gt 0) {
     Add 'warn' ('Запущені програми, що можуть забирати канал: ' + ($d.Hogs -join ', ') + '. Під час рейдів призупиніть завантаження й синхронізацію.')
   }
@@ -172,9 +200,10 @@ function Get-Verdict($d) {
 function Find-GameConnections([string]$NamePart) {
   $procs = @(Get-Process | Where-Object { $_.ProcessName -match [regex]::Escape($NamePart) -and $_.Id -ne $PID })
   if ($procs.Count -eq 0) { return $null }
-  $conns = @(Get-NetTCPConnection -State Established -ErrorAction SilentlyContinue |
-    Where-Object { $procs.Id -contains $_.OwningProcess -and $_.RemoteAddress -notmatch '^(127\.|::1|0\.0\.0\.0)' })
-  return [pscustomobject]@{ Processes = $procs; Connections = $conns }
+  $all = @(Get-NetTCPConnection -State Established -ErrorAction SilentlyContinue | Where-Object { $procs.Id -contains $_.OwningProcess })
+  $conns = @($all | Where-Object { $_.RemoteAddress -notmatch '^(127\.|::1|0\.0\.0\.0)' })
+  $loop = @($all | Where-Object { $_.RemoteAddress -match '^(127\.|::1)' })
+  return [pscustomobject]@{ Processes = $procs; Connections = $conns; Loopback = $loop.Count }
 }
 
 function Get-DefaultRoute {
@@ -405,6 +434,7 @@ function Invoke-NetCheck {
   Head 'Гра'
   $game = Find-GameConnections $ProcessName
   $gameConn = $null
+  $gameViaLoopback = $false
   if ($game -and $game.Connections.Count -gt 0) {
     Say ('Процес: ' + (($game.Processes | ForEach-Object { $_.ProcessName + ' (' + $_.Id + ')' }) -join ', '))
     $byRemote = $game.Connections | Group-Object RemoteAddress | Sort-Object Count -Descending
@@ -414,6 +444,9 @@ function Invoke-NetCheck {
     if (-not $gameConn) { $gameConn = $game.Connections | Select-Object -First 1 }
     if (-not $Target) { $Target = $gameConn.RemoteAddress }
     Say ('Сервер гри: ' + $Target + ':' + $gameConn.RemotePort) 'White'
+  } elseif ($game -and $game.Loopback -gt 0) {
+    $gameViaLoopback = $true
+    Say ('Гра підключена до 127.0.0.1 (' + $game.Loopback + ' з''єднань): це локальний проксі прискорювача пінгу (ExitLag тощо). Сервер гри за ним не видно.') 'Yellow'
   } elseif ($Target) {
     Say ('Гру не знайдено, перевіряю вказаний сервер ' + $Target) 'Yellow'
   } else {
@@ -429,6 +462,23 @@ function Invoke-NetCheck {
     Say ('Адаптер: ' + $ad.Name + ' · ' + $ad.InterfaceDescription + ' · ' + $ad.LinkSpeed + ' · ' + $(if ($isWifi) { 'Wi-Fi' } else { 'кабель' }))
   }
   Say ('Роутер (шлюз): ' + $route.Gateway)
+  try {
+    $dns = @((Get-DnsClientServerAddress -InterfaceIndex $route.IfIndex -AddressFamily IPv4 -ErrorAction Stop).ServerAddresses)
+    if ($dns.Count) {
+      $dnsNote = $(if (($dns | Where-Object { (Test-HomeIp $_) -and $_ -ne $route.Gateway }).Count) { ' (окремий пристрій, напр. Pi-hole: на пінг у грі DNS не впливає)' } else { '' })
+      Say ('DNS: ' + ($dns -join ', ') + $dnsNote)
+    }
+  } catch { }
+
+  # прискорювачі пінгу / VPN: запущені, або залишки служб і мережевих адаптерів після видалення / кінця підписки
+  $accelRx = 'ExitLag|LagoFast|GearUP|NoPing|WTFast|Mudfish|Outfox|Haste|Kovi'
+  $safe = { param($sb) try { @(& $sb) } catch { @() } }
+  $accel = [pscustomobject]@{
+    Running = & $safe { Get-Process -ErrorAction SilentlyContinue | Where-Object { $_.ProcessName -match $accelRx } | Select-Object -ExpandProperty ProcessName -Unique }
+    Services = & $safe { Get-Service -ErrorAction SilentlyContinue | Where-Object { $_.Name -match $accelRx -or $_.DisplayName -match $accelRx } | ForEach-Object { 'служба ' + $_.DisplayName + ' (' + $_.Status + ')' } }
+    Adapters = & $safe { Get-NetAdapter -IncludeHidden -ErrorAction SilentlyContinue | Where-Object { $_.InterfaceDescription -match ($accelRx + '|TAP-Windows|Wintun') -or $_.Name -match $accelRx } | ForEach-Object { 'адаптер ' + $_.InterfaceDescription + ' (' + $_.Status + ')' } }
+  }
+  foreach ($x in @($accel.Running | ForEach-Object { 'запущено ' + $_ }) + $accel.Services + $accel.Adapters) { Say ('Прискорювач / VPN: ' + $x) 'Yellow' }
   $wifi = $null
   if ($isWifi) {
     $wifi = Get-WifiInfo
@@ -451,6 +501,7 @@ function Invoke-NetCheck {
   Say ('Будую маршрут до ' + $traceTo + ' (до 30 с)...') 'DarkGray'
   $hops = @(ConvertFrom-Tracert (tracert -d -h 25 -w 700 $traceTo))
   foreach ($h in $hops) { Say ('  ' + $h.Hop + '. ' + $h.Ip) 'DarkGray' }
+  $extraGateway = Get-ExtraGateway $hops
   # PPPoE та деякі VPN мають шлюз 0.0.0.0: тоді «роутером» вважаємо перший вузол маршруту
   if ($route.Gateway -eq '0.0.0.0' -or -not $route.Gateway) {
     if ($hops.Count) { $route.Gateway = $hops[0].Ip; Say ('Шлюз 0.0.0.0 (PPPoE/VPN): перший вузол ' + $route.Gateway + ' вважаю роутером.') 'DarkGray' }
@@ -533,6 +584,7 @@ function Invoke-NetCheck {
     GameRtt = $(if ($ge -and $ge.RttMs) { $ge.RttMs } elseif ($gameStat -and $gameStat.Avg) { $gameStat.Avg } else { $null })
     BloatMs = $(if ($bloat) { $bloat.Delta } else { $null })
     Hogs = $hogs; SysRetransPct = $sysRetrans; PowerSave = $powerSave
+    Accel = $accel; GameViaLoopback = $gameViaLoopback; ExtraGateway = $extraGateway
   }
 
   Head 'Висновок'

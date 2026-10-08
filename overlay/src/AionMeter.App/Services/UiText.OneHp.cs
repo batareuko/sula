@@ -4,6 +4,10 @@ namespace AionMeter.App.Services;
 public sealed partial class UiText
 {
     public string NetNoGame { get; init; } = "no game connection";
+    public string NetGameNotRunning { get; init; } = "game not found";
+    public string NetGameNoConnection { get; init; } = "game not connected yet";
+    public string NetViaAccelerator { get; init; } = "via ping accelerator";
+    public string NetTipAccelerator { get; init; } = "The game goes through a local ping accelerator (ExitLag, LagoFast …): only it sees the ping to the server. Loss is read from the game stream.";
     public string NetPing { get; init; } = "ping {0} ms";
     public string NetPingNoReply { get; init; } = "server ignores ping";
     public string NetLoss { get; init; } = "loss {0}%";

@@ -204,13 +204,18 @@ public partial class OverlayWindow : Window
         string Pct(double v) => v.ToString("0.#", c);
 
         var parts = new List<string>();
-        if (r.Server is null) parts.Add(t.NetNoGame);
-        else
-        {
-            parts.Add(r.ServerPing.AnyReply && r.ServerPing.AvgMs is { } avg ? string.Format(t.NetPing, Math.Round(avg)) : t.NetPingNoReply);
-            if (r.StreamLossPct is { } loss) parts.Add(string.Format(t.NetLoss, Pct(loss)));
-            else if (r.ServerPing.AnyReply && r.ServerPing.Samples >= 10) parts.Add(string.Format(t.NetLoss, Pct(r.ServerPing.LossPct)));
-        }
+        if (r.Server is null)
+            parts.Add(r.Link switch
+            {
+                Services.GameLink.NotRunning => t.NetGameNotRunning,
+                Services.GameLink.Accelerator => t.NetViaAccelerator,
+                Services.GameLink.NoConnection => t.NetGameNoConnection,
+                _ => t.NetNoGame,
+            });
+        else parts.Add(r.ServerPing.AnyReply && r.ServerPing.AvgMs is { } avg ? string.Format(t.NetPing, Math.Round(avg)) : t.NetPingNoReply);
+        // Loss of the game stream is known whatever the route (also through an accelerator)
+        if (r.StreamLossPct is { } loss) parts.Add(string.Format(t.NetLoss, Pct(loss)));
+        else if (r.Server is not null && r.ServerPing.AnyReply && r.ServerPing.Samples >= 10) parts.Add(string.Format(t.NetLoss, Pct(r.ServerPing.LossPct)));
         var routerBad = r.GatewayPing.Samples >= 10 && r.GatewayPing.AnyReply && r.GatewayPing.LossPct >= 1;
         if (routerBad) parts.Add(string.Format(t.NetRouterLoss, Pct(r.GatewayPing.LossPct)));
         NetText.Text = string.Join(" · ", parts);
@@ -227,6 +232,7 @@ public partial class OverlayWindow : Window
             : t.NetTipNoPing;
         var tip = new List<string>();
         if (r.Server is not null) tip.Add(string.Format(t.NetTipServer, r.Server, PingLine(r.ServerPing)));
+        else if (r.Link == Services.GameLink.Accelerator) tip.Add(t.NetTipAccelerator);
         tip.Add(r.StreamLossPct is { } sl ? string.Format(t.NetTipStream, r.StreamSegments.ToString("#,0", c), r.StreamHoles, Pct(sl)) : t.NetTipStreamWait);
         if (r.Gateway is not null) tip.Add(string.Format(t.NetTipRouter, r.Gateway, PingLine(r.GatewayPing)));
         if (routerBad) tip.Add(t.NetAdviceHome);

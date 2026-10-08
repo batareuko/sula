@@ -304,6 +304,10 @@ public sealed partial class UiText
         UpdateCheckFailed = "Не вдалося зв'язатися з GitHub: {0}",
 
         NetNoGame = "немає з'єднання з грою",
+        NetGameNotRunning = "гру не знайдено",
+        NetGameNoConnection = "гра ще не підключена",
+        NetViaAccelerator = "через прискорювач пінгу",
+        NetTipAccelerator = "Гра йде через локальний прискорювач пінгу (ExitLag, LagoFast …): пінг до сервера бачить лише він. Втрати рахуються з потоку гри.",
         NetPing = "пінг {0} мс",
         NetPingNoReply = "сервер не відповідає на ping",
         NetLoss = "втрати {0}%",
