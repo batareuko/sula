@@ -47,10 +47,18 @@ public sealed class NetMonitor : IDisposable
     public NetReport Report()
     {
         (long Segments, long Holes, double? LossPct) stream;
-        lock (_gate) stream = _loss.Current();
+        (long Segments, long Resends, double? ResendPct) up;
+        (long Count, long TotalMs) stalls;
+        lock (_gate)
+        {
+            stream = _loss.Current();
+            up = _loss.Upstream();
+            stalls = _loss.Stalls();
+        }
         var server = _server.Summary();
         return new NetReport(Server, server, Gateway, _gateway.Summary(), stream.Segments, stream.Holes, stream.LossPct,
-            NetGrade.Of(stream.LossPct, server), Link);
+            NetGrade.Of(stream.LossPct, server, up.ResendPct, stalls.Count), Link,
+            up.Segments, up.Resends, up.ResendPct, stalls.Count, stalls.TotalMs);
     }
 
     private async Task Loop(CancellationToken ct)
@@ -72,7 +80,7 @@ public sealed class NetMonitor : IDisposable
                 await Task.WhenAll(tasks).ConfigureAwait(false);
 
                 if (_stream() is { } c)
-                    lock (_gate) _loss.Add(now, c.Segments, c.Holes);
+                    lock (_gate) _loss.Add(now, c.Segments, c.Holes, c.Upstream, c.UpstreamResends, c.Stalls, c.StallMs);
             }
             catch (Exception ex) when (ex is not OperationCanceledException)
             {
@@ -185,4 +193,5 @@ public sealed class NetMonitor : IDisposable
 
 public sealed record NetReport(
     IPAddress? Server, NetSummary ServerPing, IPAddress? Gateway, NetSummary GatewayPing,
-    long StreamSegments, long StreamHoles, double? StreamLossPct, NetQuality Quality, GameLink Link = GameLink.Unknown);
+    long StreamSegments, long StreamHoles, double? StreamLossPct, NetQuality Quality, GameLink Link = GameLink.Unknown,
+    long UpSegments = 0, long UpResends = 0, double? UpResendPct = null, long Stalls = 0, long StallMs = 0);

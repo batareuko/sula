@@ -214,9 +214,11 @@ public partial class OverlayWindow : Window
                 _ => t.NetNoGame,
             });
         else parts.Add(r.ServerPing.AnyReply && r.ServerPing.AvgMs is { } avg ? string.Format(t.NetPing, Math.Round(avg)) : t.NetPingNoReply);
-        // Loss of the game stream is known whatever the route (also through an accelerator)
-        if (r.StreamLossPct is { } loss) parts.Add(string.Format(t.NetLoss, Pct(loss)));
+        // Loss of the game stream is known whatever the route (also through an accelerator): from the server ↓ and to it ↑
+        if (r.StreamLossPct is { } loss)
+            parts.Add(r.UpResendPct is { } upPct ? string.Format(t.NetLossBoth, Pct(loss), Pct(upPct)) : string.Format(t.NetLoss, Pct(loss)));
         else if (r.Server is not null && r.ServerPing.AnyReply && r.ServerPing.Samples >= 10) parts.Add(string.Format(t.NetLoss, Pct(r.ServerPing.LossPct)));
+        if (r.Stalls > 0) parts.Add(string.Format(t.NetStalls, r.Stalls));
         var routerBad = r.GatewayPing.Samples >= 10 && r.GatewayPing.AnyReply && r.GatewayPing.LossPct >= 1;
         if (routerBad) parts.Add(string.Format(t.NetRouterLoss, Pct(r.GatewayPing.LossPct)));
         NetText.Text = string.Join(" · ", parts);
@@ -235,6 +237,10 @@ public partial class OverlayWindow : Window
         if (r.Server is not null) tip.Add(string.Format(t.NetTipServer, r.Server, PingLine(r.ServerPing)));
         else if (r.Link == Services.GameLink.Accelerator) tip.Add(t.NetTipAccelerator);
         tip.Add(r.StreamLossPct is { } sl ? string.Format(t.NetTipStream, r.StreamSegments.ToString("#,0", c), r.StreamHoles, Pct(sl)) : t.NetTipStreamWait);
+        if (r.UpResendPct is { } up) tip.Add(string.Format(t.NetTipUpstream, r.UpSegments.ToString("#,0", c), r.UpResends, Pct(up)));
+        tip.Add(r.Stalls > 0 ? string.Format(t.NetTipStalls, r.Stalls, (r.StallMs / 1000.0).ToString("0.#", c)) : t.NetTipNoStalls);
+        if (r.Stalls > 0 && (r.StreamLossPct ?? 0) < 0.5 && (r.UpResendPct ?? 0) < 0.5) tip.Add(t.NetAdviceStalls);
+        else if ((r.UpResendPct ?? 0) >= 0.5 && (r.StreamLossPct ?? 0) < 0.5) tip.Add(t.NetAdviceUpstream);
         if (r.Gateway is not null) tip.Add(string.Format(t.NetTipRouter, r.Gateway, PingLine(r.GatewayPing)));
         if (routerBad) tip.Add(t.NetAdviceHome);
         else if (r.Quality == Core.OneHp.NetQuality.Bad) tip.Add(t.NetAdviceRoute);

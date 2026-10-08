@@ -46,6 +46,9 @@ public sealed class AppSettings
     // Boss respawn timers
     /// <summary>Tray notification this many minutes before a tracked boss respawns; 0 = off.</summary>
     public int BossAlertMinutes { get; set; } = 2;
+    /// <summary>1 HP: notify about priority field bosses (★, data/priority_bosses.json) without a bell, this early.</summary>
+    public bool PriorityBossAlerts { get; set; } = true;
+    public const int PriorityAlertMinutes = 10;
 
     // Meter
     public TargetMode TargetMode { get; set; } = TargetMode.BossOnly;
@@ -93,6 +96,8 @@ public sealed class AppSettings
     public string OneHpKey { get; set; } = "";
     public bool OneHpUpload { get; set; } = true;
     public bool OneHpGear { get; set; } = true;
+    /// <summary>Send the in-game field boss list's times for your server to the site (OneHpCloud.SyncBosses).</summary>
+    public bool OneHpBossSync { get; set; } = true;
     /// <summary>Started by the watcher when AION 2 starts (Services/GameAutostart.cs) and closed after the game.</summary>
     public bool WithGame { get; set; } = true;
     /// <summary>Smaller header, rows and strip (Settings → 1 HP).</summary>

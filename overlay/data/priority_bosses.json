@@ -1,0 +1,4 @@
+{
+  "_source": "1 HP: priority field bosses (aion2-guide/data.js → bossPriority, also in supabase/functions/discord-alerts). Level 48–51 bosses: each drops its own named Unique set — gloves, boots, cloak, earrings, ring ~12.9 % each, helm and pauldrons 10.3 %, greaves 8.6 %, breastplate 6.4 % — about one Unique piece per kill; Gartua also a Legend artwork (25 %). Level 45 bosses drop Wisdom / Fantasy Uniques at 0.1–0.2 %. Chances per kill from metabot.gg, 2026-10-08.",
+  "bosses": [2101120, 2101122, 2101131, 2101074, 2400855, 2400854, 2400853, 2400800]
+}

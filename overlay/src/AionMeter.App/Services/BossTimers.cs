@@ -94,6 +94,7 @@ public sealed class BossTimers
     private readonly Dictionary<int, MapInfo> _knownMaps = new();                               // shipped
     private readonly Dictionary<(int Server, int Map), FieldBossListEvent> _lastLists = new();  // newest list (this run)
     private Learned _learned = new(new(), new(), new());
+    private readonly HashSet<int> _priority = new();                                          // 1 HP: data/priority_bosses.json
     private static readonly JsonSerializerOptions Json = new() { WriteIndented = true };
 
     public sealed record MapInfo(int Block, string? En, string? Ru);
@@ -120,6 +121,7 @@ public sealed class BossTimers
         _data = data;
         Persistent = persistent;
         LoadKnownMaps(Path.Combine(dataDirectory, "field_boss_maps.json"));
+        LoadPriority(Path.Combine(dataDirectory, "priority_bosses.json"));
         if (persistent) Load();
         if (DropInstanceBosses() > 0) Save();
     }
@@ -527,18 +529,25 @@ public sealed class BossTimers
         Save();
     }
 
-    /// <summary>Watched timers of the current server whose respawn is <paramref name="leadMinutes"/> away (or just
-    /// passed) and not announced yet; marks them announced.</summary>
-    public List<BossTimer> TakeDueAlerts(DateTimeOffset now, int leadMinutes)
+    /// <summary>1 HP: a priority field boss (★): its own Unique set, about one piece per kill.</summary>
+    public bool IsPriority(int npcCode) => _priority.Contains(npcCode);
+
+    /// <summary>
+    /// Watched timers of the current server whose respawn is <paramref name="leadMinutes"/> away (or just passed) and
+    /// not announced yet; marks them announced. 1 HP: priority bosses count as watched with
+    /// <paramref name="priorityLeadMinutes"/> (0 = only when watched), so nobody has to ring their bell first.
+    /// </summary>
+    public List<BossTimer> TakeDueAlerts(DateTimeOffset now, int leadMinutes, int priorityLeadMinutes = 0)
     {
         var due = new List<BossTimer>();
-        if (leadMinutes <= 0) return due;
         lock (_gate)
         {
             foreach (var t in _timers.Values.Where(t => t.ServerId == _learned.LastServer).ToList())
             {
-                if (!t.Watch || t.NextSpawn is not { } next || t.AlertedFor == next || t.AliveNow) continue;
-                if (now < next.AddMinutes(-leadMinutes) || now > next.AddMinutes(10)) continue;
+                var priority = priorityLeadMinutes > 0 && _priority.Contains(t.NpcCode);
+                var lead = priority ? Math.Max(leadMinutes, priorityLeadMinutes) : t.Watch ? leadMinutes : 0;
+                if (lead <= 0 || t.NextSpawn is not { } next || t.AlertedFor == next || t.AliveNow) continue;
+                if (now < next.AddMinutes(-lead) || now > next.AddMinutes(10)) continue;
                 _timers[(t.ServerId, t.NpcCode)] = t with { AlertedFor = next };
                 due.Add(t);
             }
@@ -559,6 +568,22 @@ public sealed class BossTimers
     }
 
     // ------------------------------------------------------------------ files
+
+    private void LoadPriority(string path)
+    {
+        try
+        {
+            if (!File.Exists(path)) return;
+            using var doc = JsonDocument.Parse(File.ReadAllText(path));
+            if (!doc.RootElement.TryGetProperty("bosses", out var list)) return;
+            foreach (var code in list.EnumerateArray())
+                if (code.TryGetInt32(out var c)) _priority.Add(c);
+        }
+        catch (Exception ex) when (ex is JsonException or IOException)
+        {
+            Log.Info($"priority_bosses.json ignored: {ex.Message}");
+        }
+    }
 
     private void LoadKnownMaps(string path)
     {

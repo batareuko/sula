@@ -57,6 +57,17 @@ create table if not exists public.boss_kills (
   by_user   uuid default auth.uid() references auth.users (id) on delete set null
 );
 
+-- Таймери прив'язані до сервера: у кожного сервера свої боси і свій відлік.
+--   server_id  — id сервера гри (як у профілі персонажа і в оверлеї); 0 — старі відмітки без сервера
+--   respawn_at — точний час появи з ігрового списку босів (надсилає оверлей); без нього — killed_at + цикл з data.js
+--   source     — 'site' (кнопка «Вбито») або 'game' (оверлей)
+alter table public.boss_kills add column if not exists server_id integer not null default 0 check (server_id between 0 and 99999);
+alter table public.boss_kills add column if not exists respawn_at timestamptz;
+alter table public.boss_kills add column if not exists alive boolean not null default false;
+alter table public.boss_kills add column if not exists source text not null default 'site' check (source in ('site', 'game'));
+alter table public.boss_kills drop constraint if exists boss_kills_pkey;
+alter table public.boss_kills add constraint boss_kills_pkey primary key (server_id, boss_id);
+
 alter table public.boss_kills enable row level security;
 
 drop policy if exists "boss kills readable" on public.boss_kills;

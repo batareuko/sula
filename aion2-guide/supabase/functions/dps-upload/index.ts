@@ -4,6 +4,9 @@
 //   POST { key, record: { character, class, serverId, bossCode, bossName, zone, dps, damage, durationMs, partySize, place, foughtAt } }
 //   -> { saved, place, total, topPct, best, personalBest }   місце серед учасників 1 HP (за найкращим результатом кожного)
 //   POST { key, check: true } -> { ok: true }               перевірка ключа з налаштувань оверлея
+//   POST { key, bosses: { serverId, by, list: [{ code, alive, at }] } } -> { saved }
+//        час польових босів з ігрового списку (оверлей): alive=false — повернеться о `at`, alive=true — живий з `at`;
+//        пишеться в boss_kills для цього сервера (source='game'), сайт і Discord беруть його замість «вбито + цикл»
 // Ключ створюється на сайті (розділ «Рейтинг DPS»); у базі лише його SHA-256 (таблиця overlay_keys).
 // SUPABASE_URL і SUPABASE_SERVICE_ROLE_KEY Supabase додає сам.
 
@@ -81,6 +84,28 @@ export function validate(r: any): { row?: Record<string, unknown>; error?: strin
   return { row };
 }
 
+/** Рядки boss_kills з ігрового списку босів або причина відмови */
+export function bossRows(b: any, now = Date.now()): { rows?: Record<string, unknown>[]; error?: string } {
+  if (!b || typeof b !== 'object' || !Array.isArray(b.list)) return { error: 'bad_bosses' };
+  const server = int(b.serverId);
+  if (!(server >= 1000 && server <= 9999)) return { error: 'bad_server' };
+  if (b.list.length > 120) return { error: 'too_many' };
+  const by = str(b.by, 40) || null;
+  const rows: Record<string, unknown>[] = [];
+  for (const x of b.list) {
+    const code = int(x?.code);
+    const at = Number(x?.at);
+    if (!(code >= 2_000_000 && code <= 2_999_999)) continue; // польові боси
+    if (!Number.isFinite(at) || at < now - 26 * 3600_000 || at > now + 26 * 3600_000) continue;
+    const alive = x.alive === true;
+    if (!alive && at < now - 3600_000) continue; // «повернеться о» в минулому: застаріле
+    const iso = new Date(at).toISOString();
+    rows.push({ server_id: server, boss_id: String(code), killed_at: alive ? iso : new Date(now).toISOString(),
+      respawn_at: iso, alive, source: 'game', by_name: by, by_user: null });
+  }
+  return { rows };
+}
+
 /** Місце користувача серед учасників за найкращим результатом кожного на цьому босі */
 export function rank(rows: { user_id: string; dps: number }[], userId: string) {
   const best = new Map<string, number>();
@@ -107,6 +132,19 @@ export async function handler(req: Request): Promise<Response> {
     const userId = owners?.[0]?.user_id as string | undefined;
     if (!userId) return json({ error: 'bad_key' }, 401);
     if (body.check) return json({ ok: true });
+
+    if (body.bosses) {
+      const { rows, error } = bossRows(body.bosses);
+      if (!rows) return json({ error }, 400);
+      if (rows.length) {
+        await rest('boss_kills?on_conflict=server_id,boss_id', {
+          method: 'POST',
+          headers: { Prefer: 'resolution=merge-duplicates,return=minimal' },
+          body: JSON.stringify(rows),
+        });
+      }
+      return json({ saved: rows.length });
+    }
 
     const { row, error } = validate(body.record);
     if (!row) return json({ error }, 400);

@@ -123,7 +123,9 @@ public partial class BossTimersWindow : Window
     private void Fill(TimerRow row, BossTimer t, DateTimeOffset now)
     {
         // A list slot whose boss is not known yet is keyed by -slot: "Boss #5".
-        row.Name = t.NpcCode > 0 ? _meter.Data.NpcName(t.NpcCode) : string.Format(T.UnknownSlotBoss, -t.NpcCode % 100);
+        row.Name = t.NpcCode > 0
+            ? (_meter.Timers.IsPriority(t.NpcCode) ? "★ " : "") + _meter.Data.NpcName(t.NpcCode) // 1 HP: priority bosses
+            : string.Format(T.UnknownSlotBoss, -t.NpcCode % 100);
         row.Portrait = t.NpcCode > 0 ? _meter.Portraits.Get(t.NpcCode) : null;
         row.Watch = t.Watch;
         row.SourceTip = t.FromGame && t.ListedAt is { } listed ? string.Format(T.SourceGame, When(listed, now)) : T.SourceMeter;

@@ -42,6 +42,9 @@ public sealed class MeterService : IDisposable
             if (_replaying) return;
             Log.FieldBossList(list);
             Timers.OnList(list);
+            // 1 HP: the game's own times for this server, to the site and Discord
+            var server = Timers.CurrentServer;
+            Cloud.SyncBosses(server, Tracker.SelfName, Timers.ForServer(server));
         };
 
         // Names and bosses learned before a restart (same zone, recent) come back immediately: no "#id" players, and a boss

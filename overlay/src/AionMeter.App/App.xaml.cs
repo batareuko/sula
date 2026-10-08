@@ -429,14 +429,18 @@ public partial class App : Application
     private void CheckBossAlerts()
     {
         var t = UiText.Current;
-        foreach (var timer in _meter.Timers.TakeDueAlerts(DateTimeOffset.Now, _meter.Settings.BossAlertMinutes))
+        var s = _meter.Settings;
+        foreach (var timer in _meter.Timers.TakeDueAlerts(DateTimeOffset.Now, s.BossAlertMinutes,
+                     s.PriorityBossAlerts ? AppSettings.PriorityAlertMinutes : 0))
         {
             var next = timer.NextSpawn!.Value;
             var minutes = (int)Math.Ceiling((next - DateTimeOffset.Now).TotalMinutes);
-            var name = _meter.Data.NpcName(timer.NpcCode);
+            var priority = _meter.Timers.IsPriority(timer.NpcCode);
+            var name = (priority ? "★ " : "") + _meter.Data.NpcName(timer.NpcCode);
             var text = minutes > 0
                 ? string.Format(t.AlertSoon, name, minutes, next.ToString("HH:mm"))
                 : string.Format(t.AlertNow, name, next.ToString("HH:mm"));
+            if (priority) text += Environment.NewLine + t.PriorityLoot;
             _tray?.ShowBalloon(t.TimersTitle, text);
             System.Media.SystemSounds.Asterisk.Play();
         }
