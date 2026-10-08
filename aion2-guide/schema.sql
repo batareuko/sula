@@ -156,3 +156,43 @@ create table if not exists public.alert_log (
   sent_at timestamptz not null default now()
 );
 alter table public.alert_log enable row level security;
+
+-- ===================================================================================================
+-- Рейтинг DPS 1 HP (оверлей). Кожен учасник надсилає лише СВОЇ результати боїв з босами.
+-- Оверлей входить ключем, який учасник створює на сайті; у базі зберігається тільки SHA-256 ключа.
+-- Записи додає лише функція dps-upload (service role); читати можуть усі, хто увійшов, видаляти — свої.
+-- ===================================================================================================
+create table if not exists public.overlay_keys (
+  user_id    uuid primary key references auth.users(id) on delete cascade,
+  key_hash   text not null unique check (key_hash ~ '^[0-9a-f]{64}$'),
+  created_at timestamptz not null default now()
+);
+alter table public.overlay_keys enable row level security;
+drop policy if exists "overlay key own" on public.overlay_keys;
+create policy "overlay key own" on public.overlay_keys for all to authenticated
+  using (user_id = auth.uid()) with check (user_id = auth.uid());
+
+create table if not exists public.dps_records (
+  id          bigint generated always as identity primary key,
+  user_id     uuid not null references auth.users(id) on delete cascade,
+  character   text not null check (char_length(character) between 1 and 40),
+  class       text not null default '' check (char_length(class) <= 20),
+  server_id   int not null default 0,
+  boss_code   int not null check (boss_code > 0),
+  boss_name   text not null check (char_length(boss_name) between 1 and 80),
+  zone        text check (char_length(zone) <= 80),
+  dps         double precision not null check (dps > 0 and dps < 1e9),
+  damage      bigint not null check (damage > 0),
+  duration_ms int not null check (duration_ms between 5000 and 7200000),
+  party_size  int not null check (party_size between 1 and 50),
+  place       int not null check (place between 1 and 50),
+  fought_at   timestamptz not null,
+  created_at  timestamptz not null default now(),
+  unique (user_id, boss_code, fought_at)
+);
+create index if not exists dps_records_boss on public.dps_records (boss_code, dps desc);
+alter table public.dps_records enable row level security;
+drop policy if exists "dps readable" on public.dps_records;
+create policy "dps readable" on public.dps_records for select to authenticated using (true);
+drop policy if exists "dps delete own" on public.dps_records;
+create policy "dps delete own" on public.dps_records for delete to authenticated using (user_id = auth.uid());

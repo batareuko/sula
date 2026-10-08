@@ -212,6 +212,29 @@
       return function () { client.removeChannel(ch); };
     },
 
+    /* ---- Рейтинг DPS 1 HP: ключ оверлея (у базі лише SHA-256) і результати боїв ---- */
+    fetchOverlayKey: function () {
+      return client.from('overlay_keys').select('created_at').eq('user_id', user.id).maybeSingle().then(check);
+    },
+
+    setOverlayKey: function (hash) {
+      return client.from('overlay_keys').upsert({ user_id: user.id, key_hash: hash, created_at: new Date().toISOString() }).then(check);
+    },
+
+    deleteOverlayKey: function () {
+      return client.from('overlay_keys').delete().eq('user_id', user.id).then(check);
+    },
+
+    fetchDpsRecords: function () {
+      return client.from('dps_records')
+        .select('id,user_id,character,class,boss_code,boss_name,zone,dps,damage,duration_ms,party_size,place,fought_at')
+        .order('dps', { ascending: false }).limit(3000).then(check);
+    },
+
+    deleteDpsRecord: function (id) {
+      return client.from('dps_records').delete().eq('id', id).eq('user_id', user.id).then(check);
+    },
+
     deleteMine: function () {
       return client.from('members').delete().eq('user_id', user.id).then(check);
     },

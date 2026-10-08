@@ -784,6 +784,7 @@
       clearInterval(cloudTimer);
       stopKillsSync();
       stopGroupsSync();
+      stopDps();
       ensureProfile();
       setSync('');
       syncUI();
@@ -814,6 +815,7 @@
       loadRoster();
       startKillsSync();
       startGroupsSync();
+      startDps();
       autoRefreshCharacter();
       clearInterval(cloudTimer);
       cloudTimer = setInterval(function () { if (!document.hidden) { loadRoster(); loadKills(); loadGroups(); } }, 60000);
@@ -2724,6 +2726,172 @@
     });
   }
 
+  /* ---------- Рейтинг DPS 1 HP: результати з оверлея, ключ оверлея ---------- */
+  var CLASS_UA = { Gladiator: 'Гладіатор', Templar: 'Тамплієр', Ranger: 'Рейнджер', Assassin: 'Асасин', Sorcerer: 'Чаклун',
+    Elementalist: 'Елементаліст', Cleric: 'Клірик', Chanter: 'Чантер', Brawler: 'Боєць' };
+  var dpsState = { rows: [], boss: prefGet('dpsBoss', 0), cls: '', key: undefined, newKey: '', err: '' };
+
+  function fmtCompact(n) {
+    n = Number(n) || 0;
+    if (n >= 1e6) return (n / 1e6).toFixed(n >= 1e7 ? 1 : 2).replace('.', ',') + 'M';
+    if (n >= 1e4) return Math.round(n / 1e3) + 'K';
+    return fmtNum(Math.round(n));
+  }
+  function fmtDur(ms) { var s = Math.round(ms / 1000); return Math.floor(s / 60) + ':' + pad2(s % 60); }
+
+  function startDps() {
+    $('dpsLocked').hidden = true;
+    $('dpsBox').hidden = false;
+    loadDps();
+    loadOverlayKey();
+  }
+
+  function stopDps() {
+    $('dpsLocked').hidden = false;
+    $('dpsBox').hidden = true;
+    dpsState.rows = [];
+    dpsState.key = undefined;
+    dpsState.newKey = '';
+  }
+
+  function loadDps() {
+    Cloud.fetchDpsRecords().then(function (rows) {
+      dpsState.rows = rows || [];
+      dpsState.err = '';
+      renderDps();
+    }).catch(function (err) {
+      dpsState.err = 'Не вдалося завантажити рейтинг (' + err.message + '). Чи виконано оновлений schema.sql?';
+      renderDps();
+    });
+  }
+
+  function loadOverlayKey() {
+    Cloud.fetchOverlayKey().then(function (row) { dpsState.key = row || null; renderDpsKey(); })
+      .catch(function () { dpsState.key = null; renderDpsKey(); });
+  }
+
+  /* Ключ генерується в браузері; на сервер іде лише SHA-256, тож сам ключ бачите тільки ви і лише зараз */
+  function generateOverlayKey() {
+    if (dpsState.key && !window.confirm('Створити новий ключ? Старий перестане працювати в оверлеї.')) return;
+    var bytes = new Uint8Array(32);
+    crypto.getRandomValues(bytes);
+    var key = btoa(String.fromCharCode.apply(null, bytes)).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
+    crypto.subtle.digest('SHA-256', new TextEncoder().encode(key)).then(function (buf) {
+      var hash = Array.prototype.map.call(new Uint8Array(buf), function (b) { return ('0' + b.toString(16)).slice(-2); }).join('');
+      return Cloud.setOverlayKey(hash);
+    }).then(function () {
+      dpsState.newKey = key;
+      loadOverlayKey();
+    }).catch(function (err) { toast('Не вдалося створити ключ: ' + err.message); });
+  }
+
+  function revokeOverlayKey() {
+    if (!window.confirm('Відкликати ключ? Оверлей перестане надсилати результати, доки не вставите новий.')) return;
+    Cloud.deleteOverlayKey().then(function () { dpsState.newKey = ''; loadOverlayKey(); toast('Ключ відкликано'); })
+      .catch(function (err) { toast('Помилка: ' + err.message); });
+  }
+
+  function renderDpsKey() {
+    var box = $('dpsKey');
+    box.textContent = '';
+    box.appendChild(h('h3', { class: 'h-card', text: 'Ключ оверлея' }));
+    if (dpsState.newKey) {
+      box.appendChild(h('p', null, 'Скопіюйте ключ і вставте в оверлеї: ', h('b', { text: 'трей → Налаштування → 1 HP → Ключ оверлея' }), '. Більше його ніде не видно: якщо загубите, просто створіть новий.'));
+      box.appendChild(h('div', { class: 'cmd' }, h('code', { text: dpsState.newKey }),
+        h('button', { class: 'btn btn-sm', type: 'button', text: 'Копіювати', onclick: function () { copyText(dpsState.newKey, 'Ключ скопійовано'); } })));
+    }
+    var status = dpsState.key === undefined ? 'Перевіряю…'
+      : dpsState.key ? 'Ключ створено ' + new Date(dpsState.key.created_at).toLocaleDateString('uk-UA') + '. Оверлей з ним надсилає ваші результати після кожного вбитого боса.'
+      : 'Ключа ще немає. Створіть його, щоб оверлей надсилав ваші результати в рейтинг.';
+    box.appendChild(h('p', { class: 'muted small', text: status }));
+    var acts = h('div', { class: 'g-acts' }, h('button', { class: 'btn btn-sm', type: 'button', text: dpsState.key ? 'Створити новий ключ' : 'Створити ключ', onclick: generateOverlayKey }));
+    if (dpsState.key) acts.appendChild(h('button', { class: 'btn btn-ghost btn-sm', type: 'button', text: 'Відкликати', onclick: revokeOverlayKey }));
+    box.appendChild(acts);
+  }
+
+  function renderDps() {
+    var rows = dpsState.rows, me = Cloud && Cloud.user ? Cloud.user.id : null;
+    var bosses = {};
+    rows.forEach(function (r) {
+      var b = bosses[r.boss_code] || (bosses[r.boss_code] = { code: r.boss_code, name: r.boss_name, last: 0, n: 0 });
+      b.last = Math.max(b.last, Date.parse(r.fought_at));
+      b.n++;
+    });
+    var list = Object.keys(bosses).map(function (k) { return bosses[k]; }).sort(function (a, b) { return a.name.localeCompare(b.name); });
+    if (!bosses[dpsState.boss]) {
+      var recent = list.slice().sort(function (a, b) { return b.last - a.last; })[0];
+      dpsState.boss = recent ? recent.code : 0;
+    }
+    var sel = $('dpsBoss');
+    sel.textContent = '';
+    list.forEach(function (b) { sel.appendChild(h('option', { value: String(b.code), text: b.name + ' (' + b.n + ')' })); });
+    sel.value = String(dpsState.boss);
+    sel.disabled = !list.length;
+
+    var forBoss = rows.filter(function (r) { return r.boss_code === dpsState.boss; });
+    var classes = {};
+    forBoss.forEach(function (r) { if (r.class) classes[r.class] = true; });
+    var chips = $('dpsClasses');
+    chips.textContent = '';
+    [''].concat(Object.keys(classes).sort()).forEach(function (c) {
+      chips.appendChild(h('button', { class: 'tab', type: 'button', 'aria-pressed': dpsState.cls === c ? 'true' : 'false', text: c ? CLASS_UA[c] || c : 'Усі класи',
+        onclick: function () { dpsState.cls = c; renderDps(); } }));
+    });
+    if (dpsState.cls && !classes[dpsState.cls]) dpsState.cls = '';
+
+    // найкращий результат кожного учасника (за user_id; персонаж і клас — з того бою)
+    var best = {};
+    forBoss.forEach(function (r) {
+      if (dpsState.cls && r.class !== dpsState.cls) return;
+      if (!best[r.user_id] || r.dps > best[r.user_id].dps) best[r.user_id] = r;
+    });
+    var ranked = Object.keys(best).map(function (k) { return best[k]; }).sort(function (a, b) { return b.dps - a.dps; });
+
+    var t = $('dpsTable');
+    t.textContent = '';
+    if (!ranked.length) {
+      t.appendChild(h('tbody', null, h('tr', null, h('td', { class: 'empty', text: dpsState.err || (list.length ? 'Немає результатів для цього фільтра.' : 'Поки немає жодного результату. Встановіть оверлей, створіть ключ вище і вбийте боса.') }))));
+    } else {
+      t.appendChild(h('thead', null, h('tr', null, h('th', { text: '#' }), h('th', { text: 'Персонаж' }), h('th', { text: 'Клас' }),
+        h('th', { class: 'num', text: 'DPS' }), h('th', { class: 'num', text: 'Урон' }), h('th', { class: 'num', text: 'Бій' }),
+        h('th', { class: 'num', text: 'Місце в групі' }), h('th', { text: 'Дата' }))));
+      var tb = h('tbody');
+      ranked.forEach(function (r, i) {
+        tb.appendChild(h('tr', { class: r.user_id === me ? 'mine' : null },
+          h('td', { class: 'num', text: String(i + 1) }),
+          h('td', null, h('b', { lang: 'en', text: r.character })),
+          h('td', { text: CLASS_UA[r.class] || r.class || '—' }),
+          h('td', { class: 'num gold', text: fmtCompact(r.dps) }),
+          h('td', { class: 'num', text: fmtCompact(r.damage) }),
+          h('td', { class: 'num', text: fmtDur(r.duration_ms) }),
+          h('td', { class: 'num', text: r.place + ' / ' + r.party_size }),
+          h('td', { text: new Date(r.fought_at).toLocaleDateString('uk-UA', { day: '2-digit', month: '2-digit' }) })));
+      });
+      t.appendChild(tb);
+    }
+
+    // ваші записи на цьому босі — їх можна видалити
+    var mine = forBoss.filter(function (r) { return r.user_id === me; }).sort(function (a, b) { return b.dps - a.dps; });
+    var box = $('dpsMine');
+    box.textContent = '';
+    if (mine.length) {
+      var ul = h('ul', { class: 'news-list' });
+      mine.slice(0, 20).forEach(function (r) {
+        ul.appendChild(h('li', null, h('span', { text: fmtCompact(r.dps) + ' DPS · ' + r.character + ' · ' + new Date(r.fought_at).toLocaleString('uk-UA', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' }) + ' ' }),
+          h('button', { class: 'linkbtn', type: 'button', text: 'видалити', onclick: function () {
+            if (!window.confirm('Видалити цей результат з рейтингу?')) return;
+            Cloud.deleteDpsRecord(r.id).then(loadDps).catch(function (err) { toast('Помилка: ' + err.message); });
+          } })));
+      });
+      box.appendChild(h('details', { class: 'netcheck-more' }, h('summary', { text: 'Ваші результати на цьому босі (' + mine.length + ')' }), ul));
+    }
+  }
+
+  function initDps() {
+    $('dpsBoss').addEventListener('change', function () { dpsState.boss = toInt($('dpsBoss').value); prefSet('dpsBoss', dpsState.boss); renderDps(); });
+    $('dpsRefresh').addEventListener('click', loadDps);
+  }
+
   /* ---------- «Сьогодні»: головне з усіх розділів на одному екрані ---------- */
   function plural(n, f) {
     var a = Math.abs(n) % 100, b = a % 10;
@@ -2900,6 +3068,7 @@
   initGlossary();
   initPatches();
   initPatchOpen();
+  initDps();
   $('netcheckCopy').addEventListener('click', function () { copyText($('netcheckCmd').textContent, 'Команду скопійовано: вставте її в PowerShell'); });
   initNav();
   initMap();

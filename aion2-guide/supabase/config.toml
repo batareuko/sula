@@ -5,3 +5,6 @@ verify_jwt = true
 
 [functions.discord-alerts]
 verify_jwt = true
+
+[functions.dps-upload]
+verify_jwt = true

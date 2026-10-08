@@ -41,6 +41,7 @@
       <a href="#map">Карта</a>
       <a href="#netcheck">Мережа</a>
       <a href="#glossary">Глосарій</a>
+      <a href="#dps">DPS</a>
       <a href="#team">Склад 1 HP</a>
     </nav>
     <a class="chip" href="#progress" id="topChip" title="Загальний прогрес активного профілю">
@@ -420,6 +421,32 @@
   </section>
 
   <!-- ===== Склад 1 HP ===== -->
+  <!-- ===== Рейтинг DPS 1 HP (результати з оверлея) ===== -->
+  <section class="wrap" id="dps" aria-labelledby="dpsTitle">
+    <div class="sec-head">
+      <h2 id="dpsTitle">Рейтинг DPS</h2>
+      <span class="mono muted">1 HP · за даними оверлея</span>
+    </div>
+    <div class="panel" id="dpsLocked">
+      <p class="muted">Рейтинг бачать учасники 1 HP після входу через Discord. Результати боїв надсилає <a href="#netcheck">оверлей 1 HP</a>, і кожен — лише свої.</p>
+    </div>
+    <div id="dpsBox" hidden>
+      <div class="panel dps-key" id="dpsKey"></div>
+      <div class="panel">
+        <div class="dps-tools">
+          <label class="field">Бос
+            <select id="dpsBoss"></select>
+          </label>
+          <div class="tabs" id="dpsClasses" role="group" aria-label="Клас"></div>
+          <button class="btn btn-ghost btn-sm" type="button" id="dpsRefresh">Оновити</button>
+        </div>
+        <div class="table-scroll"><table class="tbl dps-table" id="dpsTable"></table></div>
+        <div id="dpsMine"></div>
+        <p class="muted small" id="dpsNote">Найкращий результат кожного учасника на цьому босі (лише вбивства). Чужі дані оверлей не надсилає.</p>
+      </div>
+    </div>
+  </section>
+
   <section class="wrap" id="team" aria-labelledby="teamTitle">
     <div class="sec-head">
       <h2 id="teamTitle">Склад 1 HP</h2>

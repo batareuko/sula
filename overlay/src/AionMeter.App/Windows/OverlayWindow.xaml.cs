@@ -91,8 +91,10 @@ public partial class OverlayWindow : Window
             _segment = null;
         }
 
+        EncounterSnapshot? shown;
         if (_saved is { } saved)
         {
+            shown = saved.Record.Summary;
             _vm.Apply(saved.Record.Summary with { Title = saved.Title, Zone = _meter.DisplayZone(saved.Record.Summary.Zone) },
                 _settings.MaxRows, _settings.BarsRelativeToTop);
             _vm.SetSegment("saved", saved.Entry.StartedAt.ToString("dd.MM HH:mm"));
@@ -108,11 +110,13 @@ public partial class OverlayWindow : Window
                 _segment = null;
                 snap = _meter.Tracker.Snapshot(null, now);
             }
+            shown = snap;
             _vm.Apply(snap, _settings.MaxRows, _settings.BarsRelativeToTop);
             _vm.SetSegment(_segment is null ? "live" : "session", snap?.StartedAt.ToString("HH:mm"));
             _vm.Portrait = snap is null ? null : _meter.PortraitOf(snap);
         }
         if (!_settings.ShowBossPanel) _vm.HasBoss = false;
+        ApplyOneHp(shown, _saved?.Entry.FileName);
         if (Environment.TickCount64 - _timersLabelAt >= 1_000) UpdateTimersLabel();
         if (Environment.TickCount64 - _oneHpAt >= 1_000) UpdateOneHpStrip();
 
@@ -133,6 +137,59 @@ public partial class OverlayWindow : Window
             CaptureState.WaitingForGame or CaptureState.Starting => (Brush)FindResource("Amber"),
             _ => (Brush)FindResource("TextMute"),
         };
+    }
+
+    // ---------------------------------------------------------------- 1 HP: party gear, personal record, guild place
+    private long _recordAt;
+    private Guid? _recordFor;
+
+    private void ApplyOneHp(EncounterSnapshot? snap, string? savedFile)
+    {
+        var t = UiText.Current;
+        if (snap is null)
+        {
+            _vm.Record = _vm.Guild = "";
+            return;
+        }
+        foreach (var row in _vm.Rows)
+        {
+            var cb = snap.Combatants.FirstOrDefault(c => c.ActorId == row.ActorId);
+            var gear = cb is null || cb.IsUnknownSummons ? null : _meter.Cloud.GearFor(cb.Name, cb.ServerId);
+            row.Gear = gear is null ? "" : gear.ItemLevel.ToString();
+            // Apply() rebuilds the tooltip on every refresh, so the gear line is added once per refresh
+            if (gear is not null)
+                row.Tooltip += "\n" + string.Format(t.GearTip, gear.ItemLevel, gear.CombatPower.ToString("#,0", t.Culture));
+        }
+
+        // The history list is read from disk: once a second is plenty.
+        if (_recordFor != snap.Id || Environment.TickCount64 - _recordAt >= 1_000)
+        {
+            _recordAt = Environment.TickCount64;
+            _recordFor = snap.Id;
+            var cmp = Core.OneHp.PersonalRecords.Compare(_meter.History.List(), snap, savedFile);
+            if (cmp is null) _vm.Record = _vm.RecordTip = "";
+            else
+            {
+                var delta = (cmp.DeltaPct >= 0 ? "+" : "") + cmp.DeltaPct.ToString("0.#", t.Culture) + "%";
+                _vm.Record = cmp.IsNewRecord ? t.RecordNew : string.Format(t.RecordBest, Format.Compact(cmp.Best.SelfDps)) + " · " + delta;
+                _vm.RecordTip = string.Format(t.RecordTip, Format.Compact(cmp.Best.SelfDps), cmp.Best.StartedAt.ToLocalTime().ToString("dd.MM HH:mm", t.Culture),
+                    Format.Compact(cmp.CurrentDps), delta);
+            }
+        }
+
+        var guild = _meter.Cloud.ResultFor(snap.Id);
+        if (guild is null) _vm.Guild = _vm.GuildTip = "";
+        else if (guild.Error is { } err)
+        {
+            _vm.Guild = "1 HP ⚠";
+            _vm.GuildTip = string.Format(t.GuildError, err);
+        }
+        else
+        {
+            _vm.Guild = string.Format(t.GuildBadge, guild.Place, guild.Total);
+            _vm.GuildTip = string.Format(t.GuildTip, guild.Place, guild.Total) +
+                           (guild.TopPct is { } top ? string.Format(t.GuildTop, top) : "") + (guild.PersonalBest ? t.GuildPersonalBest : "");
+        }
     }
 
     // ---------------------------------------------------------------- 1 HP strip: network health, Rift, reset

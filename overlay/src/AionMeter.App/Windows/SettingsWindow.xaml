@@ -199,6 +199,25 @@
                         </StackPanel>
                     </Border>
 
+                    <!-- 1 HP: overlay key, rating upload, party gear -->
+                    <Border Style="{StaticResource Section}">
+                        <StackPanel>
+                            <TextBlock Text="{Binding SecOneHp, Source={x:Static s:UiText.Current}}" Style="{StaticResource SectionLabel}" Margin="0,0,0,8" />
+                            <StackPanel Orientation="Horizontal">
+                                <TextBlock Text="{Binding OneHpKeyLabel, Source={x:Static s:UiText.Current}}" Style="{StaticResource Label}" />
+                                <TextBox x:Name="OneHpKey" Width="260" />
+                                <Button x:Name="OneHpCheckButton" Style="{StaticResource GhostButton}" Click="OneHpCheck_Click" Margin="8,0,0,0"
+                                        Content="{Binding OneHpCheck, Source={x:Static s:UiText.Current}}" />
+                            </StackPanel>
+                            <TextBlock x:Name="OneHpKeyState" Style="{StaticResource Hint}" Margin="0,6,0,0" Visibility="Collapsed" />
+                            <TextBlock Style="{StaticResource Hint}" Text="{Binding OneHpKeyHint, Source={x:Static s:UiText.Current}}" />
+                            <CheckBox x:Name="OneHpUpload" Style="{StaticResource DarkCheck}" Margin="0,4,0,0"
+                                      Content="{Binding OneHpUpload, Source={x:Static s:UiText.Current}}" />
+                            <CheckBox x:Name="OneHpGear" Style="{StaticResource DarkCheck}" Margin="0,4,0,0"
+                                      Content="{Binding OneHpGear, Source={x:Static s:UiText.Current}}" />
+                        </StackPanel>
+                    </Border>
+
                     <!-- Updates -->
                     <Border Style="{StaticResource Section}">
                         <StackPanel>
