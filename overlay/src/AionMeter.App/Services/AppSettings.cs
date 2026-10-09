@@ -102,6 +102,10 @@ public sealed class AppSettings
     public bool WithGame { get; set; } = true;
     /// <summary>Smaller header, rows and strip (Settings → 1 HP).</summary>
     public bool Compact { get; set; } = true;
+    /// <summary>One line (name, combat power, ping) out of combat; a row per fighter in a fight (OverlayWindow.ApplyDynamic).</summary>
+    public bool DynamicOverlay { get; set; } = true;
+    /// <summary>Your characters' last known combat power by name: the one-line card shows it before the game sends it again.</summary>
+    public Dictionary<string, long> Powers { get; set; } = new(StringComparer.OrdinalIgnoreCase);
     /// <summary>Last place of the other windows (history, breakdown, settings …) by window kind.</summary>
     public Dictionary<string, WindowBounds> WindowPlaces { get; set; } = new();
 

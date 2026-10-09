@@ -66,6 +66,7 @@ jobs:
           foreach ($shot in @(
               @('--render-sample', 'dist/preview/overlay-uk.png', '--lang', 'uk'),
               @('--render-sample', 'dist/preview/overlay-dark.png', '--lang', 'uk', '--backdrop', 'dark'),
+              @('--render-sample', 'dist/preview/overlay-mini.png', '--lang', 'uk', '--backdrop', 'dark', '--window', 'overlay-mini'),
               @('--render-sample', 'dist/preview/settings-uk.png', '--lang', 'uk', '--window', 'settings'))) {
             $p = Start-Process $exe -ArgumentList $shot -PassThru
             if (-not $p.WaitForExit(120000)) { $p.Kill(); Write-Host "timed out: $shot" }

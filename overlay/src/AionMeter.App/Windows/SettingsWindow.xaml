@@ -225,6 +225,9 @@
                                       ToolTip="{Binding TipPartyOnly, Source={x:Static s:UiText.Current}}" />
                             <CheckBox x:Name="OneHpCompact" Style="{StaticResource DarkCheck}" Margin="0,4,0,0"
                                       Content="{Binding OneHpCompact, Source={x:Static s:UiText.Current}}" />
+                            <CheckBox x:Name="OneHpDynamic" Style="{StaticResource DarkCheck}" Margin="0,4,0,0"
+                                      Content="{Binding OneHpDynamic, Source={x:Static s:UiText.Current}}" />
+                            <TextBlock Style="{StaticResource Hint}" Text="{Binding OneHpDynamicHint, Source={x:Static s:UiText.Current}}" />
                             <CheckBox x:Name="OneHpWithGame" Style="{StaticResource DarkCheck}" Margin="0,4,0,0"
                                       Content="{Binding OneHpWithGame, Source={x:Static s:UiText.Current}}" />
                             <TextBlock Style="{StaticResource Hint}" Text="{Binding OneHpWithGameHint, Source={x:Static s:UiText.Current}}" />

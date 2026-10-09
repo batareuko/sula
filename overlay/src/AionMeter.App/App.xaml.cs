@@ -238,7 +238,8 @@ public partial class App : Application
             _overlay.Show();
             _autoShown = true;
         }
-        else if (!engaged && _autoShown && _overlay.IsVisible && s.AutoHideSeconds > 0 &&
+        // The dynamic card folds to one line by itself instead of going away.
+        else if (!engaged && _autoShown && _overlay.IsVisible && s.AutoHideSeconds > 0 && !s.DynamicOverlay &&
                  now - _lastEngagedTick > s.AutoHideSeconds * 1000L && !_overlay.IsMouseOver)
         {
             _overlay.Hide();

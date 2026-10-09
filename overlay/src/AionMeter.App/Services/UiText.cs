@@ -727,6 +727,11 @@ public sealed partial class UiText
         PartyOnlyChip = "ГРУППА",
         EveryoneChip = "ВСЕ",
         OneHpCompact = "Компактный оверлей (меньше шапка и строки)",
+        OneHpDynamic = "Динамическое окно: вне боя — одна строка, в бою — строка на каждого, кто бьёт",
+        OneHpDynamicHint = "Вне боя карточка — одна строка: ваш ник, боевая мощь и пинг. Когда вы или ваша группа бьёте моба, она раскрывается на столько строк, сколько вас, и сворачивается через 15 с после боя.",
+        MiniWaiting = "Жду игру…",
+        MiniPowerTip = "Боевая мощь (из списка группы в игре или из вашего профиля на сайте 1 HP)",
+        PowerTip = "Боевая мощь {0}",
     };
 
     private static string RuPlural(int n, string one, string few, string many)

@@ -70,6 +70,7 @@ public partial class SettingsWindow : Window
         OneHpGear.IsChecked = s.OneHpGear;
         OneHpWithGame.IsChecked = s.WithGame;
         OneHpCompact.IsChecked = s.Compact;
+        OneHpDynamic.IsChecked = s.DynamicOverlay;
         OneHpPartyOnly.IsChecked = s.PartyOnly;
         OneHpPriorityBosses.IsChecked = s.PriorityBossAlerts;
         OneHpBossSync.IsChecked = s.OneHpBossSync;
@@ -117,6 +118,7 @@ public partial class SettingsWindow : Window
         s.OneHpUpload = OneHpUpload.IsChecked == true;
         s.OneHpGear = OneHpGear.IsChecked == true;
         s.Compact = OneHpCompact.IsChecked == true;
+        s.DynamicOverlay = OneHpDynamic.IsChecked == true;
         s.PartyOnly = OneHpPartyOnly.IsChecked == true;
         s.PriorityBossAlerts = OneHpPriorityBosses.IsChecked == true;
         s.OneHpBossSync = OneHpBossSync.IsChecked == true;

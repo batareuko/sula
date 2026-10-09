@@ -19,6 +19,8 @@ public sealed class CombatTracker
     // 1 HP: the party roster's names (Options.PartyOnly); empty = on your own.
     private readonly HashSet<string> _party = new(StringComparer.OrdinalIgnoreCase);
     private int _partyVersion;
+    // 1 HP: combat power by character name, from the party rosters.
+    private readonly Dictionary<string, long> _powers = new(StringComparer.OrdinalIgnoreCase);
 
     public CombatTracker(GameData data, MeterOptions options)
     {
@@ -68,10 +70,17 @@ public sealed class CombatTracker
         get { lock (_gate) return _party.ToList(); }
     }
 
+    /// <summary>1 HP: a character's combat power as the last party roster with them stated it; 0 when unknown.</summary>
+    public long PowerOf(string? name)
+    {
+        if (string.IsNullOrWhiteSpace(name)) return 0;
+        lock (_gate) return _powers.GetValueOrDefault(name.Trim());
+    }
+
     /// <summary>Players' names and the bosses around: what a meter restarted in this zone could not learn again.</summary>
     public SessionState ExportCache()
     {
-        lock (_gate) return _entities.Export() with { Party = _party.ToList() };
+        lock (_gate) return _entities.Export() with { Party = _party.ToList(), Powers = new Dictionary<string, long>(_powers) };
     }
 
     public void ImportCache(SessionState state)
@@ -81,6 +90,8 @@ public sealed class CombatTracker
             _entities.Import(state);
             if (state.Party is { } party)
                 foreach (var name in party) _party.Add(name);
+            if (state.Powers is { } powers)
+                foreach (var (name, power) in powers) _powers[name] = power;
         }
     }
 
@@ -226,6 +237,14 @@ public sealed class CombatTracker
 
         var npc = _entities.UpsertNpc(target);
         if (npc.Hp == 0) return; // trailing DoT ticks on a corpse must not open a new segment after the kill
+
+        if (WorldScope())
+        {
+            // 1 HP: in the open world only your own fights count. A named player outside your party (with the party
+            // filter on) is somebody fighting nearby; a fight you walk past is dropped once you or your party hit.
+            if (Options.PartyOnly && IsStranger(source)) return;
+            if (_current is { IsActive: true } nearby && !IsOurs(nearby) && IsOursActor(source)) _current = null;
+        }
 
         if (Options.TargetMode == TargetMode.BossOnly)
         {
@@ -536,6 +555,7 @@ public sealed class CombatTracker
         enc.EndMs = Math.Max(endMs, enc.StartMs);
         if (enc.TotalDamage <= 0) return;
         AttributeOrphans(enc, long.MaxValue / 2);
+        if (!IsOurs(enc)) return; // 1 HP: a fight nearby you took no part in is neither shown nor saved
 
         _finished.Insert(0, enc);
         if (_finished.Count > Options.MaxSegments) _finished.RemoveAt(_finished.Count - 1);
@@ -585,7 +605,7 @@ public sealed class CombatTracker
         lock (_gate)
         {
             var list = new List<SegmentInfo>(_finished.Count + 1);
-            if (_current is { IsActive: true } cur) list.Add(Info(cur));
+            if (_current is { IsActive: true } cur && IsOurs(cur)) list.Add(Info(cur));
             foreach (var e in _finished) list.Add(Info(e));
             return list;
         }
@@ -622,7 +642,7 @@ public sealed class CombatTracker
     {
         lock (_gate)
         {
-            if (_current is not { IsActive: true } e) return null;
+            if (_current is not { IsActive: true } e || !IsOurs(e)) return null;
             return (e.Id, e.BossId is not null, _entities.SelfId is { } id && e.Combatants.ContainsKey(id));
         }
     }
@@ -640,7 +660,7 @@ public sealed class CombatTracker
     {
         if (id is null)
         {
-            if (_current is { IsActive: true }) return _current;
+            if (_current is { IsActive: true } && IsOurs(_current)) return _current;
             return _viewCleared ? null : _finished.FirstOrDefault();
         }
         if (_current?.Id == id) return _current;
@@ -679,6 +699,9 @@ public sealed class CombatTracker
         var names = roster.Names.Select(n => n.Trim()).Where(n => n.Length > 0).ToList();
         // Your own roster always lists you: one without you is another party's (or bytes that only look like a roster).
         if (_entities.Self?.Name is { Length: > 0 } me && !names.Contains(me.Trim(), StringComparer.OrdinalIgnoreCase)) return;
+        if (roster.Powers is { } powers)
+            foreach (var (name, power) in powers)
+                if (power > 0 && !string.IsNullOrWhiteSpace(name)) _powers[name.Trim()] = power;
         if (roster.Complete) _party.Clear();
         foreach (var name in names) _party.Add(name);
         if (roster.Complete && _party.Count <= 1) _party.Clear();
@@ -686,6 +709,36 @@ public sealed class CombatTracker
     }
 
     private static bool IsNamed(Combatant c) => c.Name.Length > 0 && c.Name[0] != '#';
+
+    /// <summary>1 HP: the open world with you known — where fights of players passing by are told apart from yours.</summary>
+    private bool WorldScope() => _entities.SelfId is not null && !GameData.IsDungeonMap(_entities.MapId);
+
+    /// <summary>You, or a party member by name.</summary>
+    private bool IsOursActor(uint id)
+    {
+        if (_entities.SelfId == id) return true;
+        return _party.Count > 0 && _entities.TryGetPlayer(id, out var p) && !string.IsNullOrEmpty(p.Name) && _party.Contains(p.Name.Trim());
+    }
+
+    /// <summary>A named player who is neither you nor in your party.</summary>
+    private bool IsStranger(uint id) =>
+        _entities.SelfId != id && _entities.TryGetPlayer(id, out var p) && !string.IsNullOrEmpty(p.Name) && !_party.Contains(p.Name.Trim());
+
+    /// <summary>
+    /// 1 HP: a fight you or your party take part in. Outside instances a fight of players passing by is not shown or
+    /// saved (in an instance everyone is with you; before the meter knows you it cannot tell).
+    /// </summary>
+    private bool IsOurs(Encounter enc)
+    {
+        if (enc.InDungeon || _entities.SelfId is not { } self) return true;
+        foreach (var c in enc.Combatants.Values)
+        {
+            if (c.ActorId == self || c.IsSelf) return true;
+            if (_party.Count > 0 && _entities.TryGetPlayer(c.ActorId, out var p) && !string.IsNullOrEmpty(p.Name) && _party.Contains(p.Name.Trim()))
+                return true;
+        }
+        return false;
+    }
 
     /// <summary>
     /// 1 HP: who is listed with <see cref="MeterOptions.PartyOnly"/>: you, your party (by name) and the pets nobody
@@ -730,7 +783,7 @@ public sealed class CombatTracker
                 c.ActorId, c.Name, c.Class, c.IsSelf,
                 t.Damage, t.Damage / seconds, (double)t.Damage / total,
                 t.Hits, t.Hits > 0 ? (double)t.Crits / t.Hits : 0,
-                t.Max, c.DamageTaken, c.ServerId));
+                t.Max, c.DamageTaken, c.ServerId, IsNamed(c) ? _powers.GetValueOrDefault(c.Name.Trim()) : 0));
         }
         rows.Sort((a, b) => b.Damage.CompareTo(a.Damage));
         // Pets without a known owner are not a player: list them last so they never take a place in the ranking.

@@ -41,7 +41,7 @@ public partial class OverlayWindow : Window
         Left = _settings.OverlayLeft;
         Top = _settings.OverlayTop;
         Width = Math.Max(MinWidth, _settings.OverlayWidth);
-        Height = Math.Max(MinHeight, _settings.OverlayHeight);
+        if (!_settings.DynamicOverlay) Height = Math.Max(MinHeight, _settings.OverlayHeight); // dynamic: as tall as its content
         EnsureOnScreen();
 
         OpacitySlider.Value = _settings.BackgroundOpacity;
@@ -49,6 +49,7 @@ public partial class OverlayWindow : Window
         ApplyLock();
         ApplyCompact();
         ApplyRowSize(_settings.RowSize);
+        ApplyDynamic();
         UpdateModeLabel();
         ApplyHotkeyTips();
         _meter.Updates.Changed += ShowUpdateBanner;
@@ -58,16 +59,8 @@ public partial class OverlayWindow : Window
         _drag = DragAnywhere.Attach(this, canDrag: () => !_settings.Locked, dropped: SavePlacement);
 
         // The card stays clean: its buttons only appear while the mouse is over it.
-        MouseEnter += (_, _) =>
-        {
-            LabelPanel.Visibility = Visibility.Collapsed;
-            Toolbar.Visibility = Visibility.Visible;
-        };
-        MouseLeave += (_, _) =>
-        {
-            Toolbar.Visibility = Visibility.Collapsed;
-            LabelPanel.Visibility = Visibility.Visible;
-        };
+        MouseEnter += (_, _) => UpdateChrome();
+        MouseLeave += (_, _) => UpdateChrome();
 
         SourceInitialized += (_, _) =>
         {
@@ -116,7 +109,8 @@ public partial class OverlayWindow : Window
             _vm.SetSegment(_segment is null ? "live" : "session", snap?.StartedAt.ToString("HH:mm"));
             _vm.Portrait = snap is null ? null : _meter.PortraitOf(snap);
         }
-        if (!_settings.ShowBossPanel) _vm.HasBoss = false;
+        SetExpanded(WantExpanded(shown));
+        if (!_settings.ShowBossPanel || _expanded == false) _vm.HasBoss = false;
         ApplyOneHp(shown, _saved?.Entry.FileName);
         if (Environment.TickCount64 - _timersLabelAt >= 1_000) UpdateTimersLabel();
         if (Environment.TickCount64 - _oneHpAt >= 1_000) UpdateOneHpStrip();
@@ -156,10 +150,14 @@ public partial class OverlayWindow : Window
         {
             var cb = snap.Combatants.FirstOrDefault(c => c.ActorId == row.ActorId);
             var gear = cb is null || cb.IsUnknownSummons ? null : _meter.Cloud.GearFor(cb.Name, cb.ServerId);
-            row.Gear = gear is null ? "" : gear.ItemLevel.ToString();
+            // Combat power next to the name: the game's party list first, the site's gear lookup otherwise
+            var power = cb?.Power is > 0 ? cb.Power : gear?.CombatPower ?? 0;
+            row.Gear = power > 0 ? Format.Power(power) : "";
             // Apply() rebuilds the tooltip on every refresh, so the gear line is added once per refresh
             if (gear is not null)
-                row.Tooltip += "\n" + string.Format(t.GearTip, gear.ItemLevel, gear.CombatPower.ToString("#,0", t.Culture));
+                row.Tooltip += "\n" + string.Format(t.GearTip, gear.ItemLevel, power.ToString("#,0", t.Culture));
+            else if (power > 0)
+                row.Tooltip += "\n" + string.Format(t.PowerTip, power.ToString("#,0", t.Culture));
         }
 
         // The history list is read from disk: once a second is plenty.
@@ -240,6 +238,11 @@ public partial class OverlayWindow : Window
             Core.OneHp.NetQuality.Bad => "Red",
             _ => "TextMute",
         });
+        MiniNetDot.Fill = NetDot.Fill;
+        MiniNetText.Text = r.Server is not null && r.ServerPing.AnyReply && r.ServerPing.AvgMs is { } ms
+            ? string.Format(t.NetPing, Math.Round(ms))
+            : r.Server is null ? "" : t.NetPingNoReply;
+        UpdateMini();
 
         string PingLine(Core.OneHp.NetSummary s) => s.AnyReply
             ? string.Format(t.NetTipPing, Math.Round(s.AvgMs ?? 0), s.MinMs, s.MaxMs, s.JitterMs?.ToString("0", c) ?? "—", Pct(s.LossPct))
@@ -255,7 +258,7 @@ public partial class OverlayWindow : Window
         if (r.Gateway is not null) tip.Add(string.Format(t.NetTipRouter, r.Gateway, PingLine(r.GatewayPing)));
         if (routerBad) tip.Add(t.NetAdviceHome);
         else if (r.Quality == Core.OneHp.NetQuality.Bad) tip.Add(t.NetAdviceRoute);
-        NetPanel.ToolTip = string.Join("\n", tip);
+        NetPanel.ToolTip = MiniNet.ToolTip = NetText.Text + "\n\n" + string.Join("\n", tip);
 
         var now = DateTimeOffset.UtcNow;
         var rift = Core.OneHp.GlobalSchedule.Rift(now);
@@ -314,6 +317,7 @@ public partial class OverlayWindow : Window
         FrameBackground.Opacity = _settings.BackgroundOpacity;
         ApplyCompact();
         ApplyRowSize(_settings.RowSize);
+        ApplyDynamic();
         UpdateModeLabel();
     }
 
@@ -327,7 +331,7 @@ public partial class OverlayWindow : Window
     {
         var on = _settings.Compact;
         if (_compact == on) return;
-        if (_compact is not null)
+        if (_compact is not null && !_settings.DynamicOverlay) // the dynamic card sizes itself
         {
             Height = Math.Max(MinHeight, Height + (on ? -CompactSaves : CompactSaves));
             _settings.OverlayHeight = Height; // also while hidden (SavePlacement skips a window never shown)
@@ -417,7 +421,7 @@ public partial class OverlayWindow : Window
     {
         LockButton.IsChecked = _settings.Locked;
         LockGlyph.Text = _settings.Locked ? "" : "";
-        ResizeGrip.Visibility = _settings.Locked ? Visibility.Collapsed : Visibility.Visible;
+        UpdateChrome();
     }
 
     private void UpdateModeLabel()
@@ -449,10 +453,21 @@ public partial class OverlayWindow : Window
         var top = area.Top / dpi.DpiScaleY;
         var right = area.Right / dpi.DpiScaleX;
         var bottom = area.Bottom / dpi.DpiScaleY;
-        if (Height > bottom - top) Height = Math.Max(MinHeight, bottom - top);
-        Left = Math.Clamp(Left, left, Math.Max(left, right - Width));
-        Top = Math.Clamp(Top, top, Math.Max(top, bottom - Height));
-        Log.Info($"Overlay placed at {Left:0},{Top:0} {Width:0}x{Height:0} DIP; monitor work area {left:0},{top:0}-{right:0},{bottom:0} DIP (scale {dpi.DpiScaleX})");
+        if (_settings.DynamicOverlay)
+        {
+            // The dynamic card grows down from where it sits: never past the bottom of the screen (the rows scroll then).
+            Left = Math.Clamp(Left, left, Math.Max(left, right - Width));
+            Top = Math.Clamp(Top, top, Math.Max(top, bottom - 60));
+            MaxHeight = Math.Max(120, bottom - Top);
+        }
+        else
+        {
+            MaxHeight = double.PositiveInfinity;
+            if (Height > bottom - top) Height = Math.Max(MinHeight, bottom - top);
+            Left = Math.Clamp(Left, left, Math.Max(left, right - Width));
+            Top = Math.Clamp(Top, top, Math.Max(top, bottom - Height));
+        }
+        Log.Info($"Overlay placed at {Left:0},{Top:0} {Width:0}x{ActualHeight:0} DIP; monitor work area {left:0},{top:0}-{right:0},{bottom:0} DIP (scale {dpi.DpiScaleX})");
     }
 
     /// <summary>After a drag or resize, and once more on exit (1 HP: so the last place is never lost).</summary>
@@ -462,8 +477,111 @@ public partial class OverlayWindow : Window
         _settings.OverlayLeft = Left;
         _settings.OverlayTop = Top;
         _settings.OverlayWidth = Width;
-        _settings.OverlayHeight = Height;
+        if (!_settings.DynamicOverlay) _settings.OverlayHeight = Height; // the dynamic card's height follows its rows
         _settings.Save();
+        if (_settings.DynamicOverlay) FitToMonitor(); // room to grow below the new place
+    }
+
+    // ------------------------------------------------------------ 1 HP: dynamic card
+
+    /// <summary>The fight on the card stays open this long after it ends, then the card folds to one line.</summary>
+    private const int FoldAfterMs = 15_000;
+    private bool? _expanded;
+    private Guid? _endedFight;
+    private long _endedAt;
+
+    /// <summary>
+    /// The dynamic card (Settings → 1 HP, on by default) sizes itself to its content: one line with your name, combat
+    /// power and ping out of combat; title, boss bar and a row per fighter in a fight. Off: the fixed-size card.
+    /// </summary>
+    private void ApplyDynamic()
+    {
+        if (_settings.DynamicOverlay)
+        {
+            MinHeight = 0;
+            ClearValue(HeightProperty);
+            SizeToContent = SizeToContent.Height;
+            ResizeGrip.Cursor = Cursors.SizeWE;
+        }
+        else
+        {
+            SizeToContent = SizeToContent.Manual;
+            MinHeight = 220;
+            MaxHeight = double.PositiveInfinity;
+            Height = Math.Max(MinHeight, _settings.OverlayHeight);
+            ResizeGrip.Cursor = Cursors.SizeNWSE;
+        }
+        _expanded = null;
+        SetExpanded(WantExpanded(null));
+        FitToMonitor();
+    }
+
+    /// <summary>Open while a fight of yours runs and for <see cref="FoldAfterMs"/> after it, or while you look at a past fight.</summary>
+    private bool WantExpanded(EncounterSnapshot? shown)
+    {
+        if (!_settings.DynamicOverlay || _saved is not null || _segment is not null) return true;
+        if (shown is null) return false;
+        if (shown.IsActive)
+        {
+            _endedFight = null;
+            return true;
+        }
+        if (_endedFight != shown.Id)
+        {
+            _endedFight = shown.Id;
+            _endedAt = Environment.TickCount64;
+        }
+        return Environment.TickCount64 - _endedAt < FoldAfterMs;
+    }
+
+    private void SetExpanded(bool expanded)
+    {
+        if (_expanded == expanded) return;
+        _expanded = expanded;
+        if (!expanded) UpdateMini();
+        UpdateChrome();
+    }
+
+    /// <summary>What shows of the card: the folded line or the fight, the toolbar while the mouse is on it.</summary>
+    private void UpdateChrome()
+    {
+        var hover = IsMouseOver;
+        var open = _expanded != false;
+        var dynamic = _settings.DynamicOverlay;
+        Toolbar.Visibility = hover ? Visibility.Visible : Visibility.Collapsed;
+        LabelPanel.Visibility = !hover && open ? Visibility.Visible : Visibility.Collapsed;
+        MiniPanel.Visibility = !hover && !open ? Visibility.Visible : Visibility.Collapsed;
+        MiniNet.Visibility = open ? Visibility.Collapsed : Visibility.Visible;
+        ClockText.Visibility = open ? Visibility.Visible : Visibility.Collapsed;
+        TitleRow.Visibility = PartyRow.Visibility = open ? Visibility.Visible : Visibility.Collapsed;
+        // The dynamic card shows its footer (timers, links, network) only while the mouse is on the open card.
+        Footer.Visibility = open && (!dynamic || hover) ? Visibility.Visible : Visibility.Collapsed;
+        ResizeGrip.Visibility = _settings.Locked || (dynamic && !hover) ? Visibility.Collapsed : Visibility.Visible;
+    }
+
+    /// <summary>The folded line: your name and combat power (the game's party list, the last one known, or the site).</summary>
+    private void UpdateMini()
+    {
+        var t = UiText.Current;
+        var name = _meter.Tracker.SelfName;
+        MiniName.Text = string.IsNullOrEmpty(name) ? t.MiniWaiting : name;
+        long power = 0;
+        if (!string.IsNullOrEmpty(name))
+        {
+            power = _meter.Tracker.PowerOf(name);
+            var known = _settings.Powers.FirstOrDefault(p => string.Equals(p.Key, name, StringComparison.OrdinalIgnoreCase));
+            if (power > 0 && known.Value != power)
+            {
+                if (known.Key is not null) _settings.Powers.Remove(known.Key);
+                _settings.Powers[name] = power;
+                _settings.Save();
+            }
+            if (power <= 0) power = known.Value;
+            if (power <= 0) power = _meter.Cloud.GearFor(name, _meter.Tracker.SelfServerId)?.CombatPower ?? 0;
+        }
+        MiniPower.Text = power > 0 ? power.ToString("#,0", t.Culture) : "";
+        MiniPowerBox.Visibility = power > 0 ? Visibility.Visible : Visibility.Collapsed;
+        MiniPowerBox.ToolTip = t.MiniPowerTip;
     }
 
     // ------------------------------------------------------------ handlers
@@ -471,7 +589,7 @@ public partial class OverlayWindow : Window
     private void Resize_DragDelta(object sender, DragDeltaEventArgs e)
     {
         Width = Math.Max(MinWidth, Width + e.HorizontalChange);
-        Height = Math.Max(MinHeight, Height + e.VerticalChange);
+        if (!_settings.DynamicOverlay) Height = Math.Max(MinHeight, Height + e.VerticalChange); // dynamic: the rows set the height
     }
 
     private void Resize_DragCompleted(object sender, DragCompletedEventArgs e) => SavePlacement();

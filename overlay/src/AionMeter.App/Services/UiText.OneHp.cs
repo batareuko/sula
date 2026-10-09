@@ -68,6 +68,12 @@ public sealed partial class UiText
     public string PartyOnlyChip { get; init; } = "PARTY";
     public string EveryoneChip { get; init; } = "EVERYONE";
     public string OneHpCompact { get; init; } = "Compact overlay (smaller header and rows)";
+    public string OneHpDynamic { get; init; } = "Dynamic overlay: one line out of combat, a row per fighter in a fight";
+    public string OneHpDynamicHint { get; init; } =
+        "Out of combat the card is one line: your name, combat power and ping. When you or your party hit something it opens with a row for each of you and folds back 15 s after the fight.";
+    public string MiniWaiting { get; init; } = "Waiting for the game…";
+    public string MiniPowerTip { get; init; } = "Combat power (from the party list in the game, or your profile on the 1 HP site)";
+    public string PowerTip { get; init; } = "Combat power {0}";
 
     /// <summary>"2:05" for an hour and more, "17 min" below.</summary>
     public string Countdown(TimeSpan d) =>

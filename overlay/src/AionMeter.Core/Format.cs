@@ -21,6 +21,12 @@ public static class Format
         static string Scaled(double v, string suffix) => v.ToString(Math.Abs(v) >= 100 ? "0.#" : "0.##", Inv) + suffix;
     }
 
+    /// <summary>Combat power next to a name: 41_230 → 41.2K, 980 → 980.</summary>
+    public static string Power(long value) =>
+        value >= 1_000_000 ? (value / 1e6).ToString("0.#", Inv) + "M"
+        : value >= 1_000 ? (value / 1e3).ToString("0.#", Inv) + "K"
+        : value.ToString(Inv);
+
     public static string Grouped(long value) => value.ToString("#,0", Inv);
 
     public static string Percent(double fraction, int decimals = 1) =>
