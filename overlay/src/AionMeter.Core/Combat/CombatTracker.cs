@@ -287,9 +287,11 @@ public sealed class CombatTracker
 
         if (WorldScope())
         {
-            // 1 HP: in the open world only your own fights count. A named player outside your party (with the party
-            // filter on) is somebody fighting nearby; a fight you walk past is dropped once you or your party hit.
-            if (Options.PartyOnly && IsStranger(source)) return;
+            // 1 HP: in the open world only your own fights count. A player outside the party as known now (with the
+            // party filter on) does not open a fight; in your fight their hits are kept all the same — the party may
+            // still be unknown (a meter started mid-session, a roster that comes later), and the filter only decides
+            // who is shown, so a party member never loses damage.
+            if (Options.PartyOnly && IsStranger(source) && (_current is not { IsActive: true } running || !IsOurs(running))) return;
             if (_current is { IsActive: true } nearby && !IsOurs(nearby) && IsOursActor(source)) _current = null;
         }
 
