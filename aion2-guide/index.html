@@ -30,19 +30,23 @@
   <div class="wrap topbar-in">
     <a class="brand" href="#top">1 HP <span>· AION 2</span></a>
     <nav class="nav" aria-label="Розділи">
+      <a href="#meter">DPS-метр</a>
+      <a href="#features">Можливості</a>
+      <a href="#install">Встановити</a>
+      <a href="#changes">Що нового</a>
+      <a href="#dps">Рейтинг DPS</a>
+      <a href="#timers">Таймери</a>
       <a href="#today">Сьогодні</a>
       <a href="#progress">Мій прогрес</a>
       <a href="#character">Персонаж</a>
-      <a href="#timers">Таймери</a>
       <a href="#groups">Групи</a>
+      <a href="#team">Склад 1 HP</a>
       <a href="#patches">Пачноути</a>
       <a href="#roadmap">Гайд</a>
       <a href="#thresholds">Пороги</a>
       <a href="#map">Карта</a>
       <a href="#netcheck">Мережа</a>
       <a href="#glossary">Глосарій</a>
-      <a href="#dps">DPS</a>
-      <a href="#team">Склад 1 HP</a>
     </nav>
     <a class="chip" href="#progress" id="topChip" title="Загальний прогрес активного профілю">
       <span id="topChipName">—</span> <b id="topChipPct">0%</b>
@@ -51,92 +55,161 @@
 </header>
 
 <main id="top">
-  <section class="hero wrap">
-    <p class="eyebrow">Aion 2 Global · Офіційний гайд для новачків Beeks</p>
-    <h1>Новачок 45 рівня<br>Дорожня карта<br>спорядження</h1>
-    <div class="hero-tools">
-      <button class="btn btn-ghost btn-sm" id="btnEn" type="button" aria-pressed="true">Англійські назви: показано</button>
-      <span class="muted small">У дужках — як термін називається в англійському клієнті гри. Повний список у <a href="#glossary">глосарії</a>.</span>
+
+  <!-- ===== DPS-метр 1 HP: головне на сайті ===== -->
+  <section class="wrap meter-hero" id="meter" aria-labelledby="meterTitle">
+    <div class="meter-hero-text">
+      <p class="eyebrow">1 HP · Aion 2 Global · Windows</p>
+      <h1 id="meterTitle">DPS-метр <span class="nowrap">1 HP</span></h1>
+      <p class="meter-lead">Оверлей поверх гри: урон вашої групи наживо, HP боса, розбір кожного бою і кожної смерті, таймери польових босів прямо з гри, пінг і втрати пакетів. Українською, безкоштовно, оновлюється сам.</p>
+      <div class="meter-cta">
+        <a class="btn btn-gold" id="meterDownload" href="https://github.com/batareuko/sula/releases/latest" target="_blank" rel="noopener">Завантажити для Windows</a>
+        <a class="btn" href="#install">Як встановити</a>
+        <a class="btn btn-ghost" href="#changes">Що нового</a>
+      </div>
+      <p class="meter-live" id="meterLive"><span class="live-dot" aria-hidden="true"></span> Активно розвивається: нова версія виходить кілька разів на тиждень за побажаннями гільдії.</p>
     </div>
+    <figure class="meter-shot">
+      <img src="img/meter-fight.webp" width="840" height="628" alt="Оверлей у бою з босом: таймер бою, HP боса, рядки групи з DPS, уроном і часткою, бойова міць біля ніків" fetchpriority="high">
+    </figure>
   </section>
 
-  <!-- ===== Сьогодні: головне на одному екрані ===== -->
-  <section class="wrap" id="today" aria-labelledby="todayTitle">
+  <section class="wrap" id="features" aria-labelledby="featuresTitle">
     <div class="sec-head">
-      <h2 id="todayTitle">Сьогодні</h2>
-      <span class="mono muted" id="todayClock"></span>
+      <h2 id="featuresTitle">Можливості</h2>
+      <span class="mono muted">усе, що вміє оверлей</span>
     </div>
-    <div id="onboard"></div>
-    <div class="today-grid" id="todayBox"></div>
+    <div class="feat-grid">
+      <article class="feat feat-wide">
+        <div>
+          <h3>Урон групи наживо</h3>
+          <p>DPS, загальний урон, частка й місце кожного — у кольорах класів, із таймером бою, HP боса і найсильнішим ударом. Ваш рядок підкреслено. Біля ніка — <b>бойова міць</b> зі списку групи і <b>гір скор</b> гравців, яких ви оглянули в грі.</p>
+        </div>
+      </article>
+      <article class="feat">
+        <h3>Лише ваша група</h3>
+        <p>Гравці поруч, що б'ють того ж монстра, не потрапляють ні в рядки, ні в загальний DPS. Боїв, повз які ви проходите, оверлей не показує й не зберігає. Перемикач <b>ГРУПА / ВСІ</b> — на панелі.</p>
+      </article>
+      <article class="feat">
+        <h3>Динамічне вікно</h3>
+        <p>Поза боєм — один рядок: нік, бойова міць, пінг і втрати. У бою розкривається на стільки рядків, скільки вас, і згортається через 15 с після вбивства.</p>
+        <img src="img/meter-mini.webp" width="840" height="105" alt="Згорнутий оверлей: нік, бойова міць, рядок таймерів і нагадувань" loading="lazy">
+      </article>
+      <article class="feat">
+        <h3>Розбір бою</h3>
+        <p>Клік по гравцю — скіли, криті, удари в спину, ротація, отриманий урон. Історія боїв зберігається, біля назви — ваш <b>рекорд на цьому босі</b> і місце в рейтингу 1 HP.</p>
+      </article>
+      <article class="feat feat-img">
+        <div>
+          <h3>Розбір смерті · Безодня</h3>
+          <p>Щойно вас вбили — хто це був, з якого сервера, його гір скор, за скільки секунд і якими скілами. Пети й ефекти — разом із власником.</p>
+        </div>
+        <img src="img/meter-death.webp" width="840" height="292" alt="Розбір смерті: вбивця Miranda з сервера Nemon, GS 1659, урон по вас" loading="lazy">
+      </article>
+      <article class="feat feat-img">
+        <div>
+          <h3>Таймери польових босів</h3>
+          <p>Точний час появи з ігрового списку босів <b>саме вашого сервера</b>, район на карті, ★ пріоритетні боси з Unique-сетами. Сповіщення за 10 хв, нагадування оновити список після входу в гру. Час іде на сайт і в Discord 1 HP.</p>
+        </div>
+        <img src="img/meter-timers.webp" width="1170" height="960" alt="Вікно таймерів босів: живі боси, зворотний відлік, цикли, дзвіночки" loading="lazy">
+      </article>
+      <article class="feat">
+        <h3>Пінг і втрати пакетів</h3>
+        <p>Пінг до сервера гри, втрати ↓ від сервера і ↑ до нього, фризи, втрати на домашньому роутері — і порада, де шукати проблему. Поруч — Розлом і ресет.</p>
+      </article>
+      <article class="feat">
+        <h3>Манекен</h3>
+        <p>Кожен бій на манекені — забіг з номером: «Забіг 17 · рекорд −9% · попер. −6%». Пауза 5 с — і наступний удар починає новий забіг.</p>
+      </article>
+      <article class="feat">
+        <h3>Рейтинг 1 HP</h3>
+        <p>Ваші вбивства босів ідуть у <a href="#dps">рейтинг гільдії</a> — лише ваші, з ключем із сайту. Видно місце, найкращий DPS і прогрес.</p>
+      </article>
+      <article class="feat feat-img">
+        <div>
+          <h3>DPS-метр на стрімі</h3>
+          <p>Сторінка для OBS (джерело «Браузер», <code>http://localhost:7799/</code>): у бою — метр із HP боса, поза боєм прозоро.</p>
+        </div>
+        <img src="img/meter-stream.webp" width="480" height="182" alt="DPS-метр на сторінці для OBS" loading="lazy">
+      </article>
+      <article class="feat">
+        <h3>Сам по собі</h3>
+        <p>Стартує разом з Aion 2 і закривається після гри, пам'ятає місце вікон, сам завантажує й ставить нові версії в тиху хвилину.</p>
+      </article>
+      <article class="feat">
+        <h3>Українською</h3>
+        <p>Увесь інтерфейс — українською (є англійська й російська), підказки до кожної цифри. Безкоштовно і без реклами.</p>
+      </article>
+      <article class="feat">
+        <h3>Відкритий код</h3>
+        <p>Метр лише слухає ваше з'єднання — пам'ять гри не читає і в гру нічого не надсилає. Увесь код відкритий на GitHub.</p>
+      </article>
+    </div>
   </section>
 
-  <section class="wrap">
-    <details class="rules-box" id="rulesBox" open>
-      <summary><h2 id="rulesTitle" class="h-side">Основні правила</h2><span class="muted small rules-hint">4 правила гайда · натисніть, щоб згорнути або розгорнути</span></summary>
-      <ol id="rules" class="rules-list"></ol>
+  <section class="wrap" id="install" aria-labelledby="installTitle">
+    <div class="sec-head">
+      <h2 id="installTitle">Встановити</h2>
+      <span class="mono muted">2 хвилини · Windows 10/11</span>
+    </div>
+    <div class="install-grid">
+      <ol class="install-steps">
+        <li><b>Npcap.</b> Встановіть <a href="https://npcap.com/#download" target="_blank" rel="noopener">Npcap</a> з налаштуваннями за замовчуванням — через нього оверлей бачить трафік гри.</li>
+        <li><b>Оверлей.</b> <a id="installDownload" href="https://github.com/batareuko/sula/releases/latest" target="_blank" rel="noopener">Завантажте останню версію</a> (<code>1HP-Overlay-v…-win-x64.zip</code>), розпакуйте в будь-яку папку і запустіть <code>1HP-Overlay.exe</code>.</li>
+        <li><b>Гра.</b> Далі оверлей сам стартує з Aion 2 і оновлюється. <kbd>Ctrl</kbd>+<kbd>Shift</kbd>+<kbd>D</kbd> — показати / сховати, <kbd>Ctrl</kbd>+<kbd>Shift</kbd>+<kbd>L</kbd> — кліки крізь оверлей.</li>
+        <li><b>Рейтинг 1 HP</b> (за бажанням). Увійдіть на сайт через Discord, скопіюйте ключ оверлея в розділі <a href="#dps">Рейтинг DPS</a> і вставте в Налаштування → 1 HP.</li>
+      </ol>
+      <div class="panel install-note">
+        <h3 class="h-card">Безпека</h3>
+        <p class="small">Оверлей лише слухає ваше з'єднання з сервером: пам'ять гри не читає і в гру нічого не надсилає. NCSOFT не схвалює сторонні програми, тож рішення й ризик — ваші.</p>
+        <p class="small">Код відкритий: основа — <a href="https://github.com/cyberbadger6969/aion2-dps-meter" target="_blank" rel="noopener">aion2-dps-meter</a> (GPL-3.0), наші зміни — <a href="https://github.com/batareuko/sula/tree/main/overlay" target="_blank" rel="noopener">тут</a>.</p>
+        <p class="small">Лагає? Скрипт у розділі <a href="#netcheck">Мережа</a> покаже, де губляться пакети.</p>
+      </div>
+    </div>
+  </section>
+
+  <section class="wrap" id="changes" aria-labelledby="changesTitle">
+    <div class="sec-head">
+      <h2 id="changesTitle">Що нового</h2>
+      <span class="mono muted" id="changesMeta">історія версій</span>
+    </div>
+    <ol class="changes" id="changesList"></ol>
+    <details class="changes-more">
+      <summary>Уся історія версій</summary>
+      <ol class="changes" id="changesOlder"></ol>
     </details>
-  </section>
-
-  <!-- ===== Мій прогрес / профілі / вхід ===== -->
-  <section class="wrap" id="progress">
-    <div class="panel profile">
-      <div class="profile-main">
-        <div class="ring" aria-hidden="true">
-          <svg viewBox="0 0 44 44"><circle class="ring-bg" cx="22" cy="22" r="19"/><circle class="ring-fg" id="ringFg" cx="22" cy="22" r="19"/></svg>
-          <b id="ringPct">0%</b>
-        </div>
-        <div class="profile-info">
-          <p class="eyebrow">Мій прогрес</p>
-          <div class="profile-row">
-            <label class="field">Профіль
-              <select id="profileSelect"></select>
-            </label>
-            <label class="field">Нік
-              <input id="profileName" type="text" maxlength="40" autocomplete="off">
-            </label>
-            <label class="field field-cp">БМ · рівень предметів
-              <input id="profileCp" type="number" inputmode="numeric" min="0" max="9999" step="1" placeholder="0">
-            </label>
-          </div>
-          <p class="muted small" id="profileSummary"></p>
-          <p class="muted small">Шкала гайда (1000–2800) відповідає рівню предметів (Gear Score) у грі: саме за ним відкриваються пороги.</p>
-          <div class="lookup" id="lookup" hidden>
-            <div class="lookup-row">
-              <label class="field grow">Нік персонажа в Aion 2
-                <input id="lookupName" type="text" maxlength="24" autocomplete="off" placeholder="Напр. Sula">
-              </label>
-              <button class="btn" id="btnLookup" type="button">Підтягнути БМ</button>
-              <button class="btn btn-ghost" id="btnLookupRefresh" type="button" hidden>Оновити</button>
-              <button class="btn btn-ghost" id="btnLookupUnlink" type="button" hidden>Відв’язати</button>
-            </div>
-            <p class="muted small" id="lookupStatus" role="status"></p>
-            <ul class="candidates" id="lookupCandidates" hidden></ul>
-          </div>
-        </div>
-      </div>
-      <div class="profile-actions">
-        <button class="btn btn-discord" id="btnLogin" type="button" hidden>Увійти через Discord</button>
-        <span class="who" id="whoami" hidden></span>
-        <button class="btn" id="btnNew" type="button">+ Новий профіль</button>
-        <button class="btn" id="btnCopyCode" type="button">Копіювати посилання</button>
-        <button class="btn btn-ghost" id="btnReset" type="button">Скинути</button>
-        <button class="btn btn-ghost" id="btnDelete" type="button">Видалити профіль</button>
-        <button class="btn btn-ghost" id="btnLogout" type="button" hidden>Вийти</button>
-      </div>
-      <p class="muted small" id="syncNote"></p>
+    <div class="panel next-up">
+      <h3 class="h-card">У роботі</h3>
+      <ul class="dash" id="meterNext"></ul>
+      <p class="muted small">Ідеї й помилки — у Discord 1 HP: більшість нових функцій з'явилась саме так.</p>
     </div>
   </section>
 
-  <!-- ===== Персонаж ===== -->
-  <section class="wrap" id="character" aria-labelledby="characterTitle">
+  <section class="wrap" id="dps" aria-labelledby="dpsTitle">
     <div class="sec-head">
-      <h2 id="characterTitle">Персонаж</h2>
-      <span class="mono muted">дані з гри</span>
+      <h2 id="dpsTitle">Рейтинг DPS</h2>
+      <span class="mono muted">1 HP · за даними оверлея</span>
     </div>
-    <div id="characterBox"></div>
+    <div class="panel" id="dpsLocked">
+      <p class="muted">Рейтинг бачать учасники 1 HP після входу через Discord. Результати боїв надсилає <a href="#meter">DPS-метр 1 HP</a>, і кожен — лише свої.</p>
+    </div>
+    <div id="dpsBox" hidden>
+      <div class="panel dps-key" id="dpsKey"></div>
+      <div class="panel">
+        <div class="dps-tools">
+          <label class="field">Бос
+            <select id="dpsBoss"></select>
+          </label>
+          <div class="tabs" id="dpsClasses" role="group" aria-label="Клас"></div>
+          <button class="btn btn-ghost btn-sm" type="button" id="dpsRefresh">Оновити</button>
+        </div>
+        <div class="table-scroll"><table class="tbl dps-table" id="dpsTable"></table></div>
+        <div id="dpsMine"></div>
+        <p class="muted small" id="dpsNote">Найкращий результат кожного учасника на цьому босі (лише вбивства). Чужі дані оверлей не надсилає.</p>
+      </div>
+    </div>
   </section>
 
-  <!-- ===== Таймери ===== -->
   <section class="wrap" id="timers" aria-labelledby="timersTitle">
     <div class="sec-head">
       <h2 id="timersTitle">Таймери</h2>
@@ -219,7 +292,75 @@
     </div>
   </section>
 
-  <!-- ===== Збір групи ===== -->
+  <details class="fold wrap" id="guild">
+    <summary class="fold-head"><span class="fold-title">Гільдія 1 HP</span><span class="muted small">сьогодні · мій прогрес · персонаж · збір групи · склад</span></summary>
+    <div class="fold-body">
+  <section class="wrap" id="today" aria-labelledby="todayTitle">
+    <div class="sec-head">
+      <h2 id="todayTitle">Сьогодні</h2>
+      <span class="mono muted" id="todayClock"></span>
+    </div>
+    <div id="onboard"></div>
+    <div class="today-grid" id="todayBox"></div>
+  </section>
+
+  <section class="wrap" id="progress">
+    <div class="panel profile">
+      <div class="profile-main">
+        <div class="ring" aria-hidden="true">
+          <svg viewBox="0 0 44 44"><circle class="ring-bg" cx="22" cy="22" r="19"/><circle class="ring-fg" id="ringFg" cx="22" cy="22" r="19"/></svg>
+          <b id="ringPct">0%</b>
+        </div>
+        <div class="profile-info">
+          <p class="eyebrow">Мій прогрес</p>
+          <div class="profile-row">
+            <label class="field">Профіль
+              <select id="profileSelect"></select>
+            </label>
+            <label class="field">Нік
+              <input id="profileName" type="text" maxlength="40" autocomplete="off">
+            </label>
+            <label class="field field-cp">БМ · рівень предметів
+              <input id="profileCp" type="number" inputmode="numeric" min="0" max="9999" step="1" placeholder="0">
+            </label>
+          </div>
+          <p class="muted small" id="profileSummary"></p>
+          <p class="muted small">Шкала гайда (1000–2800) відповідає рівню предметів (Gear Score) у грі: саме за ним відкриваються пороги.</p>
+          <div class="lookup" id="lookup" hidden>
+            <div class="lookup-row">
+              <label class="field grow">Нік персонажа в Aion 2
+                <input id="lookupName" type="text" maxlength="24" autocomplete="off" placeholder="Напр. Sula">
+              </label>
+              <button class="btn" id="btnLookup" type="button">Підтягнути БМ</button>
+              <button class="btn btn-ghost" id="btnLookupRefresh" type="button" hidden>Оновити</button>
+              <button class="btn btn-ghost" id="btnLookupUnlink" type="button" hidden>Відв’язати</button>
+            </div>
+            <p class="muted small" id="lookupStatus" role="status"></p>
+            <ul class="candidates" id="lookupCandidates" hidden></ul>
+          </div>
+        </div>
+      </div>
+      <div class="profile-actions">
+        <button class="btn btn-discord" id="btnLogin" type="button" hidden>Увійти через Discord</button>
+        <span class="who" id="whoami" hidden></span>
+        <button class="btn" id="btnNew" type="button">+ Новий профіль</button>
+        <button class="btn" id="btnCopyCode" type="button">Копіювати посилання</button>
+        <button class="btn btn-ghost" id="btnReset" type="button">Скинути</button>
+        <button class="btn btn-ghost" id="btnDelete" type="button">Видалити профіль</button>
+        <button class="btn btn-ghost" id="btnLogout" type="button" hidden>Вийти</button>
+      </div>
+      <p class="muted small" id="syncNote"></p>
+    </div>
+  </section>
+
+  <section class="wrap" id="character" aria-labelledby="characterTitle">
+    <div class="sec-head">
+      <h2 id="characterTitle">Персонаж</h2>
+      <span class="mono muted">дані з гри</span>
+    </div>
+    <div id="characterBox"></div>
+  </section>
+
   <section class="wrap" id="groups" aria-labelledby="groupsTitle">
     <div class="sec-head">
       <h2 id="groupsTitle">Збір групи</h2>
@@ -252,199 +393,6 @@
       </form>
       <p class="muted small" id="groupsStatus"></p>
       <div class="groups-list" id="groupsList"></div>
-    </div>
-  </section>
-
-  <!-- ===== Пачноути ===== -->
-  <section class="wrap" id="patches" aria-labelledby="patchesTitle">
-    <div class="sec-head">
-      <h2 id="patchesTitle">Пачноути</h2>
-      <span class="mono muted">Переклад · що змінилось · як вплине</span>
-    </div>
-    <p class="muted small">Офіційні пачноути Aion 2 Global українською з поясненнями. Блок «Для вашого персонажа» враховує вашу расу й тижневі ліміти. Нові пачноути з'являються тут автоматично англійською, доки не додано переклад.</p>
-    <form class="patch-open" id="patchOpen" autocomplete="off">
-      <input id="patchUrl" type="url" inputmode="url" placeholder="Вставте посилання на пачноут з aion2.plaync.com" aria-label="Посилання на пачноут з сайту Aion 2">
-      <button class="btn btn-sm" type="submit">Відкрити тут</button>
-    </form>
-    <div id="patchPersonal"></div>
-    <div id="patchList"></div>
-    <div id="patchLive"></div>
-  </section>
-
-  <!-- ===== Стартова точка ===== -->
-  <section class="wrap" id="startpoint">
-    <div class="panel start">
-      <div class="start-head">
-        <p class="eyebrow">Стартова точка</p>
-        <h2 id="startTitle"></h2>
-        <p class="muted" id="startGoal"></p>
-      </div>
-      <ul class="checklist cols-2" id="startList"></ul>
-    </div>
-    <div class="panel collect">
-      <h3 class="h-card">Збір у рідному регіоні</h3>
-      <p class="muted small" id="collectRegion"></p>
-      <ul class="prio" id="collectList"></ul>
-      <p class="muted small">Де шукати — на <a href="#map">інтерактивній карті</a>: категорії Stronghold і Sealed Dungeon.</p>
-    </div>
-  </section>
-
-  <!-- ===== Дорожня карта + бічна колонка ===== -->
-  <div class="wrap grid">
-    <section id="roadmap" class="col-main" aria-labelledby="roadmapTitle">
-      <div class="sec-head">
-        <h2 id="roadmapTitle">Дорожня карта</h2>
-        <span class="mono muted">БМ · 1000 → 2800+</span>
-      </div>
-      <div id="stages"></div>
-    </section>
-
-    <aside class="col-side">
-      <section class="panel" id="systems">
-        <h2 class="h-card">Ключові системи · Спеціальні слоти</h2>
-        <div id="systemsList"></div>
-      </section>
-
-      <section class="panel" id="energy">
-        <h2 class="h-card">Енергія Оділе</h2>
-        <div class="stats" id="energyStats"></div>
-        <ul class="dash" id="energyList"></ul>
-      </section>
-
-      <section class="panel" id="daily">
-        <h2 class="h-card">Щоденні / щотижневі пріоритети</h2>
-        <ul class="prio" id="prioList"></ul>
-        <p class="muted small" id="prioNote"></p>
-        <p class="muted small" id="resetInfo"></p>
-      </section>
-    </aside>
-  </div>
-
-  <!-- ===== Пороги ===== -->
-  <section class="wrap" id="thresholds" aria-labelledby="thTitle">
-    <div class="sec-head">
-      <h2 id="thTitle">Пороги розблокування</h2>
-      <span class="mono muted">Необхідна бойова міць</span>
-    </div>
-    <p class="th-status" id="thStatus"></p>
-    <ol class="timeline" id="timeline"></ol>
-  </section>
-
-  <!-- ===== Інтерактивна карта ===== -->
-  <section class="wrap" id="map" aria-labelledby="mapTitle">
-    <div class="sec-head">
-      <h2 id="mapTitle">Інтерактивна карта</h2>
-      <span class="mono muted">interactivemap.app</span>
-    </div>
-    <p class="muted lead">Карта вбудована зі стороннього сервісу <a href="https://interactivemap.app/aion2/" target="_blank" rel="noopener">interactivemap.app</a>: пошук, фільтри категорій, власні відмітки. Сама карта — англійською (української версії в сервісу немає), тому назви категорій нижче подано з англійським оригіналом.</p>
-
-    <div class="map-tools">
-      <div class="tabs" id="zoneTabs" role="tablist" aria-label="Зони"></div>
-      <div class="map-tools-r">
-        <button class="btn" id="mapFull" type="button">На весь екран</button>
-        <a class="btn" id="mapOpen" href="#" target="_blank" rel="noopener">Відкрити в новій вкладці ↗</a>
-      </div>
-    </div>
-
-    <div class="map-frame" id="mapFrame">
-      <div class="map-placeholder" id="mapPlaceholder">
-        <p>Карта завантажується, коли ви доходите до цього розділу.</p>
-        <button class="btn" id="mapLoad" type="button">Завантажити карту зараз</button>
-      </div>
-    </div>
-    <p class="muted small">Якщо карта не відображається (блокувальник реклами/трекерів, обмеження мережі) — відкрийте її в новій вкладці. <a id="routeGuide" href="#" target="_blank" rel="noopener">Гайд зі маршрутів ↗</a></p>
-
-    <details class="panel mapcheck collapsible" data-wide-open>
-      <summary><h3 class="h-card">Що шукати на карті · мій прогрес по зонах</h3></summary>
-      <p class="muted small">Назви категорій — як у бічній панелі карти (англ.). Відмічайте, де ви вже все зачистили. Набір категорій може відрізнятись між зонами.</p>
-      <div class="table-scroll">
-        <table class="tbl" id="mapMatrix"></table>
-      </div>
-    </details>
-  </section>
-
-  <!-- ===== Глосарій ===== -->
-  <!-- ===== Мережа: діагностика пінгу і втрат пакетів ===== -->
-  <section class="wrap" id="netcheck" aria-labelledby="netcheckTitle">
-    <div class="sec-head">
-      <h2 id="netcheckTitle">Мережа</h2>
-      <span class="mono muted">пінг · втрати пакетів · Windows</span>
-    </div>
-    <div class="panel netcheck">
-      <p>Лагає, скіли спрацьовують із запізненням, персонаж «телепортується»? Скрипт за хвилину покаже, <b>де саме губляться пакети</b>: вдома (Wi-Fi, кабель, роутер), у провайдера чи на маршруті до сервера гри. Він нічого не змінює в грі й не читає її пам’ять, лише вимірює мережу Windows.</p>
-      <ol class="netcheck-steps">
-        <li>Запустіть Aion 2 і зайдіть персонажем у світ.</li>
-        <li>Натисніть <kbd>Win</kbd> + <kbd>X</kbd> → «Термінал» (або «Windows PowerShell»), вставте команду і натисніть <kbd>Enter</kbd>:
-          <div class="cmd"><code id="netcheckCmd">[Net.ServicePointManager]::SecurityProtocol = 3072; irm https://guide.sulaslova.com/netcheck/aion2-netcheck.ps1 -OutFile $env:TEMP\aion2-netcheck.ps1; powershell -NoProfile -ExecutionPolicy Bypass -File $env:TEMP\aion2-netcheck.ps1</code>
-          <button class="btn btn-sm" type="button" id="netcheckCopy">Копіювати</button></div>
-        </li>
-        <li>На питання про адміністратора відповідайте <b>Y</b>: тоді видно втрати саме на з’єднанні гри. Поки йде тест (60 с), грайте як завжди.</li>
-        <li>Звіт з’явиться на Робочому столі (<code>aion2-netcheck-….txt</code>). Висновок унизу звіту, його можна скинути в Discord 1 HP.</li>
-      </ol>
-      <p class="muted small">Або <a href="netcheck/aion2-netcheck.ps1" download>завантажте скрипт</a>: права кнопка → «Виконати за допомогою PowerShell».</p>
-      <details class="netcheck-more">
-        <summary>Що перевіряє і що вміє «оптимізатор»</summary>
-        <ul>
-          <li><b>Перевірки:</b> кабель чи Wi-Fi і сила сигналу; помилки мережевої карти; ping одночасно до роутера, кожного вузла маршруту, 1.1.1.1, 8.8.8.8 і сервера гри; повторні передачі (ретрансляції) TCP на з’єднанні гри; програми, що можуть забирати канал; прискорювачі пінгу та VPN (ExitLag, GearUP, WTFast…) — запущені чи залишки служб і драйверів після кінця підписки; зайвий пристрій між ПК і роутером (наприклад, Pi-hole як шлюз) і DNS.</li>
-          <li><b>Як читати:</b> втрата, яка з’являється на якомусь вузлі й тягнеться до кінця маршруту, справжня. Втрата лише на одному проміжному вузлі — це роутер економить відповіді на ping, її можна ігнорувати.</li>
-          <li><b><code>-LoadTest</code></b>: перевірка, чи росте пінг, коли щось качається (bufferbloat). Лікується QoS / SQM у роутері.</li>
-          <li><b><code>-ApplyTweaks</code></b> (адміністратор): вимикає затримку дрібних TCP-пакетів (TcpAckFrequency, TCPNoDelay) та енергозбереження мережевої карти. Перед змінами зберігає резервну копію, <b><code>-Revert</code></b> повертає все назад. Запускайте не під час гри: карта на мить перепідключиться.</li>
-          <li><b>Чесно:</b> жодна програма на ПК не прибере втрати, які виникають у провайдера чи на магістралі. Якщо звіт показує саме це, допомагає скарга провайдеру (звіт можна показати) або сервіс маршрутизації для ігор, що веде трафік іншим шляхом.</li>
-          <li>Сервер у далекому регіоні (наприклад, азійський з Європи) завжди дає пінг 250+ мс, а довгі маршрути частіше гублять пакети.</li>
-        </ul>
-        <p class="muted small">Параметри додаються в кінець команди, наприклад <code>… aion2-netcheck.ps1 -LoadTest -Seconds 120</code>.</p>
-      </details>
-    </div>
-    <div class="panel netcheck">
-      <h3 class="h-card">Оверлей 1 HP для Windows</h3>
-      <p>DPS-метр поверх гри: урон групи наживо, HP боса, розбір по скілах, історія боїв, таймери польових босів. Унизу — <b>пінг і втрати пакетів</b> саме з’єднання гри, Розлом і ресет. Інтерфейс українською.</p>
-      <ol class="netcheck-steps">
-        <li>Встановіть <a href="https://npcap.com/#download" target="_blank" rel="noopener">Npcap</a> з налаштуваннями за замовчуванням.</li>
-        <li>Завантажте <a href="https://github.com/batareuko/sula/releases/latest" target="_blank" rel="noopener">останній реліз</a> (файл <code>1HP-Overlay-v…-win-x64.zip</code>), розпакуйте й запустіть <code>1HP-Overlay.exe</code>. Далі він сам стартує разом з Aion 2 і закривається після гри.</li>
-        <li><kbd>Ctrl</kbd>+<kbd>Shift</kbd>+<kbd>D</kbd> — показати/сховати, <kbd>Ctrl</kbd>+<kbd>Shift</kbd>+<kbd>L</kbd> — кліки крізь оверлей.</li>
-      </ol>
-      <p class="muted small">Оверлей лише слухає ваше з’єднання (пам’ять гри не читає, у гру нічого не надсилає), але NCSOFT не схвалює сторонні програми — ризик для акаунта ваш. Основа — відкритий <a href="https://github.com/cyberbadger6969/aion2-dps-meter" target="_blank" rel="noopener">aion2-dps-meter</a> (GPL-3.0), <a href="https://github.com/batareuko/sula/tree/main/overlay" target="_blank" rel="noopener">наш код</a>.</p>
-    </div>
-  </section>
-
-  <section class="wrap" id="glossary" aria-labelledby="glossaryTitle">
-    <div class="sec-head">
-      <h2 id="glossaryTitle">Глосарій</h2>
-      <span class="mono muted">українська → англійський клієнт</span>
-    </div>
-    <p class="muted lead">Гра на Global-серверах англійською, тож тут усі терміни з гайда з назвами, які ви побачите в грі.</p>
-    <label class="field gl-search">Пошук терміна
-      <input id="glossarySearch" type="search" placeholder="Напр. пояс або Belt" autocomplete="off">
-    </label>
-    <button class="btn btn-sm btn-ghost gl-toggle" id="glossaryToggle" type="button" hidden></button>
-    <div class="gl-grid" id="glossaryList"></div>
-    <p class="muted" id="glossaryEmpty" hidden>Нічого не знайдено.</p>
-  </section>
-
-  <!-- ===== Склад 1 HP ===== -->
-  <!-- ===== Рейтинг DPS 1 HP (результати з оверлея) ===== -->
-  <section class="wrap" id="dps" aria-labelledby="dpsTitle">
-    <div class="sec-head">
-      <h2 id="dpsTitle">Рейтинг DPS</h2>
-      <span class="mono muted">1 HP · за даними оверлея</span>
-    </div>
-    <div class="panel" id="dpsLocked">
-      <p class="muted">Рейтинг бачать учасники 1 HP після входу через Discord. Результати боїв надсилає <a href="#netcheck">оверлей 1 HP</a>, і кожен — лише свої.</p>
-    </div>
-    <div id="dpsBox" hidden>
-      <div class="panel dps-key" id="dpsKey"></div>
-      <div class="panel">
-        <div class="dps-tools">
-          <label class="field">Бос
-            <select id="dpsBoss"></select>
-          </label>
-          <div class="tabs" id="dpsClasses" role="group" aria-label="Клас"></div>
-          <button class="btn btn-ghost btn-sm" type="button" id="dpsRefresh">Оновити</button>
-        </div>
-        <div class="table-scroll"><table class="tbl dps-table" id="dpsTable"></table></div>
-        <div id="dpsMine"></div>
-        <p class="muted small" id="dpsNote">Найкращий результат кожного учасника на цьому босі (лише вбивства). Чужі дані оверлей не надсилає.</p>
-      </div>
     </div>
   </section>
 
@@ -488,20 +436,188 @@
       <p class="muted small">Без входу через Discord прогрес зберігається лише в цьому браузері. Щоб передати його лідеру, скопіюйте «посилання» у своєму профілі й надішліть — лідер імпортує його сюди. Імпорт оновлює профіль з тим самим ніком.</p>
     </div>
   </section>
+    </div>
+  </details>
+
+  <details class="fold wrap" id="guide">
+    <summary class="fold-head"><span class="fold-title">Гайд для новачка 45 рівня</span><span class="muted small">правила · пачноути · дорожня карта · пороги · карта · мережа · глосарій</span></summary>
+    <div class="fold-body">
+    <div class="hero-tools guide-tools">
+      <button class="btn btn-ghost btn-sm" id="btnEn" type="button" aria-pressed="true">Англійські назви: показано</button>
+      <span class="muted small">Офіційний гайд для новачків Beeks. У дужках — як термін називається в англійському клієнті гри. Повний список у <a href="#glossary">глосарії</a>.</span>
+    </div>
+  <section class="wrap">
+    <details class="rules-box" id="rulesBox" open>
+      <summary><h2 id="rulesTitle" class="h-side">Основні правила</h2><span class="muted small rules-hint">4 правила гайда · натисніть, щоб згорнути або розгорнути</span></summary>
+      <ol id="rules" class="rules-list"></ol>
+    </details>
+  </section>
+
+  <section class="wrap" id="patches" aria-labelledby="patchesTitle">
+    <div class="sec-head">
+      <h2 id="patchesTitle">Пачноути</h2>
+      <span class="mono muted">Переклад · що змінилось · як вплине</span>
+    </div>
+    <p class="muted small">Офіційні пачноути Aion 2 Global українською з поясненнями. Блок «Для вашого персонажа» враховує вашу расу й тижневі ліміти. Нові пачноути з'являються тут автоматично англійською, доки не додано переклад.</p>
+    <form class="patch-open" id="patchOpen" autocomplete="off">
+      <input id="patchUrl" type="url" inputmode="url" placeholder="Вставте посилання на пачноут з aion2.plaync.com" aria-label="Посилання на пачноут з сайту Aion 2">
+      <button class="btn btn-sm" type="submit">Відкрити тут</button>
+    </form>
+    <div id="patchPersonal"></div>
+    <div id="patchList"></div>
+    <div id="patchLive"></div>
+  </section>
+
+  <section class="wrap" id="startpoint">
+    <div class="panel start">
+      <div class="start-head">
+        <p class="eyebrow">Стартова точка</p>
+        <h2 id="startTitle"></h2>
+        <p class="muted" id="startGoal"></p>
+      </div>
+      <ul class="checklist cols-2" id="startList"></ul>
+    </div>
+    <div class="panel collect">
+      <h3 class="h-card">Збір у рідному регіоні</h3>
+      <p class="muted small" id="collectRegion"></p>
+      <ul class="prio" id="collectList"></ul>
+      <p class="muted small">Де шукати — на <a href="#map">інтерактивній карті</a>: категорії Stronghold і Sealed Dungeon.</p>
+    </div>
+  </section>
+
+  <div class="wrap grid">
+    <section id="roadmap" class="col-main" aria-labelledby="roadmapTitle">
+      <div class="sec-head">
+        <h2 id="roadmapTitle">Дорожня карта</h2>
+        <span class="mono muted">БМ · 1000 → 2800+</span>
+      </div>
+      <div id="stages"></div>
+    </section>
+
+    <aside class="col-side">
+      <section class="panel" id="systems">
+        <h2 class="h-card">Ключові системи · Спеціальні слоти</h2>
+        <div id="systemsList"></div>
+      </section>
+
+      <section class="panel" id="energy">
+        <h2 class="h-card">Енергія Оділе</h2>
+        <div class="stats" id="energyStats"></div>
+        <ul class="dash" id="energyList"></ul>
+      </section>
+
+      <section class="panel" id="daily">
+        <h2 class="h-card">Щоденні / щотижневі пріоритети</h2>
+        <ul class="prio" id="prioList"></ul>
+        <p class="muted small" id="prioNote"></p>
+        <p class="muted small" id="resetInfo"></p>
+      </section>
+    </aside>
+  </div>
+
+  <section class="wrap" id="thresholds" aria-labelledby="thTitle">
+    <div class="sec-head">
+      <h2 id="thTitle">Пороги розблокування</h2>
+      <span class="mono muted">Необхідна бойова міць</span>
+    </div>
+    <p class="th-status" id="thStatus"></p>
+    <ol class="timeline" id="timeline"></ol>
+  </section>
+
+  <section class="wrap" id="map" aria-labelledby="mapTitle">
+    <div class="sec-head">
+      <h2 id="mapTitle">Інтерактивна карта</h2>
+      <span class="mono muted">interactivemap.app</span>
+    </div>
+    <p class="muted lead">Карта вбудована зі стороннього сервісу <a href="https://interactivemap.app/aion2/" target="_blank" rel="noopener">interactivemap.app</a>: пошук, фільтри категорій, власні відмітки. Сама карта — англійською (української версії в сервісу немає), тому назви категорій нижче подано з англійським оригіналом.</p>
+
+    <div class="map-tools">
+      <div class="tabs" id="zoneTabs" role="tablist" aria-label="Зони"></div>
+      <div class="map-tools-r">
+        <button class="btn" id="mapFull" type="button">На весь екран</button>
+        <a class="btn" id="mapOpen" href="#" target="_blank" rel="noopener">Відкрити в новій вкладці ↗</a>
+      </div>
+    </div>
+
+    <div class="map-frame" id="mapFrame">
+      <div class="map-placeholder" id="mapPlaceholder">
+        <p>Карта завантажується, коли ви доходите до цього розділу.</p>
+        <button class="btn" id="mapLoad" type="button">Завантажити карту зараз</button>
+      </div>
+    </div>
+    <p class="muted small">Якщо карта не відображається (блокувальник реклами/трекерів, обмеження мережі) — відкрийте її в новій вкладці. <a id="routeGuide" href="#" target="_blank" rel="noopener">Гайд зі маршрутів ↗</a></p>
+
+    <details class="panel mapcheck collapsible" data-wide-open>
+      <summary><h3 class="h-card">Що шукати на карті · мій прогрес по зонах</h3></summary>
+      <p class="muted small">Назви категорій — як у бічній панелі карти (англ.). Відмічайте, де ви вже все зачистили. Набір категорій може відрізнятись між зонами.</p>
+      <div class="table-scroll">
+        <table class="tbl" id="mapMatrix"></table>
+      </div>
+    </details>
+  </section>
+
+  <section class="wrap" id="glossary" aria-labelledby="glossaryTitle">
+    <div class="sec-head">
+      <h2 id="glossaryTitle">Глосарій</h2>
+      <span class="mono muted">українська → англійський клієнт</span>
+    </div>
+    <p class="muted lead">Гра на Global-серверах англійською, тож тут усі терміни з гайда з назвами, які ви побачите в грі.</p>
+    <label class="field gl-search">Пошук терміна
+      <input id="glossarySearch" type="search" placeholder="Напр. пояс або Belt" autocomplete="off">
+    </label>
+    <button class="btn btn-sm btn-ghost gl-toggle" id="glossaryToggle" type="button" hidden></button>
+    <div class="gl-grid" id="glossaryList"></div>
+    <p class="muted" id="glossaryEmpty" hidden>Нічого не знайдено.</p>
+  </section>
+    </div>
+  </details>
+
+  <section class="wrap" id="netcheck" aria-labelledby="netcheckTitle">
+    <div class="sec-head">
+      <h2 id="netcheckTitle">Мережа</h2>
+      <span class="mono muted">пінг · втрати пакетів · Windows</span>
+    </div>
+    <div class="panel netcheck">
+      <p>Лагає, скіли спрацьовують із запізненням, персонаж «телепортується»? Скрипт за хвилину покаже, <b>де саме губляться пакети</b>: вдома (Wi-Fi, кабель, роутер), у провайдера чи на маршруті до сервера гри. Він нічого не змінює в грі й не читає її пам’ять, лише вимірює мережу Windows.</p>
+      <ol class="netcheck-steps">
+        <li>Запустіть Aion 2 і зайдіть персонажем у світ.</li>
+        <li>Натисніть <kbd>Win</kbd> + <kbd>X</kbd> → «Термінал» (або «Windows PowerShell»), вставте команду і натисніть <kbd>Enter</kbd>:
+          <div class="cmd"><code id="netcheckCmd">[Net.ServicePointManager]::SecurityProtocol = 3072; irm https://guide.sulaslova.com/netcheck/aion2-netcheck.ps1 -OutFile $env:TEMP\aion2-netcheck.ps1; powershell -NoProfile -ExecutionPolicy Bypass -File $env:TEMP\aion2-netcheck.ps1</code>
+          <button class="btn btn-sm" type="button" id="netcheckCopy">Копіювати</button></div>
+        </li>
+        <li>На питання про адміністратора відповідайте <b>Y</b>: тоді видно втрати саме на з’єднанні гри. Поки йде тест (60 с), грайте як завжди.</li>
+        <li>Звіт з’явиться на Робочому столі (<code>aion2-netcheck-….txt</code>). Висновок унизу звіту, його можна скинути в Discord 1 HP.</li>
+      </ol>
+      <p class="muted small">Або <a href="netcheck/aion2-netcheck.ps1" download>завантажте скрипт</a>: права кнопка → «Виконати за допомогою PowerShell».</p>
+      <details class="netcheck-more">
+        <summary>Що перевіряє і що вміє «оптимізатор»</summary>
+        <ul>
+          <li><b>Перевірки:</b> кабель чи Wi-Fi і сила сигналу; помилки мережевої карти; ping одночасно до роутера, кожного вузла маршруту, 1.1.1.1, 8.8.8.8 і сервера гри; повторні передачі (ретрансляції) TCP на з’єднанні гри; програми, що можуть забирати канал; прискорювачі пінгу та VPN (ExitLag, GearUP, WTFast…) — запущені чи залишки служб і драйверів після кінця підписки; зайвий пристрій між ПК і роутером (наприклад, Pi-hole як шлюз) і DNS.</li>
+          <li><b>Як читати:</b> втрата, яка з’являється на якомусь вузлі й тягнеться до кінця маршруту, справжня. Втрата лише на одному проміжному вузлі — це роутер економить відповіді на ping, її можна ігнорувати.</li>
+          <li><b><code>-LoadTest</code></b>: перевірка, чи росте пінг, коли щось качається (bufferbloat). Лікується QoS / SQM у роутері.</li>
+          <li><b><code>-ApplyTweaks</code></b> (адміністратор): вимикає затримку дрібних TCP-пакетів (TcpAckFrequency, TCPNoDelay) та енергозбереження мережевої карти. Перед змінами зберігає резервну копію, <b><code>-Revert</code></b> повертає все назад. Запускайте не під час гри: карта на мить перепідключиться.</li>
+          <li><b>Чесно:</b> жодна програма на ПК не прибере втрати, які виникають у провайдера чи на магістралі. Якщо звіт показує саме це, допомагає скарга провайдеру (звіт можна показати) або сервіс маршрутизації для ігор, що веде трафік іншим шляхом.</li>
+          <li>Сервер у далекому регіоні (наприклад, азійський з Європи) завжди дає пінг 250+ мс, а довгі маршрути частіше гублять пакети.</li>
+        </ul>
+        <p class="muted small">Параметри додаються в кінець команди, наприклад <code>… aion2-netcheck.ps1 -LoadTest -Seconds 120</code>.</p>
+      </details>
+    </div>
+    <p class="muted small">DPS-метр показує пінг і втрати пакетів наживо — <a href="#meter">про оверлей</a>.</p>
+  </section>
 </main>
 
 <footer class="footer">
   <div class="wrap">
-    <p>Неофіційний фанатський гайд за інфографікою «Новачок 45 рівня — дорожня карта спорядження». Aion 2 — торгова марка NCSoft. Інтерактивна карта належить interactivemap.app. Дані персонажів беруться з офіційного сайту Aion 2 через неофіційний доступ і можуть тимчасово бути недоступні — бойову міць можна ввести вручну.</p>
+    <p>DPS-метр 1 HP — фанатський проєкт гільдії, не пов'язаний з NCSOFT. Гайд — за інфографікою «Новачок 45 рівня — дорожня карта спорядження». Aion 2 — торгова марка NCSoft. Інтерактивна карта належить interactivemap.app. Дані персонажів беруться з офіційного сайту Aion 2 через неофіційний доступ і можуть тимчасово бути недоступні — бойову міць можна ввести вручну.</p>
   </div>
 </footer>
 
 <!-- Нижня панель на телефоні -->
 <nav class="tabbar" id="tabbar" aria-label="Швидка навігація">
-  <a href="#today" data-sec="today"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 11l9-7 9 7v9a1 1 0 0 1-1 1h-5v-6H9v6H4a1 1 0 0 1-1-1z"/></svg><span>Сьогодні</span></a>
-  <a href="#character" data-sec="character"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="8" r="4"/><path d="M4 21c0-4.4 3.6-7 8-7s8 2.6 8 7"/></svg><span>Персонаж</span></a>
+  <a href="#meter" data-sec="meter"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 20V10M10 20V4M16 20v-7M22 20H2"/></svg><span>Метр</span></a>
+  <a href="#dps" data-sec="dps"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M8 21h8M12 17v4M7 4h10v5a5 5 0 0 1-10 0zM7 6H4a3 3 0 0 0 3 4M17 6h3a3 3 0 0 1-3 4"/></svg><span>Рейтинг</span></a>
   <a href="#timers" data-sec="timers"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="13" r="8"/><path d="M12 9v4l3 2M9 2h6"/></svg><span>Таймери</span></a>
-  <a href="#groups" data-sec="groups"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="9" cy="8" r="3.5"/><circle cx="17" cy="9" r="2.5"/><path d="M2.5 20c0-3.6 2.9-6 6.5-6s6.5 2.4 6.5 6M15 14.5c3.4 0 6.5 1.6 6.5 5.5"/></svg><span>Групи</span></a>
+  <a href="#today" data-sec="today"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="9" cy="8" r="3.5"/><circle cx="17" cy="9" r="2.5"/><path d="M2.5 20c0-3.6 2.9-6 6.5-6s6.5 2.4 6.5 6M15 14.5c3.4 0 6.5 1.6 6.5 5.5"/></svg><span>Гільдія</span></a>
   <button type="button" id="tabMore" aria-expanded="false" aria-controls="moreSheet"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 6h16M4 12h16M4 18h16"/></svg><span>Ще</span></button>
 </nav>
 <div class="sheet" id="moreSheet" hidden>
