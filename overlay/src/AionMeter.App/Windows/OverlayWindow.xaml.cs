@@ -172,8 +172,12 @@ public partial class OverlayWindow : Window
         {
             var a = r.Attackers.FirstOrDefault(x => x.ActorId == row.ActorId);
             if (a is null) continue;
-            row.Gear = a.IsPlayer ? _meter.Data.ServerName(a.ServerId) : "";
-            row.Tooltip = $"{a.Name} · {a.Damage:#,0} · {a.Hits}×, max {a.MaxHit:#,0}\n" +
+            // Gear score: known for players you inspected in the game (before or after the fight)
+            var gear = a.IsPlayer ? _meter.Tracker.GearOf(a.Name) : 0;
+            var server = a.IsPlayer ? _meter.Data.ServerName(a.ServerId) : "";
+            row.Gear = string.Join(" · ", new[] { gear > 0 ? string.Format(t.GearScoreShort, gear) : "", server }.Where(x => x.Length > 0));
+            row.Tooltip = $"{a.Name} · {a.Damage:#,0} · {a.Hits}×, max {a.MaxHit:#,0}" +
+                          (gear > 0 ? " · " + string.Format(t.GearScoreShort, gear) : a.IsPlayer ? "\n" + t.GearScoreInspect : "") + "\n" +
                           string.Join("\n", a.Skills.Take(8).Select(s => $"{s.Name}: {s.Damage:#,0} ({s.Hits}×)"));
         }
     }

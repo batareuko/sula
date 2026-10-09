@@ -116,6 +116,7 @@ public static class SampleRenderer
         const uint me = 2, enemy = 70_001, spirit = 70_002, other = 70_003;
         tracker.Process(new PlayerSeenEvent(at - 9_000, enemy, "Miranda", 0, GameClass.Elementalist));
         tracker.Process(new PlayerSeenEvent(at - 9_000, other, "RhQm", 0, GameClass.Sorcerer));
+        tracker.Process(new PlayerGearEvent(at - 8_500, "Miranda", 2309, 45, 1659)); // inspected
         int[] skills = [16040000, 16140000, 16300000, 16330000, 16740000];
         var rnd = new Random(7);
         for (var t = at - 8_000; t < at; t += 350)

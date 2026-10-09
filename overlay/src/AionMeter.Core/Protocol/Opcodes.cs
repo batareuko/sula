@@ -24,12 +24,14 @@ public static class Opcodes
     public const ushort BattleToggle = 0x218D;   // KR only, unverified on Global
     public const ushort HpMp = 0x1B92;
     public const ushort PartyRoster = 0x0297;
+    public const ushort PlayerGear = 0x5036;     // 1 HP: another player's equipment, sent when you inspect them
     public const ushort FieldBossList = 0x0191;  // a map's field bosses: alive since / back at (in-game map list)
 
     public static string Name(ushort op) => op switch
     {
         Heartbeat => "Heartbeat",
         SelfInfo => "SelfInfo",
+        PlayerGear => "PlayerGear",
         PlayerInfo or PlayerInfoOld => "PlayerInfo",
         Spawn => "Spawn",
         Death => "Death",

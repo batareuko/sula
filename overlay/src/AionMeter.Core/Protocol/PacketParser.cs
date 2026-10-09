@@ -87,6 +87,9 @@ public sealed class PacketParser
             case Opcodes.BattleToggle:
                 ParseBattleToggle(body);
                 break;
+            case Opcodes.PlayerGear:
+                ParsePlayerGear(body);
+                break;
             case Opcodes.PartyRoster:
                 if (PartyRoster.TryParse(body, 0) is { } roster) EmitRoster(roster);
                 else ScanForRosters(body);
@@ -675,6 +678,23 @@ public sealed class PacketParser
             Emit(new PlayerSeenEvent(TimeMs, killer, name, server, GameClass.Unknown));
             Emit(new PlayerKilledEvent(TimeMs, (uint)id, (uint)killer, name, server)); // 1 HP: death recap
         }
+    }
+
+    /// <summary>
+    /// 1 HP: an inspected player (<c>50 36</c>, then the equipment):
+    /// <code>u16 0, u8, name (u8 len + utf8), u32, u8 u8, level u32, u32, gear score u32, server u16, …</code>
+    /// </summary>
+    private void ParsePlayerGear(ReadOnlySpan<byte> b)
+    {
+        var o = 3;
+        if (!Wire.TryU8(b, ref o, out var len) || len is < 1 or > 36 || o + len > b.Length) return;
+        if (!Wire.TryName(b.Slice(o, len), out var name)) return;
+        o += len + 4 + 2;
+        if (!Wire.TryU32(b, ref o, out var level) || level is < 1 or > 100) return;
+        o += 4;
+        if (!Wire.TryU32(b, ref o, out var gear) || gear > 100_000) return;
+        if (!Wire.TryU16(b, ref o, out var server) || server is < 1000 or >= 3000) return;
+        Emit(new PlayerGearEvent(TimeMs, name, server, (int)level, (int)gear));
     }
 
     /// <summary><c>mob varint, varint, toggle varint</c> (1 = engaged, 0 = left combat) — seen on Global for every mob.</summary>

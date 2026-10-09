@@ -21,6 +21,15 @@ public sealed class CombatTracker
     private int _partyVersion;
     // 1 HP: combat power by character name, from the party rosters.
     private readonly Dictionary<string, long> _powers = new(StringComparer.OrdinalIgnoreCase);
+    // 1 HP: gear score of players you inspected (name → score)
+    private readonly Dictionary<string, int> _gear = new(StringComparer.OrdinalIgnoreCase);
+
+    /// <summary>1 HP: the gear score the game showed when you inspected this player; 0 when unknown.</summary>
+    public int GearOf(string? name)
+    {
+        if (string.IsNullOrWhiteSpace(name)) return 0;
+        lock (_gate) return _gear.GetValueOrDefault(name.Trim());
+    }
 
     public CombatTracker(GameData data, MeterOptions options)
     {
@@ -156,6 +165,9 @@ public sealed class CombatTracker
                 case DeathEvent death:
                     OnDeath(death);
                     if (_entities.SelfId == death.ActorId && !death.AlreadyDead) Recap(death.TimeMs, null);
+                    break;
+                case PlayerGearEvent g:
+                    if (g.GearScore > 0) _gear[g.Name.Trim()] = g.GearScore;
                     break;
                 case PlayerKilledEvent kill:
                     if (_entities.SelfId == kill.VictimId) Recap(kill.TimeMs, (kill.KillerId, kill.KillerName, kill.KillerServer));

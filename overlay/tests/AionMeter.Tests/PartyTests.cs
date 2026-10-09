@@ -258,4 +258,19 @@ public class PartyTests
         Assert.Equal(1_400, r.DurationMs);
         Assert.Same(r, t.LastDeath);
     }
+
+    [Fact]
+    public void An_inspected_players_gear_score_is_read()
+    {
+        // 50 36 header of an inspected player (2026-10-09 Abyss capture)
+        var data = Hex("00 00 07 08 41 63 65 52 75 66 66 79 08 00 00 00 02 02 2d 00 00 00 00 00 00 00 7b 06 00 00 05 09 ed 0c 39 da 1a 5f 01 00");
+        var events = new List<GameEvent>();
+        new PacketParser(GameData.Empty, events.Add).Handle(Opcodes.PlayerGear, data);
+        var e = Assert.IsType<PlayerGearEvent>(Assert.Single(events));
+        Assert.Equal(("AceRuffy", 2309, 45, 1659), (e.Name, e.ServerId, e.Level, e.GearScore));
+
+        var t = new CombatTracker(GameData.Empty, new MeterOptions());
+        t.Process(e);
+        Assert.Equal(1659, t.GearOf("aceruffy"));
+    }
 }

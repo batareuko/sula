@@ -42,7 +42,7 @@ int Deaths(string path)
                           $"({r.KillerClass}, server {data.ServerName(r.KillerServer)}{(r.ByPlayer ? ", player" : "")}) in {r.DurationMs / 1000.0:0.0}s, {r.TotalDamage:#,0} damage");
         foreach (var a in r.Attackers)
         {
-            Console.WriteLine($"   {a.Name,-16} {a.Class,-12} {data.ServerName(a.ServerId),-10} {a.Damage,8:#,0}  {a.Hits} hits, max {a.MaxHit:#,0}");
+            Console.WriteLine($"   {a.Name,-16} {a.Class,-12} {data.ServerName(a.ServerId),-10} gear {tracker.GearOf(a.Name),5} {a.Damage,8:#,0}  {a.Hits} hits, max {a.MaxHit:#,0}");
             foreach (var s in a.Skills.Take(6)) Console.WriteLine($"      {s.Name,-28} {s.Damage,8:#,0} x{s.Hits}");
         }
     };
