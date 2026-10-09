@@ -543,7 +543,8 @@ public sealed class CombatTracker
     {
         if (_current is not { IsActive: true } enc) return;
         var bossAlive = enc.BossId is { } b && IsAlive(b);
-        var timeout = bossAlive ? Options.BossIdleTimeoutMs : Options.IdleTimeoutMs;
+        var dummy = enc.BossCode != 0 && _data.Npcs.TryGetValue(enc.BossCode, out var def) && def.IsDummy;
+        var timeout = dummy ? Options.DummyIdleTimeoutMs : bossAlive ? Options.BossIdleTimeoutMs : Options.IdleTimeoutMs;
         if (nowMs - enc.LastDamageMs > timeout) Finish(EncounterEndReason.Idle, enc.LastDamageMs);
     }
 

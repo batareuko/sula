@@ -104,6 +104,9 @@ public sealed class AppSettings
     public bool Compact { get; set; } = true;
     /// <summary>One line (name, combat power, ping) out of combat; a row per fighter in a fight (OverlayWindow.ApplyDynamic).</summary>
     public bool DynamicOverlay { get; set; } = true;
+    /// <summary>The meter as a web page for OBS (Services/StreamServer.cs); only this computer can open it.</summary>
+    public bool StreamEnabled { get; set; }
+    public int StreamPort { get; set; } = StreamServer.DefaultPort;
     /// <summary>Your characters' last known combat power by name: the one-line card shows it before the game sends it again.</summary>
     public Dictionary<string, long> Powers { get; set; } = new(StringComparer.OrdinalIgnoreCase);
     /// <summary>Last place of the other windows (history, breakdown, settings …) by window kind.</summary>

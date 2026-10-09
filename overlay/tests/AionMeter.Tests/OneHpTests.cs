@@ -1,3 +1,5 @@
+using AionMeter.Core.Combat;
+using AionMeter.Core.Events;
 using AionMeter.Core.Capture;
 using AionMeter.Core.OneHp;
 
@@ -217,5 +219,55 @@ public class GuildDataTests
             "<meta property=\"og:image\" content=\"https://metabot.gg/web/aion2/npcs-large/r/mob_phaini_01.webp\"/>"));
         // a missing monster: the site's generic card
         Assert.Null(MonsterPages.PortraitFile("<meta property=\"og:image\" content=\"https://metabot.gg/web/shared/metabot_og_card.png\"/>"));
+    }
+}
+
+/// <summary>1 HP: training dummy runs.</summary>
+public class DummyRunTests
+{
+    private static EncounterSnapshot Run(double dps, long ms = 30_000, bool active = false, int code = 2990001, Guid? id = null) =>
+        new(id ?? Guid.NewGuid(), "Dummy", null, DateTimeOffset.UtcNow, ms, ms, active,
+            active ? EncounterEndReason.None : EncounterEndReason.Idle, (long)(dps * ms / 1000), dps,
+            new BossSnapshot(500, code, "Dummy", 1, 1),
+            [new CombatantSnapshot(1, "Ilvane", GameClass.Elementalist, true, (long)(dps * ms / 1000), dps, 1, 10, 0.3, 100, 0)]);
+
+    private static bool IsDummy(int code) => code == 2990001;
+
+    [Fact]
+    public void Runs_are_numbered_and_compared_with_the_best_and_the_last()
+    {
+        var path = Path.Combine(Path.GetTempPath(), $"dummy-{Guid.NewGuid():N}.json");
+        try
+        {
+            var runs = new DummyRuns(path);
+            var first = runs.Finish(Run(40_000), IsDummy)!;
+            Assert.Equal(1, first.Run);
+            Assert.Null(first.VsBest);
+            runs.Finish(Run(44_000), IsDummy);
+            var third = runs.Finish(Run(40_040), IsDummy)!;
+            Assert.Equal(3, third.Run);
+            Assert.Equal(-9.0, third.VsBest);
+            Assert.Equal(-9.0, third.VsLast);
+
+            var live = new DummyRuns(path).Compare(Run(46_200, active: true), IsDummy)!; // a restart keeps the history
+            Assert.Equal(4, live.Run);
+            Assert.True(live.IsNewBest);
+            Assert.Equal(15.4, live.VsLast);
+        }
+        finally
+        {
+            File.Delete(path);
+        }
+    }
+
+    [Fact]
+    public void Short_fights_and_other_targets_are_not_runs()
+    {
+        var runs = new DummyRuns();
+        Assert.Null(runs.Finish(Run(40_000, ms: 4_000), IsDummy));
+        Assert.Null(runs.Finish(Run(40_000, code: 2400419), IsDummy));
+        var id = Guid.NewGuid();
+        Assert.Equal(1, runs.Finish(Run(40_000, id: id), IsDummy)!.Run);
+        Assert.Equal(1, runs.Finish(Run(40_000, id: id), IsDummy)!.Run); // the same fight twice is one run
     }
 }

@@ -31,6 +31,9 @@ public sealed class MeterService : IDisposable
         Net = new NetMonitor(() => _capture is LiveCapture live ? live.Pipeline.Health : null,
             () => _capture is LiveCapture live ? live.Pipeline.LockedFlows.ToList() : []);
         Cloud = new OneHpCloud(settings);
+        Dummies = new Core.OneHp.DummyRuns(settings.Transient ? null : Path.Combine(AppSettings.AppDataDir, "dummy-runs.json"));
+        Stream = new StreamServer(this);
+        if (!settings.Transient) Stream.Apply(settings.StreamEnabled, settings.StreamPort);
         Tracker.EncounterFinished += OnEncounterFinished;
         // A recording's or the demo's bosses must not move the live respawn timers.
         Tracker.BossNoticed += n =>
@@ -80,6 +83,13 @@ public sealed class MeterService : IDisposable
     public NetMonitor Net { get; }
     /// <summary>1 HP: party gear lookups and the guild DPS rating (guide.sulaslova.com).</summary>
     public OneHpCloud Cloud { get; }
+    /// <summary>1 HP: training dummy runs (number, against your best and your last run).</summary>
+    public Core.OneHp.DummyRuns Dummies { get; }
+    /// <summary>1 HP: the meter as a page for OBS (http://localhost:7799/).</summary>
+    public StreamServer Stream { get; }
+
+    /// <summary>A training dummy per the data tables.</summary>
+    public bool IsDummy(int npcCode) => Data.Npcs.TryGetValue(npcCode, out var def) && def.IsDummy;
     public Func<GameData, IEventSource>? CaptureFactory { get; }
 
     public CaptureStatus CaptureStatus =>
@@ -222,6 +232,7 @@ public sealed class MeterService : IDisposable
         Settings.ApplyTo(Options);
         Icons.Enabled = Settings.DownloadIcons;
         Portraits.Enabled = Settings.DownloadIcons;
+        if (!Settings.Transient) Stream.Apply(Settings.StreamEnabled, Settings.StreamPort);
         Settings.Save();
     }
 
@@ -267,6 +278,7 @@ public sealed class MeterService : IDisposable
     {
         // 1 HP: your own result of a boss kill goes to the guild rating (only with a key from the site)
         if (!_replaying && !DemoRunning) _ = Cloud.UploadAsync(record);
+        if (!_replaying && !DemoRunning) Dummies.Finish(record.Summary, IsDummy);
         if (!ShouldSave(record.Summary)) return;
         if (_exiting) Save(); // the process is about to end: a worker thread would not get to it
         else ThreadPool.QueueUserWorkItem(_ => Save());
@@ -288,6 +300,7 @@ public sealed class MeterService : IDisposable
     public void Dispose()
     {
         var live = !Settings.Transient && !_replaying && !DemoRunning;
+        Stream.Dispose();
         lock (_captureGate) _capture?.Dispose(); // no more packets: the running fight is as complete as it gets
         _replay?.Dispose();
         _demo?.Dispose();
