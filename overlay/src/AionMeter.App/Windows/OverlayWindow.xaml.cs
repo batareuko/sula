@@ -41,7 +41,7 @@ public partial class OverlayWindow : Window
         Left = _settings.OverlayLeft;
         Top = _settings.OverlayTop;
         Width = Math.Max(MinWidth, _settings.OverlayWidth);
-        Height = Math.Max(MinHeight, _settings.OverlayHeight);
+        if (!_settings.DynamicOverlay) Height = Math.Max(MinHeight, _settings.OverlayHeight); // dynamic: as tall as its content
         EnsureOnScreen();
 
         OpacitySlider.Value = _settings.BackgroundOpacity;
@@ -499,6 +499,7 @@ public partial class OverlayWindow : Window
         if (_settings.DynamicOverlay)
         {
             MinHeight = 0;
+            ClearValue(HeightProperty);
             SizeToContent = SizeToContent.Height;
             ResizeGrip.Cursor = Cursors.SizeWE;
         }

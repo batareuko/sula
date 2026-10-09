@@ -211,12 +211,12 @@
                     <c:ClassGlyph Grid.Column="1" Class="{Binding Class}" OnBar="True" Width="{DynamicResource RowGlyphSize}"
                                   Height="{DynamicResource RowGlyphSize}" HorizontalAlignment="Left" />
 
-                    <DockPanel Grid.Column="2" LastChildFill="True" Margin="4,0,8,1">
-                        <!-- 1 HP: combat power next to the name (party list in the game, else the site's gear lookup) -->
-                        <TextBlock DockPanel.Dock="Right" Text="{Binding Gear}" FontFamily="{StaticResource NumberFont}" FontSize="11"
-                                   FontWeight="SemiBold" Foreground="#9FE8DC" Opacity="0.9" VerticalAlignment="Center" Margin="6,1,0,0" />
-                        <TextBlock x:Name="NameText" Text="{Binding Name}" FontSize="{DynamicResource RowNameFont}" FontWeight="Bold"
+                    <DockPanel Grid.Column="2" LastChildFill="False" Margin="4,0,8,1">
+                        <TextBlock x:Name="NameText" DockPanel.Dock="Left" Text="{Binding Name}" FontSize="{DynamicResource RowNameFont}" FontWeight="Bold"
                                    Foreground="White" TextTrimming="CharacterEllipsis" VerticalAlignment="Center" />
+                        <!-- 1 HP: combat power right after the name (party list in the game, else the site's gear lookup) -->
+                        <TextBlock DockPanel.Dock="Left" Text="{Binding Gear}" FontFamily="{StaticResource NumberFont}" FontSize="11"
+                                   FontWeight="SemiBold" Foreground="#C8FFF6" Opacity="0.85" VerticalAlignment="Center" Margin="7,1,0,0" />
                     </DockPanel>
 
                     <TextBlock Grid.Column="3" Text="{Binding Dps}" Style="{StaticResource RowNumber}" />
