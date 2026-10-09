@@ -320,11 +320,30 @@ public sealed class CombatTracker
 
         enc.TotalDamage += d.Damage;
         enc.DamageByTarget[target] = enc.DamageByTarget.GetValueOrDefault(target) + d.Damage;
+        enc.LastHitByTarget[target] = d.TimeMs;
         if (d.TimeMs > enc.LastDamageMs) enc.LastDamageMs = d.TimeMs;
     }
 
+    /// <summary>
+    /// 1 HP: a fight with no boss ends the moment every target hit in the last few seconds is dead, so the next mob
+    /// starts a fight of its own (its name on the card) instead of the card holding a dead target until the idle timeout.
+    /// </summary>
+    private void EndTrashIfAllDead(uint deadId, long timeMs)
+    {
+        if (_current is not { IsActive: true, BossId: null } enc || !enc.DamageByTarget.ContainsKey(deadId)) return;
+        foreach (var (target, last) in enc.LastHitByTarget)
+            if (target != deadId && timeMs - last < 4_000 && IsAlive(target)) return; // still fighting something else
+        Finish(EncounterEndReason.Kill, Math.Max(timeMs, enc.LastDamageMs));
+    }
+
+    // 1 HP: players you heal while the party roster is unknown — your party, as far as the meter can tell.
+    private readonly HashSet<string> _healed = new(StringComparer.OrdinalIgnoreCase);
+
     private void OnHeal(HealEvent h)
     {
+        if (_entities.SelfId is { } me && _entities.ResolveOwner(h.SourceId) == me && h.TargetId != me &&
+            _entities.TryGetPlayer(h.TargetId, out var healed) && !string.IsNullOrEmpty(healed.Name) && _healed.Add(healed.Name.Trim()))
+            _partyVersion++;
         if (_current is not { IsActive: true } enc) return;
         var source = _entities.ResolveOwner(h.SourceId);
         if (enc.Combatants.TryGetValue(source, out var c)) c.Healing += h.Amount;
@@ -339,7 +358,8 @@ public sealed class CombatTracker
         // A cached boss is only an assumption: an HP pool that does not fit it means the id now belongs to another NPC.
         if (npc.FromCache && npc.MaxHp > 0 && (e.CurrentHp > npc.MaxHp || (e.MaxHp > 0 && e.MaxHp != npc.MaxHp)))
             npc = _entities.ForgetNpc(e.ActorId);
-        if (e.CurrentHp <= 0 && npc.Hp > 0)
+        var died = e.CurrentHp <= 0 && npc.Hp > 0;
+        if (died)
         {
             NoticeBoss(npc, BossNoticeKind.Killed, e.TimeMs);
             _entities.NoteDeath(npc);
@@ -349,6 +369,12 @@ public sealed class CombatTracker
         _entities.SetMaxHp(npc, max, known: npc.MaxHpKnown || e.MaxHp >= max);
 
         if (_current is not { IsActive: true } enc) return;
+        if (died && enc.BossId is null)
+        {
+            npc.Hp = 0;
+            EndTrashIfAllDead(e.ActorId, e.TimeMs);
+            if (!enc.IsActive) return;
+        }
 
         if (enc.BossId is null && npc.IsBoss && enc.DamageByTarget.ContainsKey(e.ActorId)) SetBoss(enc, npc);
         if (enc.BossId != e.ActorId) return;
@@ -381,6 +407,7 @@ public sealed class CombatTracker
             enc.BossHp = 0;
             Finish(EncounterEndReason.Kill, Math.Max(e.TimeMs, enc.LastDamageMs));
         }
+        else EndTrashIfAllDead(e.ActorId, e.TimeMs);
     }
 
     private void OnBattleState(BattleStateEvent e)
@@ -624,6 +651,8 @@ public sealed class CombatTracker
         if (enc.TotalDamage <= 0) return;
         AttributeOrphans(enc, long.MaxValue / 2);
         if (!IsOurs(enc)) return; // 1 HP: a fight nearby you took no part in is neither shown nor saved
+        // …nor one where the party filter would show no damage at all (before the meter knew you)
+        if (PartyFilter(enc) is { } shown && !enc.Combatants.Values.Any(c => shown(c) && c.Total.Damage > 0)) return;
 
         _finished.Insert(0, enc);
         if (_finished.Count > Options.MaxSegments) _finished.RemoveAt(_finished.Count - 1);
@@ -783,12 +812,18 @@ public sealed class CombatTracker
             foreach (var (name, score) in gear)
                 if (score > 0 && !string.IsNullOrWhiteSpace(name)) _gear[name.Trim()] = score;
         if (roster.Complete) _party.Clear();
+        _healed.Clear(); // the roster tells who is in the party
         foreach (var name in names) _party.Add(name);
         if (roster.Complete && _party.Count <= 1) _party.Clear();
         _partyVersion++;
     }
 
     private static bool IsNamed(Combatant c) => c.Name.Length > 0 && c.Name[0] != '#';
+
+    /// <summary>The party roster, or — while none came — the players you healed.</summary>
+    private bool HasParty => _party.Count > 0 || _healed.Count > 0;
+
+    private bool InParty(string name) => (_party.Count > 0 ? _party : _healed).Contains(name.Trim());
 
     /// <summary>1 HP: the open world with you known — where fights of players passing by are told apart from yours.</summary>
     private bool WorldScope() => _entities.SelfId is not null && !GameData.IsDungeonMap(_entities.MapId);
@@ -797,12 +832,12 @@ public sealed class CombatTracker
     private bool IsOursActor(uint id)
     {
         if (_entities.SelfId == id) return true;
-        return _party.Count > 0 && _entities.TryGetPlayer(id, out var p) && !string.IsNullOrEmpty(p.Name) && _party.Contains(p.Name.Trim());
+        return HasParty && _entities.TryGetPlayer(id, out var p) && !string.IsNullOrEmpty(p.Name) && InParty(p.Name);
     }
 
     /// <summary>A named player who is neither you nor in your party.</summary>
     private bool IsStranger(uint id) =>
-        _entities.SelfId != id && _entities.TryGetPlayer(id, out var p) && !string.IsNullOrEmpty(p.Name) && !_party.Contains(p.Name.Trim());
+        _entities.SelfId != id && _entities.TryGetPlayer(id, out var p) && !string.IsNullOrEmpty(p.Name) && !InParty(p.Name);
 
     /// <summary>
     /// 1 HP: a fight you or your party take part in. Outside instances a fight of players passing by is not shown or
@@ -814,7 +849,7 @@ public sealed class CombatTracker
         foreach (var c in enc.Combatants.Values)
         {
             if (c.ActorId == self || c.IsSelf) return true;
-            if (_party.Count > 0 && _entities.TryGetPlayer(c.ActorId, out var p) && !string.IsNullOrEmpty(p.Name) && _party.Contains(p.Name.Trim()))
+            if (HasParty && _entities.TryGetPlayer(c.ActorId, out var p) && !string.IsNullOrEmpty(p.Name) && InParty(p.Name))
                 return true;
         }
         return false;
@@ -831,12 +866,12 @@ public sealed class CombatTracker
         if (_entities.SelfId is null)
         {
             // You are not known yet (a meter started mid-session): your party and your name from earlier runs only.
-            if (_party.Count == 0) return null;
+            if (!HasParty) return null;
             var me = KnownSelfName?.Trim();
-            return c => IsNamed(c) && (_party.Contains(c.Name.Trim()) || (me is { Length: > 0 } && string.Equals(c.Name.Trim(), me, StringComparison.OrdinalIgnoreCase)));
+            return c => IsNamed(c) && (InParty(c.Name) || (me is { Length: > 0 } && string.Equals(c.Name.Trim(), me, StringComparison.OrdinalIgnoreCase)));
         }
         // Strictly by name: a player the meter has no name for yet, and pets nobody could be tied to, may be anyone's.
-        return c => c.IsSelf || (IsNamed(c) && _party.Contains(c.Name.Trim()));
+        return c => c.IsSelf || (IsNamed(c) && InParty(c.Name));
     }
 
     /// <summary>1 HP: what the party filter is doing right now, for the overlay's PARTY chip.</summary>
@@ -846,10 +881,10 @@ public sealed class CombatTracker
         {
             var state = !Options.PartyOnly ? PartyFilterState.Off
                 : _current is { IsActive: true, InDungeon: true } || GameData.IsDungeonMap(_entities.MapId) ? PartyFilterState.Instance
-                : _entities.SelfId is null && _party.Count == 0 ? PartyFilterState.SelfUnknown
-                : _party.Count == 0 ? PartyFilterState.Solo
+                : _entities.SelfId is null && !HasParty ? PartyFilterState.SelfUnknown
+                : !HasParty ? PartyFilterState.Solo
                 : PartyFilterState.Party;
-            return new PartyFilterStatus(state, _party.OrderBy(n => n).ToList());
+            return new PartyFilterStatus(state, (_party.Count > 0 ? _party : _healed).OrderBy(n => n).ToList());
         }
     }
 

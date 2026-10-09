@@ -163,6 +163,9 @@ public sealed class Encounter
 
     /// <summary>Damage dealt to each NPC actor, used to pick the most relevant target as the encounter title.</summary>
     public Dictionary<uint, long> DamageByTarget { get; } = new();
+
+    /// <summary>1 HP: when each target was last hit — a trash fight ends when every target hit lately is dead.</summary>
+    public Dictionary<uint, long> LastHitByTarget { get; } = new();
     public Dictionary<uint, Combatant> Combatants { get; } = new();
 
     public long TotalDamage { get; set; }

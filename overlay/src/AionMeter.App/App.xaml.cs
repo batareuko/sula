@@ -229,7 +229,8 @@ public partial class App : Application
     {
         var s = _meter.Settings;
         var fight = _meter.Tracker.LiveFight();
-        var engaged = fight is { } f && (f.Boss || f.Self);
+        // Only your fights reach here (you or your party): a healer who does not hit sees the party's fight too.
+        var engaged = fight is not null;
         var now = Environment.TickCount64;
         if (engaged) _lastEngagedTick = now;
         if (!s.AutoShow) return;
