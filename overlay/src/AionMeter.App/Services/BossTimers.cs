@@ -552,6 +552,16 @@ public sealed class BossTimers
         Save();
     }
 
+    /// <summary>1 HP: when the in-game boss list last reached the meter for this server (any map), or null.</summary>
+    public DateTimeOffset? LastListAt(int server)
+    {
+        lock (_gate) return _timers.Values.Where(t => t.ServerId == server && t.ListedAt is not null).Max(t => t.ListedAt);
+    }
+
+    /// <summary>1 HP: the boss times of this server are older than <paramref name="maxAge"/> (or never read).</summary>
+    public bool ListStale(int server, TimeSpan maxAge) =>
+        server != 0 && (LastListAt(server) is not { } at || DateTimeOffset.Now - at > maxAge);
+
     /// <summary>1 HP: a priority field boss (★): its own Unique set, about one piece per kill.</summary>
     public bool IsPriority(int npcCode) => _priority.Contains(npcCode);
 

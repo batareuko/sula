@@ -208,6 +208,7 @@ public partial class App : Application
         {
             _tray?.Update(_overlay.IsVisible, _meter.Settings.ClickThrough, _meter.DemoRunning ? "demo" : _meter.CaptureStatus.Message);
             CheckBossAlerts();
+            CheckBossListReminder();
             CheckGameStart();
             CheckPendingUpdate();
         }
@@ -427,6 +428,29 @@ public partial class App : Application
     }
 
     /// <summary>Tray notification (and a chime) shortly before a tracked boss respawns.</summary>
+    private long _listReminderAt = long.MinValue / 2;
+    private long _loginSeenAt;
+
+    /// <summary>
+    /// 1 HP: after entering the game, when the boss times of this server are older than 2 hours, ask (once per half
+    /// hour at most) to open the in-game field boss list: the overlay reads the exact times from it.
+    /// </summary>
+    private void CheckBossListReminder()
+    {
+        var now = Environment.TickCount64;
+        var server = _meter.Tracker.SelfServerId;
+        if (_meter.DemoRunning || server == 0 || _meter.CaptureStatus.State != CaptureState.Capturing) return;
+        if (_meter.Tracker.SelfName is null) return;
+        if (_loginSeenAt == 0) _loginSeenAt = now;
+        if (now - _loginSeenAt < 30_000 || now - _listReminderAt < 30 * 60_000) return; // let the loading screens pass
+        if (!_meter.Timers.ListStale(server, BossListMaxAge)) return;
+        _listReminderAt = now;
+        var t = UiText.Current;
+        _tray?.ShowBalloon(t.TimersTitle, t.OpenBossListHint);
+    }
+
+    public static readonly TimeSpan BossListMaxAge = TimeSpan.FromHours(2);
+
     private void CheckBossAlerts()
     {
         var t = UiText.Current;
