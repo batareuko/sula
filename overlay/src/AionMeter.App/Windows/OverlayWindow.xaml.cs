@@ -174,7 +174,8 @@ public partial class OverlayWindow : Window
             if (a is null) continue;
             // Gear score: known for players you inspected in the game (before or after the fight)
             var gear = a.IsPlayer ? _meter.Tracker.GearOf(a.Name) : 0;
-            var server = a.IsPlayer ? _meter.Data.ServerName(a.ServerId) : "";
+            var serverId = a.ServerId != 0 ? a.ServerId : a.ActorId == r.KillerId ? r.KillerServer : 0; // the kill notice names it
+            var server = a.IsPlayer ? _meter.Data.ServerName(serverId) : "";
             row.Gear = string.Join(" · ", new[] { gear > 0 ? string.Format(t.GearScoreShort, gear) : "", server }.Where(x => x.Length > 0));
             row.Tooltip = $"{a.Name} · {a.Damage:#,0} · {a.Hits}×, max {a.MaxHit:#,0}" +
                           (gear > 0 ? " · " + string.Format(t.GearScoreShort, gear) : a.IsPlayer ? "\n" + t.GearScoreInspect : "") + "\n" +
