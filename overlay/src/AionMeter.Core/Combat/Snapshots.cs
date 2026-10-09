@@ -27,7 +27,8 @@ public sealed record CombatantSnapshot(
     double CritRate,
     long MaxHit,
     long DamageTaken,
-    int ServerId = 0)
+    int ServerId = 0,
+    long Power = 0)
 {
     /// <summary>The "summons, owner unknown" pseudo-row (see <see cref="Combatant.UnknownSummonsId"/>).</summary>
     [System.Text.Json.Serialization.JsonIgnore]

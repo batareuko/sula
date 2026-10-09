@@ -150,6 +150,7 @@ public class EngineTests
         // Restart in the same zone: names come back.
         var second = Tracker(TargetMode.All);
         second.ImportCache(cache);
+        second.Process(new DamageEvent(900, Me, Boss, 16040000, 1_000, HitFlags.None)); // our fight (1 HP: others' are not shown)
         second.Process(new DamageEvent(1_000, Mate, Boss, 15020000, 1_000, HitFlags.None));
         // Id 102 now fights with Gladiator skills: it is someone else, the cached "Faelis" must go.
         second.Process(new DamageEvent(1_100, 102, Boss, 11020000, 1_000, HitFlags.None));
@@ -269,6 +270,7 @@ public class EngineTests
         Assert.Equal(EncounterEndReason.Manual, saved!.Summary.Reason);
         Assert.Null(t.Snapshot(null, 2_000)); // the live view starts empty
 
+        t.Process(new PartyRosterEvent(2_000, ["Ilvane", "Borgrim"], Complete: true)); // a party member's fight is ours
         t.Process(new DamageEvent(3_000, Mate, Boss, 11020000, 2_000_000, HitFlags.None));
         t.Process(new NpcHpEvent(3_100, Boss, 117_000_000, 0));
         var snap = t.Snapshot(null, 4_000)!;
@@ -283,6 +285,7 @@ public class EngineTests
         // Two unnamed Sorcerers cast Bittercold Wind a moment apart; their skill is levelled differently.
         var t = Tracker(TargetMode.All);
         t.Process(new SelfIdentifiedEvent(0, Me, "Sylvaen", 2305, GameClass.Elementalist));
+        t.Process(new DamageEvent(400, Me, Boss, 16040000, 1_000, HitFlags.None));
         t.Process(new DamageEvent(500, 201, Boss, 15020000, 1_000, HitFlags.None));
         t.Process(new DamageEvent(500, 202, Boss, 15020000, 1_000, HitFlags.None));
         t.Process(new CastEvent(1_000, 201, Boss, 15280140));
@@ -293,7 +296,7 @@ public class EngineTests
         t.Process(new CastEvent(1_500, 9001, 9001, 15280141));
 
         var snap = t.Snapshot(null, 2_000)!;
-        Assert.Equal(2, snap.PlayerCount);
+        Assert.Equal(3, snap.PlayerCount);
         Assert.Equal(3_000, snap.Combatants.Single(c => c.ActorId == 201).Damage);
     }
 

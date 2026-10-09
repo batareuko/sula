@@ -14,7 +14,7 @@ namespace AionMeter.App.Services;
 /// </summary>
 public static class SampleRenderer
 {
-    /// <param name="Window">overlay (default), overlay-update, breakdown, history, timers, settings, update or update-portable.</param>
+    /// <param name="Window">overlay (default), overlay-mini (out of combat), overlay-fixed, overlay-update, breakdown, history, timers, settings, update or update-portable.</param>
     /// <param name="Width">Overlay width (default 560): narrow sizes show how the footer copes.</param>
     /// <param name="Tab">Breakdown tab: dps (default), accuracy, rotation or defense.</param>
     /// <param name="Backdrop">Behind the translucent overlay: game (a stand-in colour), dark (a navy gradient) or none (transparent).</param>
@@ -25,8 +25,10 @@ public static class SampleRenderer
     public static void Render(string path, string language, Options o)
     {
         using var meter = CreateMeter(language, o.RowSize);
+        meter.Settings.DynamicOverlay = o.Window != "overlay-fixed";
         var start = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds() - 20_500; // a fight that is still going
-        new SampleFight(start, 20).FeedUntil(meter.Tracker, start + 20_000);
+        // overlay-mini: the card out of combat (you are known, nothing is fought)
+        new SampleFight(start, 20).FeedUntil(meter.Tracker, o.Window == "overlay-mini" ? start : start + 20_000);
         if (o.Window == "history")
             foreach (var entry in meter.History.List().Take(20)) meter.PortraitOf(entry);
         WaitForPortraits(meter);
@@ -67,7 +69,8 @@ public static class SampleRenderer
                 break;
             default:
                 if (o.Window == "overlay-update") meter.Updates.Preview(SampleRelease(meter.Updates.Current)); // with the footer's update banner
-                var overlay = new OverlayWindow(meter) { Width = o.Width ?? 560, Height = o.Height ?? 820 };
+                var overlay = new OverlayWindow(meter) { Width = o.Width ?? 560 };
+                if (o.Height is not null || !meter.Settings.DynamicOverlay) overlay.Height = o.Height ?? 820; // dynamic: as tall as its content
                 host = overlay;
                 refresh = overlay.Refresh;
                 break;
@@ -82,6 +85,7 @@ public static class SampleRenderer
     public static void Animate(string folder, string language, Options o, double seconds, int fps)
     {
         using var meter = CreateMeter(language, o.RowSize);
+        meter.Settings.DynamicOverlay = false; // frames of one size
         WaitForPortraits(meter);
         var start = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds() - 600_000;
         var fight = new SampleFight(start, seconds);
@@ -139,18 +143,29 @@ public static class SampleRenderer
     {
         refresh();
         if (host.Content is not FrameworkElement root) return;
-        root.Measure(new Size(host.Width, host.Height));
-        root.Arrange(new Rect(0, 0, host.Width, host.Height));
+        // A window sized to its content (the dynamic overlay) gets the height its content asks for.
+        double Height()
+        {
+            if (!double.IsNaN(host.Height)) return host.Height;
+            root.Measure(new Size(host.Width, double.PositiveInfinity));
+            return Math.Ceiling(root.DesiredSize.Height);
+        }
+        var height = Height();
+        root.Measure(new Size(host.Width, height));
+        root.Arrange(new Rect(0, 0, host.Width, height));
         root.UpdateLayout();
         refresh();
+        height = Height();
+        root.Measure(new Size(host.Width, height));
+        root.Arrange(new Rect(0, 0, host.Width, height));
         root.UpdateLayout();
 
-        var bmp = new RenderTargetBitmap((int)(host.Width * o.Scale), (int)(host.Height * o.Scale), 96 * o.Scale, 96 * o.Scale, PixelFormats.Pbgra32);
+        var bmp = new RenderTargetBitmap((int)(host.Width * o.Scale), (int)(height * o.Scale), 96 * o.Scale, 96 * o.Scale, PixelFormats.Pbgra32);
         if (Backdrop(host, o.Backdrop) is { } backdrop)
         {
             var bg = new DrawingVisual();
             using (var dc = bg.RenderOpen())
-                dc.DrawRectangle(backdrop, null, new Rect(0, 0, host.Width, host.Height));
+                dc.DrawRectangle(backdrop, null, new Rect(0, 0, host.Width, height));
             bmp.Render(bg);
         }
         bmp.Render(root);
@@ -210,6 +225,9 @@ public static class SampleRenderer
             var rnd = new Random(2305);
             _events.Add(new SelfIdentifiedEvent(start, 2, "Sylvaen", 2305, GameClass.Elementalist));
             foreach (var m in Party.Where(m => m.Id != 2)) _events.Add(new PlayerSeenEvent(start, m.Id, m.Name, 2305, m.Class));
+            // The game's party list, with each member's combat power (shown next to the names)
+            _events.Add(new PartyRosterEvent(start, Party.Select(m => m.Name).ToList(), Complete: true,
+                Party.ToDictionary(m => m.Name, m => 36_000L + m.Id * 1_370 % 9_000, StringComparer.OrdinalIgnoreCase)));
             _events.Add(new NpcSeenEvent(start, Boss, SampleBossCode, BossHp));
 
             var hits = new List<DamageEvent>();

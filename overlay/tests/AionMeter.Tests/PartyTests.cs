@@ -152,4 +152,82 @@ public class PartyTests
         Assert.Equal(PartyFilterState.SelfUnknown,
             new CombatTracker(GameData.Empty, new MeterOptions { PartyOnly = true }).PartyStatus().State);
     }
+
+    // ---------------------------------------------------------------- fights of players passing by
+
+    private static CombatTracker World(bool partyOnly = true)
+    {
+        var t = new CombatTracker(GameData.Empty, new MeterOptions { TargetMode = TargetMode.All, PartyOnly = partyOnly });
+        t.Process(new SelfIdentifiedEvent(0, Me, "Ilvane", 1304, GameClass.Elementalist));
+        t.Process(new PlayerSeenEvent(0, Stranger, "Passerby", 1304, GameClass.Ranger));
+        t.Process(new NpcSeenEvent(0, Boss, 2000002, 50_000_000));
+        return t;
+    }
+
+    [Theory]
+    [InlineData(true)]
+    [InlineData(false)]
+    public void A_fight_you_walk_past_is_not_shown_or_saved(bool partyOnly)
+    {
+        var t = World(partyOnly);
+        var saved = new List<FightRecord>();
+        t.EncounterFinished += saved.Add;
+        t.Process(new DamageEvent(1_000, Stranger, Boss, 14020000, 6_000_000, HitFlags.None));
+        t.Process(new DamageEvent(1_500, 777, Boss, 14020000, 1_000_000, HitFlags.None)); // not named yet
+        Assert.Null(t.Snapshot(null, 2_000));
+        Assert.Null(t.LiveFight());
+        Assert.Empty(t.Segments());
+        t.Reset();
+        Assert.Empty(saved);
+    }
+
+    [Fact]
+    public void Your_fight_starts_when_you_hit_not_when_the_passer_by_did()
+    {
+        var t = World(partyOnly: false);
+        t.Process(new DamageEvent(1_000, 777, Boss, 14020000, 1_000_000, HitFlags.None));
+        t.Process(new DamageEvent(20_000, 777, Boss, 14020000, 1_000_000, HitFlags.None)); // still "fighting" nearby
+        t.Process(new DamageEvent(25_000, Me, Boss, 16040000, 2_000_000, HitFlags.None));
+        var s = t.Snapshot(null, 25_000)!;
+        Assert.Equal(["Ilvane"], s.Combatants.Select(c => c.Name));
+        Assert.Equal(25_000, s.StartedAt.ToUnixTimeMilliseconds());
+        Assert.NotNull(t.LiveFight());
+    }
+
+    [Fact]
+    public void A_party_members_fight_is_yours()
+    {
+        var u = new CombatTracker(GameData.Empty, new MeterOptions { TargetMode = TargetMode.All, PartyOnly = true });
+        u.Process(new SelfIdentifiedEvent(0, Me, "Ilvane", 1304, GameClass.Elementalist));
+        u.Process(new PlayerSeenEvent(0, Mate, "Borgrim", 1304, GameClass.Gladiator));
+        u.Process(new PartyRosterEvent(0, ["Ilvane", "Borgrim"], Complete: true));
+        u.Process(new DamageEvent(1_000, Mate, Boss, 11020000, 3_000_000, HitFlags.None));
+        Assert.Equal(["Borgrim"], Names(u));
+        Assert.NotNull(u.LiveFight());
+    }
+
+    [Fact]
+    public void Combat_power_comes_from_the_roster()
+    {
+        var data = Hex(Header, Slot1, Member(2), Vacant(3), Vacant(4), Vacant(5));
+        var events = new List<GameEvent>();
+        new PacketParser(GameData.Empty, events.Add).Handle(Opcodes.PartyRoster, data.AsSpan(2));
+        var e = Assert.IsType<PartyRosterEvent>(Assert.Single(events));
+        Assert.NotNull(e.Powers);
+        Assert.All(e.Names, n => Assert.True(e.Powers!.GetValueOrDefault(n) > 0));
+
+        var t = new CombatTracker(GameData.Empty, new MeterOptions { TargetMode = TargetMode.All, PartyOnly = true });
+        t.Process(new SelfIdentifiedEvent(0, Me, "Ilvane", 1304, GameClass.Elementalist));
+        t.Process(new PlayerSeenEvent(0, Mate, "Borgrim", 1304, GameClass.Gladiator));
+        t.Process(new PartyRosterEvent(0, ["Ilvane", "Borgrim"], true,
+            new Dictionary<string, long> { ["Ilvane"] = 41_200, ["Borgrim"] = 38_900 }));
+        t.Process(new DamageEvent(1_000, Me, Boss, 16040000, 1_000_000, HitFlags.None));
+        t.Process(new DamageEvent(2_000, Mate, Boss, 11020000, 3_000_000, HitFlags.None));
+        Assert.Equal(41_200, t.PowerOf("ilvane"));
+        Assert.Equal([38_900L, 41_200L], t.Snapshot(null, 2_000)!.Combatants.Select(c => c.Power));
+
+        var u = new CombatTracker(GameData.Empty, new MeterOptions());
+        u.ImportCache(t.ExportCache());
+        Assert.Equal(38_900, u.PowerOf("Borgrim"));
+    }
 }

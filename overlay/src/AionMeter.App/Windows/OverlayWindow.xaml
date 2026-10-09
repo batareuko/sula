@@ -212,9 +212,9 @@
                                   Height="{DynamicResource RowGlyphSize}" HorizontalAlignment="Left" />
 
                     <DockPanel Grid.Column="2" LastChildFill="True" Margin="4,0,8,1">
-                        <!-- 1 HP: item level of the player (site lookup) -->
+                        <!-- 1 HP: combat power next to the name (party list in the game, else the site's gear lookup) -->
                         <TextBlock DockPanel.Dock="Right" Text="{Binding Gear}" FontFamily="{StaticResource NumberFont}" FontSize="11"
-                                   Foreground="#C9D2E0" Opacity="0.8" VerticalAlignment="Center" Margin="6,1,0,0" />
+                                   FontWeight="SemiBold" Foreground="#9FE8DC" Opacity="0.9" VerticalAlignment="Center" Margin="6,1,0,0" />
                         <TextBlock x:Name="NameText" Text="{Binding Name}" FontSize="{DynamicResource RowNameFont}" FontWeight="Bold"
                                    Foreground="White" TextTrimming="CharacterEllipsis" VerticalAlignment="Center" />
                     </DockPanel>
@@ -295,13 +295,35 @@
                     <Button Style="{StaticResource IconButton}" Content="&#xE711;" Click="Hide_Click" ToolTip="Hide (Ctrl+Shift+D)" />
                 </StackPanel>
 
-                <TextBlock HorizontalAlignment="Right" VerticalAlignment="Center" Text="{Binding Clock}"
+                <TextBlock x:Name="ClockText" HorizontalAlignment="Right" VerticalAlignment="Center" Text="{Binding Clock}"
                            FontFamily="{StaticResource NumberFont}" FontWeight="Bold" FontSize="{DynamicResource ClockFont}" Foreground="{StaticResource Cream}"
                            />
+
+                <!-- 1 HP dynamic card, out of combat: your name and combat power … -->
+                <StackPanel x:Name="MiniPanel" Orientation="Horizontal" VerticalAlignment="Center" Visibility="Collapsed">
+                    <Ellipse x:Name="MiniStatus" Width="7" Height="7" Margin="1,0,8,0" Fill="{Binding StatusBrush}" VerticalAlignment="Center" />
+                    <TextBlock x:Name="MiniName" FontSize="13" FontWeight="Bold" Foreground="{StaticResource Cream}" VerticalAlignment="Center"
+                               TextTrimming="CharacterEllipsis" MaxWidth="190" />
+                    <Border x:Name="MiniPowerBox" Margin="9,0,0,0" Padding="7,1,8,1" CornerRadius="5" Background="#262DD4BF" VerticalAlignment="Center">
+                        <StackPanel Orientation="Horizontal">
+                            <TextBlock Text="&#xE945;" FontFamily="{StaticResource IconFont}" FontSize="10" Margin="0,1,5,0" Foreground="#5EEAD4"
+                                       VerticalAlignment="Center" />
+                            <TextBlock x:Name="MiniPower" FontFamily="{StaticResource NumberFont}" FontSize="12" FontWeight="Bold" Foreground="#BFF7EE"
+                                       VerticalAlignment="Center" />
+                        </StackPanel>
+                    </Border>
+                </StackPanel>
+                <!-- … and the game connection's ping -->
+                <StackPanel x:Name="MiniNet" Orientation="Horizontal" HorizontalAlignment="Right" VerticalAlignment="Center" Margin="8,0,14,0"
+                            Background="Transparent" Visibility="Collapsed">
+                    <Ellipse x:Name="MiniNetDot" Width="6" Height="6" Fill="{StaticResource TextMute}" Margin="0,0,6,0" VerticalAlignment="Center" />
+                    <TextBlock x:Name="MiniNetText" FontFamily="{StaticResource NumberFont}" FontSize="12" FontWeight="SemiBold" Foreground="#C9D2E0"
+                               VerticalAlignment="Center" />
+                </StackPanel>
             </Grid>
 
             <!-- Portrait, title, top hit -->
-            <Grid Grid.Row="1" Margin="{DynamicResource TitleRowMargin}" Background="Transparent"
+            <Grid x:Name="TitleRow" Grid.Row="1" Margin="{DynamicResource TitleRowMargin}" Background="Transparent"
                   MouseWheel="Title_MouseWheel" ToolTip="Scroll to step through fights">
                 <Grid.ColumnDefinitions>
                     <ColumnDefinition Width="Auto" />
@@ -387,7 +409,7 @@
             </Grid>
 
             <!-- Party -->
-            <Grid Grid.Row="3" Margin="{DynamicResource PartyMargin}">
+            <Grid x:Name="PartyRow" Grid.Row="3" Margin="{DynamicResource PartyMargin}">
                 <Grid.RowDefinitions>
                     <RowDefinition Height="Auto" />
                     <RowDefinition Height="*" />
@@ -425,7 +447,7 @@
             </Grid>
 
             <!-- Footer -->
-            <StackPanel Grid.Row="4" Margin="{DynamicResource FooterMargin}">
+            <StackPanel x:Name="Footer" Grid.Row="4" Margin="{DynamicResource FooterMargin}">
                 <!-- New version on GitHub: a slim banner until it is installed, skipped or closed for this session -->
                 <Grid x:Name="UpdateBanner" Margin="0,0,0,8" Visibility="Collapsed">
                     <Grid.ColumnDefinitions>

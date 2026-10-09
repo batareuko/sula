@@ -106,6 +106,8 @@ public sealed record ZoneChangedEvent(long TimeMs, int MapId, string ZoneName, b
 
 /// <summary>
 /// 1 HP: the party roster (02 97), sent on every party change. <see cref="Complete"/>: every member the packet declared
-/// was read, so the list replaces the previous one (one name = on your own again).
+/// was read, so the list replaces the previous one (one name = on your own again). <see cref="Powers"/>: each member's
+/// combat power by name, as the roster states it.
 /// </summary>
-public sealed record PartyRosterEvent(long TimeMs, IReadOnlyList<string> Names, bool Complete) : GameEvent(TimeMs);
+public sealed record PartyRosterEvent(long TimeMs, IReadOnlyList<string> Names, bool Complete,
+    IReadOnlyDictionary<string, long>? Powers = null) : GameEvent(TimeMs);
