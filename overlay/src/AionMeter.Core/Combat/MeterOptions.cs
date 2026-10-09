@@ -24,6 +24,9 @@ public sealed class MeterOptions
     /// <summary>Longer timeout while a boss is still alive — covers invulnerable phases and cut-scenes.</summary>
     public int BossIdleTimeoutMs { get; set; } = 30_000;
 
+    /// <summary>1 HP: a pause this long on a training dummy ends the run, so the next hit starts the next one.</summary>
+    public int DummyIdleTimeoutMs { get; set; } = 5_000;
+
     /// <summary>Single hits above this are treated as parse errors and dropped.</summary>
     public long MaxSingleHit { get; set; } = 50_000_000;
 

@@ -71,6 +71,8 @@ public partial class SettingsWindow : Window
         OneHpWithGame.IsChecked = s.WithGame;
         OneHpCompact.IsChecked = s.Compact;
         OneHpDynamic.IsChecked = s.DynamicOverlay;
+        StreamOn.IsChecked = s.StreamEnabled;
+        StreamUrl.Text = $"http://localhost:{s.StreamPort}/";
         OneHpPartyOnly.IsChecked = s.PartyOnly;
         OneHpPriorityBosses.IsChecked = s.PriorityBossAlerts;
         OneHpBossSync.IsChecked = s.OneHpBossSync;
@@ -119,6 +121,7 @@ public partial class SettingsWindow : Window
         s.OneHpGear = OneHpGear.IsChecked == true;
         s.Compact = OneHpCompact.IsChecked == true;
         s.DynamicOverlay = OneHpDynamic.IsChecked == true;
+        s.StreamEnabled = StreamOn.IsChecked == true;
         s.PartyOnly = OneHpPartyOnly.IsChecked == true;
         s.PriorityBossAlerts = OneHpPriorityBosses.IsChecked == true;
         s.OneHpBossSync = OneHpBossSync.IsChecked == true;

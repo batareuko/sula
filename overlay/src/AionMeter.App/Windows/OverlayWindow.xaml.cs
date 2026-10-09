@@ -160,8 +160,19 @@ public partial class OverlayWindow : Window
                 row.Tooltip += "\n" + string.Format(t.PowerTip, power.ToString("#,0", t.Culture));
         }
 
+        // 1 HP: a training dummy run: its number, against your best and your last run on that dummy
+        if (savedFile is null && _meter.Dummies.Compare(snap, _meter.IsDummy) is { } run)
+        {
+            string Pct(double? v) => v is { } p ? (p >= 0 ? "+" : "−") + Math.Abs(p).ToString("0.0", t.Culture) + "%" : "—";
+            _vm.Record = run.IsNewBest
+                ? string.Format(t.DummyRun, run.Run) + " · " + t.RecordNew
+                : string.Format(t.DummyRun, run.Run) + (run.VsBest is null ? "" : " · " + string.Format(t.DummyVsBest, Pct(run.VsBest)))
+                  + (run.VsLast is null ? "" : " · " + string.Format(t.DummyVsLast, Pct(run.VsLast)));
+            _vm.RecordTip = string.Format(t.DummyTip, run.Run, Format.Compact(run.Dps), Pct(run.VsBest), Pct(run.VsLast));
+            _recordFor = null;
+        }
         // The history list is read from disk: once a second is plenty.
-        if (_recordFor != snap.Id || Environment.TickCount64 - _recordAt >= 1_000)
+        else if (_recordFor != snap.Id || Environment.TickCount64 - _recordAt >= 1_000)
         {
             _recordAt = Environment.TickCount64;
             _recordFor = snap.Id;
@@ -583,6 +594,7 @@ public partial class OverlayWindow : Window
             if (power <= 0) power = _meter.Cloud.GearFor(name, _meter.Tracker.SelfServerId)?.CombatPower ?? 0;
         }
         MiniPower.Text = power > 0 ? power.ToString("#,0", t.Culture) : "";
+        _meter.Stream.SetIdleLine(string.IsNullOrEmpty(name) ? "" : name, MiniPower.Text, MiniNetText.Text);
         MiniPowerBox.Visibility = power > 0 ? Visibility.Visible : Visibility.Collapsed;
         MiniPowerBox.ToolTip = t.MiniPowerTip;
     }
