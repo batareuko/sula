@@ -338,4 +338,38 @@ public class PartyTests
         var mate = t.Snapshot(null, 3_000)!.Combatants.Single(c => c.Name == "HACPAHO");
         Assert.Equal(4_000_000, mate.Damage);
     }
+
+    [Fact]
+    public void A_dead_mob_ends_the_fight_and_the_next_one_starts_its_own()
+    {
+        const uint mob1 = 600, mob2 = 601;
+        var t = new CombatTracker(GameData.Empty, new MeterOptions { TargetMode = TargetMode.All, PartyOnly = true });
+        t.Process(new SelfIdentifiedEvent(0, Me, "Ilvane", 1304, GameClass.Elementalist));
+        t.Process(new NpcSeenEvent(0, mob1, 2000002, 100_000));
+        t.Process(new NpcSeenEvent(0, mob2, 2000003, 100_000));
+        t.Process(new DamageEvent(1_000, Me, mob1, 16040000, 60_000, HitFlags.None));
+        t.Process(new NpcHpEvent(1_000, mob1, 40_000, 100_000));
+        t.Process(new NpcHpEvent(2_000, mob1, 0, 100_000));
+        Assert.Equal(EncounterEndReason.Kill, t.Segments()[0].Reason);
+        t.Process(new DamageEvent(2_500, Me, mob2, 16040000, 30_000, HitFlags.None));
+        Assert.Equal(2, t.Segments().Count);
+        Assert.True(t.Segments()[0].IsActive);
+    }
+
+    [Fact]
+    public void While_no_roster_came_the_players_you_heal_are_your_party()
+    {
+        // A healer who does not hit: the party's fight still shows, with the people you heal.
+        var t = new CombatTracker(GameData.Empty, new MeterOptions { TargetMode = TargetMode.All, PartyOnly = true });
+        t.Process(new SelfIdentifiedEvent(0, Me, "Kunogarasu", 1309, GameClass.Cleric));
+        t.Process(new PlayerSeenEvent(0, Mate, "HACPAHO", 1309, GameClass.Ranger));
+        t.Process(new PlayerSeenEvent(0, Stranger, "Passerby", 1309, GameClass.Gladiator));
+        t.Process(new NpcSeenEvent(0, Boss, 2000002, 50_000_000));
+        t.Process(new HealEvent(500, Me, Mate, 17010000, 3_000, HitFlags.None));
+        t.Process(new DamageEvent(1_000, Mate, Boss, 14020000, 2_000_000, HitFlags.None));
+        t.Process(new DamageEvent(1_200, Stranger, Boss, 11020000, 2_000_000, HitFlags.None));
+        Assert.NotNull(t.LiveFight());
+        Assert.Equal(["HACPAHO"], Names(t));
+        Assert.Equal(PartyFilterState.Party, t.PartyStatus().State);
+    }
 }
