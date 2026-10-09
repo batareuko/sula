@@ -201,7 +201,10 @@ public partial class OverlayWindow : Window
             var gear = cb is null || cb.IsUnknownSummons ? null : _meter.Cloud.GearFor(cb.Name, cb.ServerId);
             // Combat power next to the name: the game's party list first, the site's gear lookup otherwise
             var power = cb?.Power is > 0 ? cb.Power : gear?.CombatPower ?? 0;
-            row.Gear = power > 0 ? Format.Power(power) : "";
+            // and the gear score of players you inspected in the game
+            var gs = cb is null || cb.IsUnknownSummons ? 0 : _meter.Tracker.GearOf(cb.Name);
+            row.Gear = string.Join(" · ", new[] { gs > 0 ? string.Format(t.GearScoreShort, gs) : "", power > 0 ? Format.Power(power) : "" }
+                .Where(x => x.Length > 0));
             // Apply() rebuilds the tooltip on every refresh, so the gear line is added once per refresh
             if (gear is not null)
                 row.Tooltip += "\n" + string.Format(t.GearTip, gear.ItemLevel, power.ToString("#,0", t.Culture));
