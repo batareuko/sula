@@ -98,7 +98,7 @@ public sealed class CombatTracker
     /// <summary>Players' names and the bosses around: what a meter restarted in this zone could not learn again.</summary>
     public SessionState ExportCache()
     {
-        lock (_gate) return _entities.Export() with { Party = _party.ToList(), Powers = new Dictionary<string, long>(_powers) };
+        lock (_gate) return _entities.Export() with { Party = _party.ToList(), Powers = new Dictionary<string, long>(_powers), Gear = new Dictionary<string, int>(_gear) };
     }
 
     public void ImportCache(SessionState state)
@@ -110,6 +110,8 @@ public sealed class CombatTracker
                 foreach (var name in party) _party.Add(name);
             if (state.Powers is { } powers)
                 foreach (var (name, power) in powers) _powers[name] = power;
+            if (state.Gear is { } gear)
+                foreach (var (name, score) in gear) _gear[name] = score;
         }
     }
 
@@ -167,7 +169,11 @@ public sealed class CombatTracker
                     if (_entities.SelfId == death.ActorId && !death.AlreadyDead) Recap(death.TimeMs, null);
                     break;
                 case PlayerGearEvent g:
-                    if (g.GearScore > 0) _gear[g.Name.Trim()] = g.GearScore;
+                    if (g.GearScore > 0 && _gear.GetValueOrDefault(g.Name.Trim()) != g.GearScore)
+                    {
+                        _gear[g.Name.Trim()] = g.GearScore;
+                        _partyVersion++; // saved with the name cache
+                    }
                     break;
                 case PlayerKilledEvent kill:
                     if (_entities.SelfId == kill.VictimId) Recap(kill.TimeMs, (kill.KillerId, kill.KillerName, kill.KillerServer));
@@ -757,6 +763,10 @@ public sealed class CombatTracker
         if (roster.Powers is { } powers)
             foreach (var (name, power) in powers)
                 if (power > 0 && !string.IsNullOrWhiteSpace(name)) _powers[name.Trim()] = power;
+        // 1 HP: the roster's gear score too — the party's GS without inspecting anyone
+        if (roster.Gear is { } gear)
+            foreach (var (name, score) in gear)
+                if (score > 0 && !string.IsNullOrWhiteSpace(name)) _gear[name.Trim()] = score;
         if (roster.Complete) _party.Clear();
         foreach (var name in names) _party.Add(name);
         if (roster.Complete && _party.Count <= 1) _party.Clear();
