@@ -101,7 +101,8 @@ public sealed class BossTimers
     public sealed record FieldBossInfo(string Map, string Area, int Respawn);
     private static readonly JsonSerializerOptions Json = new() { WriteIndented = true };
 
-    public sealed record MapInfo(int Block, string? En, string? Ru);
+    /// <param name="Slots">1 HP: the map's bosses in list order, for maps whose bosses span code blocks (Verteron).</param>
+    public sealed record MapInfo(int Block, string? En, string? Ru, IReadOnlyList<int>? Slots = null);
 
     /// <summary>Where a boss was last seen alive.</summary>
     public sealed record Sighting(int MapId, float X, float Y, float Z, DateTimeOffset At);
@@ -350,7 +351,8 @@ public sealed class BossTimers
     }
 
     private int CodeOf(int slotId, int block, FieldBossListEvent list) =>
-        _learned.Slots.TryGetValue(slotId, out var learned) ? learned
+        FixedSlot(list.MapId, slotId, list.Count) is var fixedCode and not 0 ? fixedCode
+        : _learned.Slots.TryGetValue(slotId, out var learned) ? learned
         : block != 0 ? _data.FieldBossInSlot(block, list.MapId, slotId, list.Count)
         : 0;
 
@@ -373,6 +375,16 @@ public sealed class BossTimers
 
     /// <summary>The code block of a map's field bosses: shipped, or learned from bosses seen there whose block holds
     /// exactly as many bosses as the list.</summary>
+    /// <summary>1 HP: the boss of a slot on a map whose list order is shipped (all of the map's bosses, in order).</summary>
+    private int FixedSlot(int mapId, int slotId, int slotCount)
+    {
+        if (!_knownMaps.TryGetValue(mapId, out var m) || m.Slots is not { } slots || slots.Count != slotCount) return 0;
+        var place = slotId - mapId * 100;
+        return place >= 1 && place <= slots.Count ? slots[place - 1] : 0;
+    }
+
+    private bool HasFixedSlots(int mapId) => _knownMaps.TryGetValue(mapId, out var m) && m.Slots is not null;
+
     private int BlockOf(int mapId, int slotCount)
     {
         if (_knownMaps.TryGetValue(mapId, out var known)) return known.Block;
@@ -388,7 +400,7 @@ public sealed class BossTimers
     private bool LearnSlots(FieldBossListEvent list, int server)
     {
         var map = list.MapId;
-        if (BlockOf(map, list.Count) != 0) return false; // the whole list resolves from its block
+        if (BlockOf(map, list.Count) != 0 || HasFixedSlots(map)) return false; // the whole list resolves from shipped data
         var taken = list.Slots.Select(s => _learned.Slots.GetValueOrDefault(s.SlotId)).Where(c => c != 0).ToHashSet();
         var unknown = list.Slots.Where(s => !_learned.Slots.ContainsKey(s.SlotId)).ToList();
         var changed = false;
@@ -540,6 +552,16 @@ public sealed class BossTimers
         Save();
     }
 
+    /// <summary>1 HP: when the in-game boss list last reached the meter for this server (any map), or null.</summary>
+    public DateTimeOffset? LastListAt(int server)
+    {
+        lock (_gate) return _timers.Values.Where(t => t.ServerId == server && t.ListedAt is not null).Max(t => t.ListedAt);
+    }
+
+    /// <summary>1 HP: the boss times of this server are older than <paramref name="maxAge"/> (or never read).</summary>
+    public bool ListStale(int server, TimeSpan maxAge) =>
+        server != 0 && (LastListAt(server) is not { } at || DateTimeOffset.Now - at > maxAge);
+
     /// <summary>1 HP: a priority field boss (★): its own Unique set, about one piece per kill.</summary>
     public bool IsPriority(int npcCode) => _priority.Contains(npcCode);
 
@@ -583,7 +605,25 @@ public sealed class BossTimers
     {
         lock (_gate)
         {
-            if (_learned.Fixes >= 1) return false;
+            if (_learned.Fixes >= 2) return false;
+            // 1 HP, fix 2: slots of maps whose order is now shipped (Verteron) were guessed before, some wrongly
+            // (a Verteron slot taken for Altgard's Kashapa): forget the guesses and what the lists wrote under them.
+            foreach (var slot in _learned.Slots.Keys.Where(s => HasFixedSlots(s / 100)).ToList()) _learned.Slots.Remove(slot);
+            foreach (var (key, t) in _timers.ToList())
+            {
+                if (t.SlotId == 0 || !_knownMaps.TryGetValue(t.SlotId / 100, out var m) || m.Slots is not { } slots) continue;
+                var place = t.SlotId - t.SlotId / 100 * 100;
+                var right = place >= 1 && place <= slots.Count ? slots[place - 1] : 0;
+                if (t.NpcCode == right) continue;
+                if (t.NpcCode <= 0) _timers.Remove(key); // an unnamed slot: the next list names it
+                else _timers[key] = t with { SlotId = 0, MapId = 0, ListedAt = null, ListedAlive = false, ListedTime = null, AlertedFor = null };
+            }
+            if (_learned.Fixes >= 1)
+            {
+                _learned.Fixes = 2;
+                SaveLearned();
+                return true;
+            }
             foreach (var (key, t) in _timers.ToList())
             {
                 if (!_info.TryGetValue(t.NpcCode, out var info)) continue;
@@ -593,7 +633,7 @@ public sealed class BossTimers
                 if (_priority.Contains(t.NpcCode)) fixedTimer = fixedTimer with { Watch = true };
                 _timers[key] = fixedTimer;
             }
-            _learned.Fixes = 1;
+            _learned.Fixes = 2;
         }
         SaveLearned();
         return true;
@@ -657,10 +697,13 @@ public sealed class BossTimers
             if (!doc.RootElement.TryGetProperty("maps", out var maps)) return;
             foreach (var m in maps.EnumerateObject())
             {
-                if (!int.TryParse(m.Name, out var id) || !m.Value.TryGetProperty("block", out var block)) continue;
-                _knownMaps[id] = new MapInfo(block.GetInt32(),
+                if (!int.TryParse(m.Name, out var id)) continue;
+                var block = m.Value.TryGetProperty("block", out var b) ? b.GetInt32() : 0;
+                var slots = m.Value.TryGetProperty("slots", out var s) ? s.EnumerateArray().Select(c => c.GetInt32()).ToList() : null;
+                if (block == 0 && slots is null) continue;
+                _knownMaps[id] = new MapInfo(block,
                     m.Value.TryGetProperty("en", out var en) ? en.GetString() : null,
-                    m.Value.TryGetProperty("ru", out var ru) ? ru.GetString() : null);
+                    m.Value.TryGetProperty("ru", out var ru) ? ru.GetString() : null, slots);
             }
         }
         catch (Exception ex) when (ex is IOException or JsonException or InvalidOperationException)

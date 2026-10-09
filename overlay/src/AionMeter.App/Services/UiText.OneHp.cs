@@ -76,6 +76,9 @@ public sealed partial class UiText
     public string TimerStale { get; init; } = "since {0} · open the map list in game";
     public string TimerStaleTip { get; init; } =
         "This time is old: the boss may have been killed since. Open the world map in the game (the field boss list) — the overlay reads the exact times from it.";
+    public string OpenBossListHint { get; init; } =
+        "Boss times need refreshing: in the game open the map → Exploration → Field Monsters for a few seconds. The overlay reads the exact respawn times of your server from it.";
+    public string OpenBossListShort { get; init; } = "📍 Open the map → Field Monsters: boss times";
     public string TipBossMap { get; init; } = "On the online map (interactivemap.app): the boss's zone, turn on “Named Bosses”";
     public string DummyVsBest { get; init; } = "best {0}";
     public string DummyVsLast { get; init; } = "last {0}";
