@@ -239,9 +239,8 @@ public partial class OverlayWindow : Window
             _ => "TextMute",
         });
         MiniNetDot.Fill = NetDot.Fill;
-        MiniNetText.Text = r.Server is not null && r.ServerPing.AnyReply && r.ServerPing.AvgMs is { } ms
-            ? string.Format(t.NetPing, Math.Round(ms))
-            : r.Server is null ? "" : t.NetPingNoReply;
+        // The one-line card: ping, packet loss (from / to the server) and freezes
+        MiniNetText.Text = string.Join(" · ", parts.Take(3));
         UpdateMini();
 
         string PingLine(Core.OneHp.NetSummary s) => s.AnyReply
@@ -267,8 +266,10 @@ public partial class OverlayWindow : Window
         ScheduleText.Text = (rift.IsOpen ? string.Format(t.RiftOpenFor, t.Countdown(rift.Closes - now)) : string.Format(t.RiftIn, t.Countdown(rift.Opens - now)))
             + " · " + string.Format(t.ResetIn, t.Countdown(reset - now));
         ScheduleText.Foreground = rift.IsOpen ? (Brush)FindResource("Green") : new SolidColorBrush(Color.FromRgb(0xB4, 0xBC, 0xCB));
+        RemindText.Text = ScheduleText.Text;
+        RemindText.Foreground = ScheduleText.Foreground;
         string Local(DateTimeOffset d) => d.ToLocalTime().ToString("HH:mm", c);
-        ScheduleText.ToolTip = string.Format(t.ScheduleTip, Local(rift.IsOpen ? rift.Opens + Core.OneHp.GlobalSchedule.RiftEvery : rift.Opens), Local(reset),
+        ScheduleText.ToolTip = RemindText.ToolTip = string.Format(t.ScheduleTip, Local(rift.IsOpen ? rift.Opens + Core.OneHp.GlobalSchedule.RiftEvery : rift.Opens), Local(reset),
             weekly.ToLocalTime().ToString("dddd HH:mm", c));
     }
 
@@ -550,12 +551,14 @@ public partial class OverlayWindow : Window
         var dynamic = _settings.DynamicOverlay;
         Toolbar.Visibility = hover ? Visibility.Visible : Visibility.Collapsed;
         LabelPanel.Visibility = !hover && open ? Visibility.Visible : Visibility.Collapsed;
-        MiniPanel.Visibility = !hover && !open ? Visibility.Visible : Visibility.Collapsed;
-        MiniNet.Visibility = open ? Visibility.Collapsed : Visibility.Visible;
+        MiniLine.Visibility = !hover && !open ? Visibility.Visible : Visibility.Collapsed;
         ClockText.Visibility = open ? Visibility.Visible : Visibility.Collapsed;
         TitleRow.Visibility = PartyRow.Visibility = open ? Visibility.Visible : Visibility.Collapsed;
-        // The dynamic card shows its footer (timers, links, network) only while the mouse is on the open card.
-        Footer.Visibility = open && (!dynamic || hover) ? Visibility.Visible : Visibility.Collapsed;
+        // The dynamic card always keeps the boss timers and reminders; status, links and network show on hover.
+        Footer.Visibility = open || dynamic ? Visibility.Visible : Visibility.Collapsed;
+        RemindRow.Visibility = dynamic ? Visibility.Visible : Visibility.Collapsed;
+        StatusRow.Visibility = NetRow.Visibility = !dynamic || hover ? Visibility.Visible : Visibility.Collapsed;
+        StatusTimers.Visibility = ScheduleText.Visibility = dynamic ? Visibility.Collapsed : Visibility.Visible;
         ResizeGrip.Visibility = _settings.Locked || (dynamic && !hover) ? Visibility.Collapsed : Visibility.Visible;
     }
 
