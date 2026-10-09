@@ -73,6 +73,10 @@ public sealed partial class UiText
         "Out of combat the card is one line: your name, combat power and ping. When you or your party hit something it opens with a row for each of you and folds back 15 s after the fight.";
     public string MiniWaiting { get; init; } = "Waiting for the game…";
     public string DummyRun { get; init; } = "Run {0}";
+    public string TimerStale { get; init; } = "since {0} · open the map list in game";
+    public string TimerStaleTip { get; init; } =
+        "This time is old: the boss may have been killed since. Open the world map in the game (the field boss list) — the overlay reads the exact times from it.";
+    public string TipBossMap { get; init; } = "On the online map (interactivemap.app): the boss's zone, turn on “Named Bosses”";
     public string DummyVsBest { get; init; } = "best {0}";
     public string DummyVsLast { get; init; } = "last {0}";
     public string DummyTip { get; init; } =

@@ -1,0 +1,293 @@
+{
+ "_source": "1 HP: field bosses of aion2-guide/data.js (bosses): area on the map, respawn minutes after a kill (the in-game map list, when seen, always wins), zone slug on interactivemap.app.",
+ "bosses": {
+  "2100003": {
+   "map": "verteron",
+   "area": "Cantas Valley",
+   "level": 45,
+   "respawn": 30
+  },
+  "2100040": {
+   "map": "verteron",
+   "area": "Elun River Swamp",
+   "level": 45,
+   "respawn": 30
+  },
+  "2100050": {
+   "map": "verteron",
+   "area": "Cantas Valley",
+   "level": 45,
+   "respawn": 30
+  },
+  "2100076": {
+   "map": "verteron",
+   "area": "Fortress Ruins",
+   "level": 45,
+   "respawn": 120
+  },
+  "2100077": {
+   "map": "verteron",
+   "area": "Fortress Ruins",
+   "level": 45,
+   "respawn": 120
+  },
+  "2100079": {
+   "map": "verteron",
+   "area": "Fortress Ruins",
+   "level": 45,
+   "respawn": 90
+  },
+  "2100141": {
+   "map": "verteron",
+   "area": "Elun River Midstream",
+   "level": 45,
+   "respawn": 60
+  },
+  "2100177": {
+   "map": "verteron",
+   "area": "Tolbas Forest",
+   "level": 45,
+   "respawn": 180
+  },
+  "2100178": {
+   "map": "verteron",
+   "area": "Tolbas Forest",
+   "level": 45,
+   "respawn": 180
+  },
+  "2100582": {
+   "map": "verteron",
+   "area": "Artamia Plateau",
+   "level": 45,
+   "respawn": 180
+  },
+  "2100617": {
+   "map": "verteron",
+   "area": "Artamia Gorge",
+   "level": 45,
+   "respawn": 120
+  },
+  "2100661": {
+   "map": "verteron",
+   "area": "Garden of the Illusion God",
+   "level": 45,
+   "respawn": 360
+  },
+  "2100708": {
+   "map": "verteron",
+   "area": "Artamia Plateau",
+   "level": 45,
+   "respawn": 120
+  },
+  "2100718": {
+   "map": "verteron",
+   "area": "Artamia Plateau",
+   "level": 45,
+   "respawn": 360
+  },
+  "2100876": {
+   "map": "verteron",
+   "area": "Drana Plantation",
+   "level": 45,
+   "respawn": 180
+  },
+  "2100877": {
+   "map": "verteron",
+   "area": "Drana Plantation",
+   "level": 45,
+   "respawn": 120
+  },
+  "2100988": {
+   "map": "verteron",
+   "area": "Aulau Village",
+   "level": 45,
+   "respawn": 120
+  },
+  "2100989": {
+   "map": "verteron",
+   "area": "Aulau Village",
+   "level": 45,
+   "respawn": 120
+  },
+  "2100991": {
+   "map": "verteron",
+   "area": "Aulau Village",
+   "level": 45,
+   "respawn": 120
+  },
+  "2101016": {
+   "map": "verteron",
+   "area": "Nahid Legion Fortress",
+   "level": 45,
+   "respawn": 180
+  },
+  "2101074": {
+   "map": "verteron",
+   "area": "Isle of Eternity",
+   "level": 51,
+   "respawn": 360
+  },
+  "2101120": {
+   "map": "verteron",
+   "area": "Artamia Plateau South",
+   "level": 48,
+   "respawn": 180
+  },
+  "2101122": {
+   "map": "verteron",
+   "area": "Artamia Plateau East",
+   "level": 48,
+   "respawn": 360
+  },
+  "2101131": {
+   "map": "verteron",
+   "area": "Red Forest",
+   "level": 48,
+   "respawn": 360
+  },
+  "2400017": {
+   "map": "altgard",
+   "area": "Dredgion Crash Site",
+   "level": 45,
+   "respawn": 30
+  },
+  "2400074": {
+   "map": "altgard",
+   "area": "Nameless Graveyard",
+   "level": 45,
+   "respawn": 30
+  },
+  "2400140": {
+   "map": "altgard",
+   "area": "Sanctuary Watch Post",
+   "level": 45,
+   "respawn": 30
+  },
+  "2400141": {
+   "map": "altgard",
+   "area": "Sanctuary Watch Post",
+   "level": 45,
+   "respawn": 60
+  },
+  "2400212": {
+   "map": "altgard",
+   "area": "Moslan Forest",
+   "level": 45,
+   "respawn": 120
+  },
+  "2400223": {
+   "map": "altgard",
+   "area": "Moslan Forest",
+   "level": 45,
+   "respawn": 90
+  },
+  "2400274": {
+   "map": "altgard",
+   "area": "Urtumheim",
+   "level": 45,
+   "respawn": 120
+  },
+  "2400335": {
+   "map": "altgard",
+   "area": "Forest of Purification",
+   "level": 45,
+   "respawn": 120
+  },
+  "2400353": {
+   "map": "altgard",
+   "area": "Dranactus",
+   "level": 45,
+   "respawn": 120
+  },
+  "2400358": {
+   "map": "altgard",
+   "area": "Dranactus",
+   "level": 45,
+   "respawn": 180
+  },
+  "2400419": {
+   "map": "altgard",
+   "area": "Basfelt Ruins",
+   "level": 45,
+   "respawn": 180
+  },
+  "2400424": {
+   "map": "altgard",
+   "area": "Basfelt Ruins",
+   "level": 45,
+   "respawn": 240
+  },
+  "2400425": {
+   "map": "altgard",
+   "area": "Basfelt Ruins",
+   "level": 45,
+   "respawn": 240
+  },
+  "2400474": {
+   "map": "altgard",
+   "area": "Pafnite Burial Ground",
+   "level": 45,
+   "respawn": 180
+  },
+  "2400504": {
+   "map": "altgard",
+   "area": "Gribade Canyon West",
+   "level": 45,
+   "respawn": 240
+  },
+  "2400593": {
+   "map": "altgard",
+   "area": "Gribade Canyon East",
+   "level": 45,
+   "respawn": 360
+  },
+  "2400607": {
+   "map": "altgard",
+   "area": "Black Claw Village",
+   "level": 45,
+   "respawn": 180
+  },
+  "2400608": {
+   "map": "altgard",
+   "area": "Black Claw Village",
+   "level": 45,
+   "respawn": 240
+  },
+  "2400659": {
+   "map": "altgard",
+   "area": "Ragta Fortress",
+   "level": 45,
+   "respawn": 360
+  },
+  "2400709": {
+   "map": "altgard",
+   "area": "Impetusium Plaza",
+   "level": 45,
+   "respawn": 360
+  },
+  "2400800": {
+   "map": "altgard",
+   "area": "Isle of Immortality",
+   "level": 51,
+   "respawn": 720
+  },
+  "2400853": {
+   "map": "altgard",
+   "area": "Ragta Fortress",
+   "level": 48,
+   "respawn": 720
+  },
+  "2400854": {
+   "map": "altgard",
+   "area": "Pafnite Burial Ground",
+   "level": 48,
+   "respawn": 360
+  },
+  "2400855": {
+   "map": "altgard",
+   "area": "Forest of Purification",
+   "level": 48,
+   "respawn": 360
+  }
+ }
+}

@@ -31,6 +31,8 @@ public partial class BossTimersWindow : Window
 
         public int NpcCode { get; } = npcCode;
         public int Respawn { get; set; }
+        /// <summary>1 HP: zone slug on interactivemap.app, or null.</summary>
+        public string? MapSlug { get; set; }
         public string Name { get => _name; set => Set(ref _name, value); }
         public string Meta { get => _meta; set => Set(ref _meta, value); }
         public string Status { get => _status; set => Set(ref _status, value); }
@@ -132,6 +134,10 @@ public partial class BossTimersWindow : Window
         var zone = _meter.Timers.MapName(t.MapId, T.Code)
                    ?? (t.SlotId != 0 ? string.Format(T.MapNumber, t.MapId) : t.MapId != 0 ? _meter.Data.MapName(t.MapId) : t.Zone);
         if (zone == "Open world") zone = T.OpenWorld;
+        // 1 HP: where on the map (the guide's area)
+        var info = t.NpcCode > 0 ? _meter.Timers.InfoOf(t.NpcCode) : null;
+        if (info is not null && !string.IsNullOrEmpty(info.Area)) zone = string.IsNullOrEmpty(zone) ? info.Area : zone + " · " + info.Area;
+        row.MapSlug = info?.Map;
         var death = t.LastKill is { } k ? string.Format(T.TimerKilled, When(k, now))
             : t.LastSeenDead is { } d ? string.Format(T.TimerFoundDead, When(d, now)) : null;
         row.Meta = string.Join(" · ", new[] { zone, death }.Where(x => !string.IsNullOrEmpty(x)));
@@ -165,6 +171,12 @@ public partial class BossTimersWindow : Window
             row.StatusSize = 14;
             row.Status = T.TimerDue;
             row.StatusDetail = string.Format(T.TimerSince, When(due, now));
+            // 1 HP: long past: someone may have killed it since — only the in-game list knows
+            if (now - due > TimeSpan.FromHours(2))
+            {
+                row.StatusDetail = string.Format(T.TimerStale, When(due, now));
+                row.SourceTip = T.TimerStaleTip;
+            }
             row.StatusBrush = green;
             row.FrameBrush = (Brush)FindResource("GoldDim");
         }
@@ -194,6 +206,14 @@ public partial class BossTimersWindow : Window
     private void Filter_Changed(object sender, RoutedEventArgs e)
     {
         if (IsLoaded) Reload();
+    }
+
+    /// <summary>1 HP: the boss's zone on the online map (interactivemap.app, "Named Bosses").</summary>
+    private void Map_Click(object sender, RoutedEventArgs e)
+    {
+        if ((sender as FrameworkElement)?.DataContext is not TimerRow { MapSlug: { Length: > 0 } slug }) return;
+        try { System.Diagnostics.Process.Start(new System.Diagnostics.ProcessStartInfo("https://interactivemap.app/aion2/maps/" + slug) { UseShellExecute = true }); }
+        catch (Exception ex) { Log.Info("Open map: " + ex.Message); }
     }
 
     private void Remove_Click(object sender, RoutedEventArgs e)
