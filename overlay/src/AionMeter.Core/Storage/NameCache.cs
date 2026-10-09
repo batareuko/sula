@@ -19,7 +19,11 @@ public sealed class NameCache(string path)
 
     private static readonly JsonSerializerOptions Json = new() { Converters = { new JsonStringEnumConverter() } };
 
-    private sealed record FileData(DateTimeOffset SavedAt, uint? SelfId, int MapId, List<CachedPlayer> Players, List<CachedNpc>? Npcs = null);
+    /// <param name="Party">1 HP: the party roster's names (as old as the rest).</param>
+    /// <param name="Powers">1 HP: combat power by name — kept whatever the age.</param>
+    /// <param name="Gear">1 HP: gear score by name (roster or inspection) — kept whatever the age.</param>
+    private sealed record FileData(DateTimeOffset SavedAt, uint? SelfId, int MapId, List<CachedPlayer> Players, List<CachedNpc>? Npcs = null,
+        List<string>? Party = null, Dictionary<string, long>? Powers = null, Dictionary<string, int>? Gear = null);
 
     public void Save(SessionState state)
     {
@@ -27,7 +31,8 @@ public sealed class NameCache(string path)
         {
             Directory.CreateDirectory(Path.GetDirectoryName(path)!);
             var tmp = path + ".tmp";
-            var data = new FileData(DateTimeOffset.UtcNow, state.SelfId, state.MapId, state.Players.ToList(), state.Npcs.ToList());
+            var data = new FileData(DateTimeOffset.UtcNow, state.SelfId, state.MapId, state.Players.ToList(), state.Npcs.ToList(),
+                state.Party?.ToList(), state.Powers?.ToDictionary(), state.Gear?.ToDictionary());
             File.WriteAllText(tmp, JsonSerializer.Serialize(data, Json));
             File.Move(tmp, path, overwrite: true);
         }
@@ -44,8 +49,12 @@ public sealed class NameCache(string path)
             if (!File.Exists(path)) return null;
             var data = JsonSerializer.Deserialize<FileData>(File.ReadAllText(path), Json);
             var age = DateTimeOffset.UtcNow - data?.SavedAt;
-            if (data is null || age > MaxAge) return null;
-            return new SessionState(data.SelfId, data.MapId, data.Players, age <= NpcMaxAge ? data.Npcs ?? [] : []);
+            if (data is null) return null;
+            // Combat power and gear score do not go stale with the zone: they come back even from an old file.
+            if (age > MaxAge)
+                return data.Powers is null && data.Gear is null ? null : new SessionState(null, 0, [], [], null, data.Powers, data.Gear);
+            return new SessionState(data.SelfId, data.MapId, data.Players, age <= NpcMaxAge ? data.Npcs ?? [] : [],
+                data.Party, data.Powers, data.Gear);
         }
         catch (Exception ex) when (ex is IOException or JsonException)
         {

@@ -119,4 +119,4 @@ public sealed record PlayerKilledEvent(long TimeMs, uint VictimId, uint KillerId
 public sealed record PlayerGearEvent(long TimeMs, string Name, int ServerId, int Level, int GearScore) : GameEvent(TimeMs);
 
 public sealed record PartyRosterEvent(long TimeMs, IReadOnlyList<string> Names, bool Complete,
-    IReadOnlyDictionary<string, long>? Powers = null) : GameEvent(TimeMs);
+    IReadOnlyDictionary<string, long>? Powers = null, IReadOnlyDictionary<string, int>? Gear = null) : GameEvent(TimeMs);

@@ -21,7 +21,8 @@ public sealed record CachedNpc(uint Id, int Code, long MaxHp);
 /// <param name="Party">1 HP: the party roster's names (null in caches from older versions).</param>
 /// <param name="Powers">1 HP: combat power by character name, from party rosters.</param>
 public sealed record SessionState(uint? SelfId, int MapId, IReadOnlyList<CachedPlayer> Players, IReadOnlyList<CachedNpc> Npcs,
-    IReadOnlyList<string>? Party = null, IReadOnlyDictionary<string, long>? Powers = null);
+    IReadOnlyList<string>? Party = null, IReadOnlyDictionary<string, long>? Powers = null,
+    IReadOnlyDictionary<string, int>? Gear = null);
 
 /// <summary>A spawned pet / spirit / skill effect whose owner is not known yet.</summary>
 public sealed record UnownedEntity(long SpawnMs, int NpcCode, string? OwnerName);

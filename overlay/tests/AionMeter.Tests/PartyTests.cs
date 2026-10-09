@@ -273,4 +273,29 @@ public class PartyTests
         t.Process(e);
         Assert.Equal(1659, t.GearOf("aceruffy"));
     }
+
+    [Fact]
+    public void Party_power_and_gear_survive_a_restart_through_the_name_cache()
+    {
+        var path = Path.Combine(Path.GetTempPath(), $"names-{Guid.NewGuid():N}.json");
+        try
+        {
+            var t = Fight(partyOnly: true, null);
+            t.Process(new PartyRosterEvent(3_000, ["Ilvane", "Borgrim"], true,
+                new Dictionary<string, long> { ["Borgrim"] = 38_900 }, new Dictionary<string, int> { ["Borgrim"] = 1_480 }));
+            t.Process(new PlayerGearEvent(3_000, "Passerby", 2309, 45, 1_659));
+            new AionMeter.Core.Storage.NameCache(path).Save(t.ExportCache());
+
+            var u = new CombatTracker(GameData.Empty, new MeterOptions { PartyOnly = true });
+            u.ImportCache(new AionMeter.Core.Storage.NameCache(path).Load()!);
+            Assert.Contains("Borgrim", u.PartyNames);
+            Assert.Equal(38_900, u.PowerOf("Borgrim"));
+            Assert.Equal(1_480, u.GearOf("Borgrim"));
+            Assert.Equal(1_659, u.GearOf("Passerby"));
+        }
+        finally
+        {
+            File.Delete(path);
+        }
+    }
 }

@@ -527,7 +527,9 @@ public sealed class PacketParser
     private void EmitRoster(PartyRoster roster) =>
         Emit(new PartyRosterEvent(TimeMs, roster.Members.Select(m => m.Name).ToList(), roster.Complete,
             roster.Members.Where(m => m.CombatPower > 0).GroupBy(m => m.Name)
-                .ToDictionary(g => g.Key, g => g.First().CombatPower, StringComparer.OrdinalIgnoreCase)));
+                .ToDictionary(g => g.Key, g => g.First().CombatPower, StringComparer.OrdinalIgnoreCase),
+            roster.Members.Where(m => m.GearScore > 0).GroupBy(m => m.Name)
+                .ToDictionary(g => g.Key, g => g.First().GearScore, StringComparer.OrdinalIgnoreCase)));
 
     // ------------------------------------------------------------------ spawns (41 36)
 
