@@ -73,6 +73,7 @@
                                             <ColumnDefinition Width="Auto" />
                                             <ColumnDefinition Width="Auto" />
                                             <ColumnDefinition Width="Auto" />
+                                            <ColumnDefinition Width="Auto" />
                                         </Grid.ColumnDefinitions>
                                         <c:BossPortrait Width="46" Height="46" Source="{Binding Portrait}" VerticalAlignment="Center" />
                                         <StackPanel Grid.Column="1" Margin="12,0,10,0" VerticalAlignment="Center">
@@ -103,7 +104,9 @@
                                         <Button Grid.Column="5" Style="{StaticResource Chip}" VerticalAlignment="Center" Margin="0,0,4,0"
                                                 Content="{Binding BtnKilled, Source={x:Static s:UiText.Current}}" Click="Killed_Click"
                                                 ToolTip="{Binding TipKilled, Source={x:Static s:UiText.Current}}" />
-                                        <Button Grid.Column="6" Style="{StaticResource IconButton}" Content="&#xE74D;" VerticalAlignment="Center"
+                                        <Button Grid.Column="6" Style="{StaticResource IconButton}" Content="&#xE707;" VerticalAlignment="Center"
+                                                Click="Map_Click" Margin="0,0,2,0" ToolTip="{Binding TipBossMap, Source={x:Static s:UiText.Current}}" />
+                                        <Button Grid.Column="7" Style="{StaticResource IconButton}" Content="&#xE74D;" VerticalAlignment="Center"
                                                 Click="Remove_Click" ToolTip="{Binding TipRemoveTimer, Source={x:Static s:UiText.Current}}" />
                                     </Grid>
                                 </Border>

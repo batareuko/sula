@@ -95,6 +95,10 @@ public sealed class BossTimers
     private readonly Dictionary<(int Server, int Map), FieldBossListEvent> _lastLists = new();  // newest list (this run)
     private Learned _learned = new(new(), new(), new());
     private readonly HashSet<int> _priority = new();                                          // 1 HP: data/priority_bosses.json
+    private readonly Dictionary<int, FieldBossInfo> _info = new();                            // 1 HP: data/field_bosses.json
+
+    /// <summary>1 HP: a field boss as the guide lists it: area on its map, respawn after a kill, zone slug of the online map.</summary>
+    public sealed record FieldBossInfo(string Map, string Area, int Respawn);
     private static readonly JsonSerializerOptions Json = new() { WriteIndented = true };
 
     public sealed record MapInfo(int Block, string? En, string? Ru);
@@ -112,6 +116,9 @@ public sealed class BossTimers
 
         /// <summary>Maps whose in-game boss list has been seen: field maps, where bosses have world respawn timers.</summary>
         public HashSet<int> ListedMaps { get; set; } = new();
+
+        /// <summary>1 HP: one-time fixes of saved timers already applied (see <see cref="UseGuideData"/>).</summary>
+        public int Fixes { get; set; }
     }
 
     public BossTimers(string path, GameData data, string dataDirectory, bool persistent = true)
@@ -122,8 +129,10 @@ public sealed class BossTimers
         Persistent = persistent;
         LoadKnownMaps(Path.Combine(dataDirectory, "field_boss_maps.json"));
         LoadPriority(Path.Combine(dataDirectory, "priority_bosses.json"));
+        LoadInfo(Path.Combine(dataDirectory, "field_bosses.json"));
         if (persistent) Load();
-        if (DropInstanceBosses() > 0) Save();
+        var fixedSome = UseGuideData();
+        if (DropInstanceBosses() > 0 || fixedSome) Save();
     }
 
     public bool Persistent { get; }
@@ -279,13 +288,15 @@ public sealed class BossTimers
     }
 
     /// <summary>The first sighting after a kill bounds the respawn time from above; keep the shortest seen.</summary>
-    private static BossTimer Learn(BossTimer t, DateTimeOffset seen)
+    private BossTimer Learn(BossTimer t, DateTimeOffset seen)
     {
         if (t.LastKill is not { } kill || t.AliveNow || seen <= kill || t.FromGame) return t;
         if (t.RespawnMinutes > 0 && !t.RespawnLearned) return t; // set by the user
         var minutes = (int)Math.Round((seen - kill).TotalMinutes / 5.0) * 5;
         if (minutes is < 5 or > 48 * 60) return t;
-        if (t.RespawnMinutes > 0 && t.RespawnMinutes <= minutes) return t;
+        // The guide's time is only a start: a measured interval replaces it either way.
+        var guide = _info.TryGetValue(t.NpcCode, out var info) && t.RespawnMinutes == info.Respawn;
+        if (t.RespawnMinutes > 0 && t.RespawnMinutes <= minutes && !guide) return t;
         return t with { RespawnMinutes = minutes, RespawnLearned = true };
     }
 
@@ -556,7 +567,59 @@ public sealed class BossTimers
         return due;
     }
 
-    private static BossTimer New(int server, int code) => new(code, 0, null, null, null, null, 0, false, null, ServerId: server);
+    /// <summary>A new timer: the guide's respawn time to start with (marked as not exact), the bell on for priority bosses.</summary>
+    private BossTimer New(int server, int code) =>
+        new(code, 0, null, null, null, null, _info.TryGetValue(code, out var info) ? info.Respawn : 0, true, null,
+            ServerId: server, Watch: _priority.Contains(code));
+
+    /// <summary>1 HP: the guide's area and map for a boss, or null.</summary>
+    public FieldBossInfo? InfoOf(int npcCode) => _info.GetValueOrDefault(npcCode);
+
+    /// <summary>
+    /// 1 HP, once: saved timers get the guide's respawn time where none is known, an interval far below it (a menu
+    /// misclick: 15 min on a 6-hour boss) is replaced, and priority bosses get their bell.
+    /// </summary>
+    private bool UseGuideData()
+    {
+        lock (_gate)
+        {
+            if (_learned.Fixes >= 1) return false;
+            foreach (var (key, t) in _timers.ToList())
+            {
+                if (!_info.TryGetValue(t.NpcCode, out var info)) continue;
+                var fixedTimer = t;
+                if (t.RespawnMinutes == 0 || (t.RespawnMinutes < info.Respawn / 2 && !(t.RespawnLearned && t.FromGame)))
+                    fixedTimer = fixedTimer with { RespawnMinutes = info.Respawn, RespawnLearned = true, AlertedFor = null };
+                if (_priority.Contains(t.NpcCode)) fixedTimer = fixedTimer with { Watch = true };
+                _timers[key] = fixedTimer;
+            }
+            _learned.Fixes = 1;
+        }
+        SaveLearned();
+        return true;
+    }
+
+    private void LoadInfo(string path)
+    {
+        try
+        {
+            if (!File.Exists(path)) return;
+            using var doc = JsonDocument.Parse(File.ReadAllText(path));
+            if (!doc.RootElement.TryGetProperty("bosses", out var list)) return;
+            foreach (var b in list.EnumerateObject())
+            {
+                if (!int.TryParse(b.Name, out var code)) continue;
+                _info[code] = new FieldBossInfo(
+                    b.Value.TryGetProperty("map", out var map) ? map.GetString() ?? "" : "",
+                    b.Value.TryGetProperty("area", out var area) ? area.GetString() ?? "" : "",
+                    b.Value.TryGetProperty("respawn", out var respawn) ? respawn.GetInt32() : 0);
+            }
+        }
+        catch (Exception ex) when (ex is JsonException or IOException or InvalidOperationException)
+        {
+            Log.Info($"field_bosses.json ignored: {ex.Message}");
+        }
+    }
 
     private void Trim()
     {
