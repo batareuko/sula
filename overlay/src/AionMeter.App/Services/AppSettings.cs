@@ -109,6 +109,8 @@ public sealed class AppSettings
     public int StreamPort { get; set; } = StreamServer.DefaultPort;
     /// <summary>Your characters' last known combat power by name: the one-line card shows it before the game sends it again.</summary>
     public Dictionary<string, long> Powers { get; set; } = new(StringComparer.OrdinalIgnoreCase);
+    /// <summary>Your character's name last seen: a meter started mid-session recognises you by it (CombatTracker.KnownSelfName).</summary>
+    public string? LastSelfName { get; set; }
     /// <summary>Last place of the other windows (history, breakdown, settings …) by window kind.</summary>
     public Dictionary<string, WindowBounds> WindowPlaces { get; set; } = new();
 

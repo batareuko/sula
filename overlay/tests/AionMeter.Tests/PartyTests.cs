@@ -298,4 +298,27 @@ public class PartyTests
             File.Delete(path);
         }
     }
+
+    [Fact]
+    public void A_meter_started_mid_session_filters_by_party_and_finds_you_by_name()
+    {
+        // Restarted in the Abyss (an update): no login record, the party restored from the cache.
+        var t = new CombatTracker(GameData.Empty, new MeterOptions { TargetMode = TargetMode.All, PartyOnly = true })
+        {
+            KnownSelfName = "Kunogarasu",
+        };
+        t.Process(new PartyRosterEvent(0, ["Kunogarasu", "HACPAHO"], Complete: true));
+        t.Process(new PlayerSeenEvent(0, Mate, "HACPAHO", 1309, GameClass.Ranger));
+        t.Process(new PlayerSeenEvent(0, Stranger, "Passerby", 2309, GameClass.Gladiator));
+        t.Process(new NpcSeenEvent(0, Boss, 2000002, 50_000_000));
+        t.Process(new DamageEvent(1_000, Mate, Boss, 14020000, 1_000_000, HitFlags.None));
+        t.Process(new DamageEvent(1_100, Stranger, Boss, 11020000, 2_000_000, HitFlags.None));
+        Assert.Equal(["HACPAHO"], Names(t)); // not everyone
+
+        t.Process(new PlayerSeenEvent(1_500, Me, "Kunogarasu", 1309, GameClass.Unknown)); // your name in your own kill
+        Assert.Equal("Kunogarasu", t.SelfName);
+        t.Process(new DamageEvent(2_000, Me, Boss, 17010000, 500_000, HitFlags.None));
+        Assert.Equal(["HACPAHO", "Kunogarasu"], Names(t));
+        Assert.Equal(PartyFilterState.Party, t.PartyStatus().State);
+    }
 }

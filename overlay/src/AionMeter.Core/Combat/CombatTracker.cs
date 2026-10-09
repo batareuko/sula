@@ -39,6 +39,13 @@ public sealed class CombatTracker
     }
 
     public MeterOptions Options { get; }
+
+    /// <summary>
+    /// 1 HP: your character's name from earlier runs. The game names you only on a loading screen: a meter started
+    /// mid-session (an update, a restart) knows you as soon as your name shows up in any record (your kills, your
+    /// party), and until then the party filter still leaves out everyone but your party and this name.
+    /// </summary>
+    public string? KnownSelfName { get; set; }
     public GameData Data => _data;
 
     /// <summary>Raised on the processing thread after a segment closes (kill, wipe, idle, zone change, manual).</summary>
@@ -137,7 +144,13 @@ public sealed class CombatTracker
                     selfName = s.Name;
                     break;
                 case PlayerSeenEvent p:
-                    _entities.UpsertPlayer(p.ActorId, p.Name, p.ServerId, p.Class);
+                    if (_entities.SelfId is null && KnownSelfName is { Length: > 0 } known &&
+                        string.Equals(p.Name.Trim(), known.Trim(), StringComparison.OrdinalIgnoreCase))
+                    {
+                        _entities.SetSelf(p.ActorId, p.Name, p.ServerId, p.Class); // it is you
+                        selfName = p.Name;
+                    }
+                    else _entities.UpsertPlayer(p.ActorId, p.Name, p.ServerId, p.Class);
                     LinkSummonsCastBy(p.ActorId, p.Name);
                     break;
                 case NpcSeenEvent n:
@@ -812,7 +825,14 @@ public sealed class CombatTracker
     /// </summary>
     private Func<Combatant, bool>? PartyFilter(Encounter enc)
     {
-        if (!Options.PartyOnly || enc.InDungeon || _entities.SelfId is null) return null;
+        if (!Options.PartyOnly || enc.InDungeon) return null;
+        if (_entities.SelfId is null)
+        {
+            // You are not known yet (a meter started mid-session): your party and your name from earlier runs only.
+            if (_party.Count == 0) return null;
+            var me = KnownSelfName?.Trim();
+            return c => IsNamed(c) && (_party.Contains(c.Name.Trim()) || (me is { Length: > 0 } && string.Equals(c.Name.Trim(), me, StringComparison.OrdinalIgnoreCase)));
+        }
         // Strictly by name: a player the meter has no name for yet, and pets nobody could be tied to, may be anyone's.
         return c => c.IsSelf || (IsNamed(c) && _party.Contains(c.Name.Trim()));
     }
@@ -824,7 +844,7 @@ public sealed class CombatTracker
         {
             var state = !Options.PartyOnly ? PartyFilterState.Off
                 : _current is { IsActive: true, InDungeon: true } || GameData.IsDungeonMap(_entities.MapId) ? PartyFilterState.Instance
-                : _entities.SelfId is null ? PartyFilterState.SelfUnknown
+                : _entities.SelfId is null && _party.Count == 0 ? PartyFilterState.SelfUnknown
                 : _party.Count == 0 ? PartyFilterState.Solo
                 : PartyFilterState.Party;
             return new PartyFilterStatus(state, _party.OrderBy(n => n).ToList());

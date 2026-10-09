@@ -61,9 +61,16 @@ public sealed class MeterService : IDisposable
 
         // Boss timers are per server: follow the character's (from the cache now, then on every login).
         Timers.SetCurrentServer(Tracker.SelfServerId);
-        Tracker.SelfIdentified += _ =>
+        Tracker.KnownSelfName = settings.LastSelfName;
+        Tracker.SelfIdentified += name =>
         {
-            if (!_replaying && !DemoRunning) Timers.SetCurrentServer(Tracker.SelfServerId);
+            if (_replaying || DemoRunning) return;
+            Timers.SetCurrentServer(Tracker.SelfServerId);
+            if (!string.IsNullOrWhiteSpace(name) && name != Settings.LastSelfName)
+            {
+                Settings.LastSelfName = Tracker.KnownSelfName = name;
+                Settings.Save();
+            }
         };
     }
 
