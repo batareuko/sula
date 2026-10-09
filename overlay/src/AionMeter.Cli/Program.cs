@@ -147,13 +147,26 @@ int Live(string[] a)
     return 0;
 }
 
+string? ArgOpt(string name) => Array.IndexOf(args, name) is var i and >= 0 && i + 1 < args.Length ? args[i + 1] : null;
+
 int Replay(string path)
 {
     var stats = new EventStats(data);
-    var tracker = new CombatTracker(data, new MeterOptions { TargetMode = args.Contains("--boss") ? TargetMode.BossOnly : TargetMode.All });
+    // --party-only [--self Name] [--party A,B,C]: as the overlay with the party filter (party from an earlier roster)
+    var tracker = new CombatTracker(data, new MeterOptions
+    {
+        TargetMode = args.Contains("--boss") ? TargetMode.BossOnly : TargetMode.All, PartyOnly = args.Contains("--party-only"),
+    })
+    { KnownSelfName = ArgOpt("--self") };
+    var party = ArgOpt("--party")?.Split(',', StringSplitOptions.RemoveEmptyEntries);
     var replay = new PcapReplaySource(data, path, realtime: false);
     replay.EventDecoded += e =>
     {
+        if (party is not null)
+        {
+            tracker.Process(new PartyRosterEvent(e.TimeMs, party, Complete: true));
+            party = null;
+        }
         stats.Add(e);
         tracker.Process(e);
     };

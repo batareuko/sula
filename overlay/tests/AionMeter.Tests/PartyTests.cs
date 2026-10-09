@@ -321,4 +321,21 @@ public class PartyTests
         Assert.Equal(["HACPAHO", "Kunogarasu"], Names(t));
         Assert.Equal(PartyFilterState.Party, t.PartyStatus().State);
     }
+
+    [Fact]
+    public void A_party_member_known_late_keeps_all_their_damage()
+    {
+        // Started mid-session in a party: the roster only comes when the party changes.
+        var t = new CombatTracker(GameData.Empty, new MeterOptions { TargetMode = TargetMode.All, PartyOnly = true });
+        t.Process(new SelfIdentifiedEvent(0, Me, "Kunogarasu", 1309, GameClass.Cleric));
+        t.Process(new PlayerSeenEvent(0, Mate, "HACPAHO", 1309, GameClass.Ranger));
+        t.Process(new NpcSeenEvent(0, Boss, 2000002, 50_000_000));
+        t.Process(new DamageEvent(1_000, Me, Boss, 17010000, 1_000_000, HitFlags.None));
+        t.Process(new DamageEvent(1_500, Mate, Boss, 14020000, 3_000_000, HitFlags.None)); // not known as party yet
+        Assert.Equal(["Kunogarasu"], Names(t));
+        t.Process(new PartyRosterEvent(2_000, ["Kunogarasu", "HACPAHO"], Complete: true));
+        t.Process(new DamageEvent(2_500, Mate, Boss, 14020000, 1_000_000, HitFlags.None));
+        var mate = t.Snapshot(null, 3_000)!.Combatants.Single(c => c.Name == "HACPAHO");
+        Assert.Equal(4_000_000, mate.Damage);
+    }
 }
