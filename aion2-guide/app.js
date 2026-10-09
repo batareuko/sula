@@ -3086,6 +3086,83 @@
     prefSet('visits', visits + 1);
   }
 
+  /* ---------- DPS-метр: історія версій, остання версія з GitHub ---------- */
+  function initMeter() {
+    var M = G.meter;
+    if (!M) return;
+    var dates = {};
+    function fmtDate(iso) {
+      var d = new Date(iso);
+      return isNaN(d) ? '' : d.toLocaleDateString('uk-UA', { day: 'numeric', month: 'long' });
+    }
+    function render() {
+      [['changesList', M.changes.slice(0, 5)], ['changesOlder', M.changes.slice(5)]].forEach(function (pair) {
+        var ol = $(pair[0]);
+        ol.textContent = '';
+        pair[1].forEach(function (c, i) {
+          var head = h('div', { class: 'change-head' }, h('b', { class: 'mono', text: 'v' + c.v }),
+            dates[c.v] ? h('span', { class: 'muted small', text: dates[c.v] }) : null,
+            pair[0] === 'changesList' && i === 0 ? h('span', { class: 'tag-new', text: 'нове' }) : null);
+          var ul = h('ul', { class: 'dash' });
+          c.items.forEach(function (t) { ul.appendChild(h('li', { text: t })); });
+          ol.appendChild(h('li', { class: 'change' }, head, ul));
+        });
+      });
+      var next = $('meterNext');
+      next.textContent = '';
+      M.next.forEach(function (t) { next.appendChild(h('li', { text: t })); });
+    }
+    render();
+
+    fetch('https://api.github.com/repos/' + M.repo + '/releases?per_page=30', { headers: { Accept: 'application/vnd.github+json' } })
+      .then(function (r) { if (!r.ok) throw new Error(r.status); return r.json(); })
+      .then(function (list) {
+        var since = Date.now() - 7 * 864e5, week = 0, downloads = 0;
+        list.forEach(function (rel) {
+          var v = String(rel.tag_name || '').replace(/^v/, '');
+          dates[v] = fmtDate(rel.published_at);
+          if (Date.parse(rel.published_at) > since) week++;
+          (rel.assets || []).forEach(function (a) { downloads += a.download_count || 0; });
+        });
+        render();
+        var latest = list.filter(function (r) { return !r.draft && !r.prerelease; })[0];
+        if (!latest) return;
+        var zip = (latest.assets || []).filter(function (a) { return /\.zip$/i.test(a.name); })[0];
+        var ver = String(latest.tag_name).replace(/^v/, '');
+        if (zip) {
+          ['meterDownload', 'installDownload'].forEach(function (id) { $(id).href = zip.browser_download_url; });
+          $('meterDownload').textContent = 'Завантажити v' + ver + ' для Windows';
+        }
+        $('meterLive').lastChild.textContent = ' Активно розвивається: v' + ver + ' від ' + fmtDate(latest.published_at) +
+          (week > 1 ? ' · ' + week + ' версій за тиждень' : '') + '.';
+        $('changesMeta').textContent = 'остання — v' + ver;
+      })
+      .catch(function () { /* без GitHub: статичний список і посилання на сторінку релізу */ });
+  }
+
+  /* Згорнуті блоки (гільдія, гайд): посилання на розділ усередині розкриває блок */
+  function initFolds() {
+    function reveal(id, scroll) {
+      var el = id && document.getElementById(id);
+      if (!el) return;
+      var fold = el.closest && el.closest('details.fold');
+      if (!fold || fold.open) return;
+      fold.open = true;
+      if (scroll) setTimeout(function () { el.scrollIntoView({ block: 'start' }); }, 0);
+    }
+    document.addEventListener('click', function (e) {
+      var a = e.target.closest && e.target.closest('a[href^="#"]');
+      if (a) reveal(a.getAttribute('href').slice(1), true);
+    });
+    window.addEventListener('hashchange', function () { reveal(location.hash.slice(1), true); });
+    reveal(location.hash.slice(1), true);
+    // Хто вже користувався гайдом — блок гільдії розгорнутий, як був
+    document.querySelectorAll('details.fold').forEach(function (d) {
+      if (prefGet('fold-' + d.id, '0') === '1') d.open = true;
+      d.addEventListener('toggle', function () { prefSet('fold-' + d.id, d.open ? '1' : '0'); });
+    });
+  }
+
   /* ---------- Старт ---------- */
   buildStatic();
   renderResetInfo();
@@ -3101,6 +3178,8 @@
   initPatchOpen();
   initDps();
   $('netcheckCopy').addEventListener('click', function () { copyText($('netcheckCmd').textContent, 'Команду скопійовано: вставте її в PowerShell'); });
+  initMeter();
+  initFolds();
   initNav();
   initMap();
   syncUI();
