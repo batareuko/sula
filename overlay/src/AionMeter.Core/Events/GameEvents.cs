@@ -109,5 +109,14 @@ public sealed record ZoneChangedEvent(long TimeMs, int MapId, string ZoneName, b
 /// was read, so the list replaces the previous one (one name = on your own again). <see cref="Powers"/>: each member's
 /// combat power by name, as the roster states it.
 /// </summary>
+/// <summary>
+/// 1 HP: the server's kill notice (<c>04 8D</c>) naming who killed whom — for a player killed by another player it
+/// carries the killer's id, server and name.
+/// </summary>
+public sealed record PlayerKilledEvent(long TimeMs, uint VictimId, uint KillerId, string KillerName, int KillerServer) : GameEvent(TimeMs);
+
+/// <summary>1 HP: an inspected player's header (<c>50 36</c>): level and gear score (the number the game shows).</summary>
+public sealed record PlayerGearEvent(long TimeMs, string Name, int ServerId, int Level, int GearScore) : GameEvent(TimeMs);
+
 public sealed record PartyRosterEvent(long TimeMs, IReadOnlyList<string> Names, bool Complete,
     IReadOnlyDictionary<string, long>? Powers = null) : GameEvent(TimeMs);

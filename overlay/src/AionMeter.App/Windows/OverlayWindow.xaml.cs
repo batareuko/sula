@@ -53,6 +53,8 @@ public partial class OverlayWindow : Window
         UpdateModeLabel();
         ApplyHotkeyTips();
         _meter.Updates.Changed += ShowUpdateBanner;
+        _meter.Tracker.DeathRecapped += r => _death = r; // 1 HP: shown on the card right after you die
+        _death = _meter.Tracker.LastDeath;
         ShowUpdateBanner();
 
         // Drag the card by any part of it (unless locked); a click without movement still opens a breakdown.
@@ -104,6 +106,12 @@ public partial class OverlayWindow : Window
                 _segment = null;
                 snap = _meter.Tracker.Snapshot(null, now);
             }
+            // 1 HP: you just died: who killed you, until your next fight starts
+            // (for 20 s: a fight that goes on without you — a raid — comes back after that)
+            if (_segment is null && _death is { } death && now - death.DeathMs < 20_000 &&
+                (snap is null || snap.StartedAt.ToUnixTimeMilliseconds() < death.DeathMs))
+                snap = RecapSnapshot(death);
+            else _death = null;
             shown = snap;
             _vm.Apply(snap, _settings.MaxRows, _settings.BarsRelativeToTop);
             _vm.SetSegment(_segment is null ? "live" : "session", snap?.StartedAt.ToString("HH:mm"));
@@ -111,7 +119,8 @@ public partial class OverlayWindow : Window
         }
         SetExpanded(WantExpanded(shown));
         if (!_settings.ShowBossPanel || _expanded == false) _vm.HasBoss = false;
-        ApplyOneHp(shown, _saved?.Entry.FileName);
+        if (_death is { } shownDeath && shown?.Id == shownDeath.Id) ApplyDeath(shownDeath);
+        else ApplyOneHp(shown, _saved?.Entry.FileName);
         if (Environment.TickCount64 - _timersLabelAt >= 1_000) UpdateTimersLabel();
         if (Environment.TickCount64 - _oneHpAt >= 1_000) UpdateOneHpStrip();
 
@@ -132,6 +141,46 @@ public partial class OverlayWindow : Window
             CaptureState.WaitingForGame or CaptureState.Starting => (Brush)FindResource("Amber"),
             _ => (Brush)FindResource("TextMute"),
         };
+    }
+
+    // ---------------------------------------------------------------- 1 HP: death recap
+    private volatile DeathRecap? _death;
+
+    /// <summary>The recap as a fight on the card: the attackers as rows, with the damage they dealt you.</summary>
+    private EncounterSnapshot RecapSnapshot(DeathRecap r)
+    {
+        var t = UiText.Current;
+        var seconds = Math.Max(1, r.DurationMs) / 1000.0;
+        var total = Math.Max(1, r.TotalDamage);
+        var rows = r.Attackers.Select(a => new CombatantSnapshot(a.ActorId, a.Name, a.Class, false, a.Damage, a.Damage / seconds,
+            (double)a.Damage / total, a.Hits, a.Hits > 0 ? (double)a.Crits / a.Hits : 0, a.MaxHit, 0, a.ServerId)).ToList();
+        var server = _meter.Data.ServerName(r.KillerServer);
+        var title = string.Format(t.DeathTitle, r.KillerName) + (string.IsNullOrEmpty(server) ? "" : " · " + server);
+        return new EncounterSnapshot(r.Id, title, null, DateTimeOffset.FromUnixTimeMilliseconds(r.FirstHitMs).ToLocalTime(),
+            r.DurationMs, Math.Max(1_000, r.DurationMs), false, EncounterEndReason.Manual, r.TotalDamage, r.TotalDamage / seconds,
+            null, rows);
+    }
+
+    private void ApplyDeath(DeathRecap r)
+    {
+        var t = UiText.Current;
+        _vm.Detail = string.Format(t.DeathDetail, (r.DurationMs / 1000.0).ToString("0.0", t.Culture), r.TotalDamage.ToString("#,0", t.Culture));
+        _vm.Record = t.DeathBadge;
+        _vm.RecordTip = t.DeathTip;
+        _vm.Guild = _vm.GuildTip = "";
+        foreach (var row in _vm.Rows)
+        {
+            var a = r.Attackers.FirstOrDefault(x => x.ActorId == row.ActorId);
+            if (a is null) continue;
+            // Gear score: known for players you inspected in the game (before or after the fight)
+            var gear = a.IsPlayer ? _meter.Tracker.GearOf(a.Name) : 0;
+            var serverId = a.ServerId != 0 ? a.ServerId : a.ActorId == r.KillerId ? r.KillerServer : 0; // the kill notice names it
+            var server = a.IsPlayer ? _meter.Data.ServerName(serverId) : "";
+            row.Gear = string.Join(" · ", new[] { gear > 0 ? string.Format(t.GearScoreShort, gear) : "", server }.Where(x => x.Length > 0));
+            row.Tooltip = $"{a.Name} · {a.Damage:#,0} · {a.Hits}×, max {a.MaxHit:#,0}" +
+                          (gear > 0 ? " · " + string.Format(t.GearScoreShort, gear) : a.IsPlayer ? "\n" + t.GearScoreInspect : "") + "\n" +
+                          string.Join("\n", a.Skills.Take(8).Select(s => $"{s.Name}: {s.Damage:#,0} ({s.Hits}×)"));
+        }
     }
 
     // ---------------------------------------------------------------- 1 HP: party gear, personal record, guild place
@@ -631,6 +680,7 @@ public partial class OverlayWindow : Window
     private void Row_Click(object sender, MouseButtonEventArgs e)
     {
         if (_drag.JustDragged) return; // the press moved the window, it was not a click
+        if (_death is { } d && _vm.SegmentId == d.Id) return; // a death recap has no breakdown
         if ((sender as FrameworkElement)?.DataContext is RowViewModel row) OpenBreakdown(row.ActorId);
     }
 
