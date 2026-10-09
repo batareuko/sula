@@ -29,6 +29,7 @@ public static class SampleRenderer
         var start = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds() - 20_500; // a fight that is still going
         // overlay-mini: the card out of combat (you are known, nothing is fought)
         new SampleFight(start, 20).FeedUntil(meter.Tracker, o.Window == "overlay-mini" ? start : start + 20_000);
+        if (o.Window == "overlay-death") FeedDeath(meter.Tracker, start + 20_300);
         if (o.Window == "history")
             foreach (var entry in meter.History.List().Take(20)) meter.PortraitOf(entry);
         WaitForPortraits(meter);
@@ -107,6 +108,24 @@ public static class SampleRenderer
         {
             OverlayWindow.ClockOverride = null;
         }
+    }
+
+    /// <summary>overlay-death: an enemy Elementalist and her spirit kill you in the Abyss (the death recap).</summary>
+    private static void FeedDeath(Core.Combat.CombatTracker tracker, long at)
+    {
+        const uint me = 2, enemy = 70_001, spirit = 70_002, other = 70_003;
+        tracker.Process(new PlayerSeenEvent(at - 9_000, enemy, "Miranda", 0, GameClass.Elementalist));
+        tracker.Process(new PlayerSeenEvent(at - 9_000, other, "RhQm", 0, GameClass.Sorcerer));
+        int[] skills = [16040000, 16140000, 16300000, 16330000, 16740000];
+        var rnd = new Random(7);
+        for (var t = at - 8_000; t < at; t += 350)
+        {
+            tracker.Process(new DamageEvent(t, enemy, me, skills[rnd.Next(skills.Length)], 300 + rnd.Next(700), HitFlags.Back, 1, 10910));
+            if (rnd.Next(3) == 0) tracker.Process(new DamageEvent(t + 50, spirit, me, 16000000, 400 + rnd.Next(600), HitFlags.None, 1, 10910));
+            if (rnd.Next(5) == 0) tracker.Process(new DamageEvent(t + 90, other, me, 15020000, 250 + rnd.Next(300), HitFlags.None, 1, 11428));
+        }
+        tracker.Process(new DeathEvent(at, me));
+        tracker.Process(new PlayerKilledEvent(at, me, enemy, "Miranda", 2309));
     }
 
     private static MeterService CreateMeter(string language, int rowSize = 100)

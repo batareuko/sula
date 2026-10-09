@@ -35,6 +35,15 @@ public sealed class CombatTracker
     /// <summary>Raised on the processing thread after a segment closes (kill, wipe, idle, zone change, manual).</summary>
     public event Action<FightRecord>? EncounterFinished;
 
+    /// <summary>1 HP: you died; raised outside the lock, again when the kill notice names the killer.</summary>
+    public event Action<DeathRecap>? DeathRecapped;
+
+    private readonly DeathRecaps _recaps = new();
+    private readonly List<DeathRecap> _pendingRecaps = new();
+
+    /// <summary>1 HP: the newest death recap of this run, or null.</summary>
+    public DeathRecap? LastDeath { get; private set; }
+
     /// <summary>Raised when the local character is identified.</summary>
     public event Action<string>? SelfIdentified;
 
@@ -146,6 +155,10 @@ public sealed class CombatTracker
                     break;
                 case DeathEvent death:
                     OnDeath(death);
+                    if (_entities.SelfId == death.ActorId && !death.AlreadyDead) Recap(death.TimeMs, null);
+                    break;
+                case PlayerKilledEvent kill:
+                    if (_entities.SelfId == kill.VictimId) Recap(kill.TimeMs, (kill.KillerId, kill.KillerName, kill.KillerServer));
                     break;
                 case BattleStateEvent b:
                     OnBattleState(b);
@@ -202,6 +215,9 @@ public sealed class CombatTracker
         if (d.Damage <= 0 || d.Damage > Options.MaxSingleHit * Math.Max(1, d.HitCount)) return;
 
         if (_data.IsNonDamageSkill(d.SkillCode)) return; // heals and spirit-link records ride in damage packets too
+        // 1 HP: every hit you take, for the death recap (players included: PvP)
+        if (_entities.SelfId is { } me && d.TargetId == me && d.SourceId != me)
+            _recaps.OnHit(d.TimeMs, d.SourceId, d.SkillCode, d.Damage, d.Flags, d.PowerScalar);
 
         var source = _entities.ResolveOwner(d.SourceId);
         var target = d.TargetId;
@@ -348,6 +364,24 @@ public sealed class CombatTracker
             _ => EncounterEndReason.Idle,
         };
         Finish(reason, reason == EncounterEndReason.Kill ? Math.Max(e.TimeMs, enc.LastDamageMs) : enc.LastDamageMs);
+    }
+
+    // ---------------------------------------------------------------- 1 HP: death recap
+
+    private void Recap(long timeMs, (uint Id, string Name, int Server)? killer)
+    {
+        var recap = _recaps.OnDeath(timeMs, _entities.Self?.Name ?? "", killer, _entities.ResolveOwner, Who, _data.SkillName);
+        if (recap is null) return;
+        LastDeath = recap;
+        _pendingRecaps.Add(recap);
+    }
+
+    private (string Name, GameClass Class, int Server, bool IsPlayer) Who(uint id)
+    {
+        if (_entities.TryGetPlayer(id, out var p) && !string.IsNullOrEmpty(p.Name))
+            return (p.Name, p.Class, p.ServerId, true);
+        if (_entities.IsPlayerLike(id)) return ($"#{id}", GameClass.Unknown, 0, true);
+        return (_entities.NpcName(id), GameClass.Unknown, 0, false);
     }
 
     // ---------------------------------------------------------------- helpers
@@ -568,8 +602,14 @@ public sealed class CombatTracker
         List<FightRecord>? records = null;
         List<BossNotice>? notices = null;
         List<FieldBossListEvent>? lists = null;
+        List<DeathRecap>? recaps = null;
         lock (_gate)
         {
+            if (_pendingRecaps.Count > 0)
+            {
+                recaps = new List<DeathRecap>(_pendingRecaps);
+                _pendingRecaps.Clear();
+            }
             if (_pendingNotices.Count > 0)
             {
                 notices = new List<BossNotice>(_pendingNotices);
@@ -595,6 +635,8 @@ public sealed class CombatTracker
             foreach (var n in notices) notify(n);
         if (lists is not null && FieldBossListed is { } listed)
             foreach (var l in lists) listed(l);
+        if (recaps is not null && DeathRecapped is { } died)
+            foreach (var r in recaps) died(r);
         if (records is not null && EncounterFinished is { } handler)
             foreach (var r in records) handler(r);
     }

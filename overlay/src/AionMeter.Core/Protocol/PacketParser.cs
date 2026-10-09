@@ -671,7 +671,10 @@ public sealed class PacketParser
         if (!IsEntityId(killer) || !Wire.TryU16(b, ref o, out var server) || server is < 1000 or >= 3000) return;
         if (!Wire.TryU8(b, ref o, out var len) || len is < 1 or > 36 || o + len > b.Length) return;
         if (Wire.TryName(b.Slice(o, len), out var name))
+        {
             Emit(new PlayerSeenEvent(TimeMs, killer, name, server, GameClass.Unknown));
+            Emit(new PlayerKilledEvent(TimeMs, (uint)id, (uint)killer, name, server)); // 1 HP: death recap
+        }
     }
 
     /// <summary><c>mob varint, varint, toggle varint</c> (1 = engaged, 0 = left combat) — seen on Global for every mob.</summary>

@@ -230,4 +230,32 @@ public class PartyTests
         u.ImportCache(t.ExportCache());
         Assert.Equal(38_900, u.PowerOf("Borgrim"));
     }
+
+    // ---------------------------------------------------------------- death recap (PvP)
+
+    [Fact]
+    public void Dying_to_a_player_names_the_killer_and_folds_in_their_spirit()
+    {
+        var t = new CombatTracker(GameData.Empty, new MeterOptions { TargetMode = TargetMode.All, PartyOnly = true });
+        var recaps = new List<DeathRecap>();
+        t.DeathRecapped += recaps.Add;
+        t.Process(new SelfIdentifiedEvent(0, Me, "Kunogarasu", 1309, GameClass.Cleric));
+        t.Process(new PlayerSeenEvent(0, Stranger, "Miranda", 0, GameClass.Elementalist));
+        t.Process(new DamageEvent(1_000, Stranger, Me, 16040000, 520, HitFlags.Critical, 1, 10910));
+        t.Process(new DamageEvent(1_100, Stranger, Me, 16800000, 10910, HitFlags.Critical)); // the scalar where damage goes
+        t.Process(new DamageEvent(1_500, 18921, Me, 16000000, 1051, HitFlags.None, 1, 10910)); // her spirit
+        t.Process(new DamageEvent(2_000, Stranger, Me, 16140000, 109, HitFlags.Dot));
+        t.Process(new DeathEvent(2_400, Me));
+        t.Process(new PlayerKilledEvent(2_400, Me, Stranger, "Miranda", 2309));
+
+        var r = recaps[^1];
+        Assert.Equal("Miranda", r.KillerName);
+        Assert.Equal(2309, r.KillerServer);
+        Assert.True(r.ByPlayer);
+        var killer = Assert.Single(r.Attackers);
+        Assert.Equal(GameClass.Elementalist, killer.Class);
+        Assert.Equal(520 + 1051 + 109, killer.Damage);
+        Assert.Equal(1_400, r.DurationMs);
+        Assert.Same(r, t.LastDeath);
+    }
 }

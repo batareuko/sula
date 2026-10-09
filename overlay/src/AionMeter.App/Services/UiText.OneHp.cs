@@ -73,6 +73,11 @@ public sealed partial class UiText
         "Out of combat the card is one line: your name, combat power and ping. When you or your party hit something it opens with a row for each of you and folds back 15 s after the fight.";
     public string MiniWaiting { get; init; } = "Waiting for the game…";
     public string DummyRun { get; init; } = "Run {0}";
+    public string DeathTitle { get; init; } = "☠ {0}";
+    public string DeathDetail { get; init; } = "killed you in {0} s · {1} damage taken";
+    public string DeathBadge { get; init; } = "death recap";
+    public string DeathTip { get; init; } =
+        "Who hit you in the 15 s before you died, with the damage they dealt you (pets and skill effects with their owner). Hover a row for the skills. Gear score of other players is not sent by the game (only for your party).";
     public string TimerStale { get; init; } = "since {0} · open the map list in game";
     public string TimerStaleTip { get; init; } =
         "This time is old: the boss may have been killed since. Open the world map in the game (the field boss list) — the overlay reads the exact times from it.";

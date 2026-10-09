@@ -24,12 +24,33 @@ return args.FirstOrDefault() switch
     "entities" when args.Length > 1 => Entities(args[1]),
     "casts" when args.Length > 1 => Casts(args[1]),
     "bosslist" when args.Length > 1 => BossList(args[1]),
+    "deaths" when args.Length > 1 => Deaths(args[1]),
     "times" when args.Length > 1 => Times(args[1]),
     "fieldbosses" when args.Length > 1 => FieldBosses(args[1]),
     "hex" when args.Length > 2 => HexDump(args[1], Convert.ToUInt16(args[2], 16), args.Length > 3 ? int.Parse(args[3]) : 5),
     "update-check" => UpdateCheck(args.Skip(1).ToArray()),
     _ => Usage(),
 };
+
+// 1 HP: every death of yours in a capture, as the overlay's death recap shows it.
+int Deaths(string path)
+{
+    var tracker = new CombatTracker(data, new MeterOptions { TargetMode = TargetMode.All });
+    tracker.DeathRecapped += r =>
+    {
+        Console.WriteLine($"{DateTimeOffset.FromUnixTimeMilliseconds(r.DeathMs).ToLocalTime():HH:mm:ss} {r.VictimName} killed by {r.KillerName} " +
+                          $"({r.KillerClass}, server {data.ServerName(r.KillerServer)}{(r.ByPlayer ? ", player" : "")}) in {r.DurationMs / 1000.0:0.0}s, {r.TotalDamage:#,0} damage");
+        foreach (var a in r.Attackers)
+        {
+            Console.WriteLine($"   {a.Name,-16} {a.Class,-12} {data.ServerName(a.ServerId),-10} {a.Damage,8:#,0}  {a.Hits} hits, max {a.MaxHit:#,0}");
+            foreach (var s in a.Skills.Take(6)) Console.WriteLine($"      {s.Name,-28} {s.Damage,8:#,0} x{s.Hits}");
+        }
+    };
+    var replay = new PcapReplaySource(data, path, realtime: false);
+    replay.EventDecoded += tracker.Process;
+    replay.RunToEnd();
+    return 0;
+}
 
 int Usage()
 {
