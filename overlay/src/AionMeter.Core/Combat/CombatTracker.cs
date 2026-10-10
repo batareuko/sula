@@ -178,6 +178,7 @@ public sealed class CombatTracker
                     OnNpcHp(hp);
                     break;
                 case DeathEvent death:
+                    RunDeath(death);
                     OnDeath(death);
                     if (_entities.SelfId == death.ActorId && !death.AlreadyDead) Recap(death.TimeMs, null);
                     break;
@@ -206,6 +207,13 @@ public sealed class CombatTracker
                 case ZoneChangedEvent z:
                     if (z.IsTeleport) break;
                     if (_current is { IsActive: true }) Finish(EncounterEndReason.ZoneChange, _current.LastDamageMs);
+                    // 1 HP: dungeon runs — leaving the instance ends the run, entering one starts it
+                    if (_run is { } run && run.MapId != z.MapId)
+                    {
+                        _pendingRuns.Add(run.Build(z.TimeMs, ended: true));
+                        _run = null;
+                    }
+                    if (_run is null && (z.IsDungeon || GameData.IsDungeonMap(z.MapId))) _run = new DungeonRunBuilder(z.MapId, z.ZoneName, z.TimeMs);
                     _entities.OnZoneChanged(z.MapId, z.ZoneName);
                     break;
             }
@@ -442,6 +450,31 @@ public sealed class CombatTracker
         if (recap is null) return;
         LastDeath = recap;
         _pendingRecaps.Add(recap);
+    }
+
+    // ---------------------------------------------------------------- 1 HP: dungeon runs
+
+    private DungeonRunBuilder? _run;
+    private readonly List<DungeonRun> _pendingRuns = new();
+    private readonly Dictionary<uint, long> _runDeaths = new();
+
+    /// <summary>Raised outside the lock when you leave a dungeon: the whole run.</summary>
+    public event Action<DungeonRun>? DungeonRunEnded;
+
+    /// <summary>The dungeon run in progress, or null outside instances.</summary>
+    public DungeonRun? CurrentRun(long nowMs)
+    {
+        lock (_gate) return _run?.Build(nowMs, ended: false);
+    }
+
+    private void RunDeath(DeathEvent e)
+    {
+        if (_run is not { } run || e.AlreadyDead) return;
+        if (!_entities.TryGetPlayer(e.ActorId, out var p) || string.IsNullOrEmpty(p.Name)) return;
+        // The death record and the kill notice report the same death.
+        if (_runDeaths.TryGetValue(e.ActorId, out var last) && Math.Abs(e.TimeMs - last) < 5_000) return;
+        _runDeaths[e.ActorId] = e.TimeMs;
+        run.AddDeath(p.Name);
     }
 
     // ---------------------------------------------------------------- 1 HP: PvP
@@ -704,6 +737,11 @@ public sealed class CombatTracker
         if (enc.TotalDamage <= 0) return;
         AttributeOrphans(enc, long.MaxValue / 2);
         if (!IsOurs(enc)) return; // 1 HP: a fight nearby you took no part in is neither shown nor saved
+        if (_run is { } run && enc.InDungeon)
+        {
+            foreach (var c in enc.Combatants.Values) RefreshIdentity(c);
+            run.AddFight(enc, Title(enc));
+        }
         // …nor one where the party filter would show no damage at all (before the meter knew you)
         if (PartyFilter(enc) is { } shown && !enc.Combatants.Values.Any(c => shown(c) && c.Total.Damage > 0)) return;
 
@@ -719,8 +757,14 @@ public sealed class CombatTracker
         List<FieldBossListEvent>? lists = null;
         List<DeathRecap>? recaps = null;
         List<PvpSession>? pvp = null;
+        List<DungeonRun>? runs = null;
         lock (_gate)
         {
+            if (_pendingRuns.Count > 0)
+            {
+                runs = new List<DungeonRun>(_pendingRuns);
+                _pendingRuns.Clear();
+            }
             if (_pendingPvp.Count > 0)
             {
                 pvp = new List<PvpSession>(_pendingPvp);
@@ -756,6 +800,8 @@ public sealed class CombatTracker
             foreach (var n in notices) notify(n);
         if (lists is not null && FieldBossListed is { } listed)
             foreach (var l in lists) listed(l);
+        if (runs is not null && DungeonRunEnded is { } runEnded)
+            foreach (var r in runs) runEnded(r);
         if (pvp is not null && PvpSessionEnded is { } ended)
             foreach (var s in pvp) ended(s);
         if (recaps is not null && DeathRecapped is { } died)

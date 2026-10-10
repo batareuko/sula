@@ -54,6 +54,7 @@ public partial class OverlayWindow : Window
         ApplyHotkeyTips();
         _meter.Updates.Changed += ShowUpdateBanner;
         _meter.Tracker.DeathRecapped += r => _death = r; // 1 HP: shown on the card right after you die
+        _meter.Tracker.DungeonRunEnded += r => { if (r.Fights.Count > 0) _runDone = r; }; // 1 HP: the run's summary after you leave
         _death = _meter.Tracker.LastDeath;
         ShowUpdateBanner();
 
@@ -112,9 +113,17 @@ public partial class OverlayWindow : Window
                 (snap is null || snap.StartedAt.ToUnixTimeMilliseconds() < death.DeathMs))
                 snap = RecapSnapshot(death);
             else _death = null;
+            // 1 HP: a dungeon run just ended: its summary for 30 s, until your next fight
+            _runShown = null;
+            if (_segment is null && _death is null && _runDone is { } run && now - run.LeftMs < 30_000 &&
+                (snap is null || snap.StartedAt.ToUnixTimeMilliseconds() < run.LeftMs))
+            {
+                _runShown = run;
+                snap = RunSnapshot(run);
+            }
             // 1 HP: PvP — while you trade hits with players (and 20 s after), the card lists your opponents
             _pvpShown = null;
-            if (_segment is null && _death is null && _settings.PvpOverlay && _meter.Tracker.Pvp(now) is { } pvp && now - pvp.LastMs < 20_000)
+            if (_segment is null && _death is null && _runShown is null && _settings.PvpOverlay && _meter.Tracker.Pvp(now) is { } pvp && now - pvp.LastMs < 20_000)
             {
                 _pvpShown = pvp;
                 snap = PvpSnapshot(pvp);
@@ -128,6 +137,7 @@ public partial class OverlayWindow : Window
         if (!_settings.ShowBossPanel || _expanded == false) _vm.HasBoss = false;
         if (_death is { } shownDeath && shown?.Id == shownDeath.Id) ApplyDeath(shownDeath);
         else if (_pvpShown is { } pvpShown && shown?.Id == pvpShown.Id) ApplyPvp(pvpShown);
+        else if (_runShown is { } runShown && shown?.Id == runShown.Id) ApplyRun(runShown);
         else ApplyOneHp(shown, _saved?.Entry.FileName);
         var tt = UiText.Current;
         var pvpMode = _pvpShown is not null && shown?.Id == _pvpShown.Id;
@@ -154,6 +164,36 @@ public partial class OverlayWindow : Window
             CaptureState.WaitingForGame or CaptureState.Starting => (Brush)FindResource("Amber"),
             _ => (Brush)FindResource("TextMute"),
         };
+    }
+
+    // ---------------------------------------------------------------- 1 HP: dungeon run summary
+    private volatile DungeonRun? _runDone;
+    private DungeonRun? _runShown;
+
+    private EncounterSnapshot RunSnapshot(DungeonRun r)
+    {
+        var t = UiText.Current;
+        var total = Math.Max(1, r.Members.Sum(m => m.Damage));
+        var rows = r.Members.Take(_settings.MaxRows).Select((m, i) => new CombatantSnapshot((uint)(i + 1), m.Name, m.Class, m.IsSelf, m.Damage, m.Dps,
+            (double)m.Damage / total, 0, 0, 0, 0)).ToList();
+        var title = string.Format(t.RunTitle, r.Zone);
+        return new EncounterSnapshot(r.Id, title, r.Zone, DateTimeOffset.FromUnixTimeMilliseconds(r.EnteredMs).ToLocalTime(),
+            r.ClearMs, Math.Max(1_000, r.ClearMs), false, r.Cleared ? EncounterEndReason.Kill : EncounterEndReason.ZoneChange,
+            total, rows.Sum(x => x.Dps), null, rows);
+    }
+
+    private void ApplyRun(DungeonRun r)
+    {
+        var t = UiText.Current;
+        _vm.Detail = string.Format(t.RunDetail, Format.Clock(r.ClearMs), r.BossesKilled, r.BossFights, r.Deaths) + (r.Cleared ? " · " + t.RunCleared : "");
+        _vm.Record = _vm.RecordTip = _vm.Guild = _vm.GuildTip = "";
+        foreach (var row in _vm.Rows)
+        {
+            var m = r.Members.FirstOrDefault(x => x.Name == row.Name);
+            if (m is null) continue;
+            row.Gear = m.Deaths > 0 ? "☠" + m.Deaths : "";
+            row.Tooltip = string.Format(t.RunRowTip, m.Name, m.Damage.ToString("#,0"), Format.Compact(m.Dps), m.Healing.ToString("#,0"), m.Deaths);
+        }
     }
 
     // ---------------------------------------------------------------- 1 HP: PvP card
@@ -752,6 +792,7 @@ public partial class OverlayWindow : Window
         if (_drag.JustDragged) return; // the press moved the window, it was not a click
         if (_death is { } d && _vm.SegmentId == d.Id) return; // a death recap has no breakdown
         if (_pvpShown is { } pv && _vm.SegmentId == pv.Id) return; // nor has the PvP card
+        if (_runShown is { } rs && _vm.SegmentId == rs.Id) return; // nor the run summary
         if ((sender as FrameworkElement)?.DataContext is RowViewModel row) OpenBreakdown(row.ActorId);
     }
 

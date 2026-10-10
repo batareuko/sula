@@ -74,6 +74,10 @@ public sealed partial class UiText
     public string MiniWaiting { get; init; } = "Waiting for the game…";
     public string DummyRun { get; init; } = "Run {0}";
     public string SecEvents { get; init; } = "EVENT ALERTS";
+    public string RunTitle { get; init; } = "🏁 {0}";
+    public string RunDetail { get; init; } = "{0} · bosses {1}/{2} · deaths {3}";
+    public string RunCleared { get; init; } = "cleared";
+    public string RunRowTip { get; init; } = "{0} over the run\ndamage {1} · {2}/s in fights\nhealing {3}\ndeaths {4}";
     public string PvpTitle { get; init; } = "⚔ PvP · {0} kills · {1} deaths";
     public string PvpDetail { get; init; } = "dealt {0} · taken {1} · burst {2}";
     public string PvpDealt { get; init; } = "DEALT";

@@ -36,6 +36,7 @@ public sealed class MeterService : IDisposable
         if (!settings.Transient) Stream.Apply(settings.StreamEnabled, settings.StreamPort);
         Tracker.EncounterFinished += OnEncounterFinished;
         Tracker.PvpSessionEnded += SavePvp;
+        Tracker.DungeonRunEnded += SaveRun;
         // A recording's or the demo's bosses must not move the live respawn timers.
         Tracker.BossNoticed += n =>
         {
@@ -281,6 +282,32 @@ public sealed class MeterService : IDisposable
             : zone;
 
     private bool _exiting;
+
+    /// <summary>1 HP: dungeon runs — clear time, bosses, deaths, members — in %AppData%\1HP-Overlay\dungeon-runs.json (last 200).</summary>
+    private void SaveRun(Core.Combat.DungeonRun run)
+    {
+        if (_replaying || DemoRunning || Settings.Transient || run.Fights.Count == 0) return;
+        AppendJson("dungeon-runs.json", run);
+        Log.Info($"Dungeon run saved: {run.Zone}, {run.Fights.Count} fights, {run.BossesKilled}/{run.BossFights} bosses, {run.Deaths} deaths");
+    }
+
+    private static void AppendJson<T>(string file, T item)
+    {
+        try
+        {
+            var path = Path.Combine(AppSettings.AppDataDir, file);
+            var list = File.Exists(path) ? System.Text.Json.JsonSerializer.Deserialize<List<T>>(File.ReadAllText(path)) ?? new() : new List<T>();
+            list.Insert(0, item);
+            if (list.Count > 200) list.RemoveRange(200, list.Count - 200);
+            var tmp = path + ".tmp";
+            File.WriteAllText(tmp, System.Text.Json.JsonSerializer.Serialize(list));
+            File.Move(tmp, path, overwrite: true);
+        }
+        catch (Exception ex) when (ex is IOException or System.Text.Json.JsonException or UnauthorizedAccessException)
+        {
+            Log.Info(file + " not saved: " + ex.Message);
+        }
+    }
 
     /// <summary>1 HP: PvP sessions — opponents, kills, deaths, burst — kept in %AppData%\1HP-Overlay\pvp-sessions.json (last 200).</summary>
     private void SavePvp(Core.Combat.PvpSession session)
