@@ -372,4 +372,33 @@ public class PartyTests
         Assert.Equal(["HACPAHO"], Names(t));
         Assert.Equal(PartyFilterState.Party, t.PartyStatus().State);
     }
+
+    [Fact]
+    public void A_pvp_session_lists_opponents_with_damage_both_ways_hp_and_kills()
+    {
+        var t = new CombatTracker(GameData.Empty, new MeterOptions { TargetMode = TargetMode.All, PartyOnly = true });
+        t.Process(new SelfIdentifiedEvent(0, Me, "Kunogarasu", 1309, GameClass.Cleric));
+        t.Process(new PlayerSeenEvent(0, Stranger, "AceRuffy", 2309, GameClass.Gladiator));
+        t.Process(new DamageEvent(1_000, Stranger, Me, 11020000, 1_600, HitFlags.None, 1, 12_000));
+        t.Process(new DamageEvent(1_200, Me, Stranger, 17010000, 900, HitFlags.None, 1, 14_000));
+        t.Process(new DamageEvent(1_300, Me, Stranger, 17020000, 14_000, HitFlags.Critical)); // the scalar where damage goes
+        t.Process(new NpcHpEvent(1_400, Stranger, 20_000, 0, IsNpc: false));
+        t.Process(new NpcHpEvent(1_500, Stranger, 15_000, 0, IsNpc: false));
+        t.Process(new PlayerKilledEvent(2_000, Stranger, Me, "Kunogarasu", 1309));
+
+        var s = t.Pvp(2_000)!;
+        var o = Assert.Single(s.Opponents);
+        Assert.Equal(("AceRuffy", 900L, 1_600L), (o.Name, o.Dealt, o.Taken));
+        Assert.True(o.Defeated);
+        Assert.Equal(1, s.Kills);
+        Assert.Equal(0L, o.Hp);
+
+        var ended = new List<PvpSession>();
+        t.PvpSessionEnded += ended.Add;
+        t.Tick(2_000 + PvpTracker_Gap + 1);
+        Assert.Single(ended);
+        Assert.Null(t.Pvp(2_000 + PvpTracker_Gap + 2));
+    }
+
+    private const long PvpTracker_Gap = 60_000;
 }

@@ -107,6 +107,8 @@ public sealed class AppSettings
     /// <summary>1 HP: events to announce before they start (Core.OneHp.EventSchedule ids) and how early.</summary>
     public List<string> EventAlerts { get; set; } = ["rift", "kaira", "siege", "siege-bosses", "nahma"];
     public int EventAlertMinutes { get; set; } = 5;
+    /// <summary>1 HP: the PvP card (your opponents) while you trade hits with players.</summary>
+    public bool PvpOverlay { get; set; } = true;
     /// <summary>The meter as a web page for OBS (Services/StreamServer.cs); only this computer can open it.</summary>
     public bool StreamEnabled { get; set; }
     public int StreamPort { get; set; } = StreamServer.DefaultPort;

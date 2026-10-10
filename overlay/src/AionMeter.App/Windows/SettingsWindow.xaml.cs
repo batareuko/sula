@@ -81,6 +81,7 @@ public partial class SettingsWindow : Window
             });
         EventLeadMinutes.Text = s.EventAlertMinutes.ToString();
         StreamOn.IsChecked = s.StreamEnabled;
+        PvpOn.IsChecked = s.PvpOverlay;
         StreamUrl.Text = $"http://localhost:{s.StreamPort}/";
         OneHpPartyOnly.IsChecked = s.PartyOnly;
         OneHpPriorityBosses.IsChecked = s.PriorityBossAlerts;
@@ -133,6 +134,7 @@ public partial class SettingsWindow : Window
         s.EventAlerts = EventChecks.Children.OfType<CheckBox>().Where(c => c.IsChecked == true).Select(c => (string)c.Tag).ToList();
         if (int.TryParse(EventLeadMinutes.Text, out var lead)) s.EventAlertMinutes = Math.Clamp(lead, 1, 60);
         s.StreamEnabled = StreamOn.IsChecked == true;
+        s.PvpOverlay = PvpOn.IsChecked == true;
         s.PartyOnly = OneHpPartyOnly.IsChecked == true;
         s.PriorityBossAlerts = OneHpPriorityBosses.IsChecked == true;
         s.OneHpBossSync = OneHpBossSync.IsChecked == true;

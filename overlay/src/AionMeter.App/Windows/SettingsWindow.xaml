@@ -228,6 +228,8 @@
                             <CheckBox x:Name="OneHpDynamic" Style="{StaticResource DarkCheck}" Margin="0,4,0,0"
                                       Content="{Binding OneHpDynamic, Source={x:Static s:UiText.Current}}" />
                             <TextBlock Style="{StaticResource Hint}" Text="{Binding OneHpDynamicHint, Source={x:Static s:UiText.Current}}" />
+                            <CheckBox x:Name="PvpOn" Style="{StaticResource DarkCheck}" Margin="0,4,0,0"
+                                      Content="{Binding PvpOverlayOn, Source={x:Static s:UiText.Current}}" />
                             <CheckBox x:Name="StreamOn" Style="{StaticResource DarkCheck}" Margin="0,4,0,0"
                                       Content="{Binding StreamOn, Source={x:Static s:UiText.Current}}" />
                             <TextBlock Style="{StaticResource Hint}" Text="{Binding StreamHint, Source={x:Static s:UiText.Current}}" />

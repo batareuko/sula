@@ -112,6 +112,13 @@ public partial class OverlayWindow : Window
                 (snap is null || snap.StartedAt.ToUnixTimeMilliseconds() < death.DeathMs))
                 snap = RecapSnapshot(death);
             else _death = null;
+            // 1 HP: PvP — while you trade hits with players (and 20 s after), the card lists your opponents
+            _pvpShown = null;
+            if (_segment is null && _death is null && _settings.PvpOverlay && _meter.Tracker.Pvp(now) is { } pvp && now - pvp.LastMs < 20_000)
+            {
+                _pvpShown = pvp;
+                snap = PvpSnapshot(pvp);
+            }
             shown = snap;
             _vm.Apply(snap, _settings.MaxRows, _settings.BarsRelativeToTop);
             _vm.SetSegment(_segment is null ? "live" : "session", snap?.StartedAt.ToString("HH:mm"));
@@ -120,7 +127,13 @@ public partial class OverlayWindow : Window
         SetExpanded(WantExpanded(shown));
         if (!_settings.ShowBossPanel || _expanded == false) _vm.HasBoss = false;
         if (_death is { } shownDeath && shown?.Id == shownDeath.Id) ApplyDeath(shownDeath);
+        else if (_pvpShown is { } pvpShown && shown?.Id == pvpShown.Id) ApplyPvp(pvpShown);
         else ApplyOneHp(shown, _saved?.Entry.FileName);
+        var tt = UiText.Current;
+        var pvpMode = _pvpShown is not null && shown?.Id == _pvpShown.Id;
+        HeadDps.Text = pvpMode ? tt.PvpDealt : tt.ColDps;
+        HeadDamage.Text = pvpMode ? tt.PvpTaken : tt.ColDamage;
+        HeadShare.Text = pvpMode ? "HP" : tt.ColShare;
         if (Environment.TickCount64 - _timersLabelAt >= 1_000) UpdateTimersLabel();
         if (Environment.TickCount64 - _oneHpAt >= 1_000) UpdateOneHpStrip();
 
@@ -141,6 +154,43 @@ public partial class OverlayWindow : Window
             CaptureState.WaitingForGame or CaptureState.Starting => (Brush)FindResource("Amber"),
             _ => (Brush)FindResource("TextMute"),
         };
+    }
+
+    // ---------------------------------------------------------------- 1 HP: PvP card
+    private PvpSession? _pvpShown;
+
+    /// <summary>The PvP session as a fight on the card: a row per opponent, bars by the damage traded.</summary>
+    private EncounterSnapshot PvpSnapshot(PvpSession p)
+    {
+        var t = UiText.Current;
+        var seconds = Math.Max(1, p.DurationMs) / 1000.0;
+        var top = Math.Max(1, p.Opponents.Max(o => o.Dealt + o.Taken));
+        var rows = p.Opponents.Take(_settings.MaxRows).Select(o => new CombatantSnapshot(o.ActorId, o.Name, o.Class, false, o.Dealt + o.Taken,
+            (o.Dealt + o.Taken) / seconds, (double)(o.Dealt + o.Taken) / top, o.HitsDealt, 0, 0, o.Taken, o.ServerId)).ToList();
+        var title = string.Format(t.PvpTitle, p.Kills, p.Deaths);
+        return new EncounterSnapshot(p.Id, title, null, DateTimeOffset.FromUnixTimeMilliseconds(p.StartMs).ToLocalTime(),
+            p.DurationMs, Math.Max(1_000, p.DurationMs), p.Active && DateTimeOffset.UtcNow.ToUnixTimeMilliseconds() - p.LastMs < 10_000,
+            EncounterEndReason.Manual, p.Dealt, p.Dealt / seconds, null, rows);
+    }
+
+    private void ApplyPvp(PvpSession p)
+    {
+        var t = UiText.Current;
+        _vm.Detail = string.Format(t.PvpDetail, Format.Compact(p.Dealt), Format.Compact(p.Taken), Format.Compact(p.Burst));
+        _vm.Record = _vm.RecordTip = _vm.Guild = _vm.GuildTip = "";
+        foreach (var row in _vm.Rows)
+        {
+            var o = p.Opponents.FirstOrDefault(x => x.ActorId == row.ActorId);
+            if (o is null) continue;
+            row.Dps = Format.Compact(o.Dealt);
+            row.Damage = Format.Compact(o.Taken);
+            row.Share = o.Defeated ? "☠" : o.HpFraction is { } hp ? Format.Percent(hp, 0) : "—";
+            var gs = _meter.Tracker.GearOf(o.Name);
+            row.Gear = string.Join(" · ", new[] { gs > 0 ? string.Format(t.GearScoreShort, gs) : "", _meter.Data.ServerName(o.ServerId), o.KilledYou ? "⚔" : "" }
+                .Where(x => x.Length > 0));
+            row.Tooltip = string.Format(t.PvpRowTip, o.Name, o.Dealt.ToString("#,0"), o.HitsDealt, o.Taken.ToString("#,0"), o.HitsTaken) +
+                          (o.Defeated ? "\n" + t.PvpDefeated : "") + (o.KilledYou ? "\n" + t.PvpKilledYou : "");
+        }
     }
 
     // ---------------------------------------------------------------- 1 HP: death recap
@@ -701,6 +751,7 @@ public partial class OverlayWindow : Window
     {
         if (_drag.JustDragged) return; // the press moved the window, it was not a click
         if (_death is { } d && _vm.SegmentId == d.Id) return; // a death recap has no breakdown
+        if (_pvpShown is { } pv && _vm.SegmentId == pv.Id) return; // nor has the PvP card
         if ((sender as FrameworkElement)?.DataContext is RowViewModel row) OpenBreakdown(row.ActorId);
     }
 

@@ -35,6 +35,7 @@ public sealed class MeterService : IDisposable
         Stream = new StreamServer(this);
         if (!settings.Transient) Stream.Apply(settings.StreamEnabled, settings.StreamPort);
         Tracker.EncounterFinished += OnEncounterFinished;
+        Tracker.PvpSessionEnded += SavePvp;
         // A recording's or the demo's bosses must not move the live respawn timers.
         Tracker.BossNoticed += n =>
         {
@@ -280,6 +281,29 @@ public sealed class MeterService : IDisposable
             : zone;
 
     private bool _exiting;
+
+    /// <summary>1 HP: PvP sessions — opponents, kills, deaths, burst — kept in %AppData%\1HP-Overlay\pvp-sessions.json (last 200).</summary>
+    private void SavePvp(Core.Combat.PvpSession session)
+    {
+        if (_replaying || DemoRunning || Settings.Transient) return;
+        try
+        {
+            var path = Path.Combine(AppSettings.AppDataDir, "pvp-sessions.json");
+            var list = File.Exists(path)
+                ? System.Text.Json.JsonSerializer.Deserialize<List<Core.Combat.PvpSession>>(File.ReadAllText(path)) ?? new()
+                : new List<Core.Combat.PvpSession>();
+            list.Insert(0, session);
+            if (list.Count > 200) list.RemoveRange(200, list.Count - 200);
+            var tmp = path + ".tmp";
+            File.WriteAllText(tmp, System.Text.Json.JsonSerializer.Serialize(list));
+            File.Move(tmp, path, overwrite: true);
+            Log.Info($"PvP session saved: {session.Opponents.Count} opponents, {session.Kills} kills, {session.Deaths} deaths");
+        }
+        catch (Exception ex) when (ex is IOException or System.Text.Json.JsonException or UnauthorizedAccessException)
+        {
+            Log.Info("PvP session not saved: " + ex.Message);
+        }
+    }
 
     private void OnEncounterFinished(FightRecord record)
     {

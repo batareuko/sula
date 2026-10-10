@@ -190,6 +190,12 @@ public sealed class CombatTracker
                     break;
                 case PlayerKilledEvent kill:
                     if (_entities.SelfId == kill.VictimId) Recap(kill.TimeMs, (kill.KillerId, kill.KillerName, kill.KillerServer));
+                    if (_entities.SelfId is { } killer && killer != kill.VictimId)
+                    {
+                        if (_entities.ResolveOwner(kill.KillerId) == killer && _pvp.Tracks(kill.VictimId)) _pvp.YouKilled(kill.TimeMs, kill.VictimId);
+                    }
+                    if (_entities.SelfId == kill.VictimId && kill.KillerId != kill.VictimId && IsPvpOpponent(kill.KillerId))
+                        _pvp.KilledYou(kill.TimeMs, kill.KillerId);
                     break;
                 case BattleStateEvent b:
                     OnBattleState(b);
@@ -255,6 +261,7 @@ public sealed class CombatTracker
         // A player's own pet is never an enemy (nor is anyone's spirit / skill effect whose owner is still unknown).
         if (source == target || _entities.IsSummon(target) || _entities.IsUnowned(target)) return;
         if (source != d.SourceId || _entities.IsUnowned(source)) _entities.NoteEntitySkill(d.SkillCode);
+        TrackPvp(d, source, target);
 
         // Class skills mark a player; 7-digit NPC skills mark a mob unless the actor already fought like a player
         // (players fire 7-digit item / godstone procs too).
@@ -351,6 +358,7 @@ public sealed class CombatTracker
 
     private void OnNpcHp(NpcHpEvent e)
     {
+        if (_pvp.Tracks(e.ActorId)) _pvp.Hp(e.ActorId, e.CurrentHp); // 1 HP: an opponent's HP (PvP)
         if (_entities.IsPlayerLike(e.ActorId)) return;
         // HP/MP updates are sent for players too: only trust them for entities already known to be NPCs.
         if (!e.IsNpc && !_entities.IsKnownNpc(e.ActorId)) return;
@@ -434,6 +442,46 @@ public sealed class CombatTracker
         if (recap is null) return;
         LastDeath = recap;
         _pendingRecaps.Add(recap);
+    }
+
+    // ---------------------------------------------------------------- 1 HP: PvP
+
+    private readonly PvpTracker _pvp = new();
+    private readonly List<PvpSession> _pendingPvp = new();
+    private readonly HashSet<long> _scalars = new(); // power scalars seen: records carrying one in place of damage are not hits
+
+    /// <summary>Raised outside the lock when a PvP session ends (a minute without PvP hits).</summary>
+    public event Action<PvpSession>? PvpSessionEnded;
+
+    /// <summary>The PvP session running, or the last one until a minute after it (opponents, kills, deaths).</summary>
+    public PvpSession? Pvp(long nowMs)
+    {
+        lock (_gate) return _pvp.Snapshot(nowMs, WhoPvp);
+    }
+
+    private (string Name, GameClass Class, int Server) WhoPvp(uint id)
+    {
+        var (name, cls, server, _) = Who(id);
+        return (name, cls, server);
+    }
+
+    /// <summary>Another player — named or fighting like one — who is not you or your party.</summary>
+    private bool IsPvpOpponent(uint id) =>
+        _entities.SelfId != id && (_entities.TryGetPlayer(id, out _) || _entities.IsPlayerLike(id)) && !IsOursActor(id);
+
+    private void TrackPvp(DamageEvent d, uint source, uint target)
+    {
+        if (d.PowerScalar != 0)
+        {
+            if (_scalars.Count > 4_096) _scalars.Clear();
+            _scalars.Add(d.PowerScalar);
+        }
+        else if ((d.Flags & HitFlags.Dot) == 0 && _scalars.Contains(d.Damage)) return; // the scalar where damage goes
+        if (_entities.SelfId is not { } me) return;
+        if (source == me && target != me && IsPvpOpponent(target))
+            _pvp.Dealt(d.TimeMs, target, d.Damage, GameData.ClassFromSkill(d.SkillCode));
+        else if (target == me && source != me && IsPvpOpponent(source))
+            _pvp.Taken(d.TimeMs, source, d.Damage, GameData.ClassFromSkill(d.SkillCode));
     }
 
     private (string Name, GameClass Class, int Server, bool IsPlayer) Who(uint id)
@@ -635,6 +683,11 @@ public sealed class CombatTracker
 
     private void CheckIdle(long nowMs)
     {
+        if (_pvp.EndIfIdle(nowMs))
+        {
+            if (_pvp.Snapshot(nowMs, WhoPvp) is { } ended) _pendingPvp.Add(ended);
+            _pvp.Reset();
+        }
         if (_current is not { IsActive: true } enc) return;
         var bossAlive = enc.BossId is { } b && IsAlive(b);
         var dummy = enc.BossCode != 0 && _data.Npcs.TryGetValue(enc.BossCode, out var def) && def.IsDummy;
@@ -665,8 +718,14 @@ public sealed class CombatTracker
         List<BossNotice>? notices = null;
         List<FieldBossListEvent>? lists = null;
         List<DeathRecap>? recaps = null;
+        List<PvpSession>? pvp = null;
         lock (_gate)
         {
+            if (_pendingPvp.Count > 0)
+            {
+                pvp = new List<PvpSession>(_pendingPvp);
+                _pendingPvp.Clear();
+            }
             if (_pendingRecaps.Count > 0)
             {
                 recaps = new List<DeathRecap>(_pendingRecaps);
@@ -697,6 +756,8 @@ public sealed class CombatTracker
             foreach (var n in notices) notify(n);
         if (lists is not null && FieldBossListed is { } listed)
             foreach (var l in lists) listed(l);
+        if (pvp is not null && PvpSessionEnded is { } ended)
+            foreach (var s in pvp) ended(s);
         if (recaps is not null && DeathRecapped is { } died)
             foreach (var r in recaps) died(r);
         if (records is not null && EncounterFinished is { } handler)
