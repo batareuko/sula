@@ -238,6 +238,19 @@
                         </StackPanel>
                     </Border>
 
+                    <!-- 1 HP: event alerts -->
+                    <Border Style="{StaticResource Section}">
+                        <StackPanel>
+                            <TextBlock Text="{Binding SecEvents, Source={x:Static s:UiText.Current}}" Style="{StaticResource SectionLabel}" Margin="0,0,0,8" />
+                            <TextBlock Style="{StaticResource Hint}" Margin="0,0,0,6" Text="{Binding EventsHint, Source={x:Static s:UiText.Current}}" />
+                            <WrapPanel x:Name="EventChecks" />
+                            <StackPanel Orientation="Horizontal" Margin="0,8,0,0">
+                                <TextBlock Text="{Binding EventLead, Source={x:Static s:UiText.Current}}" Style="{StaticResource Label}" Width="250" />
+                                <TextBox x:Name="EventLeadMinutes" Width="70" />
+                            </StackPanel>
+                        </StackPanel>
+                    </Border>
+
                     <!-- Updates -->
                     <Border Style="{StaticResource Section}">
                         <StackPanel>

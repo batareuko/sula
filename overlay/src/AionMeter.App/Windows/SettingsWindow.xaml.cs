@@ -71,6 +71,15 @@ public partial class SettingsWindow : Window
         OneHpWithGame.IsChecked = s.WithGame;
         OneHpCompact.IsChecked = s.Compact;
         OneHpDynamic.IsChecked = s.DynamicOverlay;
+        // 1 HP: event alerts, one box per event
+        EventChecks.Children.Clear();
+        foreach (var ev in Core.OneHp.EventSchedule.All)
+            EventChecks.Children.Add(new CheckBox
+            {
+                Tag = ev.Id, Content = UiText.Current.EventName(ev.Id), IsChecked = s.EventAlerts.Contains(ev.Id),
+                Style = (Style)FindResource("DarkCheck"), Margin = new Thickness(0, 4, 18, 0),
+            });
+        EventLeadMinutes.Text = s.EventAlertMinutes.ToString();
         StreamOn.IsChecked = s.StreamEnabled;
         StreamUrl.Text = $"http://localhost:{s.StreamPort}/";
         OneHpPartyOnly.IsChecked = s.PartyOnly;
@@ -121,6 +130,8 @@ public partial class SettingsWindow : Window
         s.OneHpGear = OneHpGear.IsChecked == true;
         s.Compact = OneHpCompact.IsChecked == true;
         s.DynamicOverlay = OneHpDynamic.IsChecked == true;
+        s.EventAlerts = EventChecks.Children.OfType<CheckBox>().Where(c => c.IsChecked == true).Select(c => (string)c.Tag).ToList();
+        if (int.TryParse(EventLeadMinutes.Text, out var lead)) s.EventAlertMinutes = Math.Clamp(lead, 1, 60);
         s.StreamEnabled = StreamOn.IsChecked == true;
         s.PartyOnly = OneHpPartyOnly.IsChecked == true;
         s.PriorityBossAlerts = OneHpPriorityBosses.IsChecked == true;

@@ -73,6 +73,25 @@ public sealed partial class UiText
         "Out of combat the card is one line: your name, combat power and ping. When you or your party hit something it opens with a row for each of you and folds back 15 s after the fight.";
     public string MiniWaiting { get; init; } = "Waiting for the game…";
     public string DummyRun { get; init; } = "Run {0}";
+    public string SecEvents { get; init; } = "EVENT ALERTS";
+    public string EventsHint { get; init; } = "A notice with a sound over the game (and in the tray) before the event starts. Times: Global servers.";
+    public string EventLead { get; init; } = "Notify this many minutes before";
+    public string EventSoon { get; init; } = "{0} in {1} min ({2})";
+    public string EventNow { get; init; } = "{0} starts now ({1})";
+    public string EventsTitle { get; init; } = "1 HP · events";
+    public string EventName(string id) => (Code, id) switch
+    {
+        ("uk", "rift") => "Розлом", ("uk", "shugo") => "Фестиваль Шуго", ("uk", "kaira") => "Наглядач Кайра",
+        ("uk", "siege") => "Облога артефактів", ("uk", "siege-bosses") => "Боси облоги", ("uk", "nahma") => "Лорд-охоронець Нахма",
+        ("uk", "daily-reset") => "Щоденний ресет", ("uk", "weekly-reset") => "Тижневий ресет",
+        ("ru", "rift") => "Разлом", ("ru", "shugo") => "Фестиваль Шуго", ("ru", "kaira") => "Наблюдатель Кайра",
+        ("ru", "siege") => "Осада артефактов", ("ru", "siege-bosses") => "Боссы осады", ("ru", "nahma") => "Лорд-страж Нахма",
+        ("ru", "daily-reset") => "Ежедневный сброс", ("ru", "weekly-reset") => "Еженедельный сброс",
+        (_, "rift") => "Spacetime Rift", (_, "shugo") => "Shugo Festival", (_, "kaira") => "Watcher Kaira",
+        (_, "siege") => "Artifact Siege", (_, "siege-bosses") => "Siege bosses", (_, "nahma") => "Guardian Lord Nahma",
+        (_, "daily-reset") => "Daily reset", (_, "weekly-reset") => "Weekly reset",
+        _ => id,
+    };
     public string DeathTitle { get; init; } = "☠ {0}";
     public string GearScoreShort { get; init; } = "GS {0}";
     public string GearScoreInspect { get; init; } = "Inspect the player in the game to see their gear score here.";

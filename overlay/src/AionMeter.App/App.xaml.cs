@@ -209,6 +209,7 @@ public partial class App : Application
             _tray?.Update(_overlay.IsVisible, _meter.Settings.ClickThrough, _meter.DemoRunning ? "demo" : _meter.CaptureStatus.Message);
             CheckBossAlerts();
             CheckBossListReminder();
+            CheckEventAlerts();
             CheckGameStart();
             CheckPendingUpdate();
         }
@@ -451,6 +452,26 @@ public partial class App : Application
     }
 
     public static readonly TimeSpan BossListMaxAge = TimeSpan.FromHours(2);
+
+    private readonly Dictionary<string, DateTimeOffset> _eventsAnnounced = new();
+
+    /// <summary>1 HP: Rift, Shugo Festival, sieges, resets — a notice with a sound before they start (Settings → events).</summary>
+    private void CheckEventAlerts()
+    {
+        var s = _meter.Settings;
+        if (s.EventAlerts.Count == 0) return;
+        var now = DateTimeOffset.UtcNow;
+        var t = UiText.Current;
+        foreach (var (ev, start) in Core.OneHp.EventSchedule.Due(now, s.EventAlerts, _ => s.EventAlertMinutes, _eventsAnnounced))
+        {
+            var minutes = (int)Math.Ceiling((start - now).TotalMinutes);
+            var at = start.ToLocalTime().ToString("HH:mm");
+            var text = minutes > 0 ? string.Format(t.EventSoon, t.EventName(ev.Id), minutes, at) : string.Format(t.EventNow, t.EventName(ev.Id), at);
+            _tray?.ShowBalloon(t.EventsTitle, text);
+            _overlay.ShowNotice("⏰ " + text, TimeSpan.FromMinutes(Math.Max(1, minutes)));
+            System.Media.SystemSounds.Exclamation.Play();
+        }
+    }
 
     private void CheckBossAlerts()
     {

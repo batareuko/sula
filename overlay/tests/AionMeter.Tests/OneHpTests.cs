@@ -271,3 +271,32 @@ public class DummyRunTests
         Assert.Equal(1, runs.Finish(Run(40_000, id: id), IsDummy)!.Run); // the same fight twice is one run
     }
 }
+
+/// <summary>1 HP: Global event schedule and alerts.</summary>
+public class EventScheduleTests
+{
+    private static DateTimeOffset Utc(int d, int h, int m) => new(2026, 10, d, h, m, 0, TimeSpan.Zero); // 2026-10-10 is a Saturday
+
+    [Fact]
+    public void Events_come_at_their_times()
+    {
+        Assert.Equal(Utc(10, 15, 0), EventSchedule.Shugo.Next(Utc(10, 14, 20)));
+        Assert.Equal(Utc(10, 15, 0), EventSchedule.Rift.Next(Utc(10, 12, 5)));
+        Assert.Equal(Utc(10, 13, 0), EventSchedule.Kaira.Next(Utc(10, 12, 5)));
+        Assert.Equal(Utc(10, 12, 0), EventSchedule.Siege.Next(Utc(10, 9, 0)));     // Saturday
+        Assert.Equal(Utc(11, 12, 0), EventSchedule.Nahma.Next(Utc(10, 13, 0)));    // Sunday
+        Assert.Equal(Utc(14, 7, 0), EventSchedule.WeeklyReset.Next(Utc(10, 8, 0))); // Wednesday
+        Assert.Equal(Utc(10, 12, 0), EventSchedule.Rift.Next(Utc(10, 12, 5), includeRunning: true));
+    }
+
+    [Fact]
+    public void Each_start_is_announced_once_within_its_lead()
+    {
+        var announced = new Dictionary<string, DateTimeOffset>();
+        string[] on = ["rift", "shugo"];
+        Assert.Empty(EventSchedule.Due(Utc(10, 14, 50), on, _ => 5, announced));
+        var due = EventSchedule.Due(Utc(10, 14, 56), on, _ => 5, announced);
+        Assert.Equal(["rift", "shugo"], due.Select(d => d.Event.Id).Order());
+        Assert.Empty(EventSchedule.Due(Utc(10, 14, 58), on, _ => 5, announced));
+    }
+}

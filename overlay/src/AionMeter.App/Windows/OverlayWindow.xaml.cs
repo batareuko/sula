@@ -334,6 +334,13 @@ public partial class OverlayWindow : Window
         string Local(DateTimeOffset d) => d.ToLocalTime().ToString("HH:mm", c);
         ScheduleText.ToolTip = RemindText.ToolTip = string.Format(t.ScheduleTip, Local(rift.IsOpen ? rift.Opens + Core.OneHp.GlobalSchedule.RiftEvery : rift.Opens), Local(reset),
             weekly.ToLocalTime().ToString("dddd HH:mm", c));
+        // 1 HP: an event notice (Rift, Shugo, siege …) takes the reminders line until the event starts
+        if (_notice is { } notice && DateTime.UtcNow < notice.Until)
+        {
+            RemindText.Text = ScheduleText.Text = notice.Text;
+            RemindText.Foreground = ScheduleText.Foreground = (Brush)FindResource("Amber");
+            return;
+        }
         // 1 HP: boss times older than 2 h — ask, on the card itself, to open the in-game boss list
         if (_meter.Tracker.SelfName is not null && r.Server is not null &&
             _meter.Timers.ListStale(_meter.Tracker.SelfServerId, AionMeter.App.App.BossListMaxAge))
@@ -342,6 +349,16 @@ public partial class OverlayWindow : Window
             RemindText.Foreground = ScheduleText.Foreground = (Brush)FindResource("Amber");
             RemindText.ToolTip = ScheduleText.ToolTip = t.OpenBossListHint;
         }
+    }
+
+    private (string Text, DateTime Until)? _notice;
+
+    /// <summary>1 HP: a short notice on the card's reminders line (event alerts), for <paramref name="duration"/>.</summary>
+    public void ShowNotice(string text, TimeSpan duration)
+    {
+        _notice = (text, DateTime.UtcNow + duration);
+        _oneHpAt = 0; // shown on the next refresh
+        if (!IsVisible && _settings.DynamicOverlay) Show();
     }
 
     public void OnLanguageChanged()
