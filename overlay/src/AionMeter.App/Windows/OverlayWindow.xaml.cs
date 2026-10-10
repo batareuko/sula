@@ -56,6 +56,7 @@ public partial class OverlayWindow : Window
         _meter.Tracker.DeathRecapped += r => _death = r; // 1 HP: shown on the card right after you die
         _meter.Tracker.DungeonRunEnded += r => { if (r.Fights.Count > 0) _runDone = r; }; // 1 HP: the run's summary after you leave
         _death = _meter.Tracker.LastDeath;
+        if (_meter.Tracker.LastRun is { Fights.Count: > 0 } lastRun) _runDone = lastRun;
         ShowUpdateBanner();
 
         // Drag the card by any part of it (unless locked); a click without movement still opens a breakdown.

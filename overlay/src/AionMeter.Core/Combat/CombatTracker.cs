@@ -210,7 +210,8 @@ public sealed class CombatTracker
                     // 1 HP: dungeon runs — leaving the instance ends the run, entering one starts it
                     if (_run is { } run && run.MapId != z.MapId)
                     {
-                        _pendingRuns.Add(run.Build(z.TimeMs, ended: true));
+                        LastRun = run.Build(z.TimeMs, ended: true);
+                        _pendingRuns.Add(LastRun);
                         _run = null;
                     }
                     if (_run is null && (z.IsDungeon || GameData.IsDungeonMap(z.MapId))) _run = new DungeonRunBuilder(z.MapId, z.ZoneName, z.TimeMs);
@@ -460,6 +461,9 @@ public sealed class CombatTracker
 
     /// <summary>Raised outside the lock when you leave a dungeon: the whole run.</summary>
     public event Action<DungeonRun>? DungeonRunEnded;
+
+    /// <summary>The last dungeon run of this run of the meter that ended (you left the instance), or null.</summary>
+    public DungeonRun? LastRun { get; private set; }
 
     /// <summary>The dungeon run in progress, or null outside instances.</summary>
     public DungeonRun? CurrentRun(long nowMs)
