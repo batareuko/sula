@@ -372,4 +372,62 @@ public class PartyTests
         Assert.Equal(["HACPAHO"], Names(t));
         Assert.Equal(PartyFilterState.Party, t.PartyStatus().State);
     }
+
+    [Fact]
+    public void A_pvp_session_lists_opponents_with_damage_both_ways_hp_and_kills()
+    {
+        var t = new CombatTracker(GameData.Empty, new MeterOptions { TargetMode = TargetMode.All, PartyOnly = true });
+        t.Process(new SelfIdentifiedEvent(0, Me, "Kunogarasu", 1309, GameClass.Cleric));
+        t.Process(new PlayerSeenEvent(0, Stranger, "AceRuffy", 2309, GameClass.Gladiator));
+        t.Process(new DamageEvent(1_000, Stranger, Me, 11020000, 1_600, HitFlags.None, 1, 12_000));
+        t.Process(new DamageEvent(1_200, Me, Stranger, 17010000, 900, HitFlags.None, 1, 14_000));
+        t.Process(new DamageEvent(1_300, Me, Stranger, 17020000, 14_000, HitFlags.Critical)); // the scalar where damage goes
+        t.Process(new NpcHpEvent(1_400, Stranger, 20_000, 0, IsNpc: false));
+        t.Process(new NpcHpEvent(1_500, Stranger, 15_000, 0, IsNpc: false));
+        t.Process(new PlayerKilledEvent(2_000, Stranger, Me, "Kunogarasu", 1309));
+
+        var s = t.Pvp(2_000)!;
+        var o = Assert.Single(s.Opponents);
+        Assert.Equal(("AceRuffy", 900L, 1_600L), (o.Name, o.Dealt, o.Taken));
+        Assert.True(o.Defeated);
+        Assert.Equal(1, s.Kills);
+        Assert.Equal(0L, o.Hp);
+
+        var ended = new List<PvpSession>();
+        t.PvpSessionEnded += ended.Add;
+        t.Tick(2_000 + PvpTracker_Gap + 1);
+        Assert.Single(ended);
+        Assert.Null(t.Pvp(2_000 + PvpTracker_Gap + 2));
+    }
+
+    private const long PvpTracker_Gap = 60_000;
+
+    [Fact]
+    public void A_dungeon_run_keeps_its_fights_deaths_and_members_until_you_leave()
+    {
+        var data = GameData.Empty;
+        data.Npcs[2300243] = new NpcDef(2300243, "Fire Temple Boss", IsBoss: true, IsDummy: false);
+        var t = new CombatTracker(data, new MeterOptions { TargetMode = TargetMode.All, PartyOnly = true });
+        var runs = new List<DungeonRun>();
+        t.DungeonRunEnded += runs.Add;
+        t.Process(new SelfIdentifiedEvent(0, Me, "Ilvane", 1304, GameClass.Elementalist));
+        t.Process(new ZoneChangedEvent(0, 600021, "Fire Temple", IsDungeon: true));
+        t.Process(new PlayerSeenEvent(0, Mate, "Borgrim", 1304, GameClass.Gladiator));
+        t.Process(new NpcSeenEvent(0, Boss, 2300243, 1_000_000));
+        t.Process(new DamageEvent(10_000, Me, Boss, 16040000, 600_000, HitFlags.None));
+        t.Process(new DamageEvent(11_000, Mate, Boss, 11020000, 400_000, HitFlags.None));
+        t.Process(new DeathEvent(12_000, Mate));
+        t.Process(new NpcHpEvent(20_000, Boss, 0, 1_000_000));
+        Assert.Equal(1, t.CurrentRun(25_000)!.BossesKilled);
+        t.Process(new ZoneChangedEvent(60_000, 20, "Open world", IsDungeon: false));
+
+        var run = Assert.Single(runs);
+        Assert.Equal("Fire Temple", run.Zone);
+        Assert.True(run.Cleared);
+        Assert.Equal(20_000, run.ClearMs);
+        Assert.Equal(1, run.Deaths);
+        Assert.Equal(["Ilvane", "Borgrim"], run.Members.Select(m => m.Name));
+        Assert.Equal(1, run.Members.Single(m => m.Name == "Borgrim").Deaths);
+        Assert.Null(t.CurrentRun(61_000));
+    }
 }

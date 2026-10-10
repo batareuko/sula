@@ -434,11 +434,11 @@
                     <TextBlock Text="#" Style="{StaticResource ColHeader}" Width="{DynamicResource RowRankSize}" TextAlignment="Center"
                                HorizontalAlignment="Left" ToolTip="{Binding T.TipPlace}" />
                     <TextBlock Grid.Column="1" Grid.ColumnSpan="2" Text="{Binding T.ColPlayer}" Style="{StaticResource ColHeader}" />
-                    <TextBlock Grid.Column="3" Text="{Binding T.ColDps}" Style="{StaticResource ColHeader}" TextAlignment="Right"
+                    <TextBlock x:Name="HeadDps" Grid.Column="3" Text="{Binding T.ColDps}" Style="{StaticResource ColHeader}" TextAlignment="Right"
                                ToolTip="{Binding T.TipDps}" />
-                    <TextBlock Grid.Column="4" Text="{Binding T.ColDamage}" Style="{StaticResource ColHeader}" TextAlignment="Right"
+                    <TextBlock x:Name="HeadDamage" Grid.Column="4" Text="{Binding T.ColDamage}" Style="{StaticResource ColHeader}" TextAlignment="Right"
                                ToolTip="{Binding T.TipDamage}" />
-                    <TextBlock Grid.Column="5" Text="{Binding T.ColShare}" Style="{StaticResource ColHeader}" TextAlignment="Right"
+                    <TextBlock x:Name="HeadShare" Grid.Column="5" Text="{Binding T.ColShare}" Style="{StaticResource ColHeader}" TextAlignment="Right"
                                ToolTip="{Binding T.TipShare}" />
                 </Grid>
 

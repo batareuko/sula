@@ -195,6 +195,46 @@ public sealed class OneHpCloud : IDisposable
         }
     }
 
+    /// <summary>1 HP: a field boss time another guild overlay read from the in-game list on this server.</summary>
+    public sealed record SharedBoss(int Code, bool Alive, DateTimeOffset At, DateTimeOffset RecordedAt, string? By);
+
+    private sealed record SharedRow(string boss_id, DateTimeOffset respawn_at, bool alive, DateTimeOffset killed_at, string? by_name);
+    private sealed record SharedReply(List<SharedRow>? bosses);
+
+    /// <summary>
+    /// 1 HP shared timers: the boss times of <paramref name="server"/> that guild overlays sent (needs a key). For a living
+    /// boss At is when it appeared; for a dead one At is when it comes back and RecordedAt when the list was read.
+    /// </summary>
+    public async Task<IReadOnlyList<SharedBoss>?> FetchBossesAsync(int server)
+    {
+        var key = _settings.OneHpKey?.Trim();
+        if (!_settings.OneHpBossSync || string.IsNullOrEmpty(key) || server < 1000) return null;
+        try
+        {
+            using var res = await _http.PostAsJsonAsync(SupabaseUrl + "/functions/v1/dps-upload",
+                new { key, bossesGet = new { serverId = server } }, _cts.Token).ConfigureAwait(false);
+            if (!res.IsSuccessStatusCode)
+            {
+                Log.Info("1 HP shared boss times: " + (int)res.StatusCode);
+                return null;
+            }
+            var reply = await res.Content.ReadFromJsonAsync<SharedReply>(_cts.Token).ConfigureAwait(false);
+            return reply?.bosses?
+                .Where(r => int.TryParse(r.boss_id, out _))
+                .Select(r => new SharedBoss(int.Parse(r.boss_id), r.alive, r.respawn_at, r.alive ? r.respawn_at : r.killed_at, r.by_name))
+                .ToList();
+        }
+        catch (Exception ex) when (ex is not OperationCanceledException)
+        {
+            Log.Info("1 HP shared boss times not read: " + ex.Message);
+            return null;
+        }
+        catch (OperationCanceledException)
+        {
+            return null;
+        }
+    }
+
     /// <summary>Settings → "Check": does the site know this key?</summary>
     public async Task<bool?> CheckKeyAsync(string key)
     {

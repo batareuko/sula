@@ -16,6 +16,7 @@ namespace AionMeter.App.Services;
 /// appeared (<paramref name="ListedAlive"/>) or when it comes back.</param>
 /// <param name="Watch">Notify before it respawns (set by a kill you were near, by "Killed", or by the bell).</param>
 /// <param name="ServerId">The server this timer belongs to: every server runs its own bosses on its own clock.</param>
+/// <param name="Shared">1 HP: the list state came from another guild overlay (shared timers), not this one.</param>
 public sealed record BossTimer(
     int NpcCode,
     int MapId,
@@ -31,7 +32,8 @@ public sealed record BossTimer(
     bool ListedAlive = false,
     DateTimeOffset? ListedTime = null,
     bool Watch = false,
-    int ServerId = 0)
+    int ServerId = 0,
+    bool Shared = false)
 {
     /// <summary>Latest sign of death: a kill, a corpse, or the game list saying it is down.</summary>
     [JsonIgnore]
@@ -342,6 +344,7 @@ public sealed class BossTimers
                 MapId = list.MapId,
                 SlotId = slot.SlotId,
                 ListedAt = at,
+                Shared = false,
                 ListedAlive = slot.Alive,
                 ListedTime = time,
             };
@@ -550,6 +553,36 @@ public sealed class BossTimers
         lock (_gate)
             if (!_timers.Remove((server, npcCode))) return;
         Save();
+    }
+
+    /// <summary>
+    /// 1 HP shared timers: boss times other guild overlays read from the in-game list on this server. Each one is taken
+    /// when it is newer than what this meter knows of that boss (its own list, a kill it saw, an earlier shared time).
+    /// Returns how many timers changed.
+    /// </summary>
+    public int ApplyShared(int server, IEnumerable<(int Code, bool Alive, DateTimeOffset At, DateTimeOffset RecordedAt)> shared)
+    {
+        if (server == 0) return 0;
+        var changed = 0;
+        lock (_gate)
+        {
+            foreach (var (code, alive, at, recorded) in shared)
+            {
+                if (code <= 0 || !_info.ContainsKey(code) && !_timers.ContainsKey((server, code))) continue; // field bosses only
+                var t = _timers.TryGetValue((server, code), out var old) ? old : New(server, code);
+                var known = new[] { t.ListedAt, t.LastKill, t.LastSeenAlive, t.LastSeenDead }.Where(x => x is not null).Max();
+                var local = recorded.ToLocalTime();
+                if (known is { } k && k >= local) continue;
+                if (t.ListedAt == local && t.ListedAlive == alive && t.ListedTime == at.ToLocalTime()) continue;
+                t = t with { ListedAt = local, ListedAlive = alive, ListedTime = at.ToLocalTime(), Shared = true };
+                if (!alive && t.AlertedFor is { } alerted && alerted != t.ListedTime) t = t with { AlertedFor = null };
+                if (t.MapId == 0 && _info.TryGetValue(code, out var info)) t = t with { Zone = t.Zone ?? info.Area };
+                _timers[(server, code)] = t;
+                changed++;
+            }
+        }
+        if (changed > 0) Save();
+        return changed;
     }
 
     /// <summary>1 HP: when the in-game boss list last reached the meter for this server (any map), or null.</summary>

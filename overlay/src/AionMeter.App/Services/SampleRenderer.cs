@@ -28,8 +28,11 @@ public static class SampleRenderer
         meter.Settings.DynamicOverlay = o.Window != "overlay-fixed";
         var start = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds() - 20_500; // a fight that is still going
         // overlay-mini: the card out of combat (you are known, nothing is fought)
-        new SampleFight(start, 20).FeedUntil(meter.Tracker, o.Window == "overlay-mini" ? start : start + 20_000);
+        if (o.Window != "overlay-run") // the run feeds its own fight, inside the dungeon
+            new SampleFight(start, 20).FeedUntil(meter.Tracker, o.Window == "overlay-mini" ? start : start + 20_000);
         if (o.Window == "overlay-death") FeedDeath(meter.Tracker, start + 20_300);
+        if (o.Window == "overlay-pvp") FeedPvp(meter.Tracker, start + 20_300);
+        if (o.Window == "overlay-run") FeedRun(meter.Tracker, start);
         if (o.Window == "history")
             foreach (var entry in meter.History.List().Take(20)) meter.PortraitOf(entry);
         WaitForPortraits(meter);
@@ -108,6 +111,35 @@ public static class SampleRenderer
         {
             OverlayWindow.ClockOverride = null;
         }
+    }
+
+    /// <summary>overlay-pvp: an Abyss skirmish — you trade hits with three players and defeat one.</summary>
+    private static void FeedPvp(Core.Combat.CombatTracker tracker, long at)
+    {
+        const uint me = 2;
+        (uint Id, string Name, GameClass Class)[] foes = [(71_001, "AceRuffy", GameClass.Gladiator), (71_002, "Miranda", GameClass.Elementalist), (71_003, "RhQm", GameClass.Sorcerer)];
+        foreach (var f in foes) tracker.Process(new PlayerSeenEvent(at - 9_000, f.Id, f.Name, 2309, f.Class));
+        tracker.Process(new PlayerGearEvent(at - 9_000, "AceRuffy", 2309, 45, 1659));
+        var rnd = new Random(11);
+        for (var t = at - 8_000; t < at; t += 300)
+        {
+            var f = foes[rnd.Next(foes.Length)];
+            tracker.Process(new DamageEvent(t, me, f.Id, 16040000, 600 + rnd.Next(900), HitFlags.None, 1, 10_910));
+            tracker.Process(new DamageEvent(t + 100, f.Id, me, 11020000, 300 + rnd.Next(500), HitFlags.None, 1, 12_000));
+            tracker.Process(new NpcHpEvent(t + 120, f.Id, 9_000 + rnd.Next(5_000), 0, IsNpc: false));
+        }
+        tracker.Process(new NpcHpEvent(at - 200, 71_001, 14_000, 0, IsNpc: false));
+        tracker.Process(new PlayerKilledEvent(at - 100, 71_003, me, "Sylvaen", 2305));
+    }
+
+    /// <summary>overlay-run: a dungeon run ending — the scripted boss fight in Fire Temple, then out.</summary>
+    private static void FeedRun(Core.Combat.CombatTracker tracker, long start)
+    {
+        tracker.Process(new ZoneChangedEvent(start - 300_000, 600021, "Fire Temple", IsDungeon: true));
+        new SampleFight(start, 20).FeedUntil(tracker, start + 20_000);
+        tracker.Process(new NpcHpEvent(start + 20_100, 900_001, 0, 90_000_000));
+        tracker.Process(new DeathEvent(start + 15_000, 4));
+        tracker.Process(new ZoneChangedEvent(start + 20_400, 20, "Open world", IsDungeon: false));
     }
 
     /// <summary>overlay-death: an enemy Elementalist and her spirit kill you in the Abyss (the death recap).</summary>

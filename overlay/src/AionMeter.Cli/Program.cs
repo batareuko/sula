@@ -46,9 +46,17 @@ int Deaths(string path)
             foreach (var s in a.Skills.Take(6)) Console.WriteLine($"      {s.Name,-28} {s.Damage,8:#,0} x{s.Hits}");
         }
     };
+    void Pvp(PvpSession p)
+    {
+        Console.WriteLine($"PvP {DateTimeOffset.FromUnixTimeMilliseconds(p.StartMs).ToLocalTime():HH:mm:ss} · {p.DurationMs / 1000}s · kills {p.Kills} · deaths {p.Deaths} · dealt {p.Dealt:#,0} · taken {p.Taken:#,0} · burst {p.Burst:#,0}");
+        foreach (var o in p.Opponents)
+            Console.WriteLine($"   {o.Name,-16} {o.Class,-12} {data.ServerName(o.ServerId),-10} dealt {o.Dealt,8:#,0} taken {o.Taken,8:#,0} hp {(o.HpFraction is { } f ? f.ToString("P0") : "?"),5}{(o.Defeated ? " ☠" : "")}{(o.KilledYou ? " killed you" : "")}");
+    }
+    tracker.PvpSessionEnded += Pvp;
     var replay = new PcapReplaySource(data, path, realtime: false);
     replay.EventDecoded += tracker.Process;
     replay.RunToEnd();
+    if (tracker.Pvp(long.MaxValue / 4) is { } open) Pvp(open);
     return 0;
 }
 
