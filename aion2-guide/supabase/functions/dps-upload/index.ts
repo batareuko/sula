@@ -7,6 +7,8 @@
 //   POST { key, bosses: { serverId, by, list: [{ code, alive, at }] } } -> { saved }
 //        час польових босів з ігрового списку (оверлей): alive=false — повернеться о `at`, alive=true — живий з `at`;
 //        пишеться в boss_kills для цього сервера (source='game'), сайт і Discord беруть його замість «вбито + цикл»
+//   POST { key, bossesGet: { serverId } } -> { bosses: [{ boss_id, respawn_at, alive, killed_at, by_name }] }
+//        спільні таймери: що інші оверлеї гільдії прочитали з ігрового списку на цьому сервері (останні 26 год)
 // Ключ створюється на сайті (розділ «Рейтинг DPS»); у базі лише його SHA-256 (таблиця overlay_keys).
 // SUPABASE_URL і SUPABASE_SERVICE_ROLE_KEY Supabase додає сам.
 
@@ -132,6 +134,16 @@ export async function handler(req: Request): Promise<Response> {
     const userId = owners?.[0]?.user_id as string | undefined;
     if (!userId) return json({ error: 'bad_key' }, 401);
     if (body.check) return json({ ok: true });
+
+    // Спільні таймери: час босів цього сервера з ігрових списків, які надіслали оверлеї гільдії
+    if (body.bossesGet) {
+      const server = int(body.bossesGet.serverId);
+      if (!(server >= 1000 && server <= 9999)) return json({ error: 'bad_server' }, 400);
+      const since = new Date(Date.now() - 26 * 3600_000).toISOString();
+      const rows = await rest(`boss_kills?server_id=eq.${server}&source=eq.game&respawn_at=gte.${encodeURIComponent(since)}` +
+        `&select=boss_id,respawn_at,alive,killed_at,by_name`);
+      return json({ bosses: rows ?? [] });
+    }
 
     if (body.bosses) {
       const { rows, error } = bossRows(body.bosses);

@@ -732,6 +732,7 @@ public sealed partial class UiText
         MiniWaiting = "Жду игру…",
         DummyRun = "Забег {0}",
         SecEvents = "ОПОВЕЩЕНИЯ О СОБЫТИЯХ",
+        SourceShared = "Из списка боссов в игре участника гильдии ({0}) — общие таймеры 1 HP",
         EventsHint = "Уведомление со звуком поверх игры (и в трее) перед началом события. Время — серверов Global.",
         EventLead = "Оповещать за (мин)",
         EventSoon = "{0} через {1} мин ({2})",

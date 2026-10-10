@@ -74,6 +74,7 @@ public sealed partial class UiText
     public string MiniWaiting { get; init; } = "Waiting for the game…";
     public string DummyRun { get; init; } = "Run {0}";
     public string SecEvents { get; init; } = "EVENT ALERTS";
+    public string SourceShared { get; init; } = "From a guild member's in-game boss list ({0}) — shared 1 HP timers";
     public string EventsHint { get; init; } = "A notice with a sound over the game (and in the tray) before the event starts. Times: Global servers.";
     public string EventLead { get; init; } = "Notify this many minutes before";
     public string EventSoon { get; init; } = "{0} in {1} min ({2})";

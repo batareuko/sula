@@ -214,6 +214,7 @@ public partial class App : Application
             CheckPendingUpdate();
         }
         if (_ticks % 25 == 0) CheckGameExit();
+        if (_ticks % 900 == 30) _ = PullSharedBossesAsync(); // every 3 min (5 ticks a second)
     }
 
     // ------------------------------------------------------------ automatic show / hide
@@ -452,6 +453,17 @@ public partial class App : Application
     }
 
     public static readonly TimeSpan BossListMaxAge = TimeSpan.FromHours(2);
+
+    /// <summary>1 HP shared timers: what other guild overlays read from the in-game boss list on this server.</summary>
+    private async Task PullSharedBossesAsync()
+    {
+        var server = _meter.Timers.CurrentServer;
+        if (server == 0 || _meter.DemoRunning) return;
+        var shared = await _meter.Cloud.FetchBossesAsync(server);
+        if (shared is null || shared.Count == 0) return;
+        var changed = _meter.Timers.ApplyShared(server, shared.Select(b => (b.Code, b.Alive, b.At, b.RecordedAt)));
+        if (changed > 0) Log.Info($"Shared boss times: {changed} timers updated from the guild");
+    }
 
     private readonly Dictionary<string, DateTimeOffset> _eventsAnnounced = new();
 
