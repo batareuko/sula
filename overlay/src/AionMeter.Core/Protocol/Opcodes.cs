@@ -25,6 +25,7 @@ public static class Opcodes
     public const ushort HpMp = 0x1B92;
     public const ushort PartyRoster = 0x0297;
     public const ushort PlayerGear = 0x5036;     // 1 HP: another player's equipment, sent when you inspect them
+    public const ushort PartyMember = 0x2392;    // 1 HP: a party member's status (name + server), every few seconds
     public const ushort FieldBossList = 0x0191;  // a map's field bosses: alive since / back at (in-game map list)
 
     public static string Name(ushort op) => op switch
@@ -45,6 +46,7 @@ public static class Opcodes
         BattleToggle => "BattleToggle",
         HpMp => "HpMp",
         PartyRoster => "PartyRoster",
+        PartyMember => "PartyMember",
         FieldBossList => "FieldBosses",
         _ => $"{op >> 8:x2} {op & 0xFF:x2}",
     };
