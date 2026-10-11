@@ -209,6 +209,7 @@ public sealed class CombatTracker
                     break;
                 case ZoneChangedEvent z:
                     if (z.IsTeleport) break;
+                    _manualIds.Clear(); // ids are handed out again in the new zone
                     if (_current is { IsActive: true }) Finish(EncounterEndReason.ZoneChange, _current.LastDamageMs);
                     // 1 HP: dungeon runs — leaving the instance ends the run, entering one starts it
                     if (_run is { } run && run.MapId != z.MapId)
@@ -954,12 +955,22 @@ public sealed class CombatTracker
     private readonly HashSet<string> _manualIn = new(StringComparer.OrdinalIgnoreCase);
     private readonly HashSet<string> _manualOut = new(StringComparer.OrdinalIgnoreCase);
 
-    /// <summary>1 HP: puts a player in your party, or takes them out, by hand; false when the meter has no name for them.</summary>
+    // …and by id the players the meter has no name for yet ("#12345", ids last until the next zone).
+    private readonly HashSet<uint> _manualIds = new();
+
+    /// <summary>1 HP: puts a player in your party, or takes them out, by hand; false for you.</summary>
     public bool SetPartyMember(uint actorId, bool inParty)
     {
         lock (_gate)
         {
-            if (_entities.SelfId == actorId || !_entities.TryGetPlayer(actorId, out var p) || string.IsNullOrWhiteSpace(p.Name)) return false;
+            if (_entities.SelfId == actorId) return false;
+            if (!_entities.TryGetPlayer(actorId, out var p) || string.IsNullOrWhiteSpace(p.Name))
+            {
+                if (inParty ? !_manualIds.Add(actorId) : !_manualIds.Remove(actorId)) return false;
+                _partyVersion++;
+                return true;
+            }
+            _manualIds.Remove(actorId);
             var name = p.Name.Trim();
             (inParty ? _manualIn : _manualOut).Add(name);
             (inParty ? _manualOut : _manualIn).Remove(name);
@@ -968,12 +979,13 @@ public sealed class CombatTracker
         }
     }
 
-    /// <summary>1 HP: null for you or a player with no name yet; otherwise whether the party filter counts them.</summary>
+    /// <summary>1 HP: null for you; otherwise whether the party filter counts them.</summary>
     public bool? IsPartyMember(uint actorId)
     {
         lock (_gate)
         {
-            if (_entities.SelfId == actorId || !_entities.TryGetPlayer(actorId, out var p) || string.IsNullOrWhiteSpace(p.Name)) return null;
+            if (_entities.SelfId == actorId) return null;
+            if (!_entities.TryGetPlayer(actorId, out var p) || string.IsNullOrWhiteSpace(p.Name)) return _manualIds.Contains(actorId);
             return InParty(p.Name);
         }
     }
@@ -1009,7 +1021,7 @@ public sealed class CombatTracker
     private static bool IsNamed(Combatant c) => c.Name.Length > 0 && c.Name[0] != '#';
 
     /// <summary>The party roster or status packets, or — while neither came — the players you healed.</summary>
-    private bool HasParty => _party.Count > 0 || _healed.Count > 0 || _members.Count > 0 || _manualIn.Count > 0;
+    private bool HasParty => _party.Count > 0 || _healed.Count > 0 || _members.Count > 0 || _manualIn.Count > 0 || _manualIds.Count > 0;
 
     private bool InParty(string name)
     {
@@ -1026,7 +1038,7 @@ public sealed class CombatTracker
     /// <summary>You, or a party member by name.</summary>
     private bool IsOursActor(uint id)
     {
-        if (_entities.SelfId == id) return true;
+        if (_entities.SelfId == id || _manualIds.Contains(id)) return true;
         return HasParty && _entities.TryGetPlayer(id, out var p) && !string.IsNullOrEmpty(p.Name) && InParty(p.Name);
     }
 
@@ -1063,10 +1075,10 @@ public sealed class CombatTracker
             // You are not known yet (a meter started mid-session): your party and your name from earlier runs only.
             if (!HasParty) return null;
             var me = KnownSelfName?.Trim();
-            return c => IsNamed(c) && (InParty(c.Name) || (me is { Length: > 0 } && string.Equals(c.Name.Trim(), me, StringComparison.OrdinalIgnoreCase)));
+            return c => _manualIds.Contains(c.ActorId) || IsNamed(c) && (InParty(c.Name) || (me is { Length: > 0 } && string.Equals(c.Name.Trim(), me, StringComparison.OrdinalIgnoreCase)));
         }
         // Strictly by name: a player the meter has no name for yet, and pets nobody could be tied to, may be anyone's.
-        return c => c.IsSelf || (IsNamed(c) && InParty(c.Name));
+        return c => c.IsSelf || _manualIds.Contains(c.ActorId) || (IsNamed(c) && InParty(c.Name));
     }
 
     /// <summary>1 HP: what the party filter is doing right now, for the overlay's PARTY chip.</summary>
