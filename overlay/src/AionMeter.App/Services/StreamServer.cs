@@ -9,8 +9,9 @@ namespace AionMeter.App.Services;
 
 /// <summary>
 /// 1 HP: the meter as a web page for a stream — OBS (or any streaming app) adds http://localhost:7799/ as a browser
-/// source. Only this computer can open it. The page asks for <c>/data</c> twice a second: the live fight, or your name,
-/// combat power and ping out of combat.
+/// source. Only this computer can open it. <c>/</c> shows the overlay itself, pixel for pixel: the overlay renders its
+/// card to <c>/frame.png</c> while a page asks for it. <c>/card</c> is a lighter HTML card built from <c>/data</c>
+/// (the live fight, or your name, combat power and ping out of combat).
 /// </summary>
 public sealed class StreamServer : IDisposable
 {
@@ -22,6 +23,20 @@ public sealed class StreamServer : IDisposable
 
     // Set by the overlay (UI thread): what its one-line card shows out of combat.
     private volatile string[] _idle = ["", "", ""];
+
+    // 1 HP: the overlay's last frame (PNG) and when a page last asked for one.
+    private volatile byte[] _frame = EmptyPng;
+    private long _frameAskedAt = long.MinValue / 2;
+
+    /// <summary>A page showed the overlay in the last few seconds: the overlay keeps rendering frames for it.</summary>
+    public bool WantsFrame => Running && Environment.TickCount64 - Interlocked.Read(ref _frameAskedAt) < 3_000;
+
+    /// <summary>The overlay's card as it is on screen; <see cref="EmptyPng"/> while the overlay is hidden.</summary>
+    public void SetFrame(byte[] png) => _frame = png;
+
+    /// <summary>A 1×1 transparent PNG.</summary>
+    public static readonly byte[] EmptyPng = Convert.FromBase64String(
+        "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR4nGNgYGBgAAAABQABpfZFQAAAAABJRU5ErkJggg==");
 
     public StreamServer(MeterService meter) => _meter = meter;
 
@@ -71,17 +86,19 @@ public sealed class StreamServer : IDisposable
             try
             {
                 var path = ctx.Request.Url?.AbsolutePath ?? "/";
-                var (body, type) = path switch
+                if (path == "/frame.png") Interlocked.Exchange(ref _frameAskedAt, Environment.TickCount64);
+                var (bytes, type) = path switch
                 {
-                    "/data" => (Data(), "application/json"),
-                    "/" or "/index.html" => (Page, "text/html"),
-                    _ => ((string?)null, "text/plain"),
+                    "/frame.png" => (_frame, "image/png"),
+                    "/data" => (Encoding.UTF8.GetBytes(Data()), "application/json; charset=utf-8"),
+                    "/" or "/index.html" => (Encoding.UTF8.GetBytes(MirrorPage), "text/html; charset=utf-8"),
+                    "/card" => (Encoding.UTF8.GetBytes(Page), "text/html; charset=utf-8"),
+                    _ => ((byte[]?)null, "text/plain"),
                 };
-                if (body is null) ctx.Response.StatusCode = 404;
+                if (bytes is null) ctx.Response.StatusCode = 404;
                 else
                 {
-                    var bytes = Encoding.UTF8.GetBytes(body);
-                    ctx.Response.ContentType = type + "; charset=utf-8";
+                    ctx.Response.ContentType = type;
                     ctx.Response.Headers["Cache-Control"] = "no-store";
                     ctx.Response.ContentLength64 = bytes.Length;
                     await ctx.Response.OutputStream.WriteAsync(bytes);
@@ -152,6 +169,40 @@ public sealed class StreamServer : IDisposable
     }
 
     public void Dispose() => Stop();
+
+    /// <summary>
+    /// The overlay as it is on screen. <c>?fps=</c> sets how often the picture changes (1–10, 5 by default; the
+    /// overlay itself redraws 5 times a second), <c>?scale=</c> its size.
+    /// </summary>
+    private const string MirrorPage = """
+<!doctype html>
+<html lang="uk"><head><meta charset="utf-8"><title>1 HP DPS</title>
+<style>
+  html,body{margin:0;background:transparent;overflow:hidden}
+  img{display:block;transform-origin:0 0}
+</style></head>
+<body><img id="f" alt="">
+<script>
+const q = new URLSearchParams(location.search);
+const fps = Math.min(10, Math.max(1, +q.get('fps') || 5)), scale = +q.get('scale') || 1;
+const img = document.getElementById('f');
+if (scale !== 1) img.style.transform = 'scale(' + scale + ')';
+let url = null;
+async function tick() {
+  try {
+    const r = await fetch('/frame.png', { cache: 'no-store' });
+    if (r.ok) {
+      const next = URL.createObjectURL(await r.blob());
+      await new Promise(done => { img.onload = img.onerror = done; img.src = next; });
+      if (url) URL.revokeObjectURL(url);
+      url = next;
+    }
+  } catch { }
+  setTimeout(tick, 1000 / fps);
+}
+tick();
+</script></body></html>
+""";
 
     private const string Page = """
 <!doctype html>
