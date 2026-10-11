@@ -125,7 +125,7 @@ public sealed partial class UiText
         "Training dummy, run {0}: your DPS {1}.\nAgainst your best run on this dummy: {2}; against the run before: {3}.\nStop hitting for 5 s and the next hit starts the next run (runs under 10 s do not count).";
     public string StreamOn { get; init; } = "Stream page for OBS (browser source)";
     public string StreamHint { get; init; } =
-        "In OBS add a Browser source with the address below (width 480, height 600). It shows the meter during fights and nothing out of combat; add ?idle=1 to keep your name, combat power and ping on screen.";
+        "In OBS add a Browser source with the address below (width 480, height 600). It shows the overlay exactly as it is on your screen, transparent around the card. A lighter card instead: the address + card (…/card, add ?idle=1 to keep your name, combat power and ping out of combat).";
     public string MiniPowerTip { get; init; } = "Combat power (from the party list in the game, or your profile on the 1 HP site)";
     public string PowerTip { get; init; } = "Combat power {0}";
 

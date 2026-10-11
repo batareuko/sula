@@ -4,6 +4,7 @@ using System.Windows.Controls.Primitives;
 using System.Windows.Input;
 using System.Windows.Interop;
 using System.Windows.Media;
+using System.Windows.Media.Imaging;
 using AionMeter.App.Controls;
 using AionMeter.App.Services;
 using AionMeter.App.ViewModels;
@@ -78,9 +79,52 @@ public partial class OverlayWindow : Window
 
     public nint Handle => _hwnd;
 
+    private bool _encoding;
+
+    /// <summary>
+    /// 1 HP: the card as it is on screen, for the stream page — rendered at the screen's scale, encoded off the UI
+    /// thread; nothing (a transparent pixel) while the overlay is hidden.
+    /// </summary>
+    private void CaptureStreamFrame()
+    {
+        if (!IsVisible || Content is not FrameworkElement root || root.ActualWidth < 1 || root.ActualHeight < 1)
+        {
+            _meter.Stream.SetFrame(StreamServer.EmptyPng);
+            return;
+        }
+        if (_encoding) return;
+        var dpi = VisualTreeHelper.GetDpi(this);
+        var bmp = new RenderTargetBitmap((int)Math.Ceiling(root.ActualWidth * dpi.DpiScaleX), (int)Math.Ceiling(root.ActualHeight * dpi.DpiScaleY),
+            dpi.PixelsPerInchX, dpi.PixelsPerInchY, PixelFormats.Pbgra32);
+        bmp.Render(root);
+        bmp.Freeze();
+        _encoding = true;
+        var stream = _meter.Stream;
+        Task.Run(() =>
+        {
+            try
+            {
+                var png = new PngBitmapEncoder();
+                png.Frames.Add(BitmapFrame.Create(bmp));
+                using var ms = new System.IO.MemoryStream();
+                png.Save(ms);
+                stream.SetFrame(ms.ToArray());
+            }
+            catch (Exception ex)
+            {
+                Log.Error("Stream frame", ex);
+            }
+            finally
+            {
+                Dispatcher.BeginInvoke(() => _encoding = false);
+            }
+        });
+    }
+
     /// <summary>Called by the app's UI timer (≈5 Hz).</summary>
     public void Refresh()
     {
+        if (_meter.Stream.WantsFrame) CaptureStreamFrame(); // last tick's card, laid out and drawn by now
         // Looking at an old fight when a new pull starts: jump back to live so the fight is never missed.
         if ((_saved is not null || _segment is not null) &&
             _meter.Tracker.Segments() is [{ IsActive: true } running, ..] && running.StartedAt > _selectedAt)
