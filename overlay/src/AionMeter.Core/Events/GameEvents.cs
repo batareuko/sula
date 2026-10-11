@@ -118,5 +118,8 @@ public sealed record PlayerKilledEvent(long TimeMs, uint VictimId, uint KillerId
 /// <summary>1 HP: an inspected player's header (<c>50 36</c>): level and gear score (the number the game shows).</summary>
 public sealed record PlayerGearEvent(long TimeMs, string Name, int ServerId, int Level, int GearScore) : GameEvent(TimeMs);
 
+/// <summary>1 HP: <c>23 92</c> — a party member's status (name, server); only your party's members are sent.</summary>
+public sealed record PartyMemberEvent(long TimeMs, string Name, int ServerId) : GameEvent(TimeMs);
+
 public sealed record PartyRosterEvent(long TimeMs, IReadOnlyList<string> Names, bool Complete,
     IReadOnlyDictionary<string, long>? Powers = null, IReadOnlyDictionary<string, int>? Gear = null) : GameEvent(TimeMs);

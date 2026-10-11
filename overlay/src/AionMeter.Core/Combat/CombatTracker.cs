@@ -204,6 +204,9 @@ public sealed class CombatTracker
                 case PartyRosterEvent roster:
                     OnPartyRoster(roster);
                     break;
+                case PartyMemberEvent member:
+                    OnPartyMember(member);
+                    break;
                 case ZoneChangedEvent z:
                     if (z.IsTeleport) break;
                     if (_current is { IsActive: true }) Finish(EncounterEndReason.ZoneChange, _current.LastDamageMs);
@@ -357,7 +360,7 @@ public sealed class CombatTracker
 
     private void OnHeal(HealEvent h)
     {
-        if (_entities.SelfId is { } me && _entities.ResolveOwner(h.SourceId) == me && h.TargetId != me &&
+        if (_members.Count == 0 && _entities.SelfId is { } me && _entities.ResolveOwner(h.SourceId) == me && h.TargetId != me &&
             _entities.TryGetPlayer(h.TargetId, out var healed) && !string.IsNullOrEmpty(healed.Name) && _healed.Add(healed.Name.Trim()))
             _partyVersion++;
         if (_current is not { IsActive: true } enc) return;
@@ -720,6 +723,7 @@ public sealed class CombatTracker
 
     private void CheckIdle(long nowMs)
     {
+        if (_members.Count > 0) ExpireMembers(nowMs);
         if (_pvp.EndIfIdle(nowMs))
         {
             if (_pvp.Snapshot(nowMs, WhoPvp) is { } ended) _pendingPvp.Add(ended);
@@ -922,19 +926,64 @@ public sealed class CombatTracker
         if (roster.Gear is { } gear)
             foreach (var (name, score) in gear)
                 if (score > 0 && !string.IsNullOrWhiteSpace(name)) _gear[name.Trim()] = score;
-        if (roster.Complete) _party.Clear();
+        if (roster.Complete)
+        {
+            _party.Clear();
+            foreach (var gone in _members.Keys.Where(n => !names.Contains(n, StringComparer.OrdinalIgnoreCase)).ToList()) _members.Remove(gone);
+        }
         _healed.Clear(); // the roster tells who is in the party
         foreach (var name in names) _party.Add(name);
         if (roster.Complete && _party.Count <= 1) _party.Clear();
         _partyVersion++;
     }
 
+    /// <summary>
+    /// 1 HP: party members by the game's status packet (<c>23 92</c>, only your party's members, every few seconds to
+    /// a minute) — the party even when no roster came (Global rarely sends one) and you heal no one. A member silent
+    /// for <see cref="PartyMemberTimeoutMs"/> left the party.
+    /// </summary>
+    private readonly Dictionary<string, long> _members = new(StringComparer.OrdinalIgnoreCase);
+
+    public const long PartyMemberTimeoutMs = 5 * 60_000;
+
+    private void OnPartyMember(PartyMemberEvent m)
+    {
+        var name = m.Name.Trim();
+        if (name.Length == 0) return;
+        if (_entities.Self?.Name is { Length: > 0 } me && string.Equals(me.Trim(), name, StringComparison.OrdinalIgnoreCase)) return;
+        if (!string.IsNullOrEmpty(KnownSelfName) && string.Equals(KnownSelfName.Trim(), name, StringComparison.OrdinalIgnoreCase)) return;
+        _healed.Clear(); // the game names the party: guesses from heals are no longer needed
+        if (_members.TryAdd(name, m.TimeMs)) _partyVersion++;
+        else _members[name] = Math.Max(_members[name], m.TimeMs);
+    }
+
+    private void ExpireMembers(long nowMs)
+    {
+        foreach (var gone in _members.Where(kv => nowMs - kv.Value > PartyMemberTimeoutMs).Select(kv => kv.Key).ToList())
+        {
+            _members.Remove(gone);
+            _partyVersion++;
+        }
+    }
+
+    /// <summary>
+    /// The party as known: the roster with the members the status packet names, or — while neither came — the players
+    /// you healed (an area heal also lands on players nearby, so it is only the last resort).
+    /// </summary>
+    private IEnumerable<string> PartySet() =>
+        _party.Count == 0 && _members.Count == 0 ? _healed : _party.Concat(_members.Keys).Distinct(StringComparer.OrdinalIgnoreCase);
+
     private static bool IsNamed(Combatant c) => c.Name.Length > 0 && c.Name[0] != '#';
 
-    /// <summary>The party roster, or — while none came — the players you healed.</summary>
-    private bool HasParty => _party.Count > 0 || _healed.Count > 0;
+    /// <summary>The party roster or status packets, or — while neither came — the players you healed.</summary>
+    private bool HasParty => _party.Count > 0 || _healed.Count > 0 || _members.Count > 0;
 
-    private bool InParty(string name) => (_party.Count > 0 ? _party : _healed).Contains(name.Trim());
+    private bool InParty(string name)
+    {
+        name = name.Trim();
+        if (_party.Count == 0 && _members.Count == 0) return _healed.Contains(name);
+        return _party.Contains(name) || _members.ContainsKey(name);
+    }
 
     /// <summary>1 HP: the open world with you known — where fights of players passing by are told apart from yours.</summary>
     private bool WorldScope() => _entities.SelfId is not null && !GameData.IsDungeonMap(_entities.MapId);
@@ -995,7 +1044,7 @@ public sealed class CombatTracker
                 : _entities.SelfId is null && !HasParty ? PartyFilterState.SelfUnknown
                 : !HasParty ? PartyFilterState.Solo
                 : PartyFilterState.Party;
-            return new PartyFilterStatus(state, (_party.Count > 0 ? _party : _healed).OrderBy(n => n).ToList());
+            return new PartyFilterStatus(state, PartySet().OrderBy(n => n).ToList());
         }
     }
 

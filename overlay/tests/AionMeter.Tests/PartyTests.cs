@@ -374,6 +374,35 @@ public class PartyTests
     }
 
     [Fact]
+    public void The_party_status_packet_names_the_party_without_a_roster_or_heals()
+    {
+        // 23 92 of a party member (2026-10-09 Abyss capture): HACPAHO, Hithanya
+        var events = new List<GameEvent>();
+        new PacketParser(GameData.Empty, events.Add).Handle(Opcodes.PartyMember, Hex("07 48 41 43 50 41 48 4f 1d 05 be 43 de 1f"));
+        var e = Assert.IsType<PartyMemberEvent>(Assert.Single(events));
+        Assert.Equal(("HACPAHO", 1309), (e.Name, e.ServerId));
+
+        // A party member opens on a world boss before you hit: the whole fight is theirs and yours, a passer-by's is not.
+        var t = new CombatTracker(GameData.Empty, new MeterOptions { TargetMode = TargetMode.All, PartyOnly = true });
+        t.Process(new SelfIdentifiedEvent(0, Me, "Kunogarasu", 1309, GameClass.Cleric));
+        t.Process(new PlayerSeenEvent(0, Mate, "HACPAHO", 1309, GameClass.Ranger));
+        t.Process(new PlayerSeenEvent(0, Stranger, "Passerby", 1309, GameClass.Gladiator));
+        t.Process(new NpcSeenEvent(0, Boss, 2000002, 50_000_000));
+        t.Process(e with { TimeMs = 100 });
+        t.Process(new HealEvent(200, Me, Stranger, 17010000, 3_000, HitFlags.None)); // an area heal on a passer-by
+        t.Process(new DamageEvent(1_000, Mate, Boss, 14020000, 2_000_000, HitFlags.None));
+        t.Process(new DamageEvent(1_200, Stranger, Boss, 11020000, 2_000_000, HitFlags.None));
+        t.Process(new DamageEvent(1_500, Me, Boss, 17010000, 500_000, HitFlags.None));
+        Assert.Equal(["HACPAHO", "Kunogarasu"], Names(t));
+        Assert.Equal(2_000_000, t.Snapshot(null, 3_000)!.Combatants.First(c => c.Name == "HACPAHO").Damage);
+        Assert.Equal(PartyFilterState.Party, t.PartyStatus().State);
+
+        // Silent for five minutes: left the party.
+        t.Tick(100 + CombatTracker.PartyMemberTimeoutMs + 1);
+        Assert.Equal(PartyFilterState.Solo, t.PartyStatus().State);
+    }
+
+    [Fact]
     public void A_pvp_session_lists_opponents_with_damage_both_ways_hp_and_kills()
     {
         var t = new CombatTracker(GameData.Empty, new MeterOptions { TargetMode = TargetMode.All, PartyOnly = true });

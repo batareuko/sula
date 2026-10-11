@@ -90,6 +90,9 @@ public sealed class PacketParser
             case Opcodes.PlayerGear:
                 ParsePlayerGear(body);
                 break;
+            case Opcodes.PartyMember:
+                ParsePartyMember(body);
+                break;
             case Opcodes.PartyRoster:
                 if (PartyRoster.TryParse(body, 0) is { } roster) EmitRoster(roster);
                 else ScanForRosters(body);
@@ -697,6 +700,18 @@ public sealed class PacketParser
         if (!Wire.TryU32(b, ref o, out var gear) || gear > 100_000) return;
         if (!Wire.TryU16(b, ref o, out var server) || server is < 1000 or >= 3000) return;
         Emit(new PlayerGearEvent(TimeMs, name, server, (int)level, (int)gear));
+    }
+
+    /// <summary>1 HP: <c>name (u8 length + UTF-8), server u16, 2–4 bytes</c> — sent for party members only.</summary>
+    private void ParsePartyMember(ReadOnlySpan<byte> b)
+    {
+        var o = 0;
+        if (!Wire.TryU8(b, ref o, out var len) || len is < 1 or > 36 || o + len + 2 > b.Length) return;
+        if (!Wire.TryName(b.Slice(o, len), out var name)) return;
+        o += len;
+        if (!Wire.TryU16(b, ref o, out var server) || server is < 1000 or >= 3000) return;
+        if (b.Length - o > 4) return;
+        Emit(new PartyMemberEvent(TimeMs, name, server));
     }
 
     /// <summary><c>mob varint, varint, toggle varint</c> (1 = engaged, 0 = left combat) — seen on Global for every mob.</summary>
