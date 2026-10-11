@@ -59,7 +59,7 @@ public sealed partial class UiText
     public string OneHpPriorityBosses { get; init; } = "Notify about priority field bosses (★) 10 minutes ahead, without a bell";
     public string PriorityLoot { get; init; } = "★ Priority: level 48–51 field boss with its own Unique set, about one piece per kill.";
     public string OneHpPartyOnly { get; init; } = "Only me and my party (players around who are not in it are hidden)";
-    public string TipPartyOnly { get; init; } = "Outside dungeons only you and your party are listed: players nearby who hit the same monster are left out of the rows, the totals and the places. In dungeons and raids everyone is your group anyway.";
+    public string TipPartyOnly { get; init; } = "Outside dungeons only you and your party are listed: players nearby who hit the same monster are left out of the rows, the totals and the places. In dungeons and raids everyone is your group anyway. A party member missing (invited mid-fight)? Switch to EVERYONE, right-click them → Add to my party.";
     public string PartyStateOff { get; init; } = "Now: everyone around is listed (EVERYONE).";
     public string PartyStateSelfUnknown { get; init; } = "Now: not filtering yet — the meter does not know your character. Change zone or teleport once.";
     public string PartyStateInstance { get; init; } = "Now: in an instance, where everyone is your group.";

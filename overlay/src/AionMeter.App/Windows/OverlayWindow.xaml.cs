@@ -855,6 +855,17 @@ public partial class OverlayWindow : Window
         menu.Items.Add(new Separator());
         menu.Items.Add(copyMe);
         menu.Items.Add(copyAll);
+        // 1 HP: the party by hand — for someone the game has not shown as a member yet (invited mid-fight)
+        if (_meter.Tracker.IsPartyMember(row.ActorId) is { } member)
+        {
+            var party = new MenuItem { Header = string.Format(member ? UiText.Current.PartyRemove : UiText.Current.PartyAdd, row.Name) };
+            party.Click += (_, _) =>
+            {
+                if (_meter.Tracker.SetPartyMember(row.ActorId, !member)) Refresh();
+            };
+            menu.Items.Add(new Separator());
+            menu.Items.Add(party);
+        }
         menu.IsOpen = true;
         e.Handled = true;
     }

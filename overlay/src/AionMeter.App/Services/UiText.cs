@@ -201,6 +201,8 @@ public sealed partial class UiText
     public string OpenBreakdown { get; init; } = "Open breakdown";
     public string CopyPlayer { get; init; } = "Copy {0}'s result to chat";
     public string CopyParty { get; init; } = "Copy party ranking to chat";
+    public string PartyAdd { get; init; } = "Add {0} to my party (PARTY filter)";
+    public string PartyRemove { get; init; } = "Take {0} out of my party (PARTY filter)";
     public string RowDamage { get; init; } = "Damage";
     public string RowHits { get; init; } = "Hits";
     public string RowCrit { get; init; } = "Crit";
@@ -506,6 +508,8 @@ public sealed partial class UiText
         OpenBreakdown = "Открыть разбор",
         CopyPlayer = "Скопировать результат {0} в чат",
         CopyParty = "Скопировать рейтинг группы в чат",
+        PartyAdd = "Добавить {0} в мою группу (фильтр ГРУППА)",
+        PartyRemove = "Убрать {0} из моей группы (фильтр ГРУППА)",
         RowDamage = "Урон",
         RowHits = "Удары",
         RowCrit = "Крит",
@@ -718,7 +722,7 @@ public sealed partial class UiText
         OneHpPriorityBosses = "Оповещать о приоритетных полевых боссах (★) за 10 минут, без колокольчика",
         PriorityLoot = "★ Приоритетный: полевой босс 48–51 уровня со своим Unique-сетом, в среднем ~1 предмет за убийство.",
         OneHpPartyOnly = "Только я и моя группа (игроки рядом, не состоящие в ней, скрыты)",
-        TipPartyOnly = "Вне подземелий показываются только вы и ваша группа: игроки рядом, бьющие того же монстра, не попадают ни в строки, ни в общий DPS, ни в места. В подземельях и рейдах и так только ваша группа.",
+        TipPartyOnly = "Вне подземелий показываются только вы и ваша группа: игроки рядом, бьющие того же монстра, не попадают ни в строки, ни в общий DPS, ни в места. В подземельях и рейдах и так только ваша группа. Кого-то из группы не видно (пригласили посреди боя)? Переключите на ВСЕ, правый клик по нему → «Добавить в мою группу».",
         PartyStateOff = "Сейчас: показываются все игроки рядом (ВСЕ).",
         PartyStateSelfUnknown = "Сейчас: фильтр ещё не действует — метр не знает вашего персонажа. Смените локацию или телепортируйтесь один раз.",
         PartyStateInstance = "Сейчас: вы в подземелье, здесь и так только ваша группа.",
