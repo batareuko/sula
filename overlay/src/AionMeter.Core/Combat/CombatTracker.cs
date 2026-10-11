@@ -105,7 +105,7 @@ public sealed class CombatTracker
     /// <summary>Players' names and the bosses around: what a meter restarted in this zone could not learn again.</summary>
     public SessionState ExportCache()
     {
-        lock (_gate) return _entities.Export() with { Party = _party.ToList(), Powers = new Dictionary<string, long>(_powers), Gear = new Dictionary<string, int>(_gear) };
+        lock (_gate) return _entities.Export() with { Party = _party.Concat(_members.Keys).Concat(_manualIn).Where(n => !_manualOut.Contains(n)).Distinct(StringComparer.OrdinalIgnoreCase).ToList(), Powers = new Dictionary<string, long>(_powers), Gear = new Dictionary<string, int>(_gear) };
     }
 
     public void ImportCache(SessionState state)
@@ -929,6 +929,8 @@ public sealed class CombatTracker
         if (roster.Complete)
         {
             _party.Clear();
+            _manualIn.Clear();
+            _manualOut.Clear();
             foreach (var gone in _members.Keys.Where(n => !names.Contains(n, StringComparer.OrdinalIgnoreCase)).ToList()) _members.Remove(gone);
         }
         _healed.Clear(); // the roster tells who is in the party
@@ -938,13 +940,43 @@ public sealed class CombatTracker
     }
 
     /// <summary>
-    /// 1 HP: party members by the game's status packet (<c>23 92</c>, only your party's members, every few seconds to
-    /// a minute) — the party even when no roster came (Global rarely sends one) and you heal no one. A member silent
-    /// for <see cref="PartyMemberTimeoutMs"/> left the party.
+    /// 1 HP: party members by the game's party share packet (<c>23 92</c>: sent for your party's members only, right
+    /// after their kill credit — loot) — the party even when no roster came (Global rarely sends one) and you heal no
+    /// one. Nothing comes while a boss is still alive, so someone invited mid-fight shows from the kill on, or at once
+    /// when added by hand (<see cref="SetPartyMember"/>). A member with no share for
+    /// <see cref="PartyMemberTimeoutMs"/> left the party.
     /// </summary>
     private readonly Dictionary<string, long> _members = new(StringComparer.OrdinalIgnoreCase);
 
-    public const long PartyMemberTimeoutMs = 5 * 60_000;
+    public const long PartyMemberTimeoutMs = 30 * 60_000;
+
+    // 1 HP: players put in or out of the party by hand (the row's menu) — over anything the meter guessed.
+    private readonly HashSet<string> _manualIn = new(StringComparer.OrdinalIgnoreCase);
+    private readonly HashSet<string> _manualOut = new(StringComparer.OrdinalIgnoreCase);
+
+    /// <summary>1 HP: puts a player in your party, or takes them out, by hand; false when the meter has no name for them.</summary>
+    public bool SetPartyMember(uint actorId, bool inParty)
+    {
+        lock (_gate)
+        {
+            if (_entities.SelfId == actorId || !_entities.TryGetPlayer(actorId, out var p) || string.IsNullOrWhiteSpace(p.Name)) return false;
+            var name = p.Name.Trim();
+            (inParty ? _manualIn : _manualOut).Add(name);
+            (inParty ? _manualOut : _manualIn).Remove(name);
+            _partyVersion++;
+            return true;
+        }
+    }
+
+    /// <summary>1 HP: null for you or a player with no name yet; otherwise whether the party filter counts them.</summary>
+    public bool? IsPartyMember(uint actorId)
+    {
+        lock (_gate)
+        {
+            if (_entities.SelfId == actorId || !_entities.TryGetPlayer(actorId, out var p) || string.IsNullOrWhiteSpace(p.Name)) return null;
+            return InParty(p.Name);
+        }
+    }
 
     private void OnPartyMember(PartyMemberEvent m)
     {
@@ -971,16 +1003,19 @@ public sealed class CombatTracker
     /// you healed (an area heal also lands on players nearby, so it is only the last resort).
     /// </summary>
     private IEnumerable<string> PartySet() =>
-        _party.Count == 0 && _members.Count == 0 ? _healed : _party.Concat(_members.Keys).Distinct(StringComparer.OrdinalIgnoreCase);
+        (_party.Count == 0 && _members.Count == 0 ? _healed : _party.Concat(_members.Keys))
+        .Concat(_manualIn).Where(n => !_manualOut.Contains(n)).Distinct(StringComparer.OrdinalIgnoreCase);
 
     private static bool IsNamed(Combatant c) => c.Name.Length > 0 && c.Name[0] != '#';
 
     /// <summary>The party roster or status packets, or — while neither came — the players you healed.</summary>
-    private bool HasParty => _party.Count > 0 || _healed.Count > 0 || _members.Count > 0;
+    private bool HasParty => _party.Count > 0 || _healed.Count > 0 || _members.Count > 0 || _manualIn.Count > 0;
 
     private bool InParty(string name)
     {
         name = name.Trim();
+        if (_manualOut.Contains(name)) return false;
+        if (_manualIn.Contains(name)) return true;
         if (_party.Count == 0 && _members.Count == 0) return _healed.Contains(name);
         return _party.Contains(name) || _members.ContainsKey(name);
     }
