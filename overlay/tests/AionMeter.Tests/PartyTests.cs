@@ -424,6 +424,20 @@ public class PartyTests
     }
 
     [Fact]
+    public void A_player_with_no_name_yet_is_added_by_id()
+    {
+        var t = new CombatTracker(GameData.Empty, new MeterOptions { TargetMode = TargetMode.All, PartyOnly = true });
+        t.Process(new SelfIdentifiedEvent(0, Me, "Kunogarasu", 1309, GameClass.Cleric));
+        t.Process(new NpcSeenEvent(0, Boss, 2000002, 50_000_000));
+        t.Process(new DamageEvent(1_000, Me, Boss, 17010000, 500_000, HitFlags.None));
+        t.Process(new DamageEvent(1_200, 777, Boss, 14020000, 2_000_000, HitFlags.None)); // "#777"
+        Assert.Single(Names(t));
+        Assert.False(t.IsPartyMember(777));
+        Assert.True(t.SetPartyMember(777, true));
+        Assert.Equal(2, Names(t).Length);
+    }
+
+    [Fact]
     public void A_pvp_session_lists_opponents_with_damage_both_ways_hp_and_kills()
     {
         var t = new CombatTracker(GameData.Empty, new MeterOptions { TargetMode = TargetMode.All, PartyOnly = true });
