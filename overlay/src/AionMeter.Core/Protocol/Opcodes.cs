@@ -26,6 +26,10 @@ public static class Opcodes
     public const ushort PartyRoster = 0x0297;
     public const ushort PlayerGear = 0x5036;     // 1 HP: another player's equipment, sent when you inspect them
     public const ushort PartyMember = 0x2392;    // 1 HP: a party member's status (name + server), every few seconds
+    public const ushort PartyList = 0x0092;      // 1 HP: the party: every member, sent on joining, a change, a zone
+    public const ushort PartyJoin = 0x0D92;      // 1 HP: one party member (joined, or their card)
+    public const ushort PartyLeave = 0x0697;     // 1 HP: result u16, state u8 (2 = you left), u32
+    public const ushort PartyGone = 0x1D97;      // 1 HP: 00 00 — the party is gone
     public const ushort FieldBossList = 0x0191;  // a map's field bosses: alive since / back at (in-game map list)
 
     public static string Name(ushort op) => op switch
@@ -47,6 +51,10 @@ public static class Opcodes
         HpMp => "HpMp",
         PartyRoster => "PartyRoster",
         PartyMember => "PartyMember",
+        PartyList => "PartyList",
+        PartyJoin => "PartyJoin",
+        PartyLeave => "PartyLeave",
+        PartyGone => "PartyGone",
         FieldBossList => "FieldBosses",
         _ => $"{op >> 8:x2} {op & 0xFF:x2}",
     };

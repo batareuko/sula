@@ -280,13 +280,19 @@ public class EventScheduleTests
     [Fact]
     public void Events_come_at_their_times()
     {
-        Assert.Equal(Utc(10, 15, 0), EventSchedule.Shugo.Next(Utc(10, 14, 20)));
-        Assert.Equal(Utc(10, 15, 0), EventSchedule.Rift.Next(Utc(10, 12, 5)));
-        Assert.Equal(Utc(10, 13, 0), EventSchedule.Kaira.Next(Utc(10, 12, 5)));
-        Assert.Equal(Utc(10, 12, 0), EventSchedule.Siege.Next(Utc(10, 9, 0)));     // Saturday
-        Assert.Equal(Utc(11, 12, 0), EventSchedule.Nahma.Next(Utc(10, 13, 0)));    // Sunday
-        Assert.Equal(Utc(14, 7, 0), EventSchedule.WeeklyReset.Next(Utc(10, 8, 0))); // Wednesday
-        Assert.Equal(Utc(10, 12, 0), EventSchedule.Rift.Next(Utc(10, 12, 5), includeRunning: true));
+        // Hithanya (1309): Europe, Berlin time — summer time (UTC+2) until 25 October
+        const int hithanya = 1309;
+        Assert.Equal(Utc(10, 15, 0), EventSchedule.Shugo.Next(Utc(10, 14, 20), serverId: hithanya));
+        Assert.Equal(Utc(10, 14, 30), EventSchedule.Invasion.Next(Utc(10, 14, 20), serverId: hithanya));
+        Assert.Equal(Utc(10, 12, 0), EventSchedule.Rift.Next(Utc(10, 9, 5), serverId: hithanya));     // 14:00 Berlin
+        Assert.Equal(Utc(10, 14, 0), EventSchedule.Kaira.Next(Utc(10, 12, 5), serverId: hithanya));   // 16:00 Berlin
+        Assert.Equal(Utc(10, 19, 0), EventSchedule.Siege.Next(Utc(10, 9, 0), serverId: hithanya));    // Saturday 21:00
+        Assert.Equal(Utc(10, 19, 30), EventSchedule.SiegeBosses.Next(Utc(10, 9, 0), serverId: hithanya));
+        Assert.Equal(Utc(11, 19, 0), EventSchedule.Nahma.Next(Utc(10, 20, 0), serverId: hithanya));   // Sunday 21:00
+        Assert.Equal(Utc(14, 7, 0), EventSchedule.WeeklyReset.Next(Utc(10, 8, 0)));                   // Wednesday, UTC
+        Assert.Equal(Utc(10, 12, 0), EventSchedule.Rift.Next(Utc(10, 12, 5), includeRunning: true, serverId: hithanya));
+        // after the clocks go back (UTC+1): the Rift at 14:00 Berlin is 13:00 UTC
+        Assert.Equal(new DateTimeOffset(2026, 10, 27, 13, 0, 0, TimeSpan.Zero), EventSchedule.Rift.Next(new DateTimeOffset(2026, 10, 27, 10, 5, 0, TimeSpan.Zero), serverId: hithanya));
     }
 
     [Fact]
@@ -294,9 +300,10 @@ public class EventScheduleTests
     {
         var announced = new Dictionary<string, DateTimeOffset>();
         string[] on = ["rift", "shugo"];
-        Assert.Empty(EventSchedule.Due(Utc(10, 14, 50), on, _ => 5, announced));
-        var due = EventSchedule.Due(Utc(10, 14, 56), on, _ => 5, announced);
+        // 17:00 Berlin = 15:00 UTC: the Rift and the Shugo Festival together
+        Assert.Empty(EventSchedule.Due(Utc(10, 14, 50), on, _ => 5, announced, 1309));
+        var due = EventSchedule.Due(Utc(10, 14, 56), on, _ => 5, announced, 1309);
         Assert.Equal(["rift", "shugo"], due.Select(d => d.Event.Id).Order());
-        Assert.Empty(EventSchedule.Due(Utc(10, 14, 58), on, _ => 5, announced));
+        Assert.Empty(EventSchedule.Due(Utc(10, 14, 58), on, _ => 5, announced, 1309));
     }
 }

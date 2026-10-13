@@ -1,3 +1,4 @@
+using System.Text;
 using AionMeter.Core.Combat;
 using AionMeter.Core.Events;
 using AionMeter.Core.Game;
@@ -435,6 +436,98 @@ public class PartyTests
         Assert.False(t.IsPartyMember(777));
         Assert.True(t.SetPartyMember(777, true));
         Assert.Equal(2, Names(t).Length);
+    }
+
+    // ---------------------------------------------------------------- the game's party packets
+
+    private static byte[] Str(string text) => [(byte)Encoding.UTF8.GetByteCount(text), .. Encoding.UTF8.GetBytes(text)];
+
+    /// <summary>A 00 92 body: no optional blocks, the members, then the last byte (the members' bools share one byte).</summary>
+    private static byte[] PartyList(params (uint Id, string Name, int Slot)[] members)
+    {
+        var b = new List<byte> { 0 };
+        b.AddRange(new byte[8 + 8 + 4 + 4]);
+        b.Add((byte)members.Length);
+        var first = true;
+        foreach (var (id, name, slot) in members)
+        {
+            b.Add(0);
+            b.Add((byte)slot);
+            b.AddRange(BitConverter.GetBytes(id));
+            b.AddRange(BitConverter.GetBytes((ushort)1309));
+            b.AddRange(BitConverter.GetBytes((ushort)1309));
+            b.Add(0); // string
+            b.AddRange(new byte[8]);
+            b.AddRange(Str(name));
+            b.AddRange(new byte[4]);
+            b.Add(0); // varint
+            b.Add(0); // varint
+            b.AddRange(new byte[24 + 8 + 4 + 12]);
+            if (first) b.Add(0); // the byte all the bools come from
+            b.AddRange(new byte[12]);
+            b.AddRange(new byte[8 + 1]);
+            first = false;
+        }
+        b.Add(0);
+        return b.ToArray();
+    }
+
+    /// <summary>A 0D 92 body: kind 3, slot, id, server twice, a 36-character uuid, 8 bytes, the name.</summary>
+    private static byte[] PartyJoin(uint id, string name, int slot)
+    {
+        var b = new List<byte> { 3, (byte)slot };
+        b.AddRange(BitConverter.GetBytes(id));
+        b.AddRange(BitConverter.GetBytes((ushort)1309));
+        b.AddRange(BitConverter.GetBytes((ushort)1309));
+        b.Add(36);
+        b.AddRange(Encoding.ASCII.GetBytes(new string('a', 36)));
+        b.AddRange(new byte[8]);
+        b.AddRange(Str(name));
+        b.AddRange(new byte[20]);
+        return b.ToArray();
+    }
+
+    [Fact]
+    public void The_party_list_and_a_member_joining_are_read()
+    {
+        var events = new List<GameEvent>();
+        var parser = new PacketParser(GameData.Empty, events.Add);
+        parser.Handle(Opcodes.PartyList, PartyList((Me, "Kunogarasu", 1), (Mate, "HACPAHO", 2)));
+        var list = Assert.IsType<PartyListEvent>(events.Last());
+        Assert.Equal(["Kunogarasu", "HACPAHO"], list.Members.Select(m => m.Name));
+        Assert.Equal(Mate, list.Members[1].ActorId);
+
+        events.Clear();
+        parser.Handle(Opcodes.PartyJoin, PartyJoin(Stranger, "PensionerPro", 3));
+        var join = Assert.IsType<PartyJoinEvent>(events.Last());
+        Assert.Equal(("PensionerPro", Stranger, 1309), (join.Member.Name, join.Member.ActorId, join.Member.ServerId));
+        Assert.Contains(events, e => e is PlayerSeenEvent { Name: "PensionerPro" });
+
+        events.Clear();
+        parser.Handle(Opcodes.PartyLeave, [0, 0, 2, 0, 0, 0, 0]);
+        Assert.IsType<PartyLeftEvent>(Assert.Single(events));
+    }
+
+    [Fact]
+    public void Someone_who_joins_mid_fight_counts_with_the_whole_fight_and_leaving_ends_the_party()
+    {
+        var t = new CombatTracker(GameData.Empty, new MeterOptions { TargetMode = TargetMode.All, PartyOnly = true });
+        t.Process(new SelfIdentifiedEvent(0, Me, "Kunogarasu", 1309, GameClass.Cleric));
+        t.Process(new PlayerSeenEvent(0, Mate, "HACPAHO", 1309, GameClass.Ranger));
+        t.Process(new PlayerSeenEvent(0, Stranger, "PensionerPro", 1309, GameClass.Ranger));
+        t.Process(new NpcSeenEvent(0, Boss, 2000002, 50_000_000));
+        t.Process(new PartyListEvent(0, [new(Me, "Kunogarasu", 1309, 1), new(Mate, "HACPAHO", 1309, 2)]));
+        t.Process(new DamageEvent(1_000, Me, Boss, 17010000, 500_000, HitFlags.None));
+        t.Process(new DamageEvent(1_100, Mate, Boss, 14020000, 1_000_000, HitFlags.None));
+        t.Process(new DamageEvent(1_200, Stranger, Boss, 14020000, 2_000_000, HitFlags.None)); // not in the party yet
+        Assert.Equal(["HACPAHO", "Kunogarasu"], Names(t));
+
+        t.Process(new PartyJoinEvent(1_500, new(Stranger, "PensionerPro", 1309, 3)));
+        Assert.Equal(["PensionerPro", "HACPAHO", "Kunogarasu"], Names(t));
+
+        t.Process(new PartyLeftEvent(2_000));
+        Assert.Equal(["Kunogarasu"], Names(t));
+        Assert.Equal(PartyFilterState.Solo, t.PartyStatus().State);
     }
 
     [Fact]

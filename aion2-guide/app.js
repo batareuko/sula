@@ -2115,10 +2115,21 @@
     return Math.floor(min / 60) + ' год' + (min % 60 ? ' ' + (min % 60) + ' хв' : '');
   }
 
+  // Зсув часу сервера від UTC у мс (Європа — час Берліна, з літнім часом).
+  function serverOffset(t) {
+    try {
+      var p = {};
+      new Intl.DateTimeFormat('en-GB', { timeZone: G.rift.zone, hourCycle: 'h23', year: 'numeric', month: '2-digit', day: '2-digit',
+        hour: '2-digit', minute: '2-digit', second: '2-digit' }).formatToParts(new Date(t)).forEach(function (x) { p[x.type] = +x.value; });
+      return Date.UTC(p.year, p.month - 1, p.day, p.hour, p.minute, p.second) - Math.floor(t / 1000) * 1000;
+    } catch (e) { return 0; }
+  }
+
   function riftInfo(now) {
     var P = G.rift.everyHours * 3600000;
-    var anchor = G.rift.anchorUtcHour * 3600000;
-    var last = anchor + Math.floor((now - anchor) / P) * P;
+    var anchor = G.rift.anchorHour * 3600000;
+    var off = serverOffset(now);
+    var last = anchor + Math.floor((now + off - anchor) / P) * P - off;
     return { last: last, next: last + P, open: now < last + G.rift.portalMin * 60000, closes: last + G.rift.portalMin * 60000, P: P };
   }
 

@@ -104,7 +104,8 @@ public sealed class BossTimers
     private static readonly JsonSerializerOptions Json = new() { WriteIndented = true };
 
     /// <param name="Slots">1 HP: the map's bosses in list order, for maps whose bosses span code blocks (Verteron).</param>
-    public sealed record MapInfo(int Block, string? En, string? Ru, IReadOnlyList<int>? Slots = null);
+    /// <param name="SlotIds">1 HP: list slot → boss, for maps whose slots skip numbers or go out of code order (the Abyss).</param>
+    public sealed record MapInfo(int Block, string? En, string? Ru, IReadOnlyList<int>? Slots = null, IReadOnlyDictionary<int, int>? SlotIds = null);
 
     /// <summary>Where a boss was last seen alive.</summary>
     public sealed record Sighting(int MapId, float X, float Y, float Z, DateTimeOffset At);
@@ -381,12 +382,14 @@ public sealed class BossTimers
     /// <summary>1 HP: the boss of a slot on a map whose list order is shipped (all of the map's bosses, in order).</summary>
     private int FixedSlot(int mapId, int slotId, int slotCount)
     {
-        if (!_knownMaps.TryGetValue(mapId, out var m) || m.Slots is not { } slots || slots.Count != slotCount) return 0;
+        if (!_knownMaps.TryGetValue(mapId, out var m)) return 0;
+        if (m.SlotIds is { } ids) return ids.GetValueOrDefault(slotId);
+        if (m.Slots is not { } slots || slots.Count != slotCount) return 0;
         var place = slotId - mapId * 100;
         return place >= 1 && place <= slots.Count ? slots[place - 1] : 0;
     }
 
-    private bool HasFixedSlots(int mapId) => _knownMaps.TryGetValue(mapId, out var m) && m.Slots is not null;
+    private bool HasFixedSlots(int mapId) => _knownMaps.TryGetValue(mapId, out var m) && (m.Slots is not null || m.SlotIds is not null);
 
     private int BlockOf(int mapId, int slotCount)
     {
@@ -732,11 +735,15 @@ public sealed class BossTimers
             {
                 if (!int.TryParse(m.Name, out var id)) continue;
                 var block = m.Value.TryGetProperty("block", out var b) ? b.GetInt32() : 0;
-                var slots = m.Value.TryGetProperty("slots", out var s) ? s.EnumerateArray().Select(c => c.GetInt32()).ToList() : null;
-                if (block == 0 && slots is null) continue;
+                m.Value.TryGetProperty("slots", out var s);
+                var slots = s.ValueKind == JsonValueKind.Array ? s.EnumerateArray().Select(c => c.GetInt32()).ToList() : null;
+                var slotIds = s.ValueKind == JsonValueKind.Object
+                    ? s.EnumerateObject().Where(p => int.TryParse(p.Name, out _)).ToDictionary(p => int.Parse(p.Name), p => p.Value.GetInt32())
+                    : null;
+                if (block == 0 && slots is null && slotIds is null) continue;
                 _knownMaps[id] = new MapInfo(block,
                     m.Value.TryGetProperty("en", out var en) ? en.GetString() : null,
-                    m.Value.TryGetProperty("ru", out var ru) ? ru.GetString() : null, slots);
+                    m.Value.TryGetProperty("ru", out var ru) ? ru.GetString() : null, slots, slotIds);
             }
         }
         catch (Exception ex) when (ex is IOException or JsonException or InvalidOperationException)

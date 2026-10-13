@@ -1,8 +1,8 @@
 namespace AionMeter.Core.OneHp;
 
 /// <summary>
-/// 1 HP: fixed Global schedule (same as guide.sulaslova.com). The Spacetime Rift opens every 3 hours from 00:00 UTC
-/// and stays open 10 minutes (player-reported); daily reset at 07:00 UTC, weekly reset on Wednesday at 07:00 UTC.
+/// 1 HP: fixed Global schedule. The Spacetime Rift opens every 3 hours from 02:00 server time (see
+/// <see cref="EventSchedule"/>) and stays open 10 minutes; daily reset at 07:00 UTC, weekly reset on Wednesday at 07:00 UTC.
 /// </summary>
 public static class GlobalSchedule
 {
@@ -14,14 +14,10 @@ public static class GlobalSchedule
     /// <summary>Open = the portal is open now and closes at <see cref="Closes"/>; otherwise it opens at <see cref="Opens"/>.</summary>
     public readonly record struct RiftState(bool IsOpen, DateTimeOffset Opens, DateTimeOffset Closes);
 
-    public static RiftState Rift(DateTimeOffset now)
+    public static RiftState Rift(DateTimeOffset now, int serverId = 0)
     {
-        now = now.ToUniversalTime();
-        var midnight = new DateTimeOffset(now.UtcDateTime.Date, TimeSpan.Zero);
-        var last = midnight + RiftEvery * Math.Floor((now - midnight) / RiftEvery);
-        if (now < last + RiftOpen) return new RiftState(true, last, last + RiftOpen);
-        var next = last + RiftEvery;
-        return new RiftState(false, next, next + RiftOpen);
+        var opens = EventSchedule.Rift.Next(now, includeRunning: true, serverId: serverId);
+        return new RiftState(opens <= now, opens, opens + RiftOpen);
     }
 
     public static DateTimeOffset NextDailyReset(DateTimeOffset now)
