@@ -12,7 +12,8 @@ public sealed record ReleaseInfo(
     string Notes,
     DateTimeOffset? PublishedAt,
     ReleaseAsset? Installer,
-    ReleaseAsset? Portable);
+    ReleaseAsset? Portable,
+    ReleaseAsset? Single = null);
 
 /// <summary>One file of a release. <see cref="Sha256"/> is GitHub's digest (lower-case hex) when it reports one.</summary>
 public sealed record ReleaseAsset(string Name, long Size, string Url, string? Sha256);
@@ -28,6 +29,9 @@ public sealed class UpdateFeed : IDisposable
     public const string Repository = "batareuko/sula";
     public const string LatestReleaseApi = "https://api.github.com/repos/" + Repository + "/releases/latest";
     public const string ReleasesPage = "https://github.com/" + Repository + "/releases/latest";
+
+    /// <summary>1 HP: the release file holding the whole overlay in one exe.</summary>
+    public const string SingleExeName = "1HP-Overlay.exe";
 
     private static readonly TimeSpan ApiTimeout = TimeSpan.FromSeconds(20);
     private static readonly TimeSpan DownloadTimeout = TimeSpan.FromMinutes(30);
@@ -69,7 +73,7 @@ public sealed class UpdateFeed : IDisposable
         var tag = Str(r, "tag_name");
         if (ParseVersion(tag) is not { } version) return null;
 
-        ReleaseAsset? installer = null, portable = null;
+        ReleaseAsset? installer = null, portable = null, single = null;
         if (r.TryGetProperty("assets", out var assets) && assets.ValueKind == JsonValueKind.Array)
         {
             foreach (var a in assets.EnumerateArray())
@@ -84,11 +88,13 @@ public sealed class UpdateFeed : IDisposable
                     installer ??= asset;
                 else if (name.EndsWith("-win-x64.zip", StringComparison.OrdinalIgnoreCase))
                     portable ??= asset;
+                else if (string.Equals(name, SingleExeName, StringComparison.OrdinalIgnoreCase))
+                    single ??= asset; // 1 HP: the whole overlay in one file
             }
         }
         var page = Str(r, "html_url");
         return new ReleaseInfo(version, tag, page.Length > 0 ? page : ReleasesPage, Str(r, "body"),
-            DateTimeOffset.TryParse(Str(r, "published_at"), out var at) ? at : null, installer, portable);
+            DateTimeOffset.TryParse(Str(r, "published_at"), out var at) ? at : null, installer, portable, single);
     }
 
     /// <summary>"v0.2.0", "0.2", "v1.0.3-beta" → 0.2.0, 0.2.0, 1.0.3; null when it is not a version.</summary>

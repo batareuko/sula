@@ -158,6 +158,7 @@ public partial class App : Application
         _meter.Updates.Changed += OnUpdatesChanged;
         _meter.Updates.Start();
         Updater.CleanDownloads();
+        Updater.CleanOldExe();
         if (e.Args.Contains("--updated")) // started by the installer after an in-app update
             Dispatcher.BeginInvoke(() => _tray?.ShowBalloon(AppInfo.Name,
                 string.Format(UiText.Current.UpdatedBalloon, _meter.Updates.Current.ToString(3))), DispatcherPriority.ApplicationIdle);

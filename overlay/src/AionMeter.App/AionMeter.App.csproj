@@ -16,7 +16,7 @@
     <Product>1 HP Overlay</Product>
     <AssemblyTitle>1 HP Overlay</AssemblyTitle>
     <ApplicationIcon>Assets\app.ico</ApplicationIcon>
-    <Version>1.8.0</Version>
+    <Version>1.8.1</Version>
     <ApplicationManifest>app.manifest</ApplicationManifest>
     <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
     <NoWarn>$(NoWarn);WFO0003</NoWarn>
@@ -35,5 +35,16 @@
   <ItemGroup>
     <None Include="..\..\data\**\*" Link="data\%(RecursiveDir)%(Filename)%(Extension)" CopyToOutputDirectory="PreserveNewest" />
   </ItemGroup>
+
+  <!-- 1 HP: the one-file exe (CI: -p:PublishSingleFile=true -p:WatcherExe=…) carries 1HP-Watcher.exe inside; the data
+       folder and WPF's native libraries unpack with it to a temp folder on the first start. -->
+  <ItemGroup Condition="'$(WatcherExe)' != ''">
+    <EmbeddedResource Include="$(WatcherExe)" LogicalName="1HP-Watcher.exe" />
+  </ItemGroup>
+  <PropertyGroup Condition="'$(PublishSingleFile)' == 'true'">
+    <IncludeNativeLibrariesForSelfExtract>true</IncludeNativeLibrariesForSelfExtract>
+    <IncludeAllContentForSelfExtract>true</IncludeAllContentForSelfExtract>
+    <EnableCompressionInSingleFile>true</EnableCompressionInSingleFile>
+  </PropertyGroup>
 
 </Project>

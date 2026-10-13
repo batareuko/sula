@@ -49,6 +49,10 @@ jobs:
           Copy-Item dist/watcher/1HP-Watcher.exe "dist/$name/"
           Copy-Item LICENSE, README.md, README.upstream.md "dist/$name/"
           Compress-Archive -Path "dist/$name/*" -DestinationPath "dist/$name.zip"
+          # 1 HP: the whole overlay in one 1HP-Overlay.exe — data and the watcher inside, unpacked on the first start
+          $watcher = (Resolve-Path dist/watcher/1HP-Watcher.exe).Path
+          dotnet publish src/AionMeter.App -c Release -r win-x64 --self-contained -p:PublishSingleFile=true -p:DebugType=None "-p:WatcherExe=$watcher" -o dist/single
+          Get-ChildItem dist/single
           "version=$version" >> $env:GITHUB_OUTPUT
           "name=$name" >> $env:GITHUB_OUTPUT
 
@@ -56,6 +60,11 @@ jobs:
         with:
           name: ${{ steps.publish.outputs.name }}
           path: overlay/dist/${{ steps.publish.outputs.name }}.zip
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: 1HP-Overlay-exe
+          path: overlay/dist/single/1HP-Overlay.exe
 
       # How the overlay looks: the app's own offscreen render of a scripted fight (no game needed)
       - name: Preview
@@ -75,6 +84,10 @@ jobs:
             $p = Start-Process $exe -ArgumentList $shot -PassThru
             if (-not $p.WaitForExit(120000)) { $p.Kill(); Write-Host "timed out: $shot" }
           }
+          # 1 HP: the one-file exe starts and finds its data (it unpacks itself first)
+          $single = Resolve-Path dist/single/1HP-Overlay.exe
+          $p = Start-Process $single -ArgumentList @('--render-sample', 'dist/preview/overlay-single.png', '--lang', 'uk') -PassThru
+          if (-not $p.WaitForExit(180000)) { $p.Kill(); Write-Host "timed out: one-file exe" }
           Get-ChildItem dist/preview
 
       - uses: actions/upload-artifact@v4
@@ -92,4 +105,4 @@ jobs:
           $tag = "v${{ steps.publish.outputs.version }}"
           gh release view $tag 2>$null
           if ($LASTEXITCODE -eq 0) { Write-Host "Release $tag already exists: bump <Version> to publish a new one."; exit 0 }
-          gh release create $tag "dist/${{ steps.publish.outputs.name }}.zip" --title "1 HP Overlay $tag" --notes "Оверлей і DPS-метр 1 HP для Aion 2 (Windows). Потрібен Npcap: https://npcap.com/#download. Розпакуйте zip і запустіть 1HP-Overlay.exe. Опис: https://github.com/batareuko/sula/tree/main/overlay"
+          gh release create $tag "dist/single/1HP-Overlay.exe" "dist/${{ steps.publish.outputs.name }}.zip" --title "1 HP Overlay $tag" --notes "Оверлей і DPS-метр 1 HP для Aion 2 (Windows). Потрібен Npcap: https://npcap.com/#download. Завантажте 1HP-Overlay.exe (один файл, нічого розпаковувати) і запустіть. Або zip: розпакуйте і запустіть 1HP-Overlay.exe. Опис: https://github.com/batareuko/sula/tree/main/overlay"
