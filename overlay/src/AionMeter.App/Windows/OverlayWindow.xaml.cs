@@ -83,14 +83,24 @@ public partial class OverlayWindow : Window
     private void UpdateBuffLine()
     {
         var now = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds();
+        // 1 HP: the game's own unnamed effects ("#100000401": system and passive states) are left out, and the same
+        // buff from several casts (stacks, party members) is one line with a count — the longest left first
+        var all = _meter.Tracker.SelfBuffs(now)
+            .Where(b => !b.Name.StartsWith('#'))
+            .GroupBy(b => (b.Name, b.Debuff))
+            .Select(g => (g.Key.Name, g.Key.Debuff, Count: g.Count(), Buff: g.OrderByDescending(b => b.LeftMs(now)).First()))
+            .OrderBy(x => x.Buff.LeftMs(now))
+            .ToList();
         var buffs = _settings.ShowBuffs
-            ? _meter.Tracker.SelfBuffs(now).Where(b => !b.Debuff && (b.EndMs == 0 || b.DurationMs >= 10_000)).Take(4).ToList()
+            ? all.Where(x => !x.Debuff && (x.Buff.EndMs == 0 || x.Buff.DurationMs >= 10_000)).Take(4).ToList()
             : [];
         BuffLine.Visibility = buffs.Count > 0 ? Visibility.Visible : Visibility.Collapsed;
         if (buffs.Count == 0) return;
-        BuffLine.Text = "✦ " + string.Join(" · ", buffs.Select(b => b.EndMs == 0 ? b.Name : $"{b.Name} {Clock(b.LeftMs(now))}"));
-        BuffLine.ToolTip = string.Join("\n", _meter.Tracker.SelfBuffs(now)
-            .Select(b => (b.Debuff ? "▼ " : "▲ ") + b.Name + (b.EndMs == 0 ? "" : " " + Clock(b.LeftMs(now)))));
+        BuffLine.Text = "✦ " + string.Join(" · ", buffs.Select(Describe));
+        BuffLine.ToolTip = string.Join("\n", all.Select(x => (x.Debuff ? "▼ " : "▲ ") + Describe(x)));
+
+        string Describe((string Name, bool Debuff, int Count, ActiveBuff Buff) x) =>
+            x.Name + (x.Count > 1 ? $" ×{x.Count}" : "") + (x.Buff.EndMs == 0 ? "" : " " + Clock(x.Buff.LeftMs(now)));
     }
 
     private static readonly int[] ResourceOrder =
