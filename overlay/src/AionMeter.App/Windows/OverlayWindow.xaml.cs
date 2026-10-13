@@ -137,12 +137,41 @@ public partial class OverlayWindow : Window
     private void UpdateCooldownLine()
     {
         var now = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds();
-        var all = _settings.ShowPartyCooldowns ? _meter.Tracker.PartyCooldowns(now) : [];
-        CooldownLine.Visibility = all.Count > 0 ? Visibility.Visible : Visibility.Collapsed;
-        if (all.Count == 0) return;
-        CooldownLine.Text = "⟳ " + string.Join(" · ", all.Take(3).Select(c => $"{c.Player}: {c.Skill} {Clock(c.LeftMs)}"));
-        CooldownLine.ToolTip = string.Join("\n", all.Select(c => $"{c.Player}: {c.Skill} {Clock(c.LeftMs)} / {Clock(c.TotalMs)}"));
+        var all = _settings.ShowPartyCooldowns ? _meter.Tracker.PartyCooldowns(now).Take(8).ToList() : [];
+        CooldownPanel.Visibility = all.Count > 0 ? Visibility.Visible : Visibility.Collapsed;
+        // 1 HP: a round badge per cooldown — the skill icon, the sector still cooling down, the seconds; reused while
+        // the same cooldowns run, so the tooltips stay put
+        var keys = all.Select(c => c.Player + "|" + c.SkillCode).ToList();
+        if (!keys.SequenceEqual(_cooldownKeys))
+        {
+            CooldownPanel.Children.Clear();
+            _cooldownBadges.Clear();
+            foreach (var c in all)
+            {
+                var badge = new CooldownBadge();
+                var cell = new StackPanel { Margin = new Thickness(0, 0, 2, 0) };
+                cell.Children.Add(badge);
+                cell.Children.Add(new TextBlock
+                {
+                    Text = c.Player.Length > 6 ? c.Player[..6] : c.Player, FontSize = 9.5, Foreground = new SolidColorBrush(Color.FromRgb(0xC9, 0xD2, 0xE0)),
+                    HorizontalAlignment = HorizontalAlignment.Center, Margin = new Thickness(0, 1, 6, 0),
+                });
+                CooldownPanel.Children.Add(cell);
+                _cooldownBadges.Add((badge, cell));
+            }
+            _cooldownKeys = keys;
+        }
+        for (var i = 0; i < all.Count; i++)
+        {
+            var c = all[i];
+            var (badge, cell) = _cooldownBadges[i];
+            badge.Set(_meter.Icons.Get(c.SkillCode), c.TotalMs > 0 ? (double)c.LeftMs / c.TotalMs : 0, c.LeftMs);
+            cell.ToolTip = $"{c.Player}: {c.Skill}\n{Clock(c.LeftMs)} / {Clock(c.TotalMs)}";
+        }
     }
+
+    private List<string> _cooldownKeys = new();
+    private readonly List<(CooldownBadge Badge, StackPanel Cell)> _cooldownBadges = new();
 
     private static string Clock(long ms) =>
         ms >= 3_600_000 ? $"{ms / 3_600_000}:{ms / 60_000 % 60:00}:{ms / 1000 % 60:00}" : $"{ms / 60_000}:{ms / 1000 % 60:00}";

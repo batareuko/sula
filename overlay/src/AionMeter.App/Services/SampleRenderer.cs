@@ -33,6 +33,7 @@ public static class SampleRenderer
         if (o.Window == "overlay-death") FeedDeath(meter.Tracker, start + 20_300);
         if (o.Window == "overlay-pvp") FeedPvp(meter.Tracker, start + 20_300);
         if (o.Window == "overlay-run") FeedRun(meter.Tracker, start);
+        if (o.Window == "overlay") FeedCooldowns(meter, DateTimeOffset.UtcNow.ToUnixTimeMilliseconds());
         if (o.Window == "history")
             foreach (var entry in meter.History.List().Take(20)) meter.PortraitOf(entry);
         WaitForPortraits(meter);
@@ -159,6 +160,28 @@ public static class SampleRenderer
         }
         tracker.Process(new DeathEvent(at, me));
         tracker.Process(new PlayerKilledEvent(at, me, enemy, "Miranda", 2309));
+    }
+
+    /// <summary>1 HP: three party members with long cooldowns running, for the round badges under the card.</summary>
+    private static void FeedCooldowns(MeterService meter, long now)
+    {
+        var t = meter.Tracker;
+        var self = t.SelfName ?? "Sylvaen";
+        (uint Id, string Name, int Skill, long Total, long Ago)[] party =
+        [
+            (990001, "Hymnar", 18330010, 120_000, 30_000), (990002, "Talwyn", 14220010, 115_800, 100_000),
+            (990003, "Aegisa", 17430020, 60_000, 12_000), (990002, "Talwyn", 14060030, 43_400, 0),
+        ];
+        var members = new List<PartyMemberInfo> { new(0, self, 1309, 1) };
+        foreach (var p in party.DistinctBy(p => p.Id))
+        {
+            t.Process(new PlayerSeenEvent(now - 60_000, p.Id, p.Name, 1309, GameClass.Unknown));
+            members.Add(new PartyMemberInfo(p.Id, p.Name, 1309, members.Count + 1));
+        }
+        t.Process(new PartyListEvent(now - 60_000, members));
+        foreach (var p in party) t.Process(new SkillCooldownEvent(now - p.Ago, p.Id, p.Skill, p.Total));
+        foreach (var p in party) meter.Icons.Get(p.Skill);
+        for (var i = 0; i < 30 && party.Any(p => meter.Icons.Get(p.Skill) is null); i++) Thread.Sleep(100); // icons from the CDN
     }
 
     private static MeterService CreateMeter(string language, int rowSize = 100)
