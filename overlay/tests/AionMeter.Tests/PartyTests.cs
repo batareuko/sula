@@ -505,7 +505,8 @@ public class PartyTests
 
         events.Clear();
         parser.Handle(Opcodes.PartyLeave, [0, 0, 2, 0, 0, 0, 0]);
-        Assert.IsType<PartyLeftEvent>(Assert.Single(events));
+        Assert.Single(events.OfType<PartyLeftEvent>());
+        Assert.True(Assert.Single(events.OfType<PartyPacketEvent>()).Read); // and the raw packet for the log
     }
 
     [Fact]
