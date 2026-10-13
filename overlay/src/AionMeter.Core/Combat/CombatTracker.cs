@@ -1279,7 +1279,13 @@ public sealed class CombatTracker
                 : _entities.SelfId is null && !HasParty ? PartyFilterState.SelfUnknown
                 : !HasParty ? PartyFilterState.Solo
                 : PartyFilterState.Party;
-            return new PartyFilterStatus(state, PartySet().OrderBy(n => n).ToList());
+            var source = _partyFromGame && _party.Count > 0 ? PartySource.Game
+                : _party.Count > 0 ? PartySource.Roster
+                : _members.Count > 0 ? PartySource.Loot
+                : _manualIn.Count > 0 || _manualIds.Count > 0 ? PartySource.Manual
+                : _healed.Count > 0 ? PartySource.Heals
+                : PartySource.None;
+            return new PartyFilterStatus(state, PartySet().OrderBy(n => n).ToList(), source);
         }
     }
 

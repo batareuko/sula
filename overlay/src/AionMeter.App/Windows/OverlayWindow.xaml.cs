@@ -587,7 +587,7 @@ public partial class OverlayWindow : Window
             Core.Combat.PartyFilterState.Instance => t.PartyStateInstance,
             Core.Combat.PartyFilterState.Solo => t.PartyStateSolo,
             _ => string.Format(t.PartyStateParty, string.Join(", ", party.Party)),
-        };
+        } + (party.Source != Core.Combat.PartySource.None ? "\n" + t.PartySourceName(party.Source) : "");
 
         var parts = new List<string>();
         if (r.Server is null)
