@@ -151,6 +151,44 @@ internal static class PartyPackets
         return new PartyMemberInfo((uint)actor, name, server, body[1]);
     }
 
+    /// <summary>
+    /// 1 HP: <c>07 97</c>, someone asks to join your party: <code>…, server u16 at 10, …, job u32, level u32, 4 bytes,
+    /// name length u8, name, 6 bytes, combat power u32, …</code> — the name sits near the end (up to 40 bytes after it).
+    /// </summary>
+    public static PartyRequestEvent? ReadRequest(ReadOnlySpan<byte> body, long timeMs)
+    {
+        if (body.Length < 12) return null;
+        var server = BinaryPrimitives.ReadUInt16LittleEndian(body[10..]);
+        for (var slack = 0; slack <= 40; slack++)
+            for (var len = 1; len <= 36; len++)
+            {
+                var at = body.Length - len - 1 - slack;
+                if (at < 12 || body[at] != len || !Wire.TryName(body.Slice(at + 1, len), out var name)) continue;
+                var job = BinaryPrimitives.ReadUInt32LittleEndian(body[(at - 12)..]);
+                var level = BinaryPrimitives.ReadUInt32LittleEndian(body[(at - 8)..]);
+                if (level is < 1 or > 55) continue;
+                var cp = at + 1 + len + 6;
+                long power = cp + 4 <= body.Length && BinaryPrimitives.ReadUInt32LittleEndian(body[cp..]) is var p and <= 9_999_999 ? p : 0;
+                return new PartyRequestEvent(timeMs, name, ValidServer(server) ? server : 0, ClassOfJob(job), (int)level, power);
+            }
+        return null;
+    }
+
+    /// <summary>The game's job codes, four to a class.</summary>
+    public static GameClass ClassOfJob(uint job) => job switch
+    {
+        >= 5 and <= 8 => GameClass.Gladiator,
+        >= 9 and <= 12 => GameClass.Templar,
+        >= 13 and <= 16 => GameClass.Ranger,
+        >= 17 and <= 20 => GameClass.Assassin,
+        >= 21 and <= 24 => GameClass.Elementalist,
+        >= 25 and <= 28 => GameClass.Sorcerer,
+        >= 29 and <= 32 => GameClass.Cleric,
+        >= 33 and <= 36 => GameClass.Chanter,
+        >= 45 and <= 48 => GameClass.Brawler,
+        _ => GameClass.Unknown,
+    };
+
     /// <summary><c>06 97</c>: <code>result u16 (0 = done), state u8 (1 joined, 2 left), u32</code> — true when you left.</summary>
     public static bool IsLeave(ReadOnlySpan<byte> body) =>
         body.Length == 7 && BinaryPrimitives.ReadUInt16LittleEndian(body) == 0 && body[2] == 2;

@@ -566,6 +566,83 @@ public class PartyTests
     }
 
     [Fact]
+    public void Buffs_are_read_kept_until_they_run_out_and_removed()
+    {
+        // 2A 38: target 100, one buff: flags 1 (caster), instance 7, code 147300071, 60 s, expires, caster 100, level 1, not removing
+        var body = new List<byte> { 100, 1, 1, 7 };
+        body.AddRange(BitConverter.GetBytes(147300071));
+        body.AddRange(BitConverter.GetBytes(60_000L));
+        body.AddRange(BitConverter.GetBytes(0L));
+        body.AddRange([100, 1, 0]);
+        var events = new List<GameEvent>();
+        new PacketParser(GameData.Empty, events.Add) { TimeMs = 1_000 }.Handle(Opcodes.BuffList, body.ToArray());
+        var buff = Assert.IsType<BuffEvent>(Assert.Single(events));
+        Assert.Equal((100u, 147300071, 60_000L, false), (buff.TargetId, buff.Code, buff.DurationMs, buff.Removing));
+
+        var data = GameData.Empty;
+        data.Buffs[147300071] = ("Wind Vigor", false);
+        var t = new CombatTracker(data, new MeterOptions());
+        t.Process(new SelfIdentifiedEvent(0, 100, "Kunogarasu", 1309, GameClass.Cleric));
+        t.Process(buff);
+        var on = Assert.Single(t.SelfBuffs(31_000));
+        Assert.Equal(("Wind Vigor", 30_000L), (on.Name, on.LeftMs(31_000)));
+        Assert.Empty(t.SelfBuffs(70_000)); // ran out
+        t.Process(buff with { TimeMs = 80_000 });
+        t.Process(buff with { TimeMs = 81_000, Removing = true });
+        Assert.Empty(t.SelfBuffs(82_000));
+    }
+
+    [Fact]
+    public void The_party_long_cooldowns_are_listed_until_ready()
+    {
+        var data = GameData.Empty;
+        data.Skills[14220010] = "Bow of Blessing";
+        var t = new CombatTracker(data, new MeterOptions { PartyOnly = true });
+        t.Process(new SelfIdentifiedEvent(0, Me, "Kunogarasu", 1309, GameClass.Cleric));
+        t.Process(new PlayerSeenEvent(0, Mate, "PensionerPro", 1309, GameClass.Ranger));
+        t.Process(new PartyListEvent(0, [new(Me, "Kunogarasu", 1309, 1), new(Mate, "PensionerPro", 1309, 2)]));
+        t.Process(new SkillCooldownEvent(1_000, Mate, 14220010, 115_800));
+        t.Process(new SkillCooldownEvent(1_000, Mate, 14050140, 4_800));  // short: left out
+        t.Process(new SkillCooldownEvent(1_000, Me, 17430020, 55_950));   // yours: left out
+        var cd = Assert.Single(t.PartyCooldowns(11_000));
+        Assert.Equal(("PensionerPro", "Bow of Blessing", 105_800L), (cd.Player, cd.Skill, cd.LeftMs));
+        Assert.Empty(t.PartyCooldowns(120_000));
+    }
+
+    [Fact]
+    public void A_party_request_names_the_class_level_and_combat_power()
+    {
+        var body = new List<byte>(new byte[10]);
+        body.AddRange(BitConverter.GetBytes((ushort)2309));
+        body.AddRange(new byte[6]);
+        body.AddRange(BitConverter.GetBytes(30u));  // job: Cleric
+        body.AddRange(BitConverter.GetBytes(45u));  // level
+        body.AddRange(new byte[4]);
+        body.AddRange(Str("Miranda"));
+        body.AddRange(new byte[6]);
+        body.AddRange(BitConverter.GetBytes(4_321_000u));
+        body.AddRange(new byte[4]);
+        var events = new List<GameEvent>();
+        new PacketParser(GameData.Empty, events.Add).Handle(Opcodes.PartyRequest, body.ToArray());
+        var r = Assert.IsType<PartyRequestEvent>(Assert.Single(events));
+        Assert.Equal(("Miranda", 2309, GameClass.Cleric, 45, 4_321_000L), (r.Name, r.ServerId, r.Class, r.Level, r.Power));
+    }
+
+    [Fact]
+    public void Tickets_and_energies_are_read()
+    {
+        // 0C 61 from the 2026-10-09 capture: ticket 12 now 14
+        var events = new List<GameEvent>();
+        new PacketParser(GameData.Empty, events.Add).Handle(Opcodes.ResourceUpdate, Hex("00 04 0c 00 00 00 0e 02"));
+        var r = Assert.IsType<ResourceEvent>(Assert.Single(events));
+        Assert.Equal((12, 14, 0), (r.Id, r.Count, r.Bonus));
+
+        var t = new CombatTracker(GameData.Empty, new MeterOptions());
+        t.Process(new ResourceEvent(0, ResourceEvent.Aether, 195, 80));
+        Assert.Equal((195, 80), t.Resources()[ResourceEvent.Aether]);
+    }
+
+    [Fact]
     public void A_pvp_session_lists_opponents_with_damage_both_ways_hp_and_kills()
     {
         var t = new CombatTracker(GameData.Empty, new MeterOptions { TargetMode = TargetMode.All, PartyOnly = true });

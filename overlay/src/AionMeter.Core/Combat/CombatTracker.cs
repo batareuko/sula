@@ -60,6 +60,10 @@ public sealed class CombatTracker
     /// <summary>1 HP: a party member died (their name) — raised outside the lock.</summary>
     public event Action<string>? PartyMemberDied;
     private readonly List<string> _pendingPartyDeaths = new();
+
+    /// <summary>1 HP: someone asks to join your party — raised outside the lock.</summary>
+    public event Action<PartyRequestEvent>? PartyRequested;
+    private readonly List<PartyRequestEvent> _pendingRequests = new();
     private readonly Dictionary<string, long> _partyDeathAt = new(StringComparer.OrdinalIgnoreCase);
 
     /// <summary>1 HP: the newest death recap of this run, or null.</summary>
@@ -219,6 +223,19 @@ public sealed class CombatTracker
                 case PartyMemberEvent member:
                     OnPartyMember(member);
                     break;
+                case ResourceEvent res:
+                    _resources[res.Id] = (res.Count, res.Bonus);
+                    break;
+                case PartyRequestEvent request:
+                    if (request.Power > 0) _powers[request.Name] = request.Power;
+                    _pendingRequests.Add(request);
+                    break;
+                case SkillCooldownEvent cd:
+                    _cooldowns[(_entities.ResolveOwner(cd.ActorId), cd.SkillCode / 10_000)] = (cd.SkillCode, cd.TimeMs, cd.TimeMs + cd.CooldownMs);
+                    break;
+                case BuffEvent buff:
+                    _buffBook.Apply(buff, _data.BuffName(buff.Code), _data.Buffs.TryGetValue(buff.Code, out var info) && info.Debuff);
+                    break;
                 case PartyListEvent list:
                     OnPartyList(list);
                     break;
@@ -232,6 +249,7 @@ public sealed class CombatTracker
                 case ZoneChangedEvent z:
                     if (z.IsTeleport) break;
                     _manualIds.Clear(); // ids are handed out again in the new zone
+                    _buffBook.Clear();
                     if (_current is { IsActive: true }) Finish(EncounterEndReason.ZoneChange, _current.LastDamageMs);
                     // 1 HP: dungeon runs — leaving the instance ends the run, entering one starts it
                     if (_run is { } run && run.MapId != z.MapId)
@@ -810,6 +828,7 @@ public sealed class CombatTracker
         List<FieldBossListEvent>? lists = null;
         List<DeathRecap>? recaps = null;
         List<string>? partyDeaths = null;
+        List<PartyRequestEvent>? requests = null;
         List<PvpSession>? pvp = null;
         List<DungeonRun>? runs = null;
         lock (_gate)
@@ -828,6 +847,11 @@ public sealed class CombatTracker
             {
                 recaps = new List<DeathRecap>(_pendingRecaps);
                 _pendingRecaps.Clear();
+            }
+            if (_pendingRequests.Count > 0)
+            {
+                requests = new List<PartyRequestEvent>(_pendingRequests);
+                _pendingRequests.Clear();
             }
             if (_pendingPartyDeaths.Count > 0)
             {
@@ -867,6 +891,8 @@ public sealed class CombatTracker
             foreach (var r in recaps) died(r);
         if (partyDeaths is not null && PartyMemberDied is { } fell)
             foreach (var n in partyDeaths) fell(n);
+        if (requests is not null && PartyRequested is { } asked)
+            foreach (var r in requests) asked(r);
         if (records is not null && EncounterFinished is { } handler)
             foreach (var r in records) handler(r);
     }
@@ -1040,6 +1066,52 @@ public sealed class CombatTracker
             if (!_entities.TryGetPlayer(actorId, out var p) || string.IsNullOrWhiteSpace(p.Name)) return _manualIds.Contains(actorId);
             return InParty(p.Name);
         }
+    }
+
+    private readonly BuffBook _buffBook = new();
+
+    // 1 HP: your tickets and energies as the game last sent them (id → count, bonus).
+    private readonly Dictionary<int, (int Count, int Bonus)> _resources = new();
+
+    /// <summary>1 HP: your tickets and energies (ids in <see cref="ResourceEvent"/>); empty until the game sends them.</summary>
+    public IReadOnlyDictionary<int, (int Count, int Bonus)> Resources()
+    {
+        lock (_gate) return new Dictionary<int, (int, int)>(_resources);
+    }
+
+    // 1 HP: skill cooldowns of you and your party: (actor, skill without its variant) → skill, start, ready at.
+    private readonly Dictionary<(uint Actor, int Skill), (int Code, long StartMs, long ReadyMs)> _cooldowns = new();
+
+    /// <summary>
+    /// 1 HP: your party's long cooldowns (from <paramref name="minMs"/>) that are still running, the soonest ready
+    /// first — who, which skill, how long is left. You are left out (you see your own on the skill bar).
+    /// </summary>
+    public IReadOnlyList<PartyCooldown> PartyCooldowns(long nowMs, long minMs = 60_000)
+    {
+        lock (_gate)
+        {
+            foreach (var key in _cooldowns.Where(kv => kv.Value.ReadyMs < nowMs).Select(kv => kv.Key).ToList()) _cooldowns.Remove(key);
+            var list = new List<PartyCooldown>();
+            foreach (var ((actor, _), (code, start, ready)) in _cooldowns)
+            {
+                if (ready - start < minMs || actor == _entities.SelfId) continue;
+                if (!_entities.TryGetPlayer(actor, out var p) || string.IsNullOrEmpty(p.Name) || !InParty(p.Name)) continue;
+                list.Add(new PartyCooldown(p.Name, _data.SkillName(code), ready - nowMs, ready - start));
+            }
+            return list.OrderBy(c => c.LeftMs).ToList();
+        }
+    }
+
+    /// <summary>1 HP: the buffs on you now, the soonest to run out first (debuffs too).</summary>
+    public IReadOnlyList<ActiveBuff> SelfBuffs(long nowMs)
+    {
+        lock (_gate) return _entities.SelfId is { } me ? _buffBook.On(me, nowMs) : [];
+    }
+
+    /// <summary>1 HP: the buffs on a player or a boss now.</summary>
+    public IReadOnlyList<ActiveBuff> BuffsOn(uint actorId, long nowMs)
+    {
+        lock (_gate) return _buffBook.On(actorId, nowMs);
     }
 
     // 1 HP: the game's own party packets came (00 92 / 0D 92 / 06 97): the party is known, guesses stay off.

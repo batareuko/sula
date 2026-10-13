@@ -79,6 +79,64 @@ public partial class OverlayWindow : Window
 
     public nint Handle => _hwnd;
 
+    /// <summary>1 HP: your lasting buffs (10 s and more) on the card, the soonest to run out first.</summary>
+    private void UpdateBuffLine()
+    {
+        var now = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds();
+        var buffs = _settings.ShowBuffs
+            ? _meter.Tracker.SelfBuffs(now).Where(b => !b.Debuff && (b.EndMs == 0 || b.DurationMs >= 10_000)).Take(4).ToList()
+            : [];
+        BuffLine.Visibility = buffs.Count > 0 ? Visibility.Visible : Visibility.Collapsed;
+        if (buffs.Count == 0) return;
+        BuffLine.Text = "✦ " + string.Join(" · ", buffs.Select(b => b.EndMs == 0 ? b.Name : $"{b.Name} {Clock(b.LeftMs(now))}"));
+        BuffLine.ToolTip = string.Join("\n", _meter.Tracker.SelfBuffs(now)
+            .Select(b => (b.Debuff ? "▼ " : "▲ ") + b.Name + (b.EndMs == 0 ? "" : " " + Clock(b.LeftMs(now)))));
+    }
+
+    private static readonly int[] ResourceOrder =
+    [
+        Core.Events.ResourceEvent.Aether, Core.Events.ResourceEvent.ShugoKeys, Core.Events.ResourceEvent.Nightmare,
+        Core.Events.ResourceEvent.Invasion, Core.Events.ResourceEvent.Awakening,
+    ];
+
+    /// <summary>
+    /// 1 HP: your tickets and energies on the card (out of combat), kept per character — the tooltip lists the others.
+    /// </summary>
+    private void UpdateResourceLine()
+    {
+        var res = _meter.Tracker.Resources();
+        var me = _settings.LastSelfName;
+        if (res.Count > 0 && !string.IsNullOrEmpty(me))
+            _settings.Resources[me] = res.Where(kv => ResourceOrder.Contains(kv.Key)).ToDictionary(kv => kv.Key, kv => new[] { kv.Value.Count, kv.Value.Bonus });
+        var mine = !string.IsNullOrEmpty(me) && _settings.Resources.TryGetValue(me, out var saved) ? saved : null;
+        var show = _settings.ShowResources && mine is { Count: > 0 } && _expanded != true;
+        ResourceLine.Visibility = show ? Visibility.Visible : Visibility.Collapsed;
+        if (!show) return;
+        ResourceLine.Text = Line(mine!);
+        ResourceLine.ToolTip = string.Join("\n", _settings.Resources.OrderBy(kv => kv.Key).Select(kv => $"{kv.Key}: {Line(kv.Value)}"));
+
+        string Line(Dictionary<int, int[]> r) => string.Join(" · ", ResourceOrder.Where(r.ContainsKey).Select(id =>
+        {
+            var (count, bonus) = (r[id][0], r[id][1]);
+            var amount = bonus > 0 ? $"{count}+{bonus}" : count.ToString();
+            return $"{UiText.Current.ResourceName(id)} {amount}{(id == Core.Events.ResourceEvent.Aether ? "/840" : "")}";
+        }));
+    }
+
+    /// <summary>1 HP: the party's long cooldowns on the card: who, which skill, when it is ready.</summary>
+    private void UpdateCooldownLine()
+    {
+        var now = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds();
+        var all = _settings.ShowPartyCooldowns ? _meter.Tracker.PartyCooldowns(now) : [];
+        CooldownLine.Visibility = all.Count > 0 ? Visibility.Visible : Visibility.Collapsed;
+        if (all.Count == 0) return;
+        CooldownLine.Text = "⟳ " + string.Join(" · ", all.Take(3).Select(c => $"{c.Player}: {c.Skill} {Clock(c.LeftMs)}"));
+        CooldownLine.ToolTip = string.Join("\n", all.Select(c => $"{c.Player}: {c.Skill} {Clock(c.LeftMs)} / {Clock(c.TotalMs)}"));
+    }
+
+    private static string Clock(long ms) =>
+        ms >= 3_600_000 ? $"{ms / 3_600_000}:{ms / 60_000 % 60:00}:{ms / 1000 % 60:00}" : $"{ms / 60_000}:{ms / 1000 % 60:00}";
+
     private bool _encoding;
 
     /// <summary>
@@ -191,6 +249,9 @@ public partial class OverlayWindow : Window
         HeadShare.Text = pvpMode ? "HP" : tt.ColShare;
         if (Environment.TickCount64 - _timersLabelAt >= 1_000) UpdateTimersLabel();
         if (Environment.TickCount64 - _oneHpAt >= 1_000) UpdateOneHpStrip();
+        UpdateBuffLine();
+        UpdateCooldownLine();
+        UpdateResourceLine();
 
         var status = _meter.DemoRunning ? new CaptureStatus(CaptureState.Capturing, "Demo fight running") : _meter.CaptureStatus;
         // Names are only sent on a loading screen: players already around when the meter started show as #id.

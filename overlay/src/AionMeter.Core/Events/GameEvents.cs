@@ -121,6 +121,24 @@ public sealed record PlayerGearEvent(long TimeMs, string Name, int ServerId, int
 /// <summary>1 HP: <c>23 92</c> — a party member's status (name, server); only your party's members are sent.</summary>
 public sealed record PartyMemberEvent(long TimeMs, string Name, int ServerId) : GameEvent(TimeMs);
 
+/// <summary>
+/// 1 HP: a buff or debuff on <paramref name="TargetId"/> (<c>2A 38</c>, <c>2B 38</c>): its code (9 digits, the skill
+/// code and a digit), who put it on, how long it lasts (-1 = until removed) and whether it is going.
+/// </summary>
+public sealed record BuffEvent(long TimeMs, uint TargetId, uint CasterId, int Code, long DurationMs, int InstanceId, bool Removing) : GameEvent(TimeMs);
+
+/// <summary>1 HP: <c>0B 61</c> / <c>0C 61</c> — one of your tickets or energies: how many, plus the bonus ones.</summary>
+public sealed record ResourceEvent(long TimeMs, int Id, int Count, int Bonus) : GameEvent(TimeMs)
+{
+    public const int Aether = 60000001, ShugoKeys = 1, Nightmare = 4, Invasion = 8, Awakening = 80000001;
+}
+
+/// <summary>1 HP: <c>07 97</c> — a player asks to join your party: name, server, class, level, combat power.</summary>
+public sealed record PartyRequestEvent(long TimeMs, string Name, int ServerId, GameClass Class, int Level, long Power) : GameEvent(TimeMs);
+
+/// <summary>1 HP: a cast started its skill's cooldown (<c>02 38</c>; the game sends it for you and your party).</summary>
+public sealed record SkillCooldownEvent(long TimeMs, uint ActorId, int SkillCode, long CooldownMs) : GameEvent(TimeMs);
+
 /// <summary>1 HP: a party member as the party packets name them: id 0 while out of view.</summary>
 public sealed record PartyMemberInfo(uint ActorId, string Name, int ServerId, int Slot);
 

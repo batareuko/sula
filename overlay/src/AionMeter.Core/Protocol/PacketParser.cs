@@ -93,6 +93,10 @@ public sealed class PacketParser
             case Opcodes.PartyMember:
                 ParsePartyMember(body);
                 break;
+            case Opcodes.BuffList:
+            case Opcodes.BuffRefresh:
+                foreach (var buff in BuffPackets.Read(body, refresh: opcode == Opcodes.BuffRefresh, TimeMs)) Emit(buff);
+                break;
             case Opcodes.PartyList:
                 if (PartyPackets.ReadList(body) is { } list)
                 {
@@ -110,6 +114,13 @@ public sealed class PacketParser
                 break;
             case Opcodes.PartyLeave:
                 if (PartyPackets.IsLeave(body)) Emit(new PartyLeftEvent(TimeMs));
+                break;
+            case Opcodes.ResourceList:
+            case Opcodes.ResourceUpdate:
+                foreach (var res in ResourcePackets.Read(body, single: opcode == Opcodes.ResourceUpdate, TimeMs)) Emit(res);
+                break;
+            case Opcodes.PartyRequest:
+                if (PartyPackets.ReadRequest(body, TimeMs) is { } request) Emit(request);
                 break;
             case Opcodes.PartyGone:
                 if (PartyPackets.IsDisband(body)) Emit(new PartyLeftEvent(TimeMs));
@@ -245,6 +256,45 @@ public sealed class PacketParser
         o += 2;
         if (!Wire.TryVarint(b, ref o, out var target) || !IsEntityId(target)) return;
         Emit(new CastEvent(TimeMs, actor, target, (int)skill));
+        if (SkillCooldown(b) is { } cooldown && cooldown > 0) Emit(new SkillCooldownEvent(TimeMs, actor, (int)skill, cooldown));
+    }
+
+    /// <summary>
+    /// 1 HP: the cooldown a cast starts, in ms (sent for you and your party): <code>
+    /// actor varint, flags u8, skill u32, uid u8, [flags 1] u8, target flags u8, target varint, [t 1] u32, u32,
+    /// [t 2] 12 bytes, varint, u8, [flags 2] varint, cooldown varint, [flags 4] charges u8, [flags 8] recharge varint,
+    /// [flags 16] bool, [flags 32] count × (varint, 12 bytes)
+    /// </code>
+    /// </summary>
+    private static long? SkillCooldown(ReadOnlySpan<byte> b)
+    {
+        var r = new FieldReader(b);
+        r.Var(32);
+        var flags = r.U8();
+        if ((flags & ~0x3F) != 0) return null;
+        r.U32();
+        r.U8();
+        if ((flags & 1) != 0) r.U8();
+        var target = r.U8();
+        if ((target & ~3) != 0) return null;
+        r.Var(32);
+        if ((target & 1) != 0) r.U32();
+        r.U32();
+        if ((target & 2) != 0) r.Skip(12);
+        r.Var(32);
+        r.U8();
+        if ((flags & 2) != 0) r.Var(32);
+        var cooldown = (long)r.Var(32);
+        if ((flags & 4) != 0) r.U8();
+        if ((flags & 8) != 0) r.Var(32);
+        if ((flags & 16) != 0) r.Bool();
+        if ((flags & 32) != 0)
+            for (int i = 0, n = r.Count(13); i < n && !r.Failed; i++)
+            {
+                r.Var(32);
+                r.Skip(12);
+            }
+        return r.Done ? cooldown : null;
     }
 
     // ------------------------------------------------------------------ damage (04 38)
