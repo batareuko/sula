@@ -33,6 +33,13 @@ public sealed class RowViewModel : ObservableObject
     /// <summary>1 HP: item level from the site lookup ("2155"), empty while unknown.</summary>
     public string Gear { get => _gear; set => Set(ref _gear, value); }
 
+    private string _threatText = "";
+    private Brush _threatBrush = Brushes.Transparent;
+    /// <summary>1 HP (PvP): the gap to you as a badge ("+1 240 GS"), empty outside PvP or while it is not known.</summary>
+    public string ThreatText { get => _threatText; set => Set(ref _threatText, value); }
+    /// <summary>1 HP (PvP): red — run; orange — stronger; green — weaker; the row's frame and the badge.</summary>
+    public Brush ThreatBrush { get => _threatBrush; set => Set(ref _threatBrush, value); }
+
     public bool IsSelf
     {
         get => _isSelf;

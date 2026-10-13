@@ -642,6 +642,38 @@ public class PartyTests
         Assert.Equal((195, 80), t.Resources()[ResourceEvent.Aether]);
     }
 
+    [Theory]
+    [InlineData(1500, 2600, 0, 0, ThreatLevel.Danger, true)]     // gear score 1100 above
+    [InlineData(1500, 2300, 0, 0, ThreatLevel.Caution, true)]    // 800 above
+    [InlineData(1500, 1900, 0, 0, ThreatLevel.Even, true)]
+    [InlineData(1500, 400, 0, 0, ThreatLevel.Weak, true)]        // 1100 below
+    [InlineData(0, 1659, 62_000, 77_632, ThreatLevel.Danger, false)] // your gear score unknown: combat power
+    [InlineData(0, 0, 62_000, 70_478, ThreatLevel.Caution, false)]
+    [InlineData(0, 0, 62_000, 49_616, ThreatLevel.Weak, false)]
+    [InlineData(0, 0, 0, 70_000, ThreatLevel.Unknown, false)]
+    public void Opponents_are_coloured_by_the_gap_to_you(long myGear, long theirGear, long myPower, long theirPower, ThreatLevel level, bool byGear)
+    {
+        var t = PvpThreat.Assess(myGear, theirGear, myPower, theirPower, new ThreatThresholds());
+        Assert.Equal(level, t.Level);
+        if (level != ThreatLevel.Unknown) Assert.Equal(byGear, t.ByGear);
+    }
+
+    [Fact]
+    public void Combat_power_comes_with_you_and_with_players_in_view()
+    {
+        // 56 36 from the 2026-10-09 capture: 72,703
+        var events = new List<GameEvent>();
+        new PacketParser(GameData.Empty, events.Add).Handle(Opcodes.SelfPower, Hex("ff 1b 01 00 00 00 00 00 ff 1b 01 00 00 00 00 00"));
+        Assert.Equal(72_703, Assert.IsType<SelfPowerEvent>(Assert.Single(events)).Power);
+
+        var t = new CombatTracker(GameData.Empty, new MeterOptions());
+        t.Process(new SelfIdentifiedEvent(0, Me, "Kunogarasu", 1309, GameClass.Cleric));
+        t.Process(new SelfPowerEvent(0, 62_000));
+        t.Process(new PlayerPowerEvent(0, Stranger, "AceRuffy", 77_632));
+        Assert.Equal(77_632, t.PowerOf("AceRuffy"));
+        Assert.Equal(ThreatLevel.Danger, t.ThreatOf("AceRuffy", new ThreatThresholds()).Level);
+    }
+
     [Fact]
     public void A_pvp_session_lists_opponents_with_damage_both_ways_hp_and_kills()
     {

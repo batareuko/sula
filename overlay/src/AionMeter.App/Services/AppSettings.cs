@@ -109,6 +109,17 @@ public sealed class AppSettings
     public int EventAlertMinutes { get; set; } = 5;
     /// <summary>1 HP: the PvP card (your opponents) while you trade hits with players.</summary>
     public bool PvpOverlay { get; set; } = true;
+    /// <summary>
+    /// 1 HP: PvP colours — red (run) when an opponent is this far above you, orange from the second gap, green when
+    /// this far below; by gear score when both are inspected, else by combat power. A red one hitting you gets a notice.
+    /// </summary>
+    public int PvpDangerGear { get; set; } = 1000;
+    public int PvpCautionGear { get; set; } = 750;
+    public int PvpWeakGear { get; set; } = 1000;
+    public int PvpDangerPower { get; set; } = 10_000;
+    public int PvpCautionPower { get; set; } = 7_500;
+    public int PvpWeakPower { get; set; } = 10_000;
+    public bool PvpThreatAlert { get; set; } = true;
     /// <summary>1 HP: the boss's HP as a wide bar at the top of the screen in boss fights (Windows/BossBarWindow.cs).</summary>
     public bool BossBar { get; set; }
     /// <summary>1 HP: a sound and a notice when a party member dies.</summary>

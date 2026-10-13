@@ -230,6 +230,21 @@
                             <TextBlock Style="{StaticResource Hint}" Text="{Binding OneHpDynamicHint, Source={x:Static s:UiText.Current}}" />
                             <CheckBox x:Name="PvpOn" Style="{StaticResource DarkCheck}" Margin="0,4,0,0"
                                       Content="{Binding PvpOverlayOn, Source={x:Static s:UiText.Current}}" />
+                            <CheckBox x:Name="PvpThreatOn" Style="{StaticResource DarkCheck}" Margin="0,4,0,0"
+                                      Content="{Binding PvpThreatOn, Source={x:Static s:UiText.Current}}" />
+                            <TextBlock Style="{StaticResource Hint}" Text="{Binding PvpThreatHint, Source={x:Static s:UiText.Current}}" />
+                            <StackPanel Orientation="Horizontal" Margin="26,4,0,0">
+                                <TextBlock Text="{Binding PvpGearGaps, Source={x:Static s:UiText.Current}}" Style="{StaticResource Label}" Width="120" />
+                                <TextBox x:Name="PvpDangerGear" Width="64" Foreground="#FF6B78" />
+                                <TextBox x:Name="PvpCautionGear" Width="64" Margin="6,0,0,0" Foreground="#F0A050" />
+                                <TextBox x:Name="PvpWeakGear" Width="64" Margin="6,0,0,0" Foreground="#4FD08F" />
+                            </StackPanel>
+                            <StackPanel Orientation="Horizontal" Margin="26,4,0,0">
+                                <TextBlock Text="{Binding PvpPowerGaps, Source={x:Static s:UiText.Current}}" Style="{StaticResource Label}" Width="120" />
+                                <TextBox x:Name="PvpDangerPower" Width="64" Foreground="#FF6B78" />
+                                <TextBox x:Name="PvpCautionPower" Width="64" Margin="6,0,0,0" Foreground="#F0A050" />
+                                <TextBox x:Name="PvpWeakPower" Width="64" Margin="6,0,0,0" Foreground="#4FD08F" />
+                            </StackPanel>
                             <CheckBox x:Name="BossBarOn" Style="{StaticResource DarkCheck}" Margin="0,4,0,0"
                                       Content="{Binding BossBarOn, Source={x:Static s:UiText.Current}}" />
                             <CheckBox x:Name="PartyDeathOn" Style="{StaticResource DarkCheck}" Margin="0,4,0,0"

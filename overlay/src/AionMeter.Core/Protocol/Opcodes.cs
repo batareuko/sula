@@ -31,6 +31,7 @@ public static class Opcodes
     public const ushort PartyLeave = 0x0697;     // 1 HP: result u16, state u8 (2 = you left), u32
     public const ushort PartyGone = 0x1D97;      // 1 HP: 00 00 — the party is gone
     public const ushort PartyRequest = 0x0797;   // 1 HP: someone asks to join your party
+    public const ushort SelfPower = 0x5636;      // 1 HP: your combat power: u64 power, u64 (16 bytes)
     public const ushort ResourceList = 0x0B61;   // 1 HP: your tickets and energies (aether, Shugo keys, …)
     public const ushort ResourceUpdate = 0x0C61; // 1 HP: one of them changed
     public const ushort BuffList = 0x2A38;       // 1 HP: buffs and debuffs put on an actor (target, count × buff)
@@ -61,6 +62,7 @@ public static class Opcodes
         PartyLeave => "PartyLeave",
         PartyGone => "PartyGone",
         PartyRequest => "PartyRequest",
+        SelfPower => "SelfPower",
         ResourceList => "Resources",
         ResourceUpdate => "Resource",
         BuffList => "Buffs",

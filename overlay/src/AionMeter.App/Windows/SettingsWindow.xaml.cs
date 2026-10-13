@@ -82,6 +82,13 @@ public partial class SettingsWindow : Window
         EventLeadMinutes.Text = s.EventAlertMinutes.ToString();
         StreamOn.IsChecked = s.StreamEnabled;
         PvpOn.IsChecked = s.PvpOverlay;
+        PvpThreatOn.IsChecked = s.PvpThreatAlert;
+        PvpDangerGear.Text = s.PvpDangerGear.ToString();
+        PvpCautionGear.Text = s.PvpCautionGear.ToString();
+        PvpWeakGear.Text = s.PvpWeakGear.ToString();
+        PvpDangerPower.Text = s.PvpDangerPower.ToString();
+        PvpCautionPower.Text = s.PvpCautionPower.ToString();
+        PvpWeakPower.Text = s.PvpWeakPower.ToString();
         BossBarOn.IsChecked = s.BossBar;
         PartyDeathOn.IsChecked = s.PartyDeathAlert;
         VoiceOn.IsChecked = s.VoiceAlerts;
@@ -143,6 +150,14 @@ public partial class SettingsWindow : Window
         if (int.TryParse(EventLeadMinutes.Text, out var lead)) s.EventAlertMinutes = Math.Clamp(lead, 1, 60);
         s.StreamEnabled = StreamOn.IsChecked == true;
         s.PvpOverlay = PvpOn.IsChecked == true;
+        s.PvpThreatAlert = PvpThreatOn.IsChecked == true;
+        static int Gap(TextBox box, int fallback) => int.TryParse(box.Text.Replace(" ", ""), out var v) && v is >= 0 and <= 10_000_000 ? v : fallback;
+        s.PvpDangerGear = Gap(PvpDangerGear, s.PvpDangerGear);
+        s.PvpCautionGear = Gap(PvpCautionGear, s.PvpCautionGear);
+        s.PvpWeakGear = Gap(PvpWeakGear, s.PvpWeakGear);
+        s.PvpDangerPower = Gap(PvpDangerPower, s.PvpDangerPower);
+        s.PvpCautionPower = Gap(PvpCautionPower, s.PvpCautionPower);
+        s.PvpWeakPower = Gap(PvpWeakPower, s.PvpWeakPower);
         s.BossBar = BossBarOn.IsChecked == true;
         s.PartyDeathAlert = PartyDeathOn.IsChecked == true;
         s.VoiceAlerts = VoiceOn.IsChecked == true;

@@ -121,6 +121,11 @@ public static class SampleRenderer
         (uint Id, string Name, GameClass Class)[] foes = [(71_001, "AceRuffy", GameClass.Gladiator), (71_002, "Miranda", GameClass.Elementalist), (71_003, "RhQm", GameClass.Sorcerer)];
         foreach (var f in foes) tracker.Process(new PlayerSeenEvent(at - 9_000, f.Id, f.Name, 2309, f.Class));
         tracker.Process(new PlayerGearEvent(at - 9_000, "AceRuffy", 2309, 45, 1659));
+        // 1 HP: the PvP colours — you at 62K: AceRuffy far above (red), Miranda above (orange), RhQm below (green)
+        tracker.Process(new SelfPowerEvent(at - 9_000, 62_000));
+        tracker.Process(new PlayerPowerEvent(at - 9_000, 71_001, "AceRuffy", 77_632));
+        tracker.Process(new PlayerPowerEvent(at - 9_000, 71_002, "Miranda", 70_478));
+        tracker.Process(new PlayerPowerEvent(at - 9_000, 71_003, "RhQm", 49_616));
         var rnd = new Random(11);
         for (var t = at - 8_000; t < at; t += 300)
         {
