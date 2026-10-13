@@ -41,4 +41,8 @@ public sealed class MeterOptions
 /// filter needed), on your own, or with these party members.</summary>
 public enum PartyFilterState { Off, SelfUnknown, Instance, Solo, Party }
 
-public sealed record PartyFilterStatus(PartyFilterState State, IReadOnlyList<string> Party);
+/// <param name="Source">1 HP: where the party came from: the game's party list, its roster, loot shares, heals, by hand.</param>
+public sealed record PartyFilterStatus(PartyFilterState State, IReadOnlyList<string> Party, PartySource Source = PartySource.None);
+
+/// <summary>1 HP: how the meter knows your party, the surest first.</summary>
+public enum PartySource { None, Game, Roster, Loot, Heals, Manual }

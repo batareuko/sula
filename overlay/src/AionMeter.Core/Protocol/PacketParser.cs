@@ -98,7 +98,9 @@ public sealed class PacketParser
                 foreach (var buff in BuffPackets.Read(body, refresh: opcode == Opcodes.BuffRefresh, TimeMs)) Emit(buff);
                 break;
             case Opcodes.PartyList:
-                if (PartyPackets.ReadList(body) is { } list)
+                var list = PartyPackets.ReadList(body);
+                Emit(new PartyPacketEvent(TimeMs, opcode, Convert.ToHexString(body[..Math.Min(body.Length, 600)]), list is not null));
+                if (list is not null)
                 {
                     foreach (var m in list.Where(m => m.ActorId != 0))
                         Emit(new PlayerSeenEvent(TimeMs, m.ActorId, m.Name, m.ServerId, GameClass.Unknown));
@@ -106,13 +108,16 @@ public sealed class PacketParser
                 }
                 break;
             case Opcodes.PartyJoin:
-                if (PartyPackets.ReadMember(body) is { } member)
+                var member = PartyPackets.ReadMember(body);
+                Emit(new PartyPacketEvent(TimeMs, opcode, Convert.ToHexString(body[..Math.Min(body.Length, 300)]), member is not null));
+                if (member is not null)
                 {
                     if (member.ActorId != 0) Emit(new PlayerSeenEvent(TimeMs, member.ActorId, member.Name, member.ServerId, GameClass.Unknown));
                     Emit(new PartyJoinEvent(TimeMs, member));
                 }
                 break;
             case Opcodes.PartyLeave:
+                Emit(new PartyPacketEvent(TimeMs, opcode, Convert.ToHexString(body[..Math.Min(body.Length, 64)]), PartyPackets.IsLeave(body)));
                 if (PartyPackets.IsLeave(body)) Emit(new PartyLeftEvent(TimeMs));
                 break;
             case Opcodes.ResourceList:

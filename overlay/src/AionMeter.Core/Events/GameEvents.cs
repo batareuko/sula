@@ -145,6 +145,9 @@ public sealed record PartyRequestEvent(long TimeMs, string Name, int ServerId, G
 /// <summary>1 HP: a cast started its skill's cooldown (<c>02 38</c>; the game sends it for you and your party).</summary>
 public sealed record SkillCooldownEvent(long TimeMs, uint ActorId, int SkillCode, long CooldownMs) : GameEvent(TimeMs);
 
+/// <summary>1 HP diagnostics: a party packet as it came (hex, cut short) and whether it was read — for the log.</summary>
+public sealed record PartyPacketEvent(long TimeMs, ushort Opcode, string Hex, bool Read) : GameEvent(TimeMs);
+
 /// <summary>1 HP: a party member as the party packets name them: id 0 while out of view.</summary>
 public sealed record PartyMemberInfo(uint ActorId, string Name, int ServerId, int Slot);
 

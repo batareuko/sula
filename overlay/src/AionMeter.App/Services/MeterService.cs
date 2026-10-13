@@ -138,6 +138,41 @@ public sealed class MeterService : IDisposable
 
     private volatile bool _replaying;
 
+    private int _partyLogged;
+
+    /// <summary>1 HP: the party packets in the log (raw and read) — what the PARTY filter is built from.</summary>
+    private void LogParty(Core.Events.GameEvent e)
+    {
+        if (_partyLogged > 400) return; // enough to see what the game sends
+        switch (e)
+        {
+            case Core.Events.PartyPacketEvent p:
+                _partyLogged++;
+                Log.Info($"Party packet {p.Opcode:X4} {(p.Read ? "read" : "NOT READ")}: {p.Hex}");
+                break;
+            case Core.Events.PartyListEvent l:
+                _partyLogged++;
+                Log.Info("Party list: " + string.Join(", ", l.Members.Select(m => $"{m.Name}#{m.ActorId}")));
+                break;
+            case Core.Events.PartyJoinEvent j:
+                _partyLogged++;
+                Log.Info($"Party join: {j.Member.Name}#{j.Member.ActorId}");
+                break;
+            case Core.Events.PartyLeftEvent:
+                _partyLogged++;
+                Log.Info("Party left");
+                break;
+            case Core.Events.PartyRosterEvent r:
+                _partyLogged++;
+                Log.Info($"Party roster ({(r.Complete ? "complete" : "partial")}): " + string.Join(", ", r.Names));
+                break;
+            case Core.Events.PartyMemberEvent m:
+                _partyLogged++;
+                Log.Info("Party loot share: " + m.Name);
+                break;
+        }
+    }
+
     private readonly object _captureGate = new();
     private volatile bool _restarting;
 
@@ -150,6 +185,7 @@ public sealed class MeterService : IDisposable
             {
                 _capture = CaptureFactory(Data);
                 _capture.EventDecoded += Tracker.Process;
+                _capture.EventDecoded += LogParty;
                 _capture.Start();
                 Net.Start();
             }

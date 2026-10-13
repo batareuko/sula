@@ -126,6 +126,25 @@ public sealed partial class UiText
     public string DummyVsLast { get; init; } = "last {0}";
     public string DummyTip { get; init; } =
         "Training dummy, run {0}: your DPS {1}.\nAgainst your best run on this dummy: {2}; against the run before: {3}.\nStop hitting for 5 s and the next hit starts the next run (runs under 10 s do not count).";
+    public string PartySourceName(Core.Combat.PartySource s) => (Code, s) switch
+    {
+        ("uk", Core.Combat.PartySource.Game) => "Джерело: список групи з гри",
+        ("uk", Core.Combat.PartySource.Roster) => "Джерело: список групи (кімната)",
+        ("uk", Core.Combat.PartySource.Loot) => "Джерело: здобич після вбивств (поки гра не надіслала список групи)",
+        ("uk", Core.Combat.PartySource.Heals) => "Джерело: кого ви лікуєте (поки гра не надіслала список групи)",
+        ("uk", Core.Combat.PartySource.Manual) => "Джерело: додані вручну",
+        ("ru", Core.Combat.PartySource.Game) => "Источник: список группы из игры",
+        ("ru", Core.Combat.PartySource.Roster) => "Источник: список группы (комната)",
+        ("ru", Core.Combat.PartySource.Loot) => "Источник: добыча после убийств (пока игра не прислала список группы)",
+        ("ru", Core.Combat.PartySource.Heals) => "Источник: кого вы лечите (пока игра не прислала список группы)",
+        ("ru", Core.Combat.PartySource.Manual) => "Источник: добавлены вручную",
+        (_, Core.Combat.PartySource.Game) => "Source: the game's party list",
+        (_, Core.Combat.PartySource.Roster) => "Source: the party roster (room)",
+        (_, Core.Combat.PartySource.Loot) => "Source: loot shares after kills (until the game sends the party list)",
+        (_, Core.Combat.PartySource.Heals) => "Source: players you heal (until the game sends the party list)",
+        (_, Core.Combat.PartySource.Manual) => "Source: added by hand",
+        _ => "",
+    };
     public string ThreatDanger { get; init; } = "Run";
     public string ThreatCaution { get; init; } = "Stronger";
     public string ThreatWeak { get; init; } = "Weaker";
