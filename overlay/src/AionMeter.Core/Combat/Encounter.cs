@@ -85,6 +85,12 @@ public sealed class Combatant
     public int HitsTaken { get; set; }
     public long Healing { get; set; }
 
+    /// <summary>1 HP: healing this player received, by healer (actor id → amount, heals).</summary>
+    public Dictionary<uint, (long Amount, int Hits)> HealedBy { get; } = new();
+
+    /// <summary>1 HP: damage this player took, by attacker (actor id → amount, hits).</summary>
+    public Dictionary<uint, (long Amount, int Hits)> TakenFrom { get; } = new();
+
     public long FirstHitMs { get; set; }
     public long LastHitMs { get; set; }
 
@@ -115,9 +121,14 @@ public sealed class Combatant
         DamageTaken += other.DamageTaken;
         HitsTaken += other.HitsTaken;
         Healing += other.Healing;
+        foreach (var (id, v) in other.HealedBy) HealedBy[id] = Add(HealedBy.GetValueOrDefault(id), v.Amount, v.Hits);
+        foreach (var (id, v) in other.TakenFrom) TakenFrom[id] = Add(TakenFrom.GetValueOrDefault(id), v.Amount, v.Hits);
         if (FirstHitMs == 0 || (other.FirstHitMs != 0 && other.FirstHitMs < FirstHitMs)) FirstHitMs = other.FirstHitMs;
         LastHitMs = Math.Max(LastHitMs, other.LastHitMs);
     }
+
+    public static (long Amount, int Hits) Add((long Amount, int Hits) total, long amount, int hits = 1) =>
+        (total.Amount + amount, total.Hits + hits);
 
     public void AddDamage(int offsetMs, int skillCode, long damage, HitFlags flags)
     {
@@ -160,6 +171,31 @@ public sealed class Encounter
     public bool BossMaxHpKnown { get; set; }
     public long BossHp { get; set; } = -1;
     public long BossLowestHp { get; set; } = long.MaxValue;
+
+    /// <summary>1 HP: the first hit on the boss — its pull, from which its enrage counts.</summary>
+    public long BossPullMs { get; set; }
+
+    /// <summary>1 HP: damage to the boss by second, the last <see cref="PaceWindowSeconds"/> — the pace for the forecast.</summary>
+    public List<(long Second, long Damage)> BossPace { get; } = new();
+
+    public const int PaceWindowSeconds = 30;
+
+    public void AddBossDamage(long timeMs, long damage)
+    {
+        if (BossPullMs == 0) BossPullMs = timeMs;
+        var second = timeMs / 1000;
+        if (BossPace.Count > 0 && BossPace[^1].Second == second) BossPace[^1] = (second, BossPace[^1].Damage + damage);
+        else BossPace.Add((second, damage));
+        BossPace.RemoveAll(p => second - p.Second >= PaceWindowSeconds);
+    }
+
+    /// <summary>Damage per second to the boss over the pace window (or since the pull, when shorter).</summary>
+    public double BossPaceDps(long nowMs)
+    {
+        if (BossPace.Count == 0 || BossPullMs == 0) return 0;
+        var span = Math.Clamp((nowMs - Math.Max(BossPullMs, nowMs - PaceWindowSeconds * 1000L)) / 1000.0, 1, PaceWindowSeconds);
+        return BossPace.Where(p => nowMs / 1000 - p.Second < PaceWindowSeconds).Sum(p => p.Damage) / span;
+    }
 
     /// <summary>Damage dealt to each NPC actor, used to pick the most relevant target as the encounter title.</summary>
     public Dictionary<uint, long> DamageByTarget { get; } = new();

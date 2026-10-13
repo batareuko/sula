@@ -8,6 +8,9 @@ namespace AionMeter.Core.Combat;
 /// <param name="Uncounted">HP the boss lost that no counted hit explains — mostly damage dealt before the meter started.</param>
 public sealed record BossSnapshot(uint ActorId, int NpcCode, string Name, long Hp, long MaxHp, bool MaxHpKnown = true, long Uncounted = 0)
 {
+    /// <summary>1 HP: the kill forecast (live fights only).</summary>
+    public BossForecast? Forecast { get; init; }
+
     public double HpFraction => MaxHp > 0 && Hp >= 0 ? Math.Clamp((double)Hp / MaxHp, 0, 1) : 1;
 
     /// <summary>The boss's HP (fraction of max) when the meter's count began, when a sizeable part went uncounted.</summary>
@@ -100,7 +103,20 @@ public sealed record CombatantDetail(
     IReadOnlyList<SkillRow> Skills,
     IReadOnlyList<long> PerSecond,
     IReadOnlyList<CastRecord> Casts,
-    int ServerId = 0);
+    int ServerId = 0)
+{
+    /// <summary>1 HP: healing done in the fight.</summary>
+    public long Healing { get; init; }
+
+    /// <summary>1 HP: healing received, by healer.</summary>
+    public IReadOnlyList<SourceRow> HealedBy { get; init; } = [];
+
+    /// <summary>1 HP: damage taken, by attacker.</summary>
+    public IReadOnlyList<SourceRow> TakenFrom { get; init; } = [];
+}
+
+/// <summary>1 HP: a healer or an attacker of a player, with the amount and the number of hits.</summary>
+public sealed record SourceRow(string Name, long Amount, int Hits);
 
 public sealed record SegmentInfo(Guid Id, string Title, DateTimeOffset StartedAt, long CombatMs, bool IsActive, EncounterEndReason Reason, long TotalDamage);
 
@@ -121,3 +137,18 @@ public sealed record BossNotice(int NpcCode, int MapId, string? Zone, BossNotice
 
 /// <summary>A whole fight as saved to disk.</summary>
 public sealed record FightRecord(int Version, EncounterSnapshot Summary, IReadOnlyList<CombatantDetail> Details);
+
+/// <summary>
+/// 1 HP: at the current pace (damage to the boss over the last 30 s), when the boss falls; and against its enrage
+/// (seconds from the pull, from the game data), how long is left and the DPS that would beat it.
+/// </summary>
+/// <param name="KillSeconds">Seconds to the kill at this pace; null while there is no pace or HP.</param>
+/// <param name="EnrageLeftSeconds">Seconds to the enrage; null for a boss without one.</param>
+/// <param name="RequiredDps">DPS that kills the boss before the enrage; null without one.</param>
+public sealed record BossForecast(double? KillSeconds, double? EnrageLeftSeconds, double? RequiredDps, double PaceDps)
+{
+    /// <summary>The boss enrages before it falls at this pace.</summary>
+    public bool Late => KillSeconds is { } k && EnrageLeftSeconds is { } e && k > e;
+
+    public double MissingDps => RequiredDps is { } r ? Math.Max(0, r - PaceDps) : 0;
+}

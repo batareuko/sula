@@ -57,6 +57,11 @@ public sealed class CombatTracker
     private readonly DeathRecaps _recaps = new();
     private readonly List<DeathRecap> _pendingRecaps = new();
 
+    /// <summary>1 HP: a party member died (their name) — raised outside the lock.</summary>
+    public event Action<string>? PartyMemberDied;
+    private readonly List<string> _pendingPartyDeaths = new();
+    private readonly Dictionary<string, long> _partyDeathAt = new(StringComparer.OrdinalIgnoreCase);
+
     /// <summary>1 HP: the newest death recap of this run, or null.</summary>
     public DeathRecap? LastDeath { get; private set; }
 
@@ -181,6 +186,13 @@ public sealed class CombatTracker
                     RunDeath(death);
                     OnDeath(death);
                     if (_entities.SelfId == death.ActorId && !death.AlreadyDead) Recap(death.TimeMs, null);
+                    else if (!death.AlreadyDead && HasParty && _entities.TryGetPlayer(death.ActorId, out var fallen) &&
+                             !string.IsNullOrEmpty(fallen.Name) && InParty(fallen.Name) &&
+                             death.TimeMs - _partyDeathAt.GetValueOrDefault(fallen.Name.Trim(), long.MinValue / 2) > 5_000)
+                    {
+                        _partyDeathAt[fallen.Name.Trim()] = death.TimeMs;
+                        _pendingPartyDeaths.Add(fallen.Name.Trim());
+                    }
                     break;
                 case PlayerGearEvent g:
                     if (g.GearScore > 0 && _gear.GetValueOrDefault(g.Name.Trim()) != g.GearScore)
@@ -307,6 +319,8 @@ public sealed class CombatTracker
             {
                 victim.DamageTaken += d.Damage;
                 victim.HitsTaken++;
+                var from = _entities.ResolveOwner(source);
+                victim.TakenFrom[from] = Combatant.Add(victim.TakenFrom.GetValueOrDefault(from), d.Damage);
             }
             return;
         }
@@ -350,8 +364,26 @@ public sealed class CombatTracker
 
         enc.TotalDamage += d.Damage;
         enc.DamageByTarget[target] = enc.DamageByTarget.GetValueOrDefault(target) + d.Damage;
+        if (enc.BossId == target) enc.AddBossDamage(d.TimeMs, d.Damage);
         enc.LastHitByTarget[target] = d.TimeMs;
         if (d.TimeMs > enc.LastDamageMs) enc.LastDamageMs = d.TimeMs;
+    }
+
+    /// <summary>1 HP: time to the kill at the current pace, and the enrage: see <see cref="BossForecast"/>.</summary>
+    private BossForecast? Forecast(Encounter enc, long hp, long nowMs)
+    {
+        if (hp <= 0 || enc.BossPullMs == 0) return null;
+        // the game's clock: the last hit, so a replay (or a lull) does not drift the forecast
+        var now = Math.Min(nowMs, Math.Max(enc.LastDamageMs, enc.BossPullMs));
+        var pace = enc.BossPaceDps(now);
+        double? kill = pace > 0 ? hp / pace : null;
+        double? enrageLeft = null, required = null;
+        if (_data.Enrage.TryGetValue(enc.BossCode, out var enrage))
+        {
+            enrageLeft = Math.Max(0, enrage - (now - enc.BossPullMs) / 1000.0);
+            required = enrageLeft > 0 ? hp / enrageLeft : null;
+        }
+        return new BossForecast(kill, enrageLeft, required, pace);
     }
 
     /// <summary>
@@ -377,6 +409,8 @@ public sealed class CombatTracker
         if (_current is not { IsActive: true } enc) return;
         var source = _entities.ResolveOwner(h.SourceId);
         if (enc.Combatants.TryGetValue(source, out var c)) c.Healing += h.Amount;
+        if (enc.Combatants.TryGetValue(h.TargetId, out var receiver))
+            receiver.HealedBy[source] = Combatant.Add(receiver.HealedBy.GetValueOrDefault(source), h.Amount);
     }
 
     private void OnNpcHp(NpcHpEvent e)
@@ -775,6 +809,7 @@ public sealed class CombatTracker
         List<BossNotice>? notices = null;
         List<FieldBossListEvent>? lists = null;
         List<DeathRecap>? recaps = null;
+        List<string>? partyDeaths = null;
         List<PvpSession>? pvp = null;
         List<DungeonRun>? runs = null;
         lock (_gate)
@@ -793,6 +828,11 @@ public sealed class CombatTracker
             {
                 recaps = new List<DeathRecap>(_pendingRecaps);
                 _pendingRecaps.Clear();
+            }
+            if (_pendingPartyDeaths.Count > 0)
+            {
+                partyDeaths = new List<string>(_pendingPartyDeaths);
+                _pendingPartyDeaths.Clear();
             }
             if (_pendingNotices.Count > 0)
             {
@@ -825,6 +865,8 @@ public sealed class CombatTracker
             foreach (var s in pvp) ended(s);
         if (recaps is not null && DeathRecapped is { } died)
             foreach (var r in recaps) died(r);
+        if (partyDeaths is not null && PartyMemberDied is { } fell)
+            foreach (var n in partyDeaths) fell(n);
         if (records is not null && EncounterFinished is { } handler)
             foreach (var r in records) handler(r);
     }
@@ -1181,7 +1223,7 @@ public sealed class CombatTracker
                 ? Math.Max(0, enc.BossMaxHp - hp - enc.DamageByTarget.GetValueOrDefault(bossId))
                 : 0;
             boss = new BossSnapshot(bossId, enc.BossCode, enc.BossName ?? _entities.NpcName(bossId), hp, enc.BossMaxHp,
-                enc.BossMaxHpKnown, uncounted);
+                enc.BossMaxHpKnown, uncounted) { Forecast = enc.IsActive ? Forecast(enc, hp, nowMs) : null };
         }
 
         return new EncounterSnapshot(
@@ -1217,8 +1259,19 @@ public sealed class CombatTracker
         var casts = c.Casts.Count <= maxCasts ? c.Casts.ToArray() : c.Casts.GetRange(0, maxCasts).ToArray();
         return new CombatantDetail(
             c.ActorId, c.Name, c.Class, c.IsSelf, t.Damage, t.Damage / seconds, (double)t.Damage / Math.Max(1, enc.TotalDamage),
-            enc.CombatMs, c.DamageTaken, c.HitsTaken, quality, skills, c.PerSecond.ToArray(), casts, c.ServerId);
+            enc.CombatMs, c.DamageTaken, c.HitsTaken, quality, skills, c.PerSecond.ToArray(), casts, c.ServerId)
+        {
+            Healing = c.Healing,
+            HealedBy = Sources(c.HealedBy),
+            TakenFrom = Sources(c.TakenFrom),
+        };
     }
+
+    /// <summary>1 HP: healers or attackers of a player by name, most first.</summary>
+    private IReadOnlyList<SourceRow> Sources(Dictionary<uint, (long Amount, int Hits)> by) =>
+        by.Select(kv => new SourceRow(Who(kv.Key).Name, kv.Value.Amount, kv.Value.Hits))
+            .GroupBy(r => r.Name).Select(g => new SourceRow(g.Key, g.Sum(r => r.Amount), g.Sum(r => r.Hits)))
+            .OrderByDescending(r => r.Amount).ToList();
 
     private FightRecord BuildRecord(Encounter enc)
     {

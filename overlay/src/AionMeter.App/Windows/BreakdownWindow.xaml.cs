@@ -185,6 +185,12 @@ public partial class BreakdownWindow : Window
         AddTile(DefenseTiles, T.DefTaken, Format.Compact(d.DamageTaken), string.Format(T.DefHits, d.HitsTaken));
         AddTile(DefenseTiles, T.DefTakenPerSec, Format.Compact(d.DamageTaken / Math.Max(1.0, d.CombatMs / 1000.0)), "");
         AddTile(DefenseTiles, T.DefDotTicks, q.DotTicks.ToString(), T.DefDot);
+        // 1 HP: healing done and received, and by whom
+        var received = d.HealedBy.Sum(r => r.Amount);
+        if (d.Healing > 0) AddTile(DefenseTiles, T.DefHealingDone, Format.Compact(d.Healing), "");
+        if (received > 0) AddTile(DefenseTiles, T.DefHealingReceived, Format.Compact(received), string.Format(T.DefHits, d.HealedBy.Sum(r => r.Hits)));
+        FillSources(TakenFromList, T.DefTakenFrom, d.TakenFrom, d.DamageTaken);
+        FillSources(HealedByList, T.DefHealedBy, d.HealedBy, received);
 
         Rotation.SetData(d.Casts, _skillName, _icons.Get);
 
@@ -210,6 +216,27 @@ public partial class BreakdownWindow : Window
             maxShare > 0 ? 96 * s.Share / maxShare : 0, s.Hits == 0 && s.DotTicks > 0 ? "DoT" : "", tooltip,
             Format.Percent(s.BackRate), Format.Percent(s.FrontRate), Format.Percent(s.PerfectRate),
             Format.Percent(s.HeavyRate), Format.Percent(s.MultiRate));
+    }
+
+    /// <summary>1 HP: a "by whom" list — the six biggest sources with amount and share.</summary>
+    private void FillSources(Panel panel, string title, IReadOnlyList<SourceRow> rows, long total)
+    {
+        panel.Children.Clear();
+        if (rows.Count == 0) return;
+        panel.Children.Add(new TextBlock { Text = title, Style = (Style)FindResource("TileLabel"), Margin = new Thickness(0, 0, 0, 4) });
+        foreach (var r in rows.Take(6))
+        {
+            var line = new DockPanel { Margin = new Thickness(0, 1, 0, 1) };
+            var value = new TextBlock
+            {
+                Text = $"{Format.Compact(r.Amount)}  {Format.Percent(total > 0 ? (double)r.Amount / total : 0, 0)}",
+                Foreground = (Brush)FindResource("TextMute"), FontSize = 12,
+            };
+            DockPanel.SetDock(value, Dock.Right);
+            line.Children.Add(value);
+            line.Children.Add(new TextBlock { Text = r.Name, FontSize = 12.5, Foreground = Brushes.White, TextTrimming = TextTrimming.CharacterEllipsis });
+            panel.Children.Add(line);
+        }
     }
 
     private void AddTile(Panel panel, string label, string value, string caption)

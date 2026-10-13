@@ -375,6 +375,16 @@
                     <!-- Defense -->
                     <StackPanel x:Name="PageDefense" Visibility="Collapsed">
                         <UniformGrid x:Name="DefenseTiles" Rows="1" Margin="-6,0,0,0" HorizontalAlignment="Left" />
+                        <!-- 1 HP: who hit this player, who healed them -->
+                        <Grid x:Name="DefenseSources" Margin="0,14,0,0">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*" />
+                                <ColumnDefinition Width="24" />
+                                <ColumnDefinition Width="*" />
+                            </Grid.ColumnDefinitions>
+                            <StackPanel x:Name="TakenFromList" Grid.Column="0" />
+                            <StackPanel x:Name="HealedByList" Grid.Column="2" />
+                        </Grid>
                         <TextBlock Margin="0,16,0,0" Foreground="{StaticResource TextMute}" FontSize="11.5" TextWrapping="Wrap"
                                    Text="{Binding DefNote, Source={x:Static s:UiText.Current}}" />
                     </StackPanel>

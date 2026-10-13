@@ -531,6 +531,41 @@ public class PartyTests
     }
 
     [Fact]
+    public void The_boss_forecast_gives_the_kill_at_this_pace_and_the_enrage()
+    {
+        var data = GameData.Empty;
+        data.Enrage[2000002] = 300;
+        var t = new CombatTracker(data, new MeterOptions { TargetMode = TargetMode.All });
+        t.Process(new SelfIdentifiedEvent(0, Me, "Kunogarasu", 1309, GameClass.Cleric));
+        t.Process(new NpcSeenEvent(0, Boss, 2000002, 10_000_000));
+        // 10 s at ~100k/s with 8–9M HP left: about 80 s to the kill, 290 s to the enrage
+        for (var s = 1; s <= 11; s++) t.Process(new DamageEvent(s * 1_000, Me, Boss, 17010000, 100_000, HitFlags.None));
+        t.Process(new NpcHpEvent(11_000, Boss, 8_900_000, 10_000_000, IsNpc: true));
+        var f = t.Snapshot(null, 11_000)!.Boss!.Forecast!;
+        Assert.InRange(f.KillSeconds!.Value, 60, 100);
+        Assert.Equal(290, f.EnrageLeftSeconds!.Value, 1);
+        Assert.False(f.Late);
+        Assert.InRange(f.RequiredDps!.Value, 25_000, 31_000);
+    }
+
+    [Fact]
+    public void A_party_member_dying_is_announced_once_and_a_stranger_is_not()
+    {
+        var t = new CombatTracker(GameData.Empty, new MeterOptions { TargetMode = TargetMode.All, PartyOnly = true });
+        var died = new List<string>();
+        t.PartyMemberDied += died.Add;
+        t.Process(new SelfIdentifiedEvent(0, Me, "Kunogarasu", 1309, GameClass.Cleric));
+        t.Process(new PlayerSeenEvent(0, Mate, "HACPAHO", 1309, GameClass.Ranger));
+        t.Process(new PlayerSeenEvent(0, Stranger, "Passerby", 1309, GameClass.Gladiator));
+        t.Process(new PartyListEvent(0, [new(Me, "Kunogarasu", 1309, 1), new(Mate, "HACPAHO", 1309, 2)]));
+        t.Process(new DeathEvent(1_000, Mate, false));
+        t.Process(new DeathEvent(1_500, Mate, false)); // the same death sent twice
+        t.Process(new DeathEvent(2_000, Stranger, false));
+        t.Tick(2_000);
+        Assert.Equal(["HACPAHO"], died);
+    }
+
+    [Fact]
     public void A_pvp_session_lists_opponents_with_damage_both_ways_hp_and_kills()
     {
         var t = new CombatTracker(GameData.Empty, new MeterOptions { TargetMode = TargetMode.All, PartyOnly = true });

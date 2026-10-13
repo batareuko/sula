@@ -410,6 +410,21 @@
                                Foreground="White" VerticalAlignment="Center" />
                     <TextBlock Text="{Binding BossPercent}" FontFamily="{StaticResource NumberFont}" FontWeight="SemiBold" FontSize="{DynamicResource BossFont}"
                                Foreground="White" VerticalAlignment="Center" HorizontalAlignment="Right" />
+                    <!-- 1 HP: the kill forecast and the enrage -->
+                    <TextBlock Text="{Binding BossForecast}" ToolTip="{Binding BossForecastTip}" FontFamily="{StaticResource NumberFont}" FontWeight="SemiBold"
+                               FontSize="{DynamicResource BossFont}" VerticalAlignment="Center" HorizontalAlignment="Center"
+                               Visibility="{Binding BossForecast, Converter={StaticResource VisibleIf}}">
+                        <TextBlock.Style>
+                            <Style TargetType="TextBlock">
+                                <Setter Property="Foreground" Value="#FFE7B0" />
+                                <Style.Triggers>
+                                    <DataTrigger Binding="{Binding BossLate}" Value="True">
+                                        <Setter Property="Foreground" Value="#FF8A8A" />
+                                    </DataTrigger>
+                                </Style.Triggers>
+                            </Style>
+                        </TextBlock.Style>
+                    </TextBlock>
                 </Grid>
             </Grid>
 
