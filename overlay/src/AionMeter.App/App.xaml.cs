@@ -39,6 +39,7 @@ public partial class App : Application
     private RegisteredWaitHandle? _showWait;
     private MeterService _meter = null!;
     private OverlayWindow _overlay = null!;
+    private BossBarWindow? _bossBar;
     private TrayIcon? _tray;
     private HotkeyManager? _hotkeys;
     private DispatcherTimer? _timer;
@@ -116,6 +117,10 @@ public partial class App : Application
             // Hidden by choice: still up for a moment, so it is plain that the meter started.
             if (settings.ShowOnStart) ShowByItself();
         }
+
+        // 1 HP: a party member died; a boss fell (the bus count)
+        _meter.Tracker.PartyMemberDied += name => Dispatcher.BeginInvoke(() => OnPartyDeath(name));
+        _meter.BossKilled += (count, boss) => Dispatcher.BeginInvoke(() => OnBossKilled(count, boss));
 
         _hotkeys = new HotkeyManager(new WindowInteropHelper(_overlay).Handle);
         RegisterHotkeys();
@@ -204,6 +209,7 @@ public partial class App : Application
         _meter.Tick();
         UpdateAutoVisibility();
         if (_overlay.IsVisible) _overlay.Refresh();
+        UpdateBossBar();
         if (++_ticks % 5 == 0)
         {
             _tray?.Update(_overlay.IsVisible, _meter.Settings.ClickThrough, _meter.DemoRunning ? "demo" : _meter.CaptureStatus.Message);
@@ -327,6 +333,7 @@ public partial class App : Application
     {
         Log.Info("Meter restarted by the user");
         _meter.Restart();
+        _meter.ResetBossKills(); // the bus count starts again with the meter
         _overlay.ShowLive();
     }
 
@@ -465,6 +472,36 @@ public partial class App : Application
         if (changed > 0) Log.Info($"Shared boss times: {changed} timers updated from the guild");
     }
 
+    /// <summary>1 HP: said by the Windows voice too, when the alerts are spoken (Settings → Overlay).</summary>
+    private void Say(string text)
+    {
+        if (_meter.Settings.VoiceAlerts) Voice.Speak(text, UiText.Current.Code);
+    }
+
+    private void OnPartyDeath(string name)
+    {
+        if (!_meter.Settings.PartyDeathAlert) return;
+        var text = string.Format(UiText.Current.PartyDied, name);
+        _overlay.ShowNotice(text, TimeSpan.FromSeconds(6));
+        System.Media.SystemSounds.Hand.Play();
+        Say(text);
+    }
+
+    private void OnBossKilled(int count, string boss)
+    {
+        var text = string.Format(UiText.Current.BusCount, boss, count);
+        _overlay.ShowNotice(text, TimeSpan.FromSeconds(8));
+    }
+
+    /// <summary>1 HP: the big boss HP bar (Settings → Overlay), made on first use.</summary>
+    private void UpdateBossBar()
+    {
+        if (!_meter.Settings.BossBar && _bossBar is null) return;
+        var snap = _meter.Settings.BossBar ? _meter.Tracker.Snapshot(null, DateTimeOffset.UtcNow.ToUnixTimeMilliseconds()) : null;
+        if (snap is not null && _bossBar is null) _bossBar = new BossBarWindow();
+        _bossBar?.Update(snap, _meter.Settings.BossBar);
+    }
+
     private readonly Dictionary<string, DateTimeOffset> _eventsAnnounced = new();
 
     /// <summary>1 HP: Rift, Shugo Festival, sieges, resets — a notice with a sound before they start (Settings → events).</summary>
@@ -482,6 +519,7 @@ public partial class App : Application
             _tray?.ShowBalloon(t.EventsTitle, text);
             _overlay.ShowNotice("⏰ " + text, TimeSpan.FromMinutes(Math.Max(1, minutes)));
             System.Media.SystemSounds.Exclamation.Play();
+            Say(text);
         }
     }
 
@@ -502,6 +540,7 @@ public partial class App : Application
             if (priority) text += Environment.NewLine + t.PriorityLoot;
             _tray?.ShowBalloon(t.TimersTitle, text);
             System.Media.SystemSounds.Asterisk.Play();
+            Say(text.Split(Environment.NewLine)[0]);
         }
     }
 

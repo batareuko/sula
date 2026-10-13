@@ -16,6 +16,9 @@ public sealed class GameData
     public Dictionary<int, string> Skills { get; private set; } = new();
     public Dictionary<int, NpcDef> Npcs { get; private set; } = new();
     public HashSet<int> DotSkills { get; } = new();
+
+    /// <summary>1 HP: seconds from the pull to a boss's enrage (data/boss_enrage.json); bosses without one are absent.</summary>
+    public Dictionary<int, int> Enrage { get; } = new();
     public HashSet<int> HealSkills { get; } = new();
     public Dictionary<int, string> Maps { get; private set; } = new();
     public Dictionary<int, string> Servers { get; private set; } = new();
@@ -77,6 +80,10 @@ public sealed class GameData
 
         ReadIntArray(Path.Combine(directory, "dot_skill_ids.json"), data.DotSkills);
         ReadIntArray(Path.Combine(directory, "healing_skill_ids.json"), data.HealSkills);
+        foreach (var (key, value) in ReadObject(Path.Combine(directory, "boss_enrage.json")))
+            if (key == "enrage" && value.ValueKind == JsonValueKind.Object)
+                foreach (var e in value.EnumerateObject())
+                    if (int.TryParse(e.Name, out var code) && e.Value.TryGetInt32(out var seconds) && seconds > 0) data.Enrage[code] = seconds;
         return data;
     }
 

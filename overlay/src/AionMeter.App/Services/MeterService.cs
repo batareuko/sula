@@ -332,8 +332,21 @@ public sealed class MeterService : IDisposable
         }
     }
 
+    /// <summary>1 HP: bosses killed since the meter started (or since the counter was reset) — the "bus" count.</summary>
+    public int BossKills { get; private set; }
+
+    /// <summary>Raised (on the capture thread) when a boss falls: the session's kill count.</summary>
+    public event Action<int, string>? BossKilled;
+
+    public void ResetBossKills() => BossKills = 0;
+
     private void OnEncounterFinished(FightRecord record)
     {
+        if (!_replaying && !DemoRunning && record.Summary is { Reason: EncounterEndReason.Kill, Boss: { } boss })
+        {
+            BossKills++;
+            BossKilled?.Invoke(BossKills, boss.Name);
+        }
         // 1 HP: your own result of a boss kill goes to the guild rating (only with a key from the site)
         if (!_replaying && !DemoRunning) _ = Cloud.UploadAsync(record);
         if (!_replaying && !DemoRunning) Dummies.Finish(record.Summary, IsDummy);

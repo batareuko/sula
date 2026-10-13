@@ -126,6 +126,19 @@ public sealed partial class UiText
     public string DummyVsLast { get; init; } = "last {0}";
     public string DummyTip { get; init; } =
         "Training dummy, run {0}: your DPS {1}.\nAgainst your best run on this dummy: {2}; against the run before: {3}.\nStop hitting for 5 s and the next hit starts the next run (runs under 10 s do not count).";
+    public string DefHealingDone { get; init; } = "Healing done";
+    public string DefHealingReceived { get; init; } = "Healing received";
+    public string DefTakenFrom { get; init; } = "Damage taken from";
+    public string DefHealedBy { get; init; } = "Healed by";
+    public string BossBarOn { get; init; } = "Big boss HP bar at the top of the screen (boss fights)";
+    public string PartyDeathOn { get; init; } = "Sound and notice when a party member dies";
+    public string VoiceOn { get; init; } = "Speak the alerts (Windows voice)";
+    public string PartyDied { get; init; } = "☠ {0} died";
+    public string BusCount { get; init; } = "🚌 {0} down · {1} bosses this session";
+    public string ForecastEnrage { get; init; } = "enrage {0}";
+    public string ForecastMissing { get; init; } = "+{0} DPS";
+    public string ForecastTip { get; init; } =
+        "At the pace of the last 30 s ({0} DPS on the boss) it falls in ⏱. Enrage: counted from the pull; to kill before it, {1} DPS. Red: the boss enrages first.";
     public string StreamOn { get; init; } = "Stream page for OBS (browser source)";
     public string StreamHint { get; init; } =
         "In OBS add a Browser source with the address below (width 480, height 600). It shows the overlay exactly as it is on your screen, transparent around the card. A lighter card instead: the address + card (…/card, add ?idle=1 to keep your name, combat power and ping out of combat).";

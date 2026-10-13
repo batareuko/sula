@@ -230,6 +230,12 @@
                             <TextBlock Style="{StaticResource Hint}" Text="{Binding OneHpDynamicHint, Source={x:Static s:UiText.Current}}" />
                             <CheckBox x:Name="PvpOn" Style="{StaticResource DarkCheck}" Margin="0,4,0,0"
                                       Content="{Binding PvpOverlayOn, Source={x:Static s:UiText.Current}}" />
+                            <CheckBox x:Name="BossBarOn" Style="{StaticResource DarkCheck}" Margin="0,4,0,0"
+                                      Content="{Binding BossBarOn, Source={x:Static s:UiText.Current}}" />
+                            <CheckBox x:Name="PartyDeathOn" Style="{StaticResource DarkCheck}" Margin="0,4,0,0"
+                                      Content="{Binding PartyDeathOn, Source={x:Static s:UiText.Current}}" />
+                            <CheckBox x:Name="VoiceOn" Style="{StaticResource DarkCheck}" Margin="0,4,0,0"
+                                      Content="{Binding VoiceOn, Source={x:Static s:UiText.Current}}" />
                             <CheckBox x:Name="StreamOn" Style="{StaticResource DarkCheck}" Margin="0,4,0,0"
                                       Content="{Binding StreamOn, Source={x:Static s:UiText.Current}}" />
                             <TextBlock Style="{StaticResource Hint}" Text="{Binding StreamHint, Source={x:Static s:UiText.Current}}" />

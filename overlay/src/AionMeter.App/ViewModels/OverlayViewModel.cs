@@ -225,6 +225,14 @@ public sealed class OverlayViewModel : ObservableObject
     /// <summary>"58.9%"</summary>
     public string BossPercent { get => _bossPercent; set => Set(ref _bossPercent, value); }
     public double BossHpFraction { get => _bossHpFraction; set => Set(ref _bossHpFraction, value); }
+    /// <summary>1 HP: "⏱ 1:23 · enrage 3:10" — the kill at this pace and the enrage (empty without a forecast).</summary>
+    public string BossForecast { get => _bossForecast; set => Set(ref _bossForecast, value); }
+    private string _bossForecast = "";
+    /// <summary>1 HP: the boss enrages before it falls at this pace.</summary>
+    public bool BossLate { get => _bossLate; set => Set(ref _bossLate, value); }
+    private bool _bossLate;
+    public string BossForecastTip { get => _bossForecastTip; set => Set(ref _bossForecastTip, value); }
+    private string _bossForecastTip = "";
     public string PartyDps { get => _partyDps; set => Set(ref _partyDps, value); }
     public string TotalDamage { get => _totalDamage; set => Set(ref _totalDamage, value); }
     public string Status { get => _status; set => Set(ref _status, value); }
@@ -324,10 +332,12 @@ public sealed class OverlayViewModel : ObservableObject
             BossHpFraction = boss.HpFraction;
             BossHpText = boss.Hp == 0 ? T.Defeated : Format.Grouped(boss.Hp) + " HP";
             BossPercent = boss.MaxHpKnown || boss.Hp == 0 ? Format.Percent(boss.HpFraction) : "?";
+            ApplyForecast(boss.Forecast);
         }
         else
         {
             HasBoss = false;
+            ApplyForecast(null);
         }
 
         var list = snap.Combatants;
@@ -388,5 +398,26 @@ public sealed class OverlayViewModel : ObservableObject
         var b = new SolidColorBrush(c);
         b.Freeze();
         return b;
+    }
+
+    private static string Mmss(double seconds) =>
+        seconds > 3599 ? ">59:59" : TimeSpan.FromSeconds(Math.Ceiling(Math.Max(0, seconds))).ToString(@"m\:ss");
+
+    /// <summary>1 HP: the boss bar's forecast: the kill at this pace, the enrage, and the DPS missing when late.</summary>
+    private void ApplyForecast(BossForecast? f)
+    {
+        BossLate = f?.Late == true;
+        if (f is null || (f.KillSeconds is null && f.EnrageLeftSeconds is null))
+        {
+            BossForecast = BossForecastTip = "";
+            return;
+        }
+        var parts = new List<string>();
+        if (f.KillSeconds is { } k) parts.Add("⏱ " + Mmss(k));
+        if (f.EnrageLeftSeconds is { } e) parts.Add(string.Format(T.ForecastEnrage, Mmss(e)));
+        if (f.Late && f.MissingDps > 0) parts.Add(string.Format(T.ForecastMissing, Format.Compact(f.MissingDps)));
+        BossForecast = string.Join(" · ", parts);
+        BossForecastTip = string.Format(T.ForecastTip, Format.Compact(f.PaceDps),
+            f.RequiredDps is { } r ? Format.Compact(r) : "—");
     }
 }
