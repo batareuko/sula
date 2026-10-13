@@ -236,6 +236,16 @@
                                       Content="{Binding PartyDeathOn, Source={x:Static s:UiText.Current}}" />
                             <CheckBox x:Name="VoiceOn" Style="{StaticResource DarkCheck}" Margin="0,4,0,0"
                                       Content="{Binding VoiceOn, Source={x:Static s:UiText.Current}}" />
+                            <CheckBox x:Name="BuffsOn" Style="{StaticResource DarkCheck}" Margin="0,4,0,0"
+                                      Content="{Binding BuffsOn, Source={x:Static s:UiText.Current}}" />
+                            <CheckBox x:Name="BuffEndOn" Style="{StaticResource DarkCheck}" Margin="0,4,0,0"
+                                      Content="{Binding BuffEndOn, Source={x:Static s:UiText.Current}}" />
+                            <CheckBox x:Name="CooldownsOn" Style="{StaticResource DarkCheck}" Margin="0,4,0,0"
+                                      Content="{Binding CooldownsOn, Source={x:Static s:UiText.Current}}" />
+                            <CheckBox x:Name="PartyRequestOn" Style="{StaticResource DarkCheck}" Margin="0,4,0,0"
+                                      Content="{Binding PartyRequestOn, Source={x:Static s:UiText.Current}}" />
+                            <CheckBox x:Name="ResourcesOn" Style="{StaticResource DarkCheck}" Margin="0,4,0,0"
+                                      Content="{Binding ResourcesOn, Source={x:Static s:UiText.Current}}" />
                             <CheckBox x:Name="StreamOn" Style="{StaticResource DarkCheck}" Margin="0,4,0,0"
                                       Content="{Binding StreamOn, Source={x:Static s:UiText.Current}}" />
                             <TextBlock Style="{StaticResource Hint}" Text="{Binding StreamHint, Source={x:Static s:UiText.Current}}" />

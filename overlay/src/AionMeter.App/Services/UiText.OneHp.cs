@@ -126,6 +126,28 @@ public sealed partial class UiText
     public string DummyVsLast { get; init; } = "last {0}";
     public string DummyTip { get; init; } =
         "Training dummy, run {0}: your DPS {1}.\nAgainst your best run on this dummy: {2}; against the run before: {3}.\nStop hitting for 5 s and the next hit starts the next run (runs under 10 s do not count).";
+    public string BuffsOn { get; init; } = "Your lasting buffs on the card (10 s and more)";
+    public string BuffEndOn { get; init; } = "Notice 10 s before a buff of a minute or more runs out";
+    public string BuffEnding { get; init; } = "{0} ends in {1} s";
+    public string CooldownsOn { get; init; } = "Your party's cooldowns of a minute and more on the card";
+    public string PartyRequestOn { get; init; } = "Notice when someone asks to join your party (class, level, combat power)";
+    public string PartyRequest { get; init; } = "Asks to join: {0}";
+    public string LevelShort { get; init; } = "lvl {0}";
+    public string ResourcesOn { get; init; } = "Your aether, Shugo keys and tickets on the card (out of combat; tooltip: all characters)";
+
+    public string ResourceName(int id) => (Code, id) switch
+    {
+        ("uk", Core.Events.ResourceEvent.Aether) => "Етер", ("uk", Core.Events.ResourceEvent.ShugoKeys) => "Ключі Шуго",
+        ("uk", Core.Events.ResourceEvent.Nightmare) => "Кошмар", ("uk", Core.Events.ResourceEvent.Invasion) => "Вторгнення",
+        ("uk", Core.Events.ResourceEvent.Awakening) => "Пробудження",
+        ("ru", Core.Events.ResourceEvent.Aether) => "Эфир", ("ru", Core.Events.ResourceEvent.ShugoKeys) => "Ключи Шуго",
+        ("ru", Core.Events.ResourceEvent.Nightmare) => "Кошмар", ("ru", Core.Events.ResourceEvent.Invasion) => "Вторжение",
+        ("ru", Core.Events.ResourceEvent.Awakening) => "Пробуждение",
+        (_, Core.Events.ResourceEvent.Aether) => "Aether", (_, Core.Events.ResourceEvent.ShugoKeys) => "Shugo keys",
+        (_, Core.Events.ResourceEvent.Nightmare) => "Nightmare", (_, Core.Events.ResourceEvent.Invasion) => "Invasion",
+        (_, Core.Events.ResourceEvent.Awakening) => "Awakening",
+        _ => "#" + id,
+    };
     public string DefHealingDone { get; init; } = "Healing done";
     public string DefHealingReceived { get; init; } = "Healing received";
     public string DefTakenFrom { get; init; } = "Damage taken from";

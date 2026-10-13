@@ -121,6 +121,7 @@ public partial class App : Application
         // 1 HP: a party member died; a boss fell (the bus count)
         _meter.Tracker.PartyMemberDied += name => Dispatcher.BeginInvoke(() => OnPartyDeath(name));
         _meter.BossKilled += (count, boss) => Dispatcher.BeginInvoke(() => OnBossKilled(count, boss));
+        _meter.Tracker.PartyRequested += r => Dispatcher.BeginInvoke(() => OnPartyRequest(r));
 
         _hotkeys = new HotkeyManager(new WindowInteropHelper(_overlay).Handle);
         RegisterHotkeys();
@@ -216,6 +217,7 @@ public partial class App : Application
             CheckBossAlerts();
             CheckBossListReminder();
             CheckEventAlerts();
+            CheckBuffAlerts();
             CheckGameStart();
             CheckPendingUpdate();
         }
@@ -478,6 +480,26 @@ public partial class App : Application
         if (_meter.Settings.VoiceAlerts) Voice.Speak(text, UiText.Current.Code);
     }
 
+    private readonly HashSet<(int, long)> _buffsAnnounced = new();
+
+    /// <summary>1 HP: a buff of a minute or more on you runs out in 10 s — a notice (and the voice), once per buff.</summary>
+    private void CheckBuffAlerts()
+    {
+        if (!_meter.Settings.BuffEndAlert) return;
+        var now = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds();
+        foreach (var b in _meter.Tracker.SelfBuffs(now))
+        {
+            if (b.Debuff || b.EndMs == 0 || b.DurationMs < 60_000) continue;
+            var left = b.LeftMs(now);
+            if (left is <= 0 or > 10_000 || !_buffsAnnounced.Add((b.Code, b.StartMs))) continue;
+            var text = string.Format(UiText.Current.BuffEnding, b.Name, (int)Math.Ceiling(left / 1000.0));
+            _overlay.ShowNotice("✦ " + text, TimeSpan.FromSeconds(8));
+            System.Media.SystemSounds.Asterisk.Play();
+            Say(text);
+        }
+        if (_buffsAnnounced.Count > 500) _buffsAnnounced.Clear();
+    }
+
     private void OnPartyDeath(string name)
     {
         if (!_meter.Settings.PartyDeathAlert) return;
@@ -485,6 +507,24 @@ public partial class App : Application
         _overlay.ShowNotice(text, TimeSpan.FromSeconds(6));
         System.Media.SystemSounds.Hand.Play();
         Say(text);
+    }
+
+    /// <summary>1 HP: someone asks to join — who they are: class, level, combat power, gear score when inspected before.</summary>
+    private void OnPartyRequest(Core.Events.PartyRequestEvent r)
+    {
+        if (!_meter.Settings.PartyRequestAlert) return;
+        var t = UiText.Current;
+        var parts = new List<string> { r.Name };
+        if (r.ServerId > 0) parts.Add(_meter.Data.ServerName(r.ServerId));
+        if (r.Class != Core.Events.GameClass.Unknown) parts.Add(t.ClassName(r.Class));
+        parts.Add(string.Format(t.LevelShort, r.Level));
+        if (r.Power > 0) parts.Add("⚡ " + Core.Format.Power(r.Power));
+        if (_meter.Tracker.GearOf(r.Name) is > 0 and var gs) parts.Add(string.Format(t.GearScoreShort, gs));
+        var text = "📨 " + string.Format(t.PartyRequest, string.Join(" · ", parts));
+        _overlay.ShowNotice(text, TimeSpan.FromSeconds(20));
+        _tray?.ShowBalloon(AppInfo.Name, text);
+        System.Media.SystemSounds.Asterisk.Play();
+        Say(string.Format(t.PartyRequest, r.Name));
     }
 
     private void OnBossKilled(int count, string boss)

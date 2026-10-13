@@ -19,6 +19,16 @@ public sealed class GameData
 
     /// <summary>1 HP: seconds from the pull to a boss's enrage (data/boss_enrage.json); bosses without one are absent.</summary>
     public Dictionary<int, int> Enrage { get; } = new();
+
+    /// <summary>1 HP: buffs and debuffs by abnormal code (data/buffs.json): name, and whether it is a debuff.</summary>
+    public Dictionary<int, (string Name, bool Debuff)> Buffs { get; } = new();
+
+    /// <summary>1 HP: a buff's name — the buff list, else the skill it comes from (the code without its last digit).</summary>
+    public string BuffName(int code) =>
+        Buffs.TryGetValue(code, out var b) ? b.Name
+        : Skills.TryGetValue(code / 10, out var s) ? s
+        : Skills.TryGetValue(code / 10 / 10_000 * 10_000, out var basic) ? basic
+        : $"#{code}";
     public HashSet<int> HealSkills { get; } = new();
     public Dictionary<int, string> Maps { get; private set; } = new();
     public Dictionary<int, string> Servers { get; private set; } = new();
@@ -80,6 +90,11 @@ public sealed class GameData
 
         ReadIntArray(Path.Combine(directory, "dot_skill_ids.json"), data.DotSkills);
         ReadIntArray(Path.Combine(directory, "healing_skill_ids.json"), data.HealSkills);
+        foreach (var (key, value) in ReadObject(Path.Combine(directory, "buffs.json")))
+            if (key == "buffs" && value.ValueKind == JsonValueKind.Object)
+                foreach (var e in value.EnumerateObject())
+                    if (int.TryParse(e.Name, out var code) && e.Value.TryGetProperty("name", out var n) && n.GetString() is { Length: > 0 } name)
+                        data.Buffs[code] = (name, e.Value.TryGetProperty("type", out var t) && t.GetString() == "debuff");
         foreach (var (key, value) in ReadObject(Path.Combine(directory, "boss_enrage.json")))
             if (key == "enrage" && value.ValueKind == JsonValueKind.Object)
                 foreach (var e in value.EnumerateObject())

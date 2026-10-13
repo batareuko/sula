@@ -115,6 +115,17 @@ public sealed class AppSettings
     public bool PartyDeathAlert { get; set; } = true;
     /// <summary>1 HP: alerts spoken by the Windows voice as well (events, bosses, deaths).</summary>
     public bool VoiceAlerts { get; set; }
+    /// <summary>1 HP: your lasting buffs on the card, and a notice 10 s before one of a minute or more runs out.</summary>
+    public bool ShowBuffs { get; set; } = true;
+    public bool BuffEndAlert { get; set; } = true;
+    /// <summary>1 HP: your party's cooldowns of a minute and more on the card.</summary>
+    public bool ShowPartyCooldowns { get; set; } = true;
+    /// <summary>1 HP: a notice when someone asks to join your party.</summary>
+    public bool PartyRequestAlert { get; set; } = true;
+    /// <summary>1 HP: your tickets and energies on the card out of combat.</summary>
+    public bool ShowResources { get; set; } = true;
+    /// <summary>1 HP: tickets and energies last seen, per character (name → id → count, bonus).</summary>
+    public Dictionary<string, Dictionary<int, int[]>> Resources { get; set; } = new();
     /// <summary>The meter as a web page for OBS (Services/StreamServer.cs); only this computer can open it.</summary>
     public bool StreamEnabled { get; set; }
     public int StreamPort { get; set; } = StreamServer.DefaultPort;

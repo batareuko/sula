@@ -85,6 +85,11 @@ public partial class SettingsWindow : Window
         BossBarOn.IsChecked = s.BossBar;
         PartyDeathOn.IsChecked = s.PartyDeathAlert;
         VoiceOn.IsChecked = s.VoiceAlerts;
+        BuffsOn.IsChecked = s.ShowBuffs;
+        BuffEndOn.IsChecked = s.BuffEndAlert;
+        CooldownsOn.IsChecked = s.ShowPartyCooldowns;
+        PartyRequestOn.IsChecked = s.PartyRequestAlert;
+        ResourcesOn.IsChecked = s.ShowResources;
         StreamUrl.Text = $"http://localhost:{s.StreamPort}/";
         OneHpPartyOnly.IsChecked = s.PartyOnly;
         OneHpPriorityBosses.IsChecked = s.PriorityBossAlerts;
@@ -141,6 +146,11 @@ public partial class SettingsWindow : Window
         s.BossBar = BossBarOn.IsChecked == true;
         s.PartyDeathAlert = PartyDeathOn.IsChecked == true;
         s.VoiceAlerts = VoiceOn.IsChecked == true;
+        s.ShowBuffs = BuffsOn.IsChecked == true;
+        s.BuffEndAlert = BuffEndOn.IsChecked == true;
+        s.ShowPartyCooldowns = CooldownsOn.IsChecked == true;
+        s.PartyRequestAlert = PartyRequestOn.IsChecked == true;
+        s.ShowResources = ResourcesOn.IsChecked == true;
         s.PartyOnly = OneHpPartyOnly.IsChecked == true;
         s.PriorityBossAlerts = OneHpPriorityBosses.IsChecked == true;
         s.OneHpBossSync = OneHpBossSync.IsChecked == true;

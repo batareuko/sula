@@ -43,7 +43,7 @@ public class ProtocolTests
     [InlineData("d1ca0200 0d28e900 0102 d1ca02 a263c741d3c7ea47bd1ed1c70048a546ee64029a3a", 42321u, 42321u, 15280141)]
     public void Cast_announcements_decode(string hex, uint actor, uint target, int skill)
     {
-        var c = Assert.IsType<CastEvent>(Assert.Single(Parse(Opcodes.Cast, hex.Replace(" ", ""))));
+        var c = Assert.Single(Parse(Opcodes.Cast, hex.Replace(" ", "")).OfType<CastEvent>()); // 1 HP: a cooldown may follow
         Assert.Equal(actor, c.ActorId);
         Assert.Equal(target, c.TargetId);
         Assert.Equal(skill, c.SkillCode);
