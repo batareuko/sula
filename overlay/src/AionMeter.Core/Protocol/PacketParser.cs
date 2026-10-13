@@ -63,7 +63,7 @@ public sealed class PacketParser
                 break;
             case Opcodes.PlayerInfo:
             case Opcodes.PlayerInfoOld:
-                ParseIdentity(body, 0, isSelf: false);
+                ParseIdentity(body, 0, isSelf: false, wholePacket: true);
                 ScanEmbeddedBundles(body);
                 break;
             case Opcodes.Spawn:
@@ -118,6 +118,12 @@ public sealed class PacketParser
             case Opcodes.ResourceList:
             case Opcodes.ResourceUpdate:
                 foreach (var res in ResourcePackets.Read(body, single: opcode == Opcodes.ResourceUpdate, TimeMs)) Emit(res);
+                break;
+            case Opcodes.SelfPower:
+                // 1 HP: u64 combat power, u64 (the same or the peak) — sent on login and when it changes
+                if (body.Length == 16 && BitConverter.ToUInt64(body) is var power and > 0 and <= 5_000_000 &&
+                    BitConverter.ToUInt64(body[8..]) is >= 10_000 and <= 5_000_000)
+                    Emit(new SelfPowerEvent(TimeMs, (long)power));
                 break;
             case Opcodes.PartyRequest:
                 if (PartyPackets.ReadRequest(body, TimeMs) is { } request) Emit(request);
@@ -533,7 +539,7 @@ public sealed class PacketParser
     /// <code>id varint, mask1 u32, mask2 u8, [mask2 &amp; 1] len u8 + utf8 name, server u16, class u32, u8, level u32</code>
     /// The tail after the name is only trusted when server and class both validate.
     /// </summary>
-    private bool ParseIdentity(ReadOnlySpan<byte> b, int o, bool isSelf)
+    private bool ParseIdentity(ReadOnlySpan<byte> b, int o, bool isSelf, bool wholePacket = false)
     {
         if (!Wire.TryVarint(b, ref o, out var id) || !IsEntityId(id)) return false;
         o += 4; // mask1
@@ -575,7 +581,28 @@ public sealed class PacketParser
         Emit(isSelf
             ? new SelfIdentifiedEvent(TimeMs, id, name, server, cls, level)
             : new PlayerSeenEvent(TimeMs, id, name, server, cls));
+        // 1 HP: a player coming into view brings their combat power (the stat block at the end of the record)
+        if (wholePacket && !isSelf && TailCombatPower(b) is > 0 and var power) Emit(new PlayerPowerEvent(TimeMs, id, name, power));
         return true;
+    }
+
+    /// <summary>
+    /// 1 HP: the stat block near the end of a player's record (<c>45 36</c>): <code>u8, F4 CB 1F (or C7 9A 1E), u32
+    /// (100–2,000,000), u32 (1–128), combat power u32, u32 0</code> — about 21 bytes from the end.
+    /// </summary>
+    private static long TailCombatPower(ReadOnlySpan<byte> b)
+    {
+        for (var i = b.Length - 20; i >= Math.Max(0, b.Length - 64); i--)
+        {
+            var marker = (b[i + 1] == 0xF4 && b[i + 2] == 0xCB && b[i + 3] == 0x1F) || (b[i + 1] == 0xC7 && b[i + 2] == 0x9A && b[i + 3] == 0x1E);
+            if (!marker) continue;
+            var a = Wire.U32(b, i + 4);
+            var n = Wire.U32(b, i + 8);
+            var power = Wire.U32(b, i + 12);
+            if (a is >= 100 and <= 2_000_000 && n is >= 1 and <= 128 && power is >= 10_000 and <= 5_000_000 && Wire.U32(b, i + 16) == 0)
+                return power;
+        }
+        return 0;
     }
 
     private void ScanForIdentities(ReadOnlySpan<byte> b)

@@ -188,6 +188,9 @@
                 <!-- your own row -->
                 <Border CornerRadius="6" BorderThickness="1.5" BorderBrush="{StaticResource Accent}"
                         Visibility="{Binding IsSelf, Converter={StaticResource VisibleIf}}" />
+                <!-- 1 HP (PvP): how this player compares with you — red: run, orange: stronger, green: weaker -->
+                <Border CornerRadius="6" BorderThickness="2.2" BorderBrush="{Binding ThreatBrush}"
+                        Visibility="{Binding ThreatText, Converter={StaticResource VisibleIf}}" />
 
                 <Grid Margin="8,0,14,0">
                     <Grid.ColumnDefinitions>
@@ -217,6 +220,11 @@
                         <!-- 1 HP: combat power right after the name (party list in the game, else the site's gear lookup) -->
                         <TextBlock DockPanel.Dock="Left" Text="{Binding Gear}" FontFamily="{StaticResource NumberFont}" FontSize="11"
                                    FontWeight="SemiBold" Foreground="#C8FFF6" Opacity="0.85" VerticalAlignment="Center" Margin="7,1,0,0" />
+                        <Border DockPanel.Dock="Left" Background="{Binding ThreatBrush}" CornerRadius="5" Padding="5,0,5,1" Margin="7,0,0,0"
+                                VerticalAlignment="Center" Visibility="{Binding ThreatText, Converter={StaticResource VisibleIf}}">
+                            <TextBlock Text="{Binding ThreatText}" FontFamily="{StaticResource NumberFont}" FontSize="11" FontWeight="Bold"
+                                       Foreground="White" />
+                        </Border>
                     </DockPanel>
 
                     <TextBlock Grid.Column="3" Text="{Binding Dps}" Style="{StaticResource RowNumber}" />

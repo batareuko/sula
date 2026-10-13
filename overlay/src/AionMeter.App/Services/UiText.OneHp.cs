@@ -126,6 +126,18 @@ public sealed partial class UiText
     public string DummyVsLast { get; init; } = "last {0}";
     public string DummyTip { get; init; } =
         "Training dummy, run {0}: your DPS {1}.\nAgainst your best run on this dummy: {2}; against the run before: {3}.\nStop hitting for 5 s and the next hit starts the next run (runs under 10 s do not count).";
+    public string ThreatDanger { get; init; } = "Run";
+    public string ThreatCaution { get; init; } = "Stronger";
+    public string ThreatWeak { get; init; } = "Weaker";
+    public string ThreatEven { get; init; } = "Even";
+    public string ThreatYou { get; init; } = "you";
+    public string ThreatRun { get; init; } = "Run! {0} ({1}) is far stronger: {2}";
+    public string ThreatRunVoice { get; init; } = "Run, {0} is much stronger";
+    public string PvpThreatOn { get; init; } = "PvP colours: red — run, orange — stronger, green — weaker; a notice when a red one hits you";
+    public string PvpThreatHint { get; init; } =
+        "Gaps (theirs minus yours) for red / orange / green: gear score when both are inspected, else combat power (sent for everyone in view).";
+    public string PvpGearGaps { get; init; } = "Gear score";
+    public string PvpPowerGaps { get; init; } = "Combat power";
     public string BuffsOn { get; init; } = "Your lasting buffs on the card (10 s and more)";
     public string BuffEndOn { get; init; } = "Notice 10 s before a buff of a minute or more runs out";
     public string BuffEnding { get; init; } = "{0} ends in {1} s";

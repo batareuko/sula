@@ -127,6 +127,12 @@ public sealed record PartyMemberEvent(long TimeMs, string Name, int ServerId) : 
 /// </summary>
 public sealed record BuffEvent(long TimeMs, uint TargetId, uint CasterId, int Code, long DurationMs, int InstanceId, bool Removing) : GameEvent(TimeMs);
 
+/// <summary>1 HP: your own combat power (<c>56 36</c>).</summary>
+public sealed record SelfPowerEvent(long TimeMs, long Power) : GameEvent(TimeMs);
+
+/// <summary>1 HP: a player's combat power, sent with their record when they come into view (<c>45 36</c>).</summary>
+public sealed record PlayerPowerEvent(long TimeMs, uint ActorId, string Name, long Power) : GameEvent(TimeMs);
+
 /// <summary>1 HP: <c>0B 61</c> / <c>0C 61</c> — one of your tickets or energies: how many, plus the bonus ones.</summary>
 public sealed record ResourceEvent(long TimeMs, int Id, int Count, int Bonus) : GameEvent(TimeMs)
 {

@@ -337,6 +337,7 @@ public partial class OverlayWindow : Window
             var m = r.Members.FirstOrDefault(x => x.Name == row.Name);
             if (m is null) continue;
             row.Gear = m.Deaths > 0 ? "☠" + m.Deaths : "";
+            row.ThreatText = "";
             row.Tooltip = string.Format(t.RunRowTip, m.Name, m.Damage.ToString("#,0"), Format.Compact(m.Dps), m.Healing.ToString("#,0"), m.Deaths);
         }
     }
@@ -371,11 +372,85 @@ public partial class OverlayWindow : Window
             row.Damage = Format.Compact(o.Taken);
             row.Share = o.Defeated ? "☠" : o.HpFraction is { } hp ? Format.Percent(hp, 0) : "—";
             var gs = _meter.Tracker.GearOf(o.Name);
-            row.Gear = string.Join(" · ", new[] { gs > 0 ? string.Format(t.GearScoreShort, gs) : "", _meter.Data.ServerName(o.ServerId), o.KilledYou ? "⚔" : "" }
+            var power = _meter.Tracker.PowerOf(o.Name);
+            row.Gear = string.Join(" · ", new[]
+                {
+                    gs > 0 ? string.Format(t.GearScoreShort, gs) : power > 0 ? "⚡" + Format.Power(power) : "",
+                    _meter.Data.ServerName(o.ServerId), o.KilledYou ? "⚔" : "",
+                }
                 .Where(x => x.Length > 0));
+            var threat = SetThreat(row, o.Name);
             row.Tooltip = string.Format(t.PvpRowTip, o.Name, o.Dealt.ToString("#,0"), o.HitsDealt, o.Taken.ToString("#,0"), o.HitsTaken) +
-                          (o.Defeated ? "\n" + t.PvpDefeated : "") + (o.KilledYou ? "\n" + t.PvpKilledYou : "");
+                          (o.Defeated ? "\n" + t.PvpDefeated : "") + (o.KilledYou ? "\n" + t.PvpKilledYou : "") +
+                          "\n" + t.ClassName(o.Class) + (threat.Level != ThreatLevel.Unknown ? "\n" + ThreatLine(threat) : "");
+            if (threat.Level == ThreatLevel.Danger && o.HitsTaken > 0) WarnDanger(o, threat);
         }
+    }
+
+    /// <summary>1 HP: the row's PvP colour and badge — the gap between this player and you.</summary>
+    private ThreatInfo SetThreat(RowViewModel row, string name)
+    {
+        var s = _settings;
+        var threat = _meter.Tracker.ThreatOf(name, new ThreatThresholds(s.PvpDangerGear, s.PvpCautionGear, s.PvpWeakGear,
+            s.PvpDangerPower, s.PvpCautionPower, s.PvpWeakPower));
+        row.ThreatBrush = threat.Level switch
+        {
+            ThreatLevel.Danger => ThreatRed,
+            ThreatLevel.Caution => ThreatOrange,
+            ThreatLevel.Weak => ThreatGreen,
+            _ => ThreatGrey,
+        };
+        row.ThreatText = threat.Level == ThreatLevel.Unknown ? "" : DiffText(threat);
+        return threat;
+    }
+
+    private static readonly Brush ThreatRed = Frozen(Color.FromRgb(0xE5, 0x2B, 0x3C));
+    private static readonly Brush ThreatOrange = Frozen(Color.FromRgb(0xF0, 0x8A, 0x1C));
+    private static readonly Brush ThreatGreen = Frozen(Color.FromRgb(0x22, 0xB5, 0x73));
+    private static readonly Brush ThreatGrey = Frozen(Color.FromArgb(0xA0, 0x5E, 0x6B, 0x84));
+
+    private static Brush Frozen(Color c)
+    {
+        var b = new SolidColorBrush(c);
+        b.Freeze();
+        return b;
+    }
+
+    private static string DiffText(ThreatInfo t)
+    {
+        var sign = t.Diff > 0 ? "+" : t.Diff < 0 ? "−" : "±";
+        var amount = Math.Abs(t.Diff);
+        return t.ByGear ? $"{sign}{amount:#,0} GS" : $"{sign}{Format.Power(amount)} ⚡";
+    }
+
+    private static string ThreatLine(ThreatInfo t)
+    {
+        var u = UiText.Current;
+        var what = t.ByGear ? "GS" : "⚡";
+        var level = t.Level switch
+        {
+            ThreatLevel.Danger => u.ThreatDanger,
+            ThreatLevel.Caution => u.ThreatCaution,
+            ThreatLevel.Weak => u.ThreatWeak,
+            _ => u.ThreatEven,
+        };
+        return $"{level}: {what} {t.Theirs:#,0} / {u.ThreatYou} {t.Mine:#,0} ({DiffText(t)})";
+    }
+
+    private readonly Dictionary<string, long> _dangerWarned = new(StringComparer.OrdinalIgnoreCase);
+
+    /// <summary>1 HP: someone far stronger is hitting you — a red notice, a sound and the voice, once per 5 minutes per player.</summary>
+    private void WarnDanger(PvpOpponent o, ThreatInfo threat)
+    {
+        if (!_settings.PvpThreatAlert) return;
+        var now = Environment.TickCount64;
+        if (_dangerWarned.TryGetValue(o.Name, out var at) && now - at < 300_000) return;
+        _dangerWarned[o.Name] = now;
+        var t = UiText.Current;
+        var text = string.Format(t.ThreatRun, o.Name, t.ClassName(o.Class), DiffText(threat));
+        ShowNotice("🏃 " + text, TimeSpan.FromSeconds(10));
+        System.Media.SystemSounds.Hand.Play();
+        if (_settings.VoiceAlerts) Voice.Speak(string.Format(t.ThreatRunVoice, o.Name), t.Code);
     }
 
     // ---------------------------------------------------------------- 1 HP: death recap
@@ -412,6 +487,8 @@ public partial class OverlayWindow : Window
             var serverId = a.ServerId != 0 ? a.ServerId : a.ActorId == r.KillerId ? r.KillerServer : 0; // the kill notice names it
             var server = a.IsPlayer ? _meter.Data.ServerName(serverId) : "";
             row.Gear = string.Join(" · ", new[] { gear > 0 ? string.Format(t.GearScoreShort, gear) : "", server }.Where(x => x.Length > 0));
+            if (a.IsPlayer) SetThreat(row, a.Name); // 1 HP: who killed you, against you
+            else row.ThreatText = "";
             row.Tooltip = $"{a.Name} · {a.Damage:#,0} · {a.Hits}×, max {a.MaxHit:#,0}" +
                           (gear > 0 ? " · " + string.Format(t.GearScoreShort, gear) : a.IsPlayer ? "\n" + t.GearScoreInspect : "") + "\n" +
                           string.Join("\n", a.Skills.Take(8).Select(s => $"{s.Name}: {s.Damage:#,0} ({s.Hits}×)"));
@@ -440,6 +517,7 @@ public partial class OverlayWindow : Window
             var gs = cb is null || cb.IsUnknownSummons ? 0 : _meter.Tracker.GearOf(cb.Name);
             row.Gear = string.Join(" · ", new[] { gs > 0 ? string.Format(t.GearScoreShort, gs) : "", power > 0 ? Format.Power(power) : "" }
                 .Where(x => x.Length > 0));
+            row.ThreatText = ""; // 1 HP: the PvP colours belong to the PvP card and the death recap
             // Apply() rebuilds the tooltip on every refresh, so the gear line is added once per refresh
             if (gear is not null)
                 row.Tooltip += "\n" + string.Format(t.GearTip, gear.ItemLevel, power.ToString("#,0", t.Culture));

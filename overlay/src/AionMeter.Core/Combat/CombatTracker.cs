@@ -223,6 +223,17 @@ public sealed class CombatTracker
                 case PartyMemberEvent member:
                     OnPartyMember(member);
                     break;
+                case SelfPowerEvent sp:
+                    SelfPower = sp.Power;
+                    if (_entities.Self?.Name is { Length: > 0 } myName) _powers[myName.Trim()] = sp.Power;
+                    break;
+                case PlayerPowerEvent pp:
+                    if (_powers.GetValueOrDefault(pp.Name) != pp.Power)
+                    {
+                        _powers[pp.Name] = pp.Power;
+                        _partyVersion++; // saved with the name cache
+                    }
+                    break;
                 case ResourceEvent res:
                     _resources[res.Id] = (res.Count, res.Bonus);
                     break;
@@ -1069,6 +1080,21 @@ public sealed class CombatTracker
     }
 
     private readonly BuffBook _buffBook = new();
+
+    /// <summary>1 HP: your combat power as the game last sent it (<c>56 36</c>); 0 until then.</summary>
+    public long SelfPower { get; private set; }
+
+    /// <summary>1 HP: a player against you — gear score when both are inspected, else combat power.</summary>
+    public ThreatInfo ThreatOf(string name, ThreatThresholds thresholds)
+    {
+        lock (_gate)
+        {
+            var me = (_entities.Self?.Name ?? KnownSelfName)?.Trim();
+            var myGear = me is { Length: > 0 } ? _gear.GetValueOrDefault(me) : 0;
+            var myPower = SelfPower > 0 ? SelfPower : me is { Length: > 0 } ? _powers.GetValueOrDefault(me) : 0;
+            return PvpThreat.Assess(myGear, _gear.GetValueOrDefault(name.Trim()), myPower, _powers.GetValueOrDefault(name.Trim()), thresholds);
+        }
+    }
 
     // 1 HP: your tickets and energies as the game last sent them (id → count, bonus).
     private readonly Dictionary<int, (int Count, int Bonus)> _resources = new();
