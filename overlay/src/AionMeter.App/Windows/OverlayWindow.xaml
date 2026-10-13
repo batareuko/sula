@@ -490,8 +490,7 @@
                 <TextBlock x:Name="ResourceLine" FontSize="{DynamicResource FooterFont}" Foreground="#C9D2E0" Margin="0,0,0,4"
                            TextTrimming="CharacterEllipsis" Visibility="Collapsed" />
                 <!-- 1 HP: your party's long cooldowns (a minute and more), the soonest ready first -->
-                <TextBlock x:Name="CooldownLine" FontSize="{DynamicResource FooterFont}" Foreground="#FFE7B0" Margin="0,0,0,4"
-                           TextTrimming="CharacterEllipsis" Visibility="Collapsed" />
+                <WrapPanel x:Name="CooldownPanel" Margin="0,0,0,6" Visibility="Collapsed" />
                 <!-- 1 HP dynamic card: boss timers and reminders (Rift, reset) stay on, the rest shows on hover -->
                 <Grid x:Name="RemindRow" Visibility="Collapsed">
                     <Grid.ColumnDefinitions>

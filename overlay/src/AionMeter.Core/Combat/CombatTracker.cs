@@ -1096,7 +1096,7 @@ public sealed class CombatTracker
             {
                 if (ready - start < minMs || actor == _entities.SelfId) continue;
                 if (!_entities.TryGetPlayer(actor, out var p) || string.IsNullOrEmpty(p.Name) || !InParty(p.Name)) continue;
-                list.Add(new PartyCooldown(p.Name, _data.SkillName(code), ready - nowMs, ready - start));
+                list.Add(new PartyCooldown(p.Name, _data.SkillName(code), ready - nowMs, ready - start, code));
             }
             return list.OrderBy(c => c.LeftMs).ToList();
         }

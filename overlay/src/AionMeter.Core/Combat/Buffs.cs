@@ -45,4 +45,4 @@ internal sealed class BuffBook
 }
 
 /// <summary>1 HP: a party member's skill on cooldown.</summary>
-public sealed record PartyCooldown(string Player, string Skill, long LeftMs, long TotalMs);
+public sealed record PartyCooldown(string Player, string Skill, long LeftMs, long TotalMs, int SkillCode = 0);
