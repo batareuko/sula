@@ -458,7 +458,7 @@ public partial class OverlayWindow : Window
         NetPanel.ToolTip = MiniNet.ToolTip = NetText.Text + "\n\n" + string.Join("\n", tip);
 
         var now = DateTimeOffset.UtcNow;
-        var rift = Core.OneHp.GlobalSchedule.Rift(now);
+        var rift = Core.OneHp.GlobalSchedule.Rift(now, _meter.Timers.CurrentServer);
         var reset = Core.OneHp.GlobalSchedule.NextDailyReset(now);
         var weekly = Core.OneHp.GlobalSchedule.NextWeeklyReset(now);
         ScheduleText.Text = (rift.IsOpen ? string.Format(t.RiftOpenFor, t.Countdown(rift.Closes - now)) : string.Format(t.RiftIn, t.Countdown(rift.Opens - now)))

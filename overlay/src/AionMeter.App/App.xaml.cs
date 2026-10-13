@@ -474,7 +474,7 @@ public partial class App : Application
         if (s.EventAlerts.Count == 0) return;
         var now = DateTimeOffset.UtcNow;
         var t = UiText.Current;
-        foreach (var (ev, start) in Core.OneHp.EventSchedule.Due(now, s.EventAlerts, _ => s.EventAlertMinutes, _eventsAnnounced))
+        foreach (var (ev, start) in Core.OneHp.EventSchedule.Due(now, s.EventAlerts, _ => s.EventAlertMinutes, _eventsAnnounced, _meter.Timers.CurrentServer))
         {
             var minutes = (int)Math.Ceiling((start - now).TotalMinutes);
             var at = start.ToLocalTime().ToString("HH:mm");

@@ -207,6 +207,16 @@ public sealed class CombatTracker
                 case PartyMemberEvent member:
                     OnPartyMember(member);
                     break;
+                case PartyListEvent list:
+                    OnPartyList(list);
+                    break;
+                case PartyJoinEvent join:
+                    OnPartyJoin(join);
+                    break;
+                case PartyLeftEvent:
+                    ClearParty();
+                    _partyFromGame = true;
+                    break;
                 case ZoneChangedEvent z:
                     if (z.IsTeleport) break;
                     _manualIds.Clear(); // ids are handed out again in the new zone
@@ -361,7 +371,7 @@ public sealed class CombatTracker
 
     private void OnHeal(HealEvent h)
     {
-        if (_members.Count == 0 && _entities.SelfId is { } me && _entities.ResolveOwner(h.SourceId) == me && h.TargetId != me &&
+        if (!_partyFromGame && _members.Count == 0 && _entities.SelfId is { } me && _entities.ResolveOwner(h.SourceId) == me && h.TargetId != me &&
             _entities.TryGetPlayer(h.TargetId, out var healed) && !string.IsNullOrEmpty(healed.Name) && _healed.Add(healed.Name.Trim()))
             _partyVersion++;
         if (_current is not { IsActive: true } enc) return;
@@ -988,6 +998,44 @@ public sealed class CombatTracker
             if (!_entities.TryGetPlayer(actorId, out var p) || string.IsNullOrWhiteSpace(p.Name)) return _manualIds.Contains(actorId);
             return InParty(p.Name);
         }
+    }
+
+    // 1 HP: the game's own party packets came (00 92 / 0D 92 / 06 97): the party is known, guesses stay off.
+    private bool _partyFromGame;
+
+    private bool IsSelfName(string name) =>
+        (_entities.Self?.Name is { Length: > 0 } me && string.Equals(me.Trim(), name, StringComparison.OrdinalIgnoreCase)) ||
+        (!string.IsNullOrEmpty(KnownSelfName) && string.Equals(KnownSelfName.Trim(), name, StringComparison.OrdinalIgnoreCase));
+
+    private void ClearParty()
+    {
+        _party.Clear();
+        _members.Clear();
+        _healed.Clear();
+        _manualIn.Clear();
+        _manualOut.Clear();
+        _manualIds.Clear();
+        _partyVersion++;
+    }
+
+    /// <summary>1 HP: <c>00 92</c> — the whole party: it replaces whatever the meter knew or guessed.</summary>
+    private void OnPartyList(PartyListEvent list)
+    {
+        ClearParty();
+        _partyFromGame = true;
+        foreach (var m in list.Members)
+            if (_entities.SelfId != m.ActorId && !IsSelfName(m.Name)) _party.Add(m.Name.Trim());
+    }
+
+    /// <summary>1 HP: <c>0D 92</c> — someone joined (or a member's card): in the party from now, the whole fight counted.</summary>
+    private void OnPartyJoin(PartyJoinEvent join)
+    {
+        var name = join.Member.Name.Trim();
+        if (_entities.SelfId == join.Member.ActorId || IsSelfName(name)) return;
+        _partyFromGame = true;
+        _healed.Clear();
+        _manualOut.Remove(name);
+        if (_party.Add(name)) _partyVersion++;
     }
 
     private void OnPartyMember(PartyMemberEvent m)

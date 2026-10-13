@@ -93,6 +93,27 @@ public sealed class PacketParser
             case Opcodes.PartyMember:
                 ParsePartyMember(body);
                 break;
+            case Opcodes.PartyList:
+                if (PartyPackets.ReadList(body) is { } list)
+                {
+                    foreach (var m in list.Where(m => m.ActorId != 0))
+                        Emit(new PlayerSeenEvent(TimeMs, m.ActorId, m.Name, m.ServerId, GameClass.Unknown));
+                    Emit(new PartyListEvent(TimeMs, list));
+                }
+                break;
+            case Opcodes.PartyJoin:
+                if (PartyPackets.ReadMember(body) is { } member)
+                {
+                    if (member.ActorId != 0) Emit(new PlayerSeenEvent(TimeMs, member.ActorId, member.Name, member.ServerId, GameClass.Unknown));
+                    Emit(new PartyJoinEvent(TimeMs, member));
+                }
+                break;
+            case Opcodes.PartyLeave:
+                if (PartyPackets.IsLeave(body)) Emit(new PartyLeftEvent(TimeMs));
+                break;
+            case Opcodes.PartyGone:
+                if (PartyPackets.IsDisband(body)) Emit(new PartyLeftEvent(TimeMs));
+                break;
             case Opcodes.PartyRoster:
                 if (PartyRoster.TryParse(body, 0) is { } roster) EmitRoster(roster);
                 else ScanForRosters(body);

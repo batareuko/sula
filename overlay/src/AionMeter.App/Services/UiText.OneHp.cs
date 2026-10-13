@@ -95,12 +95,15 @@ public sealed partial class UiText
     public string EventName(string id) => (Code, id) switch
     {
         ("uk", "rift") => "Розлом", ("uk", "shugo") => "Фестиваль Шуго", ("uk", "kaira") => "Наглядач Кайра",
+        ("uk", "invasion") => "Вторгнення", ("uk", "arena") => "Арена стратегії",
         ("uk", "siege") => "Облога артефактів", ("uk", "siege-bosses") => "Боси облоги", ("uk", "nahma") => "Лорд-охоронець Нахма",
         ("uk", "daily-reset") => "Щоденний ресет", ("uk", "weekly-reset") => "Тижневий ресет",
         ("ru", "rift") => "Разлом", ("ru", "shugo") => "Фестиваль Шуго", ("ru", "kaira") => "Наблюдатель Кайра",
+        ("ru", "invasion") => "Вторжение", ("ru", "arena") => "Арена стратегии",
         ("ru", "siege") => "Осада артефактов", ("ru", "siege-bosses") => "Боссы осады", ("ru", "nahma") => "Лорд-страж Нахма",
         ("ru", "daily-reset") => "Ежедневный сброс", ("ru", "weekly-reset") => "Еженедельный сброс",
         (_, "rift") => "Spacetime Rift", (_, "shugo") => "Shugo Festival", (_, "kaira") => "Watcher Kaira",
+        (_, "invasion") => "Invasion", (_, "arena") => "Arena of Strategy",
         (_, "siege") => "Artifact Siege", (_, "siege-bosses") => "Siege bosses", (_, "nahma") => "Guardian Lord Nahma",
         (_, "daily-reset") => "Daily reset", (_, "weekly-reset") => "Weekly reset",
         _ => id,

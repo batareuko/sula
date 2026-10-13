@@ -121,5 +121,17 @@ public sealed record PlayerGearEvent(long TimeMs, string Name, int ServerId, int
 /// <summary>1 HP: <c>23 92</c> — a party member's status (name, server); only your party's members are sent.</summary>
 public sealed record PartyMemberEvent(long TimeMs, string Name, int ServerId) : GameEvent(TimeMs);
 
+/// <summary>1 HP: a party member as the party packets name them: id 0 while out of view.</summary>
+public sealed record PartyMemberInfo(uint ActorId, string Name, int ServerId, int Slot);
+
+/// <summary>1 HP: <c>00 92</c> — the whole party (you among them).</summary>
+public sealed record PartyListEvent(long TimeMs, IReadOnlyList<PartyMemberInfo> Members) : GameEvent(TimeMs);
+
+/// <summary>1 HP: <c>0D 92</c> — one member: someone who joined, or a member's card.</summary>
+public sealed record PartyJoinEvent(long TimeMs, PartyMemberInfo Member) : GameEvent(TimeMs);
+
+/// <summary>1 HP: <c>06 97</c> / <c>1D 97</c> — you left the party, or it is gone.</summary>
+public sealed record PartyLeftEvent(long TimeMs) : GameEvent(TimeMs);
+
 public sealed record PartyRosterEvent(long TimeMs, IReadOnlyList<string> Names, bool Complete,
     IReadOnlyDictionary<string, long>? Powers = null, IReadOnlyDictionary<string, int>? Gear = null) : GameEvent(TimeMs);
