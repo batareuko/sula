@@ -58,18 +58,30 @@ public sealed class Updater : IDisposable
     /// <summary>True when this copy runs from the folder the installer put it in (it can update itself).</summary>
     public static bool IsInstalled { get; } = DetectInstalled();
 
+    /// <summary>
+    /// 1 HP: this copy is the one-file exe (it unpacks itself to a temp folder, so its files are not next to it).
+    /// </summary>
+    public static bool IsSingleFile { get; } = DetectSingleFile();
+
+    /// <summary>1 HP: the folder of the exe itself — for the one-file exe not the folder it unpacked to.</summary>
+    public static string ExeDirectory { get; } =
+        Path.GetDirectoryName(Environment.ProcessPath) is { Length: > 0 } dir ? dir : AppContext.BaseDirectory;
+
+    /// <summary>1 HP: the one-file exe whose folder is writable: it swaps itself for the new one.</summary>
+    public static bool CanUpdateSingle { get; } = !IsInstalled && IsSingleFile && Writable(ExeDirectory);
+
     /// <summary>1 HP: an unzipped copy that can replace its own files (1HP-Watcher.exe next to it, folder writable).</summary>
-    public static bool CanUpdateZip { get; } = !IsInstalled && DetectZipUpdate();
+    public static bool CanUpdateZip { get; } = !IsInstalled && !IsSingleFile && DetectZipUpdate();
 
     /// <summary>This copy can install a new version by itself, one way or the other.</summary>
-    public static bool CanSelfUpdate => IsInstalled || CanUpdateZip;
+    public static bool CanSelfUpdate => IsInstalled || CanUpdateZip || CanUpdateSingle;
 
     /// <summary>This copy fetches and installs new versions by itself (unless turned off).</summary>
     public bool AutoInstall => CanSelfUpdate && _settings.AutoInstallUpdates;
 
     /// <summary>The release file this copy installs from: the installer, or the zip for an unzipped copy.</summary>
     public static ReleaseAsset? UpdateAsset(ReleaseInfo release) =>
-        IsInstalled ? release.Installer : CanUpdateZip ? release.Portable : null;
+        IsInstalled ? release.Installer : CanUpdateZip ? release.Portable : CanUpdateSingle ? release.Single : null;
 
     /// <summary>The update whose installer is downloaded and checked, waiting for a quiet moment to be installed.</summary>
     public ReleaseInfo? Downloaded { get; private set; }
@@ -186,7 +198,70 @@ public sealed class Updater : IDisposable
     public static void Install(string path, bool quiet, bool restart = true)
     {
         if (path.EndsWith(".zip", StringComparison.OrdinalIgnoreCase)) LaunchZipUpdate(path, restart);
+        else if (CanUpdateSingle && !IsInstalled) SwapSingle(path, restart);
         else LaunchInstaller(path, quiet);
+    }
+
+    /// <summary>
+    /// 1 HP: the one-file exe updates itself: Windows lets a running exe be renamed, so this one steps aside
+    /// (<c>.old</c>, removed at the next start), the new one takes its name and starts once this copy has exited.
+    /// </summary>
+    private static void SwapSingle(string downloaded, bool restart)
+    {
+        var exe = Environment.ProcessPath ?? throw new InvalidOperationException("No exe path");
+        if (!UpdateFeed.IsProductName(FileVersionInfo.GetVersionInfo(downloaded).ProductName, AppInfo.Name))
+            throw new InvalidDataException($"{Path.GetFileName(downloaded)} is not {AppInfo.Name}");
+        var old = exe + ".old";
+        File.Delete(old);
+        File.Move(exe, old);
+        try
+        {
+            File.Copy(downloaded, exe);
+        }
+        catch
+        {
+            File.Move(old, exe); // put this copy back: the meter still works
+            throw;
+        }
+        if (restart)
+        {
+            // started by cmd after a moment, so the new copy's single-instance check does not meet this one
+            using (Process.Start(new ProcessStartInfo("cmd.exe", $"/c timeout /t 2 /nobreak >nul & start \"\" \"{exe}\"")
+                       { UseShellExecute = false, CreateNoWindow = true })) { }
+        }
+        Log.Info($"Updated in place: {exe} (restart: {restart})");
+    }
+
+    /// <summary>1 HP: the copy an in-place update left behind.</summary>
+    public static void CleanOldExe()
+    {
+        try
+        {
+            if (Environment.ProcessPath is { } exe && File.Exists(exe + ".old")) File.Delete(exe + ".old");
+        }
+        catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
+        {
+        }
+    }
+
+    private static bool DetectSingleFile() =>
+        !string.Equals(Path.GetFullPath(AppContext.BaseDirectory).TrimEnd(Path.DirectorySeparatorChar),
+            Path.GetFullPath(Path.GetDirectoryName(Environment.ProcessPath) ?? AppContext.BaseDirectory).TrimEnd(Path.DirectorySeparatorChar),
+            StringComparison.OrdinalIgnoreCase);
+
+    private static bool Writable(string dir)
+    {
+        try
+        {
+            var probe = Path.Combine(dir, ".write-test-" + Guid.NewGuid().ToString("N"));
+            File.WriteAllText(probe, "");
+            File.Delete(probe);
+            return true;
+        }
+        catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
+        {
+            return false;
+        }
     }
 
     private const string WatcherFile = "1HP-Watcher.exe";

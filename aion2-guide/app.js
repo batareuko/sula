@@ -3138,7 +3138,9 @@
         render();
         var latest = list.filter(function (r) { return !r.draft && !r.prerelease; })[0];
         if (!latest) return;
-        var zip = (latest.assets || []).filter(function (a) { return /\.zip$/i.test(a.name); })[0];
+        // один 1HP-Overlay.exe, а для старих релізів — zip
+        var zip = (latest.assets || []).filter(function (a) { return /^1HP-Overlay\.exe$/i.test(a.name); })[0] ||
+          (latest.assets || []).filter(function (a) { return /\.zip$/i.test(a.name); })[0];
         var ver = String(latest.tag_name).replace(/^v/, '');
         if (zip) {
           ['meterDownload', 'installDownload'].forEach(function (id) { $(id).href = zip.browser_download_url; });

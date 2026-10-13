@@ -42,7 +42,9 @@ public static class GameAutostart
     {
         var overlay = Environment.ProcessPath;
         var bundled = Path.Combine(AppContext.BaseDirectory, WatcherFile);
-        if (overlay is null || !File.Exists(bundled))
+        // 1 HP: the one-file exe carries the watcher inside (an embedded resource)
+        var embedded = File.Exists(bundled) ? null : EmbeddedWatcher();
+        if (overlay is null || (!File.Exists(bundled) && embedded is null))
         {
             Log.Info("Start with the game: no " + WatcherFile + " next to the overlay (developer build)");
             return;
@@ -51,14 +53,15 @@ public static class GameAutostart
         var command = $"\"{watcher}\" \"{overlay}\"";
         using var key = Registry.CurrentUser.CreateSubKey(RunKey);
         var registered = key.GetValue(RunValue) as string;
-        var fresh = !SameFile(bundled, watcher);
+        var fresh = embedded is not null ? !SameBytes(embedded, watcher) : !SameFile(bundled, watcher);
 
         // A watcher from another version or folder would start the wrong overlay: replace it.
         if ((fresh || registered != command) && WatcherRunning()) StopWatcher(wait: true);
         if (fresh)
         {
             Directory.CreateDirectory(Path.GetDirectoryName(watcher)!);
-            File.Copy(bundled, watcher, overwrite: true);
+            if (embedded is not null) File.WriteAllBytes(watcher, embedded);
+            else File.Copy(bundled, watcher, overwrite: true);
         }
         if (registered != command)
         {
@@ -81,6 +84,19 @@ public static class GameAutostart
         }
         if (WatcherRunning()) StopWatcher(wait: false);
     }
+
+    /// <summary>1 HP: the watcher built into the one-file exe (CI: -p:WatcherExe=…), or null.</summary>
+    private static byte[]? EmbeddedWatcher()
+    {
+        using var stream = typeof(GameAutostart).Assembly.GetManifestResourceStream(WatcherFile);
+        if (stream is null) return null;
+        using var ms = new MemoryStream();
+        stream.CopyTo(ms);
+        return ms.ToArray();
+    }
+
+    private static bool SameBytes(byte[] a, string b) =>
+        File.Exists(b) && new FileInfo(b).Length == a.Length && File.ReadAllBytes(b).AsSpan().SequenceEqual(a);
 
     private static bool SameFile(string a, string b)
     {
