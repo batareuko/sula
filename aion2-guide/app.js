@@ -2560,7 +2560,7 @@
   }
 
   /* ---------- Пачноути: переклад з тлумаченням (data.js → patches) + свіжі новини з офіційного сайту ---------- */
-  var WHO_UA = { all: 'Усім', founder: 'Founder\'s Pack', stones: 'Камені заточки', craft: 'Ремесло', raid: 'Рейди й боси', asmodians: 'Асмодіани', elyos: 'Елійці', qol: 'Зручність' };
+  var WHO_UA = { all: 'Усім', founder: 'Founder\'s Pack', stones: 'Камені заточки', craft: 'Ремесло', raid: 'Рейди й боси', asmodians: 'Асмодіани', elyos: 'Елійці', qol: 'Зручність', event: 'Подія', 'class': 'Класи' };
   var KIND_UA = { plus: 'на користь', minus: 'обмеження', fix: 'виправлення' };
   var NEWS_URL = { update: 'https://aion2.plaync.com/en-us/board/update/view?articleId=', notice: 'https://aion2.plaync.com/en-us/board/notice/view?articleId=' };
   var news = { busy: false, done: false, err: '', data: null, art: {} };
