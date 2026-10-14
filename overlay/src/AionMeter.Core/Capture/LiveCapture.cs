@@ -209,11 +209,55 @@ public sealed class LiveCapture : IEventSource
 
     private void OpenRecorder(LibPcapLiveDevice device)
     {
-        if (_options.RecordDirectory is not { Length: > 0 } dir) return;
+        if (_analysisDir is { } analysis) OpenRecorder(device, analysis, "analysis");
+        else if (_options.RecordDirectory is { Length: > 0 } dir) OpenRecorder(device, dir, "aion2");
+    }
+
+    private readonly object _recordGate = new();
+    private volatile string? _analysisDir;
+
+    private void OpenRecorder(LibPcapLiveDevice device, string dir, string prefix)
+    {
         Directory.CreateDirectory(dir);
-        RecordingPath = Path.Combine(dir, $"aion2_{DateTime.Now:yyyyMMdd_HHmmss}.pcap");
-        _writer = new CaptureFileWriterDevice(RecordingPath);
-        _writer.Open(new DeviceConfiguration { LinkLayerType = device.LinkType });
+        var path = Path.Combine(dir, $"{prefix}_{DateTime.Now:yyyyMMdd_HHmmss}.pcap");
+        var writer = new CaptureFileWriterDevice(path);
+        writer.Open(new DeviceConfiguration { LinkLayerType = device.LinkType });
+        lock (_recordGate)
+        {
+            _writer?.Close();
+            _writer = writer;
+            RecordingPath = path;
+        }
+    }
+
+    /// <summary>
+    /// 1 HP: the "record for analysis" button — the game's packets go to pcap files in <paramref name="dir"/> until
+    /// <see cref="StopRecording"/>, also across a game restart or an adapter change (each opening starts a new file).
+    /// A recording made because of Settings → "record packets" is closed and the analysis takes over.
+    /// </summary>
+    public void StartRecording(string dir)
+    {
+        lock (_gate)
+        {
+            _analysisDir = dir;
+            if (_device is not null) OpenRecorder(_device, dir, "analysis");
+        }
+    }
+
+    /// <summary>1 HP: ends the analysis recording (packets written so far stay in its folder).</summary>
+    public void StopRecording()
+    {
+        lock (_gate)
+        {
+            if (_analysisDir is null) return;
+            _analysisDir = null;
+            lock (_recordGate)
+            {
+                _writer?.Close();
+                _writer = null;
+                RecordingPath = null;
+            }
+        }
     }
 
     private void CloseDevice()
@@ -235,9 +279,12 @@ public sealed class LiveCapture : IEventSource
         _device.Close();
         _device = null;
         _filter = null;
-        _writer?.Close();
-        _writer = null;
-        RecordingPath = null;
+        lock (_recordGate)
+        {
+            _writer?.Close();
+            _writer = null;
+            RecordingPath = null;
+        }
     }
 
     private void OnPacketArrival(object sender, PacketCapture e)
@@ -246,7 +293,9 @@ public sealed class LiveCapture : IEventSource
         Interlocked.Increment(ref _packets);
         try
         {
-            _writer?.Write(raw);
+            if (_writer is not null)
+                lock (_recordGate)
+                    _writer?.Write(raw);
             if (SegmentReader.TryRead(raw, out var seg))
                 _pipeline.OnSegment(seg.TimeMs, seg.Key, seg.Seq, seg.Syn, seg.FinOrRst, seg.Payload);
         }

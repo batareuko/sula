@@ -207,3 +207,9 @@ drop policy if exists "dps readable" on public.dps_records;
 create policy "dps readable" on public.dps_records for select to authenticated using (true);
 drop policy if exists "dps delete own" on public.dps_records;
 create policy "dps delete own" on public.dps_records for delete to authenticated using (user_id = auth.uid());
+
+-- 1 HP: записи «для аналізу» з оверлея (zip з пакетами й подіями). Приватний кошик, пише лише функція dps-upload
+-- (service role), читати — тільки за підписаним посиланням на 7 днів. 50 МБ на файл.
+insert into storage.buckets (id, name, public, file_size_limit, allowed_mime_types)
+values ('analysis', 'analysis', false, 52428800, array['application/zip'])
+on conflict (id) do update set public = false, file_size_limit = excluded.file_size_limit;
