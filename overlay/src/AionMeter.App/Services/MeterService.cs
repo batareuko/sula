@@ -173,6 +173,30 @@ public sealed class MeterService : IDisposable
         }
     }
 
+    /// <summary>1 HP: "record for analysis" — packets and decoded events into one zip to send for decoding.</summary>
+    public AnalysisRecorder Analysis { get; } = new();
+
+    public void StartAnalysis()
+    {
+        lock (_captureGate) Analysis.Start(_capture as LiveCapture);
+    }
+
+    /// <summary>Stops the analysis recording and writes its zip (null when none was running).</summary>
+    public string? StopAnalysis()
+    {
+        var t = Tracker;
+        var party = t.PartyStatus();
+        var summary = new
+        {
+            self = new { name = t.SelfName, server = t.SelfServerId },
+            capture = CaptureStatus.Message,
+            party = new { state = party.State.ToString(), source = party.Source.ToString(), members = party.Party },
+            bossKills = BossKills,
+            language = Settings.Language,
+        };
+        lock (_captureGate) return Analysis.Stop(_capture as LiveCapture, summary);
+    }
+
     private readonly object _captureGate = new();
     private volatile bool _restarting;
 
@@ -186,6 +210,8 @@ public sealed class MeterService : IDisposable
                 _capture = CaptureFactory(Data);
                 _capture.EventDecoded += Tracker.Process;
                 _capture.EventDecoded += LogParty;
+                _capture.EventDecoded += Analysis.Write;
+                Analysis.Attach(_capture as LiveCapture);
                 _capture.Start();
                 Net.Start();
             }

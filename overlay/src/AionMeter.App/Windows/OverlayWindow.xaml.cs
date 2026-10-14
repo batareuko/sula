@@ -1321,6 +1321,21 @@ public partial class OverlayWindow : Window
 
     private void Restart_Click(object sender, RoutedEventArgs e) => AppHost.Current.RestartMeter();
 
+    /// <summary>1 HP: "record for analysis" — first click starts, second stops and sends.</summary>
+    private void Record_Click(object sender, RoutedEventArgs e)
+    {
+        if (!_drag.JustDragged) AppHost.Current.ToggleAnalysis();
+    }
+
+    /// <summary>The record button: red while recording, with the time so far in its tooltip.</summary>
+    public void ShowRecording(bool running, TimeSpan elapsed)
+    {
+        var t = UiText.Current;
+        if (running) RecordButton.Foreground = new SolidColorBrush(Color.FromRgb(0xE5, 0x48, 0x4D));
+        else RecordButton.ClearValue(ForegroundProperty);
+        RecordButton.ToolTip = running ? string.Format(t.AnalysisStopTip, (int)elapsed.TotalMinutes, elapsed.Seconds) : t.AnalysisStartTip;
+    }
+
     /// <summary>Back to the live view (after a restart of the meter: empty until the next hit).</summary>
     public void ShowLive()
     {

@@ -9,6 +9,10 @@
 //        пишеться в boss_kills для цього сервера (source='game'), сайт і Discord беруть його замість «вбито + цикл»
 //   POST { key, bossesGet: { serverId } } -> { bosses: [{ boss_id, respawn_at, alive, killed_at, by_name }] }
 //        спільні таймери: що інші оверлеї гільдії прочитали з ігрового списку на цьому сервері (останні 26 год)
+//   POST { key, analysisUpload: { name } } -> { path, uploadUrl }
+//        запис для розбору («Записати для аналізу» в оверлеї): адреса, куди оверлей кладе zip (PUT, до 50 МБ),
+//        у приватний кошик Storage `analysis`, тека — id користувача
+//   POST { key, analysisLink: { path } } -> { url }   посилання на цей zip на 7 днів (його вставляють у чат для розбору)
 // Ключ створюється на сайті (розділ «Рейтинг DPS»); у базі лише його SHA-256 (таблиця overlay_keys).
 // SUPABASE_URL і SUPABASE_SERVICE_ROLE_KEY Supabase додає сам.
 
@@ -118,6 +122,23 @@ export function rank(rows: { user_id: string; dps: number }[], userId: string) {
   return { place, total, topPct: place > 0 ? Math.max(1, Math.round((100 * place) / total)) : null, best: best.get(userId) ?? null };
 }
 
+async function storage(path: string, body: unknown): Promise<any> {
+  const res = await fetch(`${SUPABASE_URL}/storage/v1/${path}`, {
+    method: 'POST',
+    headers: { apikey: SERVICE_KEY, Authorization: `Bearer ${SERVICE_KEY}`, 'Content-Type': 'application/json' },
+    body: JSON.stringify(body ?? {}),
+  });
+  if (!res.ok) throw new Error(`storage ${res.status}: ${await res.text()}`);
+  return await res.json();
+}
+
+/** Ім'я zip для розбору: лише безпечні символи, завжди .zip */
+export function analysisName(name: unknown): string | null {
+  const n = String(name ?? '').replace(/\.zip$/i, '');
+  if (!/^[A-Za-z0-9_.-]{1,80}$/.test(n) || n.includes('..')) return null;
+  return `${n}.zip`;
+}
+
 export async function handler(req: Request): Promise<Response> {
   if (req.method === 'OPTIONS') return new Response(null, { headers: cors });
   if (req.method !== 'POST') return json({ error: 'method_not_allowed' }, 405);
@@ -134,6 +155,22 @@ export async function handler(req: Request): Promise<Response> {
     const userId = owners?.[0]?.user_id as string | undefined;
     if (!userId) return json({ error: 'bad_key' }, 401);
     if (body.check) return json({ ok: true });
+
+    // Запис для розбору: приватний кошик `analysis`, кожен пише лише у свою теку
+    if (body.analysisUpload) {
+      const name = analysisName(body.analysisUpload.name);
+      if (!name) return json({ error: 'bad_name' }, 400);
+      const path = `${userId}/${name}`;
+      const r = await storage(`object/upload/sign/analysis/${path}`, {});
+      return json({ path, uploadUrl: `${SUPABASE_URL}/storage/v1${r.url}` });
+    }
+    if (body.analysisLink) {
+      const path = String(body.analysisLink.path ?? '');
+      const name = analysisName(path.slice(userId.length + 1));
+      if (!path.startsWith(`${userId}/`) || !name || path !== `${userId}/${name}`) return json({ error: 'bad_path' }, 400);
+      const r = await storage(`object/sign/analysis/${path}`, { expiresIn: 7 * 24 * 3600 });
+      return json({ url: `${SUPABASE_URL}/storage/v1${r.signedURL}` });
+    }
 
     // Спільні таймери: час босів цього сервера з ігрових списків, які надіслали оверлеї гільдії
     if (body.bossesGet) {

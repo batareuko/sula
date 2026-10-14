@@ -1,4 +1,5 @@
 using System.Collections.Concurrent;
+using System.IO;
 using System.Net.Http;
 using System.Net.Http.Json;
 using System.Text.Json;
@@ -232,6 +233,51 @@ public sealed class OneHpCloud : IDisposable
         catch (OperationCanceledException)
         {
             return null;
+        }
+    }
+
+    private sealed record AnalysisSlot(string? path, string? uploadUrl, string? error);
+    private sealed record AnalysisLink(string? url, string? error);
+
+    /// <summary>
+    /// 1 HP: an analysis zip to the private Storage bucket (through <c>dps-upload</c>, needs the key) and back a link
+    /// valid for 7 days. Null link and an error code when it did not work (no key, offline, function not updated…).
+    /// </summary>
+    public async Task<(string? Link, string? Error)> UploadAnalysisAsync(string zip)
+    {
+        var key = _settings.OneHpKey?.Trim();
+        if (string.IsNullOrEmpty(key)) return (null, "no_key");
+        try
+        {
+            using var slotRes = await _http.PostAsJsonAsync(SupabaseUrl + "/functions/v1/dps-upload",
+                new { key, analysisUpload = new { name = Path.GetFileNameWithoutExtension(zip) } }).ConfigureAwait(false);
+            var slot = await slotRes.Content.ReadFromJsonAsync<AnalysisSlot>().ConfigureAwait(false);
+            if (!slotRes.IsSuccessStatusCode || slot?.uploadUrl is null || slot.path is null)
+                return (null, slot?.error ?? ((int)slotRes.StatusCode).ToString());
+
+            using (var upload = new HttpClient { Timeout = TimeSpan.FromMinutes(10) })
+            {
+                upload.DefaultRequestHeaders.Add("apikey", AnonKey);
+                await using var file = File.OpenRead(zip);
+                using var content = new StreamContent(file);
+                content.Headers.ContentType = new System.Net.Http.Headers.MediaTypeHeaderValue("application/zip");
+                using var put = await upload.PutAsync(slot.uploadUrl, content).ConfigureAwait(false);
+                if (!put.IsSuccessStatusCode)
+                {
+                    Log.Info("Analysis upload: " + (int)put.StatusCode + " " + await put.Content.ReadAsStringAsync().ConfigureAwait(false));
+                    return (null, "upload_" + (int)put.StatusCode);
+                }
+            }
+
+            using var linkRes = await _http.PostAsJsonAsync(SupabaseUrl + "/functions/v1/dps-upload",
+                new { key, analysisLink = new { slot.path } }).ConfigureAwait(false);
+            var link = await linkRes.Content.ReadFromJsonAsync<AnalysisLink>().ConfigureAwait(false);
+            return linkRes.IsSuccessStatusCode && link?.url is { } url ? (url, null) : (null, link?.error ?? ((int)linkRes.StatusCode).ToString());
+        }
+        catch (Exception ex) when (ex is HttpRequestException or TaskCanceledException or IOException or JsonException)
+        {
+            Log.Info("Analysis upload failed: " + ex.Message);
+            return (null, "network");
         }
     }
 

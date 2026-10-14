@@ -23,6 +23,8 @@ public sealed class TrayIcon : IDisposable
     private readonly ToolStripMenuItem _checkUpdates;
     private readonly ToolStripMenuItem _site;     // 1 HP
     private readonly ToolStripMenuItem _netCheck; // 1 HP
+    private readonly ToolStripMenuItem _analysis; // 1 HP
+    private bool _analysisRunning;
     private readonly Icon _image;
     private bool _overlayVisible = true;
     private string? _updateVersion;
@@ -48,9 +50,10 @@ public sealed class TrayIcon : IDisposable
         _exit = new ToolStripMenuItem("", null, (_, _) => actions.Exit());
         _site = new ToolStripMenuItem("", null, (_, _) => OpenUrl("https://guide.sulaslova.com/"));
         _netCheck = new ToolStripMenuItem("", null, (_, _) => OpenUrl("https://guide.sulaslova.com/#netcheck"));
+        _analysis = new ToolStripMenuItem("", null, (_, _) => actions.Analysis());
         menu.Items.AddRange([
             _update, _updateSeparator,
-            _toggle, _clickThrough, _reset, new ToolStripSeparator(),
+            _toggle, _clickThrough, _reset, _analysis, new ToolStripSeparator(),
             _history, _timers, _settings, _language, _demo, _replay, _checkUpdates, new ToolStripSeparator(),
             _site, _netCheck, new ToolStripSeparator(),
             _exit,
@@ -100,7 +103,17 @@ public sealed class TrayIcon : IDisposable
         _checkUpdates.Text = t.TrayCheckUpdates;
         _site.Text = t.TraySite;
         _netCheck.Text = t.TrayNetCheck;
+        _analysis.Text = _analysisRunning ? t.AnalysisTrayStop : t.AnalysisTrayStart;
         if (_updateVersion is not null) _update.Text = string.Format(t.TrayUpdate, _updateVersion);
+    }
+
+    /// <summary>1 HP: the analysis item says "stop and send" while a recording runs.</summary>
+    public void SetAnalysis(bool running)
+    {
+        if (running == _analysisRunning) return;
+        _analysisRunning = running;
+        _analysis.Text = running ? UiText.Current.AnalysisTrayStop : UiText.Current.AnalysisTrayStart;
+        _analysis.Checked = running;
     }
 
     /// <summary>"Update to 0.2.0…" at the top of the menu while a new version is available; null hides it.</summary>
@@ -167,4 +180,5 @@ public sealed record TrayActions(
     Action ToggleLanguage,
     Action Update,
     Action CheckUpdates,
+    Action Analysis,
     Action Exit);

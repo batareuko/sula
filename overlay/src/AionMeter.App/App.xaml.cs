@@ -138,6 +138,7 @@ public partial class App : Application
             ToggleLanguage: ToggleLanguage,
             Update: () => ShowUpdate(),
             CheckUpdates: () => _ = CheckUpdatesFromTrayAsync(),
+            Analysis: ToggleAnalysis,
             Exit: () =>
             {
                 Log.Info("Exit chosen in the tray menu");
@@ -221,6 +222,11 @@ public partial class App : Application
             CheckBuffAlerts();
             CheckGameStart();
             CheckPendingUpdate();
+            if (_meter.Analysis.Running && !_analysisBusy)
+            {
+                UpdateAnalysisView();
+                if (_meter.Analysis.ShouldAutoStop()) _ = FinishAnalysisAsync();
+            }
         }
         if (_ticks % 25 == 0) CheckGameExit();
         if (_ticks % 900 == 30) _ = PullSharedBossesAsync(); // every 3 min (5 ticks a second)
@@ -338,6 +344,75 @@ public partial class App : Application
         _meter.Restart();
         _meter.ResetBossKills(); // the bus count starts again with the meter
         _overlay.ShowLive();
+    }
+
+    // ------------------------------------------------------------ 1 HP: record for analysis
+
+    private bool _analysisBusy;
+
+    /// <summary>
+    /// The record button (overlay, tray): the first press starts writing packets and events, the second packs them,
+    /// sends them and puts the link in the clipboard — one paste in the chat and the recording can be decoded.
+    /// </summary>
+    public void ToggleAnalysis()
+    {
+        var t = UiText.Current;
+        if (_analysisBusy) return;
+        if (!_meter.Analysis.Running)
+        {
+            _meter.StartAnalysis();
+            _overlay.ShowNotice("● " + t.AnalysisStarted, TimeSpan.FromSeconds(12));
+            _tray?.ShowBalloon(AppInfo.Name, t.AnalysisStarted);
+            UpdateAnalysisView();
+            return;
+        }
+        _ = FinishAnalysisAsync();
+    }
+
+    private async Task FinishAnalysisAsync()
+    {
+        var t = UiText.Current;
+        _analysisBusy = true;
+        _overlay.ShowNotice("⏳ " + t.AnalysisPacking, TimeSpan.FromMinutes(5));
+        try
+        {
+            var zip = await Task.Run(_meter.StopAnalysis);
+            UpdateAnalysisView();
+            if (zip is null) return;
+            var mb = new FileInfo(zip).Length / 1024.0 / 1024.0;
+            _overlay.ShowNotice($"⏳ {t.AnalysisSending} ({mb:0.#} MB)", TimeSpan.FromMinutes(10));
+            var (link, error) = await _meter.Cloud.UploadAnalysisAsync(zip);
+            if (link is not null)
+            {
+                AppHost.CopyText(link);
+                Log.Info("Analysis sent: " + link);
+                _overlay.ShowNotice("✔ " + t.AnalysisSent, TimeSpan.FromSeconds(30));
+                _tray?.ShowBalloon(AppInfo.Name, t.AnalysisSent, () => AppHost.CopyText(link));
+                return;
+            }
+            Log.Info("Analysis not sent: " + error);
+            var local = AnalysisRecorder.ToDesktop(zip);
+            var why = error == "no_key" ? t.AnalysisNoKey : string.Format(t.AnalysisFailed, error);
+            _overlay.ShowNotice("📁 " + why, TimeSpan.FromSeconds(30));
+            _tray?.ShowBalloon(AppInfo.Name, why + "\n" + Path.GetFileName(local));
+        }
+        catch (Exception ex)
+        {
+            Log.Error("Analysis recording failed", ex);
+            _overlay.ShowNotice("⚠ " + string.Format(t.AnalysisFailed, ex.Message), TimeSpan.FromSeconds(20));
+        }
+        finally
+        {
+            _analysisBusy = false;
+            UpdateAnalysisView();
+        }
+    }
+
+    private void UpdateAnalysisView()
+    {
+        var a = _meter.Analysis;
+        _overlay.ShowRecording(a.Running, a.Running ? DateTime.Now - a.StartedAt : TimeSpan.Zero);
+        _tray?.SetAnalysis(a.Running);
     }
 
     // ------------------------------------------------------------ window management (used by windows via AppHost)
