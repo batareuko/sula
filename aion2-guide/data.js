@@ -151,6 +151,8 @@ window.GUIDE = {
   weeklyLimits: [
     { id: 'w-wing-morph', name: '[Морф Запечатаних Крил|Sealed Wings → Enhance Stones]', max: 20, hint: '20 / тиждень на сервер, з 7.10' },
     { id: 'w-res-stone', name: '[Камінь Воскресіння|Resurrection Spiritstone] за кінари', max: 10, hint: '10 / тиждень по 25 000, до 16.12' },
+    { id: 'w-odyle', name: '[Енергія Оділе|Odyle Energy] у Торговців Вітерця', max: 20, hint: '20 / тиждень на персонажа, на час перенесення серверів' },
+    { id: 'w-candy-keys', name: 'Ключі-цукерки (Хелловін)', max: 3, hint: 'червоний, жовтий, синій — по 60 уламків, до 4.11' },
   ],
 
   /* Пачноути Global: переклад, тлумачення і для кого це важливо.
@@ -159,6 +161,109 @@ window.GUIDE = {
      kind: plus — на користь гравцям, minus — обмеження, fix — виправлення.
      act — що зробити; counter — id лічильника в «Тижневих лімітах». Новий пачноут — новий об'єкт зверху. */
   patches: [
+    {
+      id: '6acf20d007b77e214688a7ac',
+      date: '2026-10-14',
+      title: 'Пачноут 14 жовтня',
+      en: '[Notice] Patch Notes | Oct. 13 (PDT) / Oct. 14 (CEST)',
+      maint: 'Техобслуговування 14 жовтня з 06:30 UTC (09:30 за Києвом), 4 год.',
+      tldr: [
+        'Хелловін до 4 листопада: відвідування на 14 днів, тижневі івент-місії, крамниця за Гарбузові монети, ключі-цукерки з Експедицій і Трансценденції.',
+        'Енергія Оділе в Торговців Вітерця: замість 16 на сервер — 20 на персонажа щотижня.',
+        'Камінь розлому Нижньої Безодні в магазині на два тижні.',
+        'Чаклун: Fire Wall, Cold Storm і Bittercold Wind більше не втрачають бонуси на перепаді висот, а чужі сильніші Embers/Frostbite не збивають ваші.',
+        'Скоро перенесення серверів: у кожного сервера ліміт на вхід і вихід, місця оновлюються щогодини (окреме оголошення).',
+      ],
+      groups: [
+        {
+          title: 'Магазин',
+          items: [
+            {
+              en: 'During the server transfer period, some items from [Shop > Wind Breeze Merchants > Special] will be moved to [Substance Morph > Special > Wind Breeze Merchants]. The affected items are "Instant Clear Ticket: Daily Dungeon (Bound)" and "Soul Crystal (Bound)."',
+              ua: 'На час перенесення серверів «[Квиток миттєвого проходження: щоденне підземелля|Instant Clear Ticket: Daily Dungeon]» і «[Кристал душі|Soul Crystal]» (обидва зв\'язані) переїжджають з Магазин → Wind Breeze Merchants → Special у [Морф|Substance Morph] → Special → Wind Breeze Merchants.',
+              why: 'Предмети не зникають, просто шукати їх тепер у вкладці морфу. Ймовірно, щоб їх не скуповували перед переносом на інший сервер.',
+              who: ['all'], kind: 'fix', act: 'Квитки щоденок і Кристали душі тепер у Морф → Special → Wind Breeze Merchants.',
+            },
+            {
+              en: 'During the server transfer period, the sales method for "Odyle Energy (Bound)" in [Shop > Wind Breeze Merchants > Special] will change. The weekly limit of 16 per server for "Odyle Energy (Bound)" will be removed. The weekly limit will change from 4/4 to 20/20 per character.',
+              ua: '[Енергія Оділе|Odyle Energy] (зв\'язана) у Wind Breeze Merchants → Special: прибирають ліміт 16 на тиждень на сервер, а ліміт на персонажа зростає з 4 до 20 на тиждень.',
+              why: 'Енергія Оділе — ресурс для фарму, і тепер її можна брати на кожного персонажа по 20 щотижня. Мейну це в п\'ять разів більше, а твінки більше не ділять один серверний ліміт. Зміна діє на період перенесення серверів.',
+              who: ['all'], kind: 'plus', act: 'Купуйте до 20 Енергії Оділе на кожного персонажа щотижня.', counter: 'w-odyle',
+            },
+            {
+              en: '"Lower Abyss Rift Stone" will be available for purchase in [Shop > Wind Breeze Merchants > Special] for two weeks.',
+              ua: '«[Камінь розлому Нижньої Безодні|Lower Abyss Rift Stone]» два тижні продається в Магазин → Wind Breeze Merchants → Special.',
+              why: 'Камінь відкриває прохід у Нижню Безодню. Продаж тимчасовий, тож хто ходить у Безодню, хай запасеться зараз.',
+              who: ['raid'], kind: 'plus', act: 'Купіть Камені розлому Нижньої Безодні, поки вони в магазині (2 тижні).',
+            },
+          ],
+        },
+        {
+          title: 'Класи',
+          items: [
+            {
+              en: 'Spiritmaster — Summon: Ancient Spirit: An issue where Ancient Spirit Summons at Level 15 or below did not activate skills properly will be fixed.',
+              ua: '[Елементаліст|Spiritmaster], «[Призов: Древній дух|Summon: Ancient Spirit]»: Древній дух рівня 15 і нижче знову нормально використовує вміння.',
+              why: 'У Global цей клас називається Spiritmaster. На низькому рівні вміння дух часто «простоював». Тепер він б\'є, як має.',
+              who: ['class'], kind: 'fix',
+            },
+            {
+              en: 'Sorcerer — Fire Wall: An issue where bonus damage was not applied during combat when there was a difference in elevation will be fixed. An issue where the effect of your Embers was removed by another PC\'s stronger Embers effect will be fixed.',
+              ua: '[Чаклун|Sorcerer], «[Вогняна стіна|Fire Wall]»: бонусний урон тепер працює і на перепаді висот, а ваші [Жарини|Embers] більше не знімаються сильнішими Жаринами іншого гравця.',
+              why: 'Два Чаклуни в одній групі збивали один одному горіння, і урон слабшого пропадав. Тепер кожен тримає свій ефект. Плюс урон більше не губиться, коли ціль вище чи нижче (сходи, пагорби, боси на платформах).',
+              who: ['class'], kind: 'fix',
+            },
+            {
+              en: 'Sorcerer — Cold Storm: An issue where bonus damage was not applied during combat when there was a difference in elevation will be fixed. An issue where the effect of your Frostbite was removed by another PC\'s stronger Frostbite effect will be fixed.',
+              ua: 'Чаклун, «[Крижаний шторм|Cold Storm]»: бонусний урон працює на перепаді висот, а ваше [Обмороження|Frostbite] більше не знімається сильнішим Обмороженням іншого гравця.',
+              why: 'Те саме для гілки холоду: кілька Чаклунів у групі тепер не обнуляють ефекти один одного.',
+              who: ['class'], kind: 'fix',
+            },
+            {
+              en: 'Sorcerer — Bittercold Wind: An issue where the Frost Cooldown Reduction effect did not function properly during combat when there was a difference in elevation will be fixed.',
+              ua: 'Чаклун, «[Пронизливий вітер|Bittercold Wind]»: скорочення відкату від Морозу тепер працює й на перепаді висот.',
+              why: 'Раніше на нерівній місцевості відкати не скорочувалися, і ротація холоду сповільнювалася.',
+              who: ['class'], kind: 'fix',
+            },
+          ],
+        },
+        {
+          title: 'Хелловін (до 4 листопада)',
+          items: [
+            {
+              en: 'Halloween Event: after the scheduled maintenance on October 14, 2026 (CEST) through before the scheduled maintenance on November 4, 2026 (CET). Trick or Treat Attendance: Halloween Pumpkin Coin (Event) x35 daily, x100 on days 7 and 14.',
+              ua: 'Подія «Хелловін» з техобслуговування 14 жовтня до техобслуговування 4 листопада. Відвідування «Trick or Treat» (меню → Відвідування): щодня 35 [Гарбузових монет|Halloween Pumpkin Coin], на 7-й і 14-й день — по 100.',
+              why: 'За 14 входів — 620 монет. Це основне джерело івент-валюти: досить заходити раз на день.',
+              who: ['event', 'all'], kind: 'plus', act: 'Заходьте щодня й забирайте нагороду відвідування (14 днів).',
+            },
+            {
+              en: 'New event missions under [Season Mission] > [Event], once per week per server: Abyss (hunt 10 monsters) 25, Transcendence 25, Expedition Conquest 25, Ascension Trial 25, Nightmare (any stage) 25, Log in 3 times 30, Obtain 1 Unique Gear 20, Use 5 Scrolls 20, Dimensional Invasion 20, Shugo Festival 20.',
+              ua: 'Нові тижневі місії ([Сезонні місії|Season Mission] → Event), раз на тиждень на сервер: 10 монстрів у Безодні — 25, Трансценденція — 25, Експедиція (Підкорення) — 25, Випробування Вознесіння — 25, Кошмар (будь-яка стадія) — 25, 3 входи — 30, отримати 1 унікальне спорядження — 20, використати 5 сувоїв — 20, Вторгнення — 20, Фестиваль Шуго — 20.',
+              why: 'Разом 235 монет на тиждень, і майже все це звичайні щотижневі активності. Сувої й вхід — безкоштовні монети.',
+              who: ['event', 'all'], kind: 'plus', act: 'Закривайте 10 івент-місій щотижня (235 Гарбузових монет).',
+            },
+            {
+              en: 'Event shop: Coin Merchant NPC in Verteron (Dawn Legion Base / Zumion Village) and Altgard (Safe Haven / Nornir Assembly). Special Halloween Chest 250 (1 per server), Odyle Energy 10 (4/week), Lower Abyss Rift Stone 30 (2/week), Skin Chest x10 15 (5/week), Resurrection Spiritstone 2 (10/week), Instant Clear Ticket: Daily Dungeon 3 (7/week), Nightmare Dungeon Challenge Ticket 7 (3/week), Shugo Festival Reward Key 7 (3/week), Life Crystal 2 (20 per character), Halloween Candy 2 / Cookie 2 (10 per character), Superior Power Shard 1 (no limit).',
+              ua: 'Крамниця за монети — NPC Coin Merchant: Елійці — [Вертерон|Verteron] (база Легіону Світанку / селище Зуміон), Асмодіани — [Альтгард|Altgard] (Safe Haven / Nornir Assembly). Ціни: Особлива хелловінська скриня 250 (1 на сервер), Енергія Оділе 10 (4/тиж), Камінь розлому Нижньої Безодні 30 (2/тиж), Скриня скінів ×10 — 15 (5/тиж), Камінь Воскресіння 2 (10/тиж), Квиток щоденного підземелля 3 (7/тиж), Квиток Кошмару 7 (3/тиж), Ключ нагороди Фестивалю Шуго 7 (3/тиж), Кристал життя 2 (20 на персонажа), Цукерка/Печиво 2 (по 10 на персонажа), Вищий уламок сили 1 (без ліміту).',
+              why: 'Найвигідніше щотижня: 3 Квитки Кошмару (21), 3 Ключі Шуго (21), 10 Каменів Воскресіння (20) і 7 Квитків щоденок (21) — 83 монети за все. Скриня за 250 — разовий скін-нагрудник «Spooky Scary Skeleton» і 10 000 Кристалів душі улюбленця. Залишок монет — у Вищі уламки сили, бо вони без ліміту.',
+              who: ['event', 'all'], kind: 'plus', act: 'Щотижня міняйте монети на Квитки Кошмару, Ключі Шуго, Камені Воскресіння й Квитки щоденок; Скриню за 250 — один раз.',
+            },
+            {
+              en: 'Halloween Candy (Bound): Attack 25, Defense 250, Max Stamina 300, Natural Stamina Regen +40% for 5 minutes. Halloween Cookie (Bound): Max HP 500, Max MP 250, Max Stamina 300, Natural Stamina Regen +40% for 5 minutes.',
+              ua: '[Хелловінська цукерка|Halloween Candy]: Атака +25, Захист +250, макс. витривалість +300, відновлення витривалості +40% на 5 хв. [Хелловінське печиво|Halloween Cookie]: макс. HP +500, макс. MP +250, макс. витривалість +300, відновлення витривалості +40% на 5 хв.',
+              why: 'Короткі бафи на бій з босом. Цукерка корисніша для DPS, печиво — для виживання.',
+              who: ['event', 'raid'], kind: 'plus',
+            },
+            {
+              en: 'Craft a "Candy Key" using the Event Substance Morphs to open event candies placed throughout the towns. "Candy Key Fragments" are rewards for Expedition and Transcendence Dungeons. Red / Yellow / Blue Candy Key: 60 Candy Key Fragments each, once per week per server. Superior Power Shard x10: 1 fragment, no limit. Red Candy: Growth Pet Chest x20, Battle Enhance Scroll x10. Yellow Candy: Abyss Points 10,000, Life Crystal x10. Blue Candy: Odyle Energy x4, Resurrection Spiritstone x10. Each also gives Halloween Candy x5 and Cookie x5.',
+              ua: '[Уламки ключа-цукерки|Candy Key Fragment] падають за Експедиції та Трансценденцію. У івент-морфі: Червоний, Жовтий і Синій ключі — по 60 уламків, кожен раз на тиждень на сервер; 10 Вищих уламків сили — за 1 уламок, без ліміту. Ключем відкриваєте цукерку в місті: Червона — 20 скринь росту улюбленця і 10 бойових сувоїв заточки; Жовта — 10 000 очок Безодні і 10 Кристалів життя; Синя — 4 Енергії Оділе і 10 Каменів Воскресіння. У кожній ще 5 цукерок і 5 печива.',
+              why: 'Щоб відкрити всі три цукерки, потрібно 180 уламків на тиждень. Тож Експедиції й Трансценденцію варто ходити до кінця тижня. Зайві уламки міняйте на Вищі уламки сили.',
+              who: ['event', 'all'], kind: 'plus', act: 'Збирайте 180 уламків за Експедиції й Трансценденцію і крафтіть усі 3 ключі-цукерки щотижня.', counter: 'w-candy-keys',
+            },
+          ],
+        },
+      ],
+    },
     {
       id: '6ac5e6e8d97eae18cc40e34e',
       date: '2026-10-07',
