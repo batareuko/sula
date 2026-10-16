@@ -51,7 +51,8 @@ public sealed record EncounterSnapshot(
     double PartyDps,
     BossSnapshot? Boss,
     IReadOnlyList<CombatantSnapshot> Combatants,
-    int TargetCode = 0)
+    int TargetCode = 0,
+    bool InDungeon = false)
 {
     /// <summary>Players who took part (the unknown-summons row is not one).</summary>
     [System.Text.Json.Serialization.JsonIgnore]
