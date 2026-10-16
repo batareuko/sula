@@ -40,6 +40,20 @@ public sealed class HistoryTests : IDisposable
     }
 
     [Fact]
+    public void Dungeon_fights_keep_their_flag_and_older_entries_read_as_outside()
+    {
+        var store = new HistoryStore(_dir);
+        var fight = Fight("Berk", 10, boss: true, selfPlace: 1);
+        store.Save(fight with { Summary = fight.Summary with { InDungeon = true } });
+        Assert.True(Assert.Single(new HistoryStore(_dir).List()).InDungeon);
+
+        // an index line written before 1.10.2 has no InDungeon
+        var index = Path.Combine(_dir, "index.jsonl");
+        File.WriteAllText(index, File.ReadAllText(index).Replace(",\"InDungeon\":true", ""));
+        Assert.False(Assert.Single(new HistoryStore(_dir).List()).InDungeon);
+    }
+
+    [Fact]
     public void Missing_index_is_rebuilt_from_fight_files()
     {
         var store = new HistoryStore(_dir);

@@ -44,6 +44,7 @@
         <Grid>
             <Grid.RowDefinitions>
                 <RowDefinition Height="52" />
+                <RowDefinition Height="Auto" />
                 <RowDefinition Height="*" />
             </Grid.RowDefinitions>
             <Grid Margin="18,0,8,0">
@@ -51,11 +52,6 @@
                     <TextBlock Text="{Binding YourFights, Source={x:Static s:UiText.Current}}" FontFamily="{StaticResource TitleFont}" FontSize="19" FontWeight="SemiBold" />
                     <TextBlock x:Name="CountText" Margin="12,4,18,0" FontFamily="{StaticResource NumberFont}" FontSize="12"
                                Foreground="{StaticResource TextMute}" VerticalAlignment="Center" />
-                    <StackPanel Orientation="Horizontal" WindowChrome.IsHitTestVisibleInChrome="True">
-                        <RadioButton x:Name="FilterAll" Style="{StaticResource TabToggle}" Content="{Binding FilterAll, Source={x:Static s:UiText.Current}}" IsChecked="True" Checked="Filter_Changed" />
-                        <RadioButton x:Name="FilterBosses" Style="{StaticResource TabToggle}" Content="{Binding FilterBosses, Source={x:Static s:UiText.Current}}" Checked="Filter_Changed" />
-                        <RadioButton x:Name="FilterKills" Style="{StaticResource TabToggle}" Content="{Binding FilterKills, Source={x:Static s:UiText.Current}}" Checked="Filter_Changed" />
-                    </StackPanel>
                 </StackPanel>
                 <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" VerticalAlignment="Center"
                             WindowChrome.IsHitTestVisibleInChrome="True">
@@ -66,7 +62,19 @@
                 </StackPanel>
             </Grid>
 
-            <Grid Grid.Row="1">
+            <!-- 1 HP: one category at a time — bosses, ordinary mobs, dungeons (runs with their fights), PvP sessions -->
+            <WrapPanel Grid.Row="1" Margin="14,0,14,8">
+                <RadioButton x:Name="FilterAll" GroupName="Cat" Style="{StaticResource TabToggle}" Content="{Binding FilterAll, Source={x:Static s:UiText.Current}}" IsChecked="True" Checked="Filter_Changed" />
+                <RadioButton x:Name="FilterBosses" GroupName="Cat" Style="{StaticResource TabToggle}" Content="{Binding FilterBosses, Source={x:Static s:UiText.Current}}" Checked="Filter_Changed" />
+                <RadioButton x:Name="FilterMobs" GroupName="Cat" Style="{StaticResource TabToggle}" Content="{Binding FilterMobs, Source={x:Static s:UiText.Current}}" Checked="Filter_Changed" />
+                <RadioButton x:Name="FilterDungeons" GroupName="Cat" Style="{StaticResource TabToggle}" Content="{Binding FilterDungeons, Source={x:Static s:UiText.Current}}" Checked="Filter_Changed" />
+                <RadioButton x:Name="FilterPvp" GroupName="Cat" Style="{StaticResource TabToggle}" Content="{Binding FilterPvp, Source={x:Static s:UiText.Current}}" Checked="Filter_Changed" />
+                <Border Width="1" Height="18" Margin="10,0" Background="{StaticResource GoldDim}" VerticalAlignment="Center" />
+                <RadioButton x:Name="FilterKills" GroupName="Kills" Style="{StaticResource TabToggle}" Content="{Binding FilterKills, Source={x:Static s:UiText.Current}}"
+                             PreviewMouseLeftButtonDown="Kills_Toggle" />
+            </WrapPanel>
+
+            <Grid Grid.Row="2">
                 <Grid.ColumnDefinitions>
                     <ColumnDefinition Width="360" />
                     <ColumnDefinition Width="*" />
@@ -76,17 +84,22 @@
                          ScrollViewer.HorizontalScrollBarVisibility="Disabled">
                     <ListBox.ItemTemplate>
                         <DataTemplate>
-                            <Grid>
+                            <Grid Margin="{Binding Indent}">
                                 <Grid.ColumnDefinitions>
                                     <ColumnDefinition Width="Auto" />
                                     <ColumnDefinition Width="*" />
                                     <ColumnDefinition Width="Auto" />
                                 </Grid.ColumnDefinitions>
-                                <c:BossPortrait Width="36" Height="36" Margin="0,0,10,0" VerticalAlignment="Center" Source="{Binding Portrait}" />
+                                <Grid Width="36" Height="36" Margin="0,0,10,0" VerticalAlignment="Center">
+                                    <c:BossPortrait Source="{Binding Portrait}" />
+                                    <TextBlock Text="{Binding Badge}" FontSize="18" HorizontalAlignment="Center" VerticalAlignment="Center"
+                                               Foreground="{StaticResource GoldBright}" IsHitTestVisible="False" />
+                                </Grid>
                                 <StackPanel Grid.Column="1" VerticalAlignment="Center">
                                     <StackPanel Orientation="Horizontal">
                                         <TextBlock Text="{Binding ResultGlyph}" Foreground="{Binding ResultBrush}" FontSize="12" Margin="0,0,6,0" />
-                                        <TextBlock Text="{Binding Title}" FontSize="13" FontWeight="SemiBold" TextTrimming="CharacterEllipsis" MaxWidth="170" />
+                                        <TextBlock Text="{Binding Title}" FontSize="13" FontWeight="SemiBold" TextTrimming="CharacterEllipsis" MaxWidth="170"
+                                                   Foreground="{Binding TitleBrush}" />
                                     </StackPanel>
                                     <TextBlock Text="{Binding Meta}" Style="{StaticResource Cell}" FontSize="11" Foreground="{StaticResource TextMute}"
                                                TextTrimming="CharacterEllipsis" />
@@ -127,7 +140,7 @@
                                 <TextBlock x:Name="DetailMeta" Style="{StaticResource Cell}" Margin="0,2,0,0" TextWrapping="Wrap" />
                             </StackPanel>
                         </Grid>
-                        <Button Style="{StaticResource PrimaryButton}" HorizontalAlignment="Right" VerticalAlignment="Top"
+                        <Button x:Name="ShowInOverlayButton" Style="{StaticResource PrimaryButton}" HorizontalAlignment="Right" VerticalAlignment="Top"
                                 Click="ShowInOverlay_Click" ToolTip="{Binding TipShowInOverlay, Source={x:Static s:UiText.Current}}">
                             <StackPanel Orientation="Horizontal">
                                 <TextBlock Text="&#xE8A7;" FontFamily="{StaticResource IconFont}" Margin="0,1,8,0" />

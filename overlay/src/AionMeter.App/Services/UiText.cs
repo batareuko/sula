@@ -259,6 +259,11 @@ public sealed partial class UiText
     public string FilterAll { get; init; } = "All";
     public string FilterBosses { get; init; } = "Bosses";
     public string FilterKills { get; init; } = "Kills";
+    public string FilterMobs { get; init; } = "Mobs";
+    public string FilterDungeons { get; init; } = "Dungeons";
+    public string FilterPvp { get; init; } = "PvP";
+    public string PvpOpponentsShort { get; init; } = "opponents";
+    public string PvpTakenShort { get; init; } = "taken";
     public string ShowInOverlay { get; init; } = "Show in overlay";
     public string TipShowInOverlay { get; init; } = "Show this fight in the overlay (live returns with the next pull)";
     public string HistoryEmpty { get; init; } = "Kill a boss and it lands here automatically.";
@@ -564,6 +569,11 @@ public sealed partial class UiText
         FilterAll = "Все",
         FilterBosses = "Боссы",
         FilterKills = "Убийства",
+        FilterMobs = "Мобы",
+        FilterDungeons = "Подземелья",
+        FilterPvp = "PvP",
+        PvpOpponentsShort = "соперн.",
+        PvpTakenShort = "получено",
         ShowInOverlay = "Показать в оверлее",
         TipShowInOverlay = "Показать этот бой в оверлее (с началом нового боя вернётся живой режим)",
         HistoryEmpty = "Убейте босса — бой сохранится здесь автоматически.",

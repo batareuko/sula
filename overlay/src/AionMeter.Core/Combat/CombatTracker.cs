@@ -1332,7 +1332,7 @@ public sealed class CombatTracker
 
         return new EncounterSnapshot(
             enc.Id, Title(enc), enc.Zone, ToTime(enc.StartMs), enc.ClockMs(nowMs), combatMs, enc.IsActive, enc.Reason,
-            shownDamage, shownDamage / seconds, boss, rows, MainTargetCode(enc));
+            shownDamage, shownDamage / seconds, boss, rows, MainTargetCode(enc), enc.InDungeon);
     }
 
     private CombatantDetail BuildDetail(Encounter enc, Combatant c, int maxCasts)

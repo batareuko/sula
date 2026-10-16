@@ -294,6 +294,7 @@ public sealed class MeterService : IDisposable
         language = UiText.Normalize(language);
         Settings.Language = language;
         Data.ReloadNames(DataDirectory, language);
+        _dungeonNames = null;
         UiText.Use(language);
         Settings.Save();
     }
@@ -393,6 +394,38 @@ public sealed class MeterService : IDisposable
             Log.Info("PvP session not saved: " + ex.Message);
         }
     }
+
+    /// <summary>1 HP: saved dungeon runs, newest first (the history window's «Dungeons»).</summary>
+    public IReadOnlyList<Core.Combat.DungeonRun> DungeonRuns() => ReadJson<Core.Combat.DungeonRun>("dungeon-runs.json");
+
+    /// <summary>1 HP: saved PvP sessions, newest first (the history window's «PvP»).</summary>
+    public IReadOnlyList<Core.Combat.PvpSession> PvpSessions() => ReadJson<Core.Combat.PvpSession>("pvp-sessions.json");
+
+    private static List<T> ReadJson<T>(string file)
+    {
+        try
+        {
+            var path = Path.Combine(AppSettings.AppDataDir, file);
+            return File.Exists(path) ? System.Text.Json.JsonSerializer.Deserialize<List<T>>(File.ReadAllText(path)) ?? new() : new();
+        }
+        catch (Exception ex) when (ex is IOException or System.Text.Json.JsonException or UnauthorizedAccessException)
+        {
+            Log.Info(file + " not read: " + ex.Message);
+            return new();
+        }
+    }
+
+    /// <summary>1 HP: a saved fight was in a dungeon — by its flag, or (fights saved before 1.10.2) by its zone's name.</summary>
+    public bool InDungeon(HistoryEntry e)
+    {
+        if (e.InDungeon) return true;
+        if (string.IsNullOrEmpty(e.Zone)) return false;
+        if (e.Zone.StartsWith("Dungeon ", StringComparison.Ordinal)) return true;
+        _dungeonNames ??= Data.Maps.Where(kv => GameData.IsDungeonMap(kv.Key)).Select(kv => kv.Value).ToHashSet(StringComparer.OrdinalIgnoreCase);
+        return _dungeonNames.Contains(e.Zone) || (DisplayZone(e.Zone) is { } z && _dungeonNames.Contains(z));
+    }
+
+    private HashSet<string>? _dungeonNames;
 
     /// <summary>1 HP: bosses killed since the meter started (or since the counter was reset) — the "bus" count.</summary>
     public int BossKills { get; private set; }

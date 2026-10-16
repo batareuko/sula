@@ -21,7 +21,8 @@ public sealed record HistoryEntry(
     string? SelfName,
     GameClass SelfClass,
     double SelfDps,
-    int SelfPlace)
+    int SelfPlace,
+    bool InDungeon = false)
 {
     [JsonIgnore] public string Path { get; init; } = "";
     public bool IsBoss => BossCode != 0;
@@ -167,7 +168,7 @@ public sealed class HistoryStore
         return new HistoryEntry(
             fileName, s.Title, s.StartedAt, s.CombatMs, s.Reason, s.PartyDps, s.TotalDamage, s.Zone,
             s.Boss?.NpcCode ?? 0, s.TargetCode, s.PlayerCount,
-            self?.Name, self?.Class ?? GameClass.Unknown, self?.Dps ?? 0, selfIndex + 1);
+            self?.Name, self?.Class ?? GameClass.Unknown, self?.Dps ?? 0, selfIndex + 1, s.InDungeon);
     }
 
     private static string Sanitize(string title)
