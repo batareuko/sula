@@ -34,6 +34,7 @@ public static class SampleRenderer
         if (o.Window == "overlay-pvp") FeedPvp(meter.Tracker, start + 20_300);
         if (o.Window == "overlay-run") FeedRun(meter.Tracker, start);
         if (o.Window == "overlay") FeedCooldowns(meter, DateTimeOffset.UtcNow.ToUnixTimeMilliseconds());
+        if (o.Window == "overlay-mini") FeedResources(meter, start);
         if (o.Window == "history")
             foreach (var entry in meter.History.List().Take(20)) meter.PortraitOf(entry);
         WaitForPortraits(meter);
@@ -168,6 +169,19 @@ public static class SampleRenderer
     }
 
     /// <summary>1 HP: three party members with long cooldowns running, for the round badges under the card.</summary>
+    /// <summary>1 HP: aether, Shugo keys, Nightmare, Invasion and Awakening on the card out of combat.</summary>
+    private static void FeedResources(MeterService meter, long at)
+    {
+        meter.Settings.ShowResources = true;
+        meter.Settings.LastSelfName = meter.Tracker.SelfName ?? "Sylvaen";
+        (int Id, int Count, int Bonus)[] res =
+        [
+            (ResourceEvent.Aether, 612, 0), (ResourceEvent.ShugoKeys, 7, 0), (ResourceEvent.Nightmare, 12, 2),
+            (ResourceEvent.Invasion, 2, 0), (ResourceEvent.Awakening, 1, 0),
+        ];
+        foreach (var r in res) meter.Tracker.Process(new ResourceEvent(at, r.Id, r.Count, r.Bonus));
+    }
+
     private static void FeedCooldowns(MeterService meter, long now)
     {
         var t = meter.Tracker;

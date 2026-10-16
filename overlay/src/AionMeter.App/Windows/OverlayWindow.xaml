@@ -496,8 +496,7 @@
                 <TextBlock x:Name="BuffLine" FontSize="{DynamicResource FooterFont}" Foreground="#BFF7EE" Margin="0,0,0,4"
                            TextTrimming="CharacterEllipsis" Visibility="Collapsed" />
                 <!-- 1 HP: your tickets and energies: aether, Shugo keys, Nightmare, invasion, Awakening -->
-                <TextBlock x:Name="ResourceLine" FontSize="{DynamicResource FooterFont}" Foreground="#C9D2E0" Margin="0,0,0,4"
-                           TextTrimming="CharacterEllipsis" Visibility="Collapsed" />
+                <WrapPanel x:Name="ResourceLine" Margin="0,0,0,4" Visibility="Collapsed" Background="Transparent" />
                 <!-- 1 HP: your party's long cooldowns (a minute and more), the soonest ready first -->
                 <WrapPanel x:Name="CooldownPanel" Margin="0,0,0,6" Visibility="Collapsed" />
                 <!-- 1 HP dynamic card: boss timers and reminders (Rift, reset) stay on, the rest shows on hover -->
