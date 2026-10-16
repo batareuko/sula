@@ -34,6 +34,7 @@ public static class SampleRenderer
         if (o.Window == "overlay-pvp") FeedPvp(meter.Tracker, start + 20_300);
         if (o.Window == "overlay-run") FeedRun(meter.Tracker, start);
         if (o.Window == "overlay") FeedCooldowns(meter, DateTimeOffset.UtcNow.ToUnixTimeMilliseconds());
+        if (o.Window == "overlay") FeedBuffs(meter.Tracker, DateTimeOffset.UtcNow.ToUnixTimeMilliseconds());
         if (o.Window == "overlay-mini") FeedResources(meter, start);
         if (o.Window == "history")
             foreach (var entry in meter.History.List().Take(20)) meter.PortraitOf(entry);
@@ -169,6 +170,18 @@ public static class SampleRenderer
     }
 
     /// <summary>1 HP: three party members with long cooldowns running, for the round badges under the card.</summary>
+    /// <summary>1 HP: your buffs on the card — attack, defence, speed, food — with the time each has left.</summary>
+    private static void FeedBuffs(Core.Combat.CombatTracker tracker, long now)
+    {
+        const uint me = 2;
+        (int Code, long Duration, long Ago)[] buffs =
+        [
+            (150, 1_800_000, 600_000), (610, 300_000, 200_000), (140, 120_000, 30_000), (21634011, 1_800_000, 300_000),
+        ];
+        var instance = 1;
+        foreach (var b in buffs) tracker.Process(new BuffEvent(now - b.Ago, me, me, b.Code, b.Duration, instance++, false));
+    }
+
     /// <summary>1 HP: aether, Shugo keys, Nightmare, Invasion and Awakening on the card out of combat.</summary>
     private static void FeedResources(MeterService meter, long at)
     {

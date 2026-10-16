@@ -46,9 +46,9 @@ public partial class OverlayWindow : Window
         EnsureOnScreen();
 
         OpacitySlider.Value = _settings.BackgroundOpacity;
-        FrameBackground.Opacity = _settings.BackgroundOpacity;
         ApplyLock();
         ApplyCompact();
+        ApplyFrameless();
         ApplyRowSize(_settings.RowSize);
         ApplyDynamic();
         UpdateModeLabel();
@@ -92,16 +92,52 @@ public partial class OverlayWindow : Window
             .OrderBy(x => x.Buff.LeftMs(now))
             .ToList();
         var buffs = _settings.ShowBuffs
-            ? all.Where(x => !x.Debuff && (x.Buff.EndMs == 0 || x.Buff.DurationMs >= 10_000)).Take(4).ToList()
+            ? all.Where(x => !x.Debuff && (x.Buff.EndMs == 0 || x.Buff.DurationMs >= 10_000)).Take(10).ToList()
             : [];
         BuffLine.Visibility = buffs.Count > 0 ? Visibility.Visible : Visibility.Collapsed;
         if (buffs.Count == 0) return;
-        BuffLine.Text = "✦ " + string.Join(" · ", buffs.Select(Describe));
+        // 1 HP: a round badge per buff — what it does, a ring running down, the time left under it; reused while
+        // the same buffs are on, so the tooltips stay put
+        var keys = buffs.Select(x => x.Name).ToList();
+        if (!keys.SequenceEqual(_buffKeys))
+        {
+            BuffLine.Children.Clear();
+            _buffCells.Clear();
+            foreach (var x in buffs)
+            {
+                var badge = new BuffBadge();
+                var time = new TextBlock
+                {
+                    FontFamily = (FontFamily)FindResource("NumberFont"),
+                    FontSize = 10,
+                    FontWeight = FontWeights.SemiBold,
+                    Foreground = new SolidColorBrush(Color.FromRgb(0xD6, 0xDE, 0xEA)),
+                    HorizontalAlignment = HorizontalAlignment.Center,
+                };
+                var cell = new StackPanel { Margin = new Thickness(0, 0, 5, 0), ToolTip = x.Name };
+                cell.Children.Add(badge);
+                cell.Children.Add(time);
+                BuffLine.Children.Add(cell);
+                _buffCells.Add((badge, time));
+            }
+            _buffKeys = keys;
+        }
+        for (var i = 0; i < buffs.Count; i++)
+        {
+            var x = buffs[i];
+            var left = x.Buff.EndMs == 0 || x.Buff.DurationMs <= 0 ? 1 : (double)x.Buff.LeftMs(now) / x.Buff.DurationMs;
+            _buffCells[i].Badge.Set(BuffBadge.KindOf(x.Name), left, x.Count);
+            _buffCells[i].Time.Text = x.Buff.EndMs == 0 ? "∞" : Clock(x.Buff.LeftMs(now));
+            ((FrameworkElement)BuffLine.Children[i]).ToolTip = Describe(x);
+        }
         BuffLine.ToolTip = string.Join("\n", all.Select(x => (x.Debuff ? "▼ " : "▲ ") + Describe(x)));
 
         string Describe((string Name, bool Debuff, int Count, ActiveBuff Buff) x) =>
             x.Name + (x.Count > 1 ? $" ×{x.Count}" : "") + (x.Buff.EndMs == 0 ? "" : " " + Clock(x.Buff.LeftMs(now)));
     }
+
+    private List<string> _buffKeys = [];
+    private readonly List<(BuffBadge Badge, TextBlock Time)> _buffCells = [];
 
     private static readonly int[] ResourceOrder =
     [
@@ -739,8 +775,8 @@ public partial class OverlayWindow : Window
     public void ApplyAppearance()
     {
         OpacitySlider.Value = _settings.BackgroundOpacity;
-        FrameBackground.Opacity = _settings.BackgroundOpacity;
         ApplyCompact();
+        ApplyFrameless();
         ApplyRowSize(_settings.RowSize);
         ApplyDynamic();
         UpdateModeLabel();
@@ -785,6 +821,42 @@ public partial class OverlayWindow : Window
         Resources["FooterFont"] = on ? 11.0 : 12.0;
     }
 
+    /// <summary>
+    /// 1 HP: the frameless look (Settings → Overlay, on by default) — no card: a dark rounded panel behind the header
+    /// and one behind the footer, the rows float over the game on their own dark tracks, the class emblem sits on a
+    /// tile, no place medals or column labels, the share in gold. Names shimmer when that is on as well.
+    /// </summary>
+    private void ApplyFrameless()
+    {
+        var on = _settings.Frameless;
+        Frame.BorderBrush = on ? Brushes.Transparent : (Brush)FindResource("CardFrame");
+        AccentBar.Visibility = on ? Visibility.Collapsed : Visibility.Visible;
+        HeadPanel.Visibility = FootPanel.Visibility = on ? Visibility.Visible : Visibility.Collapsed;
+        ColumnLabels.Opacity = on ? 0 : 1;
+        Resources["GlyphTileBrush"] = on ? new SolidColorBrush(Color.FromArgb(0x90, 0x08, 0x0B, 0x14)) : Brushes.Transparent;
+        Resources["ShareBrush"] = on ? new SolidColorBrush(Color.FromRgb(0xFF, 0xD3, 0x4D)) : Brushes.White;
+        Resources["RankVisibility"] = on ? Visibility.Collapsed : Visibility.Visible;
+        ApplyOpacity();
+
+        if (NameShimmer.Enabled != _settings.AnimatedNames)
+        {
+            NameShimmer.Enabled = _settings.AnimatedNames;
+            foreach (var row in _vm.Rows) row.RefreshNameFill();
+        }
+    }
+
+    /// <summary>The background slider: the card, or (frameless) the panels and the rows' tracks.</summary>
+    private void ApplyOpacity()
+    {
+        var o = _settings.BackgroundOpacity;
+        var frameless = _settings.Frameless;
+        FrameBackground.Opacity = frameless ? 0 : o;
+        HeadPanel.Opacity = FootPanel.Opacity = o;
+        Resources["RowTrackBrush"] = frameless
+            ? new SolidColorBrush(Color.FromArgb((byte)Math.Round(0xD0 * o), 0x0E, 0x13, 0x20))
+            : new SolidColorBrush(Color.FromArgb(0x14, 0xFF, 0xFF, 0xFF));
+    }
+
     /// <summary>Roughly the height the compact layout saves with ten rows (header, boss bar, margins, slim rows).</summary>
     public const double CompactSaves = 260;
 
@@ -808,7 +880,7 @@ public partial class OverlayWindow : Window
         Resources["RowRankSize"] = Math.Min(Math.Round(24 * f), height - 3);
         Resources["RowRankFont"] = Math.Round(13 * f, 1);
         Resources["ColHeaderFont"] = Math.Max(9, Math.Round(11 * f, 1));
-        Resources["ColRankWidth"] = new GridLength(Math.Round(30 * f));
+        Resources["ColRankWidth"] = new GridLength(_settings.Frameless ? 0 : Math.Round(30 * f));
         Resources["ColGlyphWidth"] = new GridLength(Math.Round(32 * f));
         Resources["ColDpsWidth"] = new GridLength(Math.Round(104 * f));
         Resources["ColDamageWidth"] = new GridLength(Math.Round(74 * f));
@@ -1385,8 +1457,8 @@ public partial class OverlayWindow : Window
     private void Opacity_Changed(object sender, RoutedPropertyChangedEventArgs<double> e)
     {
         if (FrameBackground is null) return;
-        FrameBackground.Opacity = e.NewValue;
         _settings.BackgroundOpacity = Math.Round(e.NewValue, 2);
+        ApplyOpacity();
     }
 
     protected override void OnClosed(EventArgs e)

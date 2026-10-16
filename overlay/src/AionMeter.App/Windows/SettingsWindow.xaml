@@ -251,6 +251,10 @@
                                       Content="{Binding PartyDeathOn, Source={x:Static s:UiText.Current}}" />
                             <CheckBox x:Name="VoiceOn" Style="{StaticResource DarkCheck}" Margin="0,4,0,0"
                                       Content="{Binding VoiceOn, Source={x:Static s:UiText.Current}}" />
+                            <CheckBox x:Name="FramelessOn" Style="{StaticResource DarkCheck}" Margin="0,4,0,0"
+                                      Content="{Binding FramelessOn, Source={x:Static s:UiText.Current}}" />
+                            <CheckBox x:Name="AnimatedNamesOn" Style="{StaticResource DarkCheck}" Margin="0,4,0,0"
+                                      Content="{Binding AnimatedNamesOn, Source={x:Static s:UiText.Current}}" />
                             <CheckBox x:Name="BuffsOn" Style="{StaticResource DarkCheck}" Margin="0,4,0,0"
                                       Content="{Binding BuffsOn, Source={x:Static s:UiText.Current}}" />
                             <CheckBox x:Name="BuffEndOn" Style="{StaticResource DarkCheck}" Margin="0,4,0,0"

@@ -797,6 +797,8 @@ public sealed partial class UiText
         PvpGearGaps = "ГС",
         PvpPowerGaps = "Боевая мощь",
         BuffsOn = "Ваши долгие бафы на карточке (от 10 с)",
+        FramelessOn = "Без рамки: тёмная шапка и строки прямо поверх игры",
+        AnimatedNamesOn = "Ники переливаются цветами класса",
         BuffEndOn = "Уведомление за 10 с до конца бафа от минуты",
         BuffEnding = "{0} заканчивается через {1} с",
         CooldownsOn = "Откаты группы от минуты на карточке",

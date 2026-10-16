@@ -118,7 +118,14 @@ public sealed class RowViewModel : ObservableObject
     {
         NameBrush = IsSelf ? Brushes.White : Freeze(new SolidColorBrush(Lighten(ClassVisuals.ColorOf(Class), 0.18)));
         Raise(nameof(NameBrush));
+        Raise(nameof(NameFill));
     }
+
+    /// <summary>1 HP: the name on the overlay — shimmering in the class colours (gold-pink for you), or white.</summary>
+    public Brush NameFill => NameShimmer.For(Class, IsSelf);
+
+    /// <summary>After the "animated names" setting changed.</summary>
+    public void RefreshNameFill() => Raise(nameof(NameFill));
 
     private static Brush Freeze(Brush b)
     {
