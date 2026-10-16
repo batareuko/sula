@@ -128,6 +128,10 @@ public sealed class AppSettings
     public bool VoiceAlerts { get; set; }
     /// <summary>1 HP: your lasting buffs on the card, and a notice 10 s before one of a minute or more runs out.</summary>
     public bool ShowBuffs { get; set; } = true;
+    /// <summary>1 HP: no card around the meter — a dark header and rows straight over the game (like the stream meters).</summary>
+    public bool Frameless { get; set; } = true;
+    /// <summary>1 HP: names shimmer in the class colours (yours gold-pink).</summary>
+    public bool AnimatedNames { get; set; } = true;
     public bool BuffEndAlert { get; set; } = true;
     /// <summary>1 HP: your party's cooldowns of a minute and more on the card.</summary>
     public bool ShowPartyCooldowns { get; set; } = true;

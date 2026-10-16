@@ -93,6 +93,8 @@ public partial class SettingsWindow : Window
         PartyDeathOn.IsChecked = s.PartyDeathAlert;
         VoiceOn.IsChecked = s.VoiceAlerts;
         BuffsOn.IsChecked = s.ShowBuffs;
+        FramelessOn.IsChecked = s.Frameless;
+        AnimatedNamesOn.IsChecked = s.AnimatedNames;
         BuffEndOn.IsChecked = s.BuffEndAlert;
         CooldownsOn.IsChecked = s.ShowPartyCooldowns;
         PartyRequestOn.IsChecked = s.PartyRequestAlert;
@@ -162,6 +164,8 @@ public partial class SettingsWindow : Window
         s.PartyDeathAlert = PartyDeathOn.IsChecked == true;
         s.VoiceAlerts = VoiceOn.IsChecked == true;
         s.ShowBuffs = BuffsOn.IsChecked == true;
+        s.Frameless = FramelessOn.IsChecked == true;
+        s.AnimatedNames = AnimatedNamesOn.IsChecked == true;
         s.BuffEndAlert = BuffEndOn.IsChecked == true;
         s.ShowPartyCooldowns = CooldownsOn.IsChecked == true;
         s.PartyRequestAlert = PartyRequestOn.IsChecked == true;

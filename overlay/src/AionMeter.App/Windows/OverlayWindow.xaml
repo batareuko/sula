@@ -27,6 +27,11 @@
         <sys:Double x:Key="RowHeight">42</sys:Double>
         <!-- 1 HP: header, boss bar and footer sizes; the compact layout replaces them (OverlayWindow.ApplyCompact) -->
         <Thickness x:Key="CardPadding">20,14,20,10</Thickness>
+        <!-- 1 HP: the frameless look replaces these (OverlayWindow.ApplyFrameless) -->
+        <SolidColorBrush x:Key="RowTrackBrush" Color="#14FFFFFF" />
+        <SolidColorBrush x:Key="GlyphTileBrush" Color="Transparent" />
+        <SolidColorBrush x:Key="ShareBrush" Color="White" />
+        <Visibility x:Key="RankVisibility">Visible</Visibility>
         <sys:Double x:Key="HeaderHeight">30</sys:Double>
         <sys:Double x:Key="ClockFont">27</sys:Double>
         <Thickness x:Key="TitleRowMargin">0,8,0,0</Thickness>
@@ -177,7 +182,7 @@
             <Grid Height="{DynamicResource RowHeight}" Margin="{DynamicResource RowMargin}" Cursor="Hand" ToolTip="{Binding Tooltip}"
                   Background="Transparent" MouseLeftButtonUp="Row_Click" MouseRightButtonUp="Row_RightClick">
                 <!-- track -->
-                <Border CornerRadius="6" Background="#14FFFFFF" />
+                <Border CornerRadius="6" Background="{DynamicResource RowTrackBrush}" />
                 <!-- fill -->
                 <Border CornerRadius="6" Background="{Binding FillBrush}" RenderTransformOrigin="0,0.5">
                     <Border.RenderTransform>
@@ -204,19 +209,22 @@
 
                     <!-- Place: medal for the top three, ringed number for the rest -->
                     <Grid Width="{DynamicResource RowRankSize}" Height="{DynamicResource RowRankSize}" HorizontalAlignment="Left"
-                          VerticalAlignment="Center">
+                          VerticalAlignment="Center" Visibility="{DynamicResource RankVisibility}">
                         <Ellipse Fill="{Binding RankBackground}" Stroke="{Binding RankBorder}" StrokeThickness="1.2" />
                         <TextBlock Text="{Binding RankText}" FontFamily="{StaticResource NumberFont}" FontSize="{DynamicResource RowRankFont}"
                                    FontWeight="Bold" Foreground="{Binding RankForeground}" HorizontalAlignment="Center"
                                    VerticalAlignment="Center" Margin="0,0,0,1" />
                     </Grid>
 
-                    <c:ClassGlyph Grid.Column="1" Class="{Binding Class}" OnBar="True" Width="{DynamicResource RowGlyphSize}"
-                                  Height="{DynamicResource RowGlyphSize}" HorizontalAlignment="Left" />
+                    <Border Grid.Column="1" Background="{DynamicResource GlyphTileBrush}" CornerRadius="6" HorizontalAlignment="Left"
+                            VerticalAlignment="Center" Padding="1">
+                        <c:ClassGlyph Class="{Binding Class}" OnBar="True" Width="{DynamicResource RowGlyphSize}"
+                                      Height="{DynamicResource RowGlyphSize}" />
+                    </Border>
 
                     <DockPanel Grid.Column="2" LastChildFill="False" Margin="4,0,8,1">
                         <TextBlock x:Name="NameText" DockPanel.Dock="Left" Text="{Binding Name}" FontSize="{DynamicResource RowNameFont}" FontWeight="Bold"
-                                   Foreground="White" TextTrimming="CharacterEllipsis" VerticalAlignment="Center" />
+                                   Foreground="{Binding NameFill}" TextTrimming="CharacterEllipsis" VerticalAlignment="Center" />
                         <!-- 1 HP: combat power right after the name (party list in the game, else the site's gear lookup) -->
                         <TextBlock DockPanel.Dock="Left" Text="{Binding Gear}" FontFamily="{StaticResource NumberFont}" FontSize="11"
                                    FontWeight="SemiBold" Foreground="#C8FFF6" Opacity="0.85" VerticalAlignment="Center" Margin="7,1,0,0" />
@@ -229,7 +237,7 @@
 
                     <TextBlock Grid.Column="3" Text="{Binding Dps}" Style="{StaticResource RowNumber}" />
                     <TextBlock Grid.Column="4" Text="{Binding Damage}" Style="{StaticResource RowNumber}" />
-                    <TextBlock Grid.Column="5" Text="{Binding Share}" Style="{StaticResource RowNumber}" />
+                    <TextBlock Grid.Column="5" Text="{Binding Share}" Style="{StaticResource RowNumber}" Foreground="{DynamicResource ShareBrush}" />
                 </Grid>
             </Grid>
             <DataTemplate.Triggers>
@@ -250,7 +258,7 @@
                 <SolidColorBrush x:Name="FrameBackground" Color="#0E1320" Opacity="0.92" />
             </Border.Background>
         </Border>
-        <Border Height="1.5" VerticalAlignment="Top" Margin="24,0" Background="{StaticResource AccentLine}" IsHitTestVisible="False" />
+        <Border x:Name="AccentBar" Height="1.5" VerticalAlignment="Top" Margin="24,0" Background="{StaticResource AccentLine}" IsHitTestVisible="False" />
 
         <Grid Margin="{DynamicResource CardPadding}">
             <Grid.RowDefinitions>
@@ -260,6 +268,11 @@
                 <RowDefinition Height="*" />
                 <RowDefinition Height="Auto" />
             </Grid.RowDefinitions>
+            <!-- 1 HP frameless look: dark panels only behind the header and the footer, the rows float over the game -->
+            <Border x:Name="HeadPanel" Grid.RowSpan="3" CornerRadius="10" Margin="-10,-6,-10,-6" Visibility="Collapsed"
+                    Background="#0E1320" IsHitTestVisible="False" />
+            <Border x:Name="FootPanel" Grid.Row="4" CornerRadius="10" Margin="-10,0,-10,-6" Visibility="Collapsed"
+                    Background="#0E1320" IsHitTestVisible="False" />
 
             <!-- Label row (toolbar appears on hover) + timer -->
             <Grid x:Name="Header" Background="Transparent" Height="{DynamicResource HeaderHeight}">
@@ -445,7 +458,7 @@
                 </Grid.RowDefinitions>
 
                 <!-- Column labels (same widths as the rows below) -->
-                <Grid Margin="8,0,14,5" Visibility="{Binding HasData, Converter={StaticResource VisibleIf}}"
+                <Grid x:Name="ColumnLabels" Margin="8,0,14,5" Visibility="{Binding HasData, Converter={StaticResource VisibleIf}}"
                      >
                     <Grid.ColumnDefinitions>
                         <ColumnDefinition Width="{DynamicResource ColRankWidth}" />
@@ -493,8 +506,7 @@
                             VerticalAlignment="Center" ToolTip="{Binding T.UpdateLater}" />
                 </Grid>
                 <!-- 1 HP: your buffs that last (10 s and more), the soonest to run out first -->
-                <TextBlock x:Name="BuffLine" FontSize="{DynamicResource FooterFont}" Foreground="#BFF7EE" Margin="0,0,0,4"
-                           TextTrimming="CharacterEllipsis" Visibility="Collapsed" />
+                <WrapPanel x:Name="BuffLine" Margin="0,0,0,4" Visibility="Collapsed" Background="Transparent" />
                 <!-- 1 HP: your tickets and energies: aether, Shugo keys, Nightmare, invasion, Awakening -->
                 <WrapPanel x:Name="ResourceLine" Margin="0,0,0,4" Visibility="Collapsed" Background="Transparent" />
                 <!-- 1 HP: your party's long cooldowns (a minute and more), the soonest ready first -->

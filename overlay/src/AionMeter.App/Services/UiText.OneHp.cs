@@ -168,6 +168,8 @@ public sealed partial class UiText
     public string PvpGearGaps { get; init; } = "Gear score";
     public string PvpPowerGaps { get; init; } = "Combat power";
     public string BuffsOn { get; init; } = "Your lasting buffs on the card (10 s and more)";
+    public string FramelessOn { get; init; } = "No frame: a dark header and the rows straight over the game";
+    public string AnimatedNamesOn { get; init; } = "Shimmering names in the class colours";
     public string BuffEndOn { get; init; } = "Notice 10 s before a buff of a minute or more runs out";
     public string BuffEnding { get; init; } = "{0} ends in {1} s";
     public string CooldownsOn { get; init; } = "Your party's cooldowns of a minute and more on the card";

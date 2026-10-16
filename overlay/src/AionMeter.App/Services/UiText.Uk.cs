@@ -430,6 +430,8 @@ public sealed partial class UiText
         PvpGearGaps = "ГС",
         PvpPowerGaps = "Бойова міць",
         BuffsOn = "Ваші тривалі бафи на картці (від 10 с)",
+        FramelessOn = "Без рамки: темна шапка й рядки просто поверх гри",
+        AnimatedNamesOn = "Ніки переливаються кольорами класу",
         BuffEndOn = "Сповіщення за 10 с до кінця бафа від хвилини",
         BuffEnding = "{0} закінчується через {1} с",
         CooldownsOn = "Відкати групи від хвилини на картці",
