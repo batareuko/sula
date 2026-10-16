@@ -122,16 +122,39 @@ public partial class OverlayWindow : Window
         var show = _settings.ShowResources && mine is { Count: > 0 } && _expanded != true;
         ResourceLine.Visibility = show ? Visibility.Visible : Visibility.Collapsed;
         if (!show) return;
-        ResourceLine.Text = Line(mine!);
+        // an icon and the amount per resource; rebuilt only when something changed
+        var items = ResourceOrder.Where(mine!.ContainsKey).Select(id => (Id: id, Amount: Amount(id, mine[id]))).ToList();
+        var key = string.Join(";", items.Select(x => x.Id + "=" + x.Amount)) + "|" + UiText.Current.Code + "|" + FindResource("FooterFont");
+        if (key != _resourceKey)
+        {
+            _resourceKey = key;
+            ResourceLine.Children.Clear();
+            foreach (var (id, amount) in items)
+            {
+                var cell = new StackPanel { Orientation = Orientation.Horizontal, Margin = new Thickness(0, 0, 10, 0), ToolTip = UiText.Current.ResourceName(id) };
+                cell.Children.Add(new ResourceIcon { ResourceId = id, Width = 15, Height = 15, Margin = new Thickness(0, 0, 4, 0), VerticalAlignment = VerticalAlignment.Center });
+                cell.Children.Add(new TextBlock
+                {
+                    Text = amount,
+                    FontFamily = (FontFamily)FindResource("NumberFont"),
+                    FontSize = (double)FindResource("FooterFont") + 1,
+                    FontWeight = FontWeights.SemiBold,
+                    Foreground = new SolidColorBrush(Color.FromRgb(0xE4, 0xEA, 0xF4)),
+                    VerticalAlignment = VerticalAlignment.Center,
+                });
+                ResourceLine.Children.Add(cell);
+            }
+        }
+        // other characters in the tooltip of the empty space around the icons
         ResourceLine.ToolTip = string.Join("\n", _settings.Resources.OrderBy(kv => kv.Key).Select(kv => $"{kv.Key}: {Line(kv.Value)}"));
 
-        string Line(Dictionary<int, int[]> r) => string.Join(" · ", ResourceOrder.Where(r.ContainsKey).Select(id =>
-        {
-            var (count, bonus) = (r[id][0], r[id][1]);
-            var amount = bonus > 0 ? $"{count}+{bonus}" : count.ToString();
-            return $"{UiText.Current.ResourceName(id)} {amount}{(id == Core.Events.ResourceEvent.Aether ? "/840" : "")}";
-        }));
+        string Line(Dictionary<int, int[]> r) => string.Join(" · ", ResourceOrder.Where(r.ContainsKey).Select(id => $"{UiText.Current.ResourceName(id)} {Amount(id, r[id])}"));
+
+        static string Amount(int id, int[] v) =>
+            (v[1] > 0 ? $"{v[0]}+{v[1]}" : v[0].ToString()) + (id == Core.Events.ResourceEvent.Aether ? "/840" : "");
     }
+
+    private string? _resourceKey;
 
     /// <summary>1 HP: the party's long cooldowns on the card: who, which skill, when it is ready.</summary>
     private void UpdateCooldownLine()
