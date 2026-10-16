@@ -39,8 +39,8 @@ public sealed class BuffBadge : FrameworkElement
         var n = name.ToLowerInvariant();
         bool Any(params string[] words) => words.Any(n.Contains);
         if (Any("candy", "cookie", "food", "scroll", "potion", "elixir", "dish", "meal", "drink", "serum")) return Kind.Consumable;
-        if (Any("heal", "recover", "regen", "restor", "life", "vitality", "hp ", "prayer", "blessing", "mend")) return Kind.Heal;
         if (Any("speed", "swift", "haste", "movement", "sprint", "flight", "wing", "dash", "agility")) return Kind.Speed;
+        if (Any("heal", "recover", "regen", "restor", "life", "vitality", "hp ", "prayer", "blessing", "mend")) return Kind.Heal;
         if (Any("defense", "defence", "block", "shield", "guard", "protect", "barrier", "resist", "armor", "armour", "parry", "evasion", "dodge"))
             return Kind.Defense;
         if (Any("attack", "damage", "power", "crit", "fury", "rage", "strength", "might", "berserk", "sharp", "accuracy", "boost", "focus"))
