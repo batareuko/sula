@@ -60,6 +60,7 @@ public sealed class MeterService : IDisposable
             Log.Info($"Restored {cached.Players.Count} cached player names, {cached.Npcs.Count} bosses");
         }
         _savedNamesVersion = Tracker.CacheVersion;
+        if (!settings.Transient) LoadBuffSkills();
 
         // Boss timers are per server: follow the character's (from the cache now, then on every login).
         Timers.SetCurrentServer(Tracker.SelfServerId);
@@ -280,8 +281,44 @@ public sealed class MeterService : IDisposable
     private int _savedNamesVersion;
     private long _lastNamesCheck;
 
+    // 1 HP: buff → the skill that puts it on, learnt in play (the card shows that skill's icon for the buff)
+    private static string BuffSkillsPath => Path.Combine(AppSettings.AppDataDir, "buff-skills.json");
+    private int _savedBuffSkills;
+
+    private void LoadBuffSkills()
+    {
+        try
+        {
+            if (!File.Exists(BuffSkillsPath)) return;
+            var known = System.Text.Json.JsonSerializer.Deserialize<Dictionary<int, int>>(File.ReadAllText(BuffSkillsPath));
+            if (known is not null) Tracker.ImportBuffSkills(known);
+        }
+        catch (Exception ex) when (ex is IOException or System.Text.Json.JsonException or UnauthorizedAccessException)
+        {
+            Log.Info("buff-skills.json not read: " + ex.Message);
+        }
+    }
+
+    private void SaveBuffSkills()
+    {
+        var version = Tracker.BuffSkillsVersion;
+        if (version == _savedBuffSkills) return;
+        _savedBuffSkills = version;
+        try
+        {
+            var tmp = BuffSkillsPath + ".tmp";
+            File.WriteAllText(tmp, System.Text.Json.JsonSerializer.Serialize(Tracker.ExportBuffSkills()));
+            File.Move(tmp, BuffSkillsPath, overwrite: true);
+        }
+        catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
+        {
+            Log.Info("buff-skills.json not saved: " + ex.Message);
+        }
+    }
+
     private void SaveNames()
     {
+        SaveBuffSkills();
         var version = Tracker.CacheVersion;
         if (version == _savedNamesVersion) return;
         _savedNamesVersion = version;

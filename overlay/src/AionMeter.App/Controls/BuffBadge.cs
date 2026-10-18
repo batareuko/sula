@@ -17,6 +17,7 @@ public sealed class BuffBadge : FrameworkElement
     private Kind _kind;
     private double _left = 1;
     private int _count;
+    private ImageSource? _icon;
 
     public BuffBadge()
     {
@@ -25,8 +26,11 @@ public sealed class BuffBadge : FrameworkElement
     }
 
     /// <summary>What the buff does, the share of its time still left (1 for one without an end) and its stacks.</summary>
-    public void Set(Kind kind, double left, int count)
+    /// <param name="icon">The icon of the skill that puts this buff on, when the meter has learnt it; else the drawn sign.</param>
+    public void Set(Kind kind, double left, int count, ImageSource? icon = null)
     {
+        if (_kind == kind && Math.Abs(_left - Math.Clamp(left, 0, 1)) < 0.002 && _count == count && ReferenceEquals(_icon, icon)) return;
+        _icon = icon;
         _kind = kind;
         _left = Math.Clamp(left, 0, 1);
         _count = count;
@@ -109,14 +113,25 @@ public sealed class BuffBadge : FrameworkElement
             dc.DrawGeometry(null, ring, arc);
         }
 
-        // the sign, at about 60 % of the badge
-        var s = size * 0.58 / Box;
-        dc.PushTransform(new TranslateTransform(c.X - Box * s / 2, c.Y - Box * s / 2));
-        dc.PushTransform(new ScaleTransform(s, s));
-        var fill = new LinearGradientBrush(Mix(color, Colors.White, 0.35), color, new Point(0.2, 0), new Point(0.8, 1));
-        dc.DrawGeometry(fill, null, GlyphOf(_kind));
-        dc.Pop();
-        dc.Pop();
+        if (_icon is not null)
+        {
+            // the skill's own icon inside the ring
+            var ri = r - 2;
+            dc.PushClip(new EllipseGeometry(c, ri, ri));
+            dc.DrawImage(_icon, new Rect(c.X - ri, c.Y - ri, ri * 2, ri * 2));
+            dc.Pop();
+        }
+        else
+        {
+            // the sign, at about 60 % of the badge
+            var s = size * 0.58 / Box;
+            dc.PushTransform(new TranslateTransform(c.X - Box * s / 2, c.Y - Box * s / 2));
+            dc.PushTransform(new ScaleTransform(s, s));
+            var fill = new LinearGradientBrush(Mix(color, Colors.White, 0.35), color, new Point(0.2, 0), new Point(0.8, 1));
+            dc.DrawGeometry(fill, null, GlyphOf(_kind));
+            dc.Pop();
+            dc.Pop();
+        }
 
         if (_count > 1)
         {
