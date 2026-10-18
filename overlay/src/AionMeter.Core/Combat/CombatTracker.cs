@@ -178,6 +178,7 @@ public sealed class CombatTracker
                     else _entities.MarkUnowned(s.ActorId, s.TimeMs, s.NpcCode, s.OwnerName);
                     break;
                 case CastEvent c:
+                    if (GameData.IsClassSkill(c.SkillCode)) _lastCastBy[c.ActorId] = (c.SkillCode, c.TimeMs);
                     OnCast(c);
                     break;
                 case FieldBossListEvent list:
@@ -246,6 +247,7 @@ public sealed class CombatTracker
                     break;
                 case BuffEvent buff:
                     _buffBook.Apply(buff, _data.BuffName(buff.Code), _data.Buffs.TryGetValue(buff.Code, out var info) && info.Debuff);
+                    LearnBuffSkill(buff);
                     break;
                 case PartyListEvent list:
                     OnPartyList(list);
@@ -696,6 +698,39 @@ public sealed class CombatTracker
     /// changed (cast 15280140 → ticks 15280141..3). Its owner is the most recent caster of that variant up to 3 s before
     /// it spawned — the variant tells apart players of the same class whose skills are levelled differently.
     /// </summary>
+    // 1 HP: which skill puts each buff on — learnt from the caster's cast just before the buff arrives, so the card can
+    // show the skill's own icon for the buff (the game data the meter has carries no buff icons)
+    private readonly Dictionary<uint, (int Skill, long Ms)> _lastCastBy = new();
+    private readonly Dictionary<int, int> _buffSkills = new();
+
+    /// <summary>Changes whenever a buff's skill is learnt (to save the list now and then).</summary>
+    public int BuffSkillsVersion { get; private set; }
+
+    private void LearnBuffSkill(BuffEvent buff)
+    {
+        if (buff.Removing || buff.CasterId == 0 || _buffSkills.ContainsKey(buff.Code)) return;
+        if (!_lastCastBy.TryGetValue(buff.CasterId, out var cast) || buff.TimeMs - cast.Ms is < 0 or > 1_500) return;
+        _buffSkills[buff.Code] = cast.Skill;
+        BuffSkillsVersion++;
+    }
+
+    /// <summary>The skill that puts this buff on, 0 while not known.</summary>
+    public int BuffSkill(int buffCode)
+    {
+        lock (_gate) return _buffSkills.GetValueOrDefault(buffCode);
+    }
+
+    public Dictionary<int, int> ExportBuffSkills()
+    {
+        lock (_gate) return new Dictionary<int, int>(_buffSkills);
+    }
+
+    public void ImportBuffSkills(IReadOnlyDictionary<int, int> known)
+    {
+        lock (_gate)
+            foreach (var (buff, skill) in known) _buffSkills.TryAdd(buff, skill);
+    }
+
     private void OnCast(CastEvent c)
     {
         if (_entities.TryGetUnowned(c.ActorId, out var entity))

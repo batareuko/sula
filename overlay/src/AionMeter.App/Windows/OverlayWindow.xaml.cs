@@ -126,7 +126,8 @@ public partial class OverlayWindow : Window
         {
             var x = buffs[i];
             var left = x.Buff.EndMs == 0 || x.Buff.DurationMs <= 0 ? 1 : (double)x.Buff.LeftMs(now) / x.Buff.DurationMs;
-            _buffCells[i].Badge.Set(BuffBadge.KindOf(x.Name), left, x.Count);
+            var skill = _meter.Tracker.BuffSkill(x.Buff.Code);
+            _buffCells[i].Badge.Set(BuffBadge.KindOf(x.Name), left, x.Count, skill != 0 ? _meter.Icons.Get(skill) : null);
             _buffCells[i].Time.Text = x.Buff.EndMs == 0 ? "∞" : Clock(x.Buff.LeftMs(now));
             ((FrameworkElement)BuffLine.Children[i]).ToolTip = Describe(x);
         }
