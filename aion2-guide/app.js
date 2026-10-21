@@ -3371,7 +3371,8 @@
     var up = eu ? eu.up : null;
     var t = function (ms) { return new Date(ms).toLocaleString('uk-UA', { weekday: 'short', day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' }); };
     var hm = function (ms) { return new Date(ms).toLocaleTimeString('uk-UA', { hour: '2-digit', minute: '2-digit' }); };
-    var gw = up === true ? 'Шлюз Європи приймає з\'єднання' + (eu.ms != null ? ' (' + eu.ms + ' мс)' : '') + '.' : up === false ? 'Шлюз Європи не відповідає.' : '';
+    var gw = up === true ? 'Шлюз Європи приймає з\'єднання' + (eu.ms != null ? ' (' + eu.ms + ' мс)' : '') + '.' : up === false ? 'Шлюз Європи не відповідає.'
+      : eu && eu.unreliable ? 'Живої перевірки шлюзу немає — статус за офіційним оголошенням.' : '';
     if (m) {
       var start = Date.parse(m.start), end = Date.parse(m.end);
       if (now < start) return { phase: 'planned', title: 'Онлайн', text: 'Заплановано техобслуговування: ' + t(start) + ' – ' + hm(end) + ' (' + timeLeft(end - start) + '). ' + gw, link: m.id };
