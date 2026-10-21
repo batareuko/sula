@@ -474,6 +474,23 @@ img.broken { visibility: hidden; }
 .guide-sec[open] > summary { color: var(--gold); margin-bottom: 6px; }
 .guide-tbl td, .guide-tbl th { font-size: 13px; vertical-align: top; }
 
+.skill-ico { width: 20px; height: 20px; border-radius: 4px; vertical-align: -5px; margin-right: 5px; box-shadow: 0 0 0 1px rgba(255,255,255,.12); }
+.cls-emblem { vertical-align: middle; margin-right: 8px; }
+.cls-tab { display: inline-flex; align-items: center; gap: 2px; }
+.cls-tab .cls-emblem { margin-right: 6px; }
+.macro { background: var(--bg-2); border: 1px solid var(--line); border-radius: var(--radius); padding: 12px 14px; margin: 4px 0 14px; display: grid; gap: 10px; }
+.macro-row { display: grid; grid-template-columns: 150px 1fr; gap: 10px; align-items: center; }
+.macro-label { font: 600 12px var(--font-mono); letter-spacing: .06em; text-transform: uppercase; color: var(--gold); }
+.macro-row.manual .macro-label { color: var(--muted); }
+.macro-slots { display: flex; flex-wrap: wrap; gap: 8px; align-items: flex-start; }
+.macro-slot { display: grid; justify-items: center; gap: 3px; width: 74px; text-align: center; }
+.macro-slot img, .macro-slot .skill-ph { width: 40px; height: 40px; border-radius: 8px; box-shadow: 0 0 0 1px rgba(255,255,255,.18), 0 2px 6px rgba(0,0,0,.4); }
+.macro-slot .skill-ph { display: grid; place-items: center; background: #252b3a; font-weight: 700; }
+.macro-slot.top img { box-shadow: 0 0 0 2px var(--gold), 0 0 10px rgba(245,166,35,.45); }
+.macro-slot small { font-size: 10.5px; line-height: 1.2; color: #c4c8d4; }
+.macro-arrow { align-self: center; margin-top: -14px; color: var(--gold); font-size: 20px; }
+@media (max-width: 600px) { .macro-row { grid-template-columns: 1fr; gap: 6px; } .macro-slot { width: 64px; } }
+
 /* ---------- Servers ---------- */
 .srv-status { display: flex; align-items: center; gap: 16px; flex-wrap: wrap; margin-bottom: 14px; }
 .srv-status .srv-dot { width: 14px; height: 14px; border-radius: 50%; background: var(--muted); flex: none; }
