@@ -696,14 +696,16 @@ public partial class OverlayWindow : Window
         NetPanel.ToolTip = MiniNet.ToolTip = NetText.Text + "\n\n" + string.Join("\n", tip);
 
         var now = DateTimeOffset.UtcNow;
+        UpdateEventStrip(now);
         var rift = Core.OneHp.GlobalSchedule.Rift(now, _meter.Timers.CurrentServer);
         var reset = Core.OneHp.GlobalSchedule.NextDailyReset(now);
         var weekly = Core.OneHp.GlobalSchedule.NextWeeklyReset(now);
-        ScheduleText.Text = (rift.IsOpen ? string.Format(t.RiftOpenFor, t.Countdown(rift.Closes - now)) : string.Format(t.RiftIn, t.Countdown(rift.Opens - now)))
-            + " · " + string.Format(t.ResetIn, t.Countdown(reset - now));
-        ScheduleText.Foreground = rift.IsOpen ? (Brush)FindResource("Green") : new SolidColorBrush(Color.FromRgb(0xB4, 0xBC, 0xCB));
-        RemindText.Text = ScheduleText.Text;
-        RemindText.Foreground = ScheduleText.Foreground;
+        // the event strip above shows Rift and the rest; this line keeps the daily reset (the folded card: both)
+        ScheduleText.Text = string.Format(t.ResetIn, t.Countdown(reset - now));
+        ScheduleText.Foreground = new SolidColorBrush(Color.FromRgb(0xB4, 0xBC, 0xCB));
+        RemindText.Text = (rift.IsOpen ? string.Format(t.RiftOpenFor, t.Countdown(rift.Closes - now)) : string.Format(t.RiftIn, t.Countdown(rift.Opens - now)))
+            + " · " + ScheduleText.Text;
+        RemindText.Foreground = rift.IsOpen ? (Brush)FindResource("Green") : ScheduleText.Foreground;
         string Local(DateTimeOffset d) => d.ToLocalTime().ToString("HH:mm", c);
         ScheduleText.ToolTip = RemindText.ToolTip = string.Format(t.ScheduleTip, Local(rift.IsOpen ? rift.Opens + Core.OneHp.GlobalSchedule.RiftEvery : rift.Opens), Local(reset),
             weekly.ToLocalTime().ToString("dddd HH:mm", c));
@@ -721,6 +723,57 @@ public partial class OverlayWindow : Window
             RemindText.Text = ScheduleText.Text = t.OpenBossListShort;
             RemindText.Foreground = ScheduleText.Foreground = (Brush)FindResource("Amber");
             RemindText.ToolTip = ScheduleText.ToolTip = t.OpenBossListHint;
+        }
+    }
+
+    private readonly List<(EventIcon.Kind Kind, TextBlock Text, FrameworkElement Cell)> _eventCells = [];
+
+    /// <summary>
+    /// 1 HP: the event strip — a sign and a countdown per event (Shugo, Rift, Invasion, siege or Nahma, weekly reset), in
+    /// server time for the character's region. A running event counts down to its end, in green.
+    /// </summary>
+    private void UpdateEventStrip(DateTimeOffset now)
+    {
+        var t = UiText.Current;
+        var server = _meter.Timers.CurrentServer;
+        if (_eventCells.Count == 0)
+        {
+            foreach (var kind in new[] { EventIcon.Kind.Shugo, EventIcon.Kind.Rift, EventIcon.Kind.Invasion, EventIcon.Kind.Siege, EventIcon.Kind.Weekly })
+            {
+                var text = new TextBlock
+                {
+                    FontFamily = (FontFamily)FindResource("NumberFont"),
+                    FontSize = (double)FindResource("FooterFont") + 0.5,
+                    FontWeight = FontWeights.SemiBold,
+                    VerticalAlignment = VerticalAlignment.Center,
+                };
+                var cell = new StackPanel { Orientation = Orientation.Horizontal, Margin = new Thickness(0, 0, 12, 2), Background = Brushes.Transparent };
+                cell.Children.Add(new EventIcon(kind) { Width = 16, Height = 16, Margin = new Thickness(0, 0, 5, 0), VerticalAlignment = VerticalAlignment.Center });
+                cell.Children.Add(text);
+                EventStrip.Children.Add(cell);
+                _eventCells.Add((kind, text, cell));
+            }
+        }
+        var idle = new SolidColorBrush(Color.FromRgb(0xE4, 0xEA, 0xF4));
+        foreach (var (kind, text, cell) in _eventCells)
+        {
+            Core.OneHp.EventSchedule.GameEvent ev = kind switch
+            {
+                EventIcon.Kind.Shugo => Core.OneHp.EventSchedule.Shugo,
+                EventIcon.Kind.Rift => Core.OneHp.EventSchedule.Rift,
+                EventIcon.Kind.Invasion => Core.OneHp.EventSchedule.Invasion,
+                EventIcon.Kind.Weekly => Core.OneHp.EventSchedule.WeeklyReset,
+                _ => Core.OneHp.EventSchedule.Siege.Next(now, true, server) <= Core.OneHp.EventSchedule.Nahma.Next(now, true, server)
+                    ? Core.OneHp.EventSchedule.Siege : Core.OneHp.EventSchedule.Nahma,
+            };
+            var start = ev.Next(now, includeRunning: true, serverId: server);
+            if (start == DateTimeOffset.MaxValue) { cell.Visibility = Visibility.Collapsed; continue; }
+            cell.Visibility = Visibility.Visible;
+            var running = start <= now;
+            var end = start.AddMinutes(ev.DurationMinutes);
+            text.Text = running ? t.ShortCountdown(end - now) : t.ShortCountdown(start - now);
+            text.Foreground = running ? (Brush)FindResource("Green") : idle;
+            cell.ToolTip = t.EventName(ev.Id) + " · " + (running ? "▶ " + end.ToLocalTime().ToString("HH:mm") : start.ToLocalTime().ToString("ddd HH:mm", t.Culture));
         }
     }
 

@@ -2157,6 +2157,68 @@
     return { last: last, next: last + P, open: now < last + G.rift.portalMin * 60000, closes: last + G.rift.portalMin * 60000, P: P };
   }
 
+  /* ---------- Смуга подій: значок + відлік (Шуго, Розлом, Вторгнення, облога/Нахма, тижневий ресет), час сервера ---------- */
+  var EV_SVG_DEFS = '<defs><linearGradient id="evgo" x1=".2" y1="0" x2=".8" y2="1"><stop offset="0" stop-color="#FFE68A"/><stop offset="1" stop-color="#C8861E"/></linearGradient>' +
+    '<radialGradient id="evvi"><stop offset="0" stop-color="#1A0830"/><stop offset="1" stop-color="#B07CFF"/></radialGradient>' +
+    '<linearGradient id="evvr" x1=".2" y1="0" x2=".8" y2="1"><stop offset="0" stop-color="#E2C8FF"/><stop offset="1" stop-color="#7A3CD8"/></linearGradient>' +
+    '<linearGradient id="evre" x1=".2" y1="0" x2=".8" y2="1"><stop offset="0" stop-color="#FF9A8A"/><stop offset="1" stop-color="#C81E2E"/></linearGradient>' +
+    '<linearGradient id="evst" x1=".2" y1="0" x2=".8" y2="1"><stop offset="0" stop-color="#D8DEEA"/><stop offset="1" stop-color="#7A869C"/></linearGradient>' +
+    '<linearGradient id="evte" x1=".2" y1="0" x2=".8" y2="1"><stop offset="0" stop-color="#BFF7EE"/><stop offset="1" stop-color="#2DB4A0"/></linearGradient></defs>';
+  var EV_ICONS = {
+    shugo: '<circle cx="9" cy="9" r="7.6" fill="url(#evgo)" stroke="#7A4E0E" stroke-width=".8"/><ellipse cx="6.6" cy="8" rx="1.1" ry="1.3" fill="#4A2C08"/><ellipse cx="11.4" cy="8" rx="1.1" ry="1.3" fill="#4A2C08"/><path d="M6.4,11.4 Q9,13.6 11.6,11.4" stroke="#4A2C08" fill="none"/><path d="M3.4,4.6 L2,1.4 L5.8,2.8 Z M14.6,4.6 L16,1.4 L12.2,2.8 Z" fill="url(#evgo)" stroke="#7A4E0E" stroke-width=".8"/>',
+    rift: '<circle cx="9" cy="9" r="7.4" fill="url(#evvi)" stroke="url(#evvr)" stroke-width="1.4"/><path d="M9,9 m-1,0 a1,1 0 1 1 2,0 a2.4,2.4 0 1 1 -4.4,0.4 a3.8,3.8 0 1 1 7.4,0.8" stroke="#fffd" stroke-width=".9" fill="none"/>',
+    invasion: '<path d="M2,2 L4.2,2 L13.6,11.4 L12.2,12.8 Z M16,2 L13.8,2 L4.4,11.4 L5.8,12.8 Z M11,12.6 L14.6,16.2 L16.2,14.6 L12.6,11 Z M7,12.6 L3.4,16.2 L1.8,14.6 L5.4,11 Z" fill="url(#evre)" stroke="#5A0A10" stroke-width=".7"/>',
+    siege: '<path d="M3,16.5 L3,5 L5,5 L5,3 L7,3 L7,5 L8,5 L8,3 L10,3 L10,5 L11,5 L11,3 L13,3 L13,5 L15,5 L15,16.5 Z" fill="url(#evst)" stroke="#2A3040" stroke-width=".7"/><path d="M7,16.5 L7,12 A2,2 0 0 1 11,12 L11,16.5 Z" fill="#202634"/>',
+    weekly: '<path d="M2.5,4 L15.5,4 L15.5,16 L2.5,16 Z" fill="url(#evte)" stroke="#0E4A42" stroke-width=".7"/><path d="M2.5,4 L15.5,4 L15.5,7.2 L2.5,7.2 Z" fill="#146E62"/><rect x="5" y="2.2" width="1.4" height="3.2" fill="#0E4A42"/><rect x="11.6" y="2.2" width="1.4" height="3.2" fill="#0E4A42"/><path d="M6,11.6 L8.2,13.6 L12.2,9.2" stroke="#0E4A42" stroke-width="1.2" fill="none"/>',
+  };
+  /* Наступний початок події в часі сервера: хвилини доби, дні тижня (0 — неділя) або щодня; поточна, якщо ще йде */
+  function nextServerEvent(now, minutes, days, dur) {
+    var off = serverOffset(now), wall = now + off, day0 = Math.floor(wall / DAY_MS) * DAY_MS;
+    for (var d = -1; d <= 8; d++) {
+      var date = day0 + d * DAY_MS;
+      if (days && days.indexOf(new Date(date).getUTCDay()) < 0) continue;
+      for (var i = 0; i < minutes.length; i++) {
+        var start = date + minutes[i] * 60000 - off;
+        if (start >= now || (dur && now < start + dur * 60000)) return { start: start, end: start + (dur || 0) * 60000 };
+      }
+    }
+    return null;
+  }
+  function evCountdown(ms) {
+    ms = Math.max(0, ms);
+    var s = Math.floor(ms / 1000), m = Math.floor(s / 60), h = Math.floor(m / 60), d = Math.floor(h / 24);
+    if (h < 1) return m + ':' + String(s % 60).padStart(2, '0');
+    if (d < 1) return h + 'г ' + (m % 60) + 'хв';
+    return d + 'д ' + (h % 24) + 'г';
+  }
+  function renderEventStrip() {
+    var box = $('evStrip');
+    if (!box) return;
+    var now = Date.now(), r = riftInfo(now), hourly = [], half = [];
+    for (var i = 0; i < 24; i++) { hourly.push(i * 60); half.push(i * 60 + 30); }
+    var siege = nextServerEvent(now, [21 * 60], [1, 4, 6], 30), nahma = nextServerEvent(now, [21 * 60], [5, 0], 30);
+    var big = siege && (!nahma || siege.start <= nahma.start) ? { name: 'Облога артефактів', ev: siege } : { name: 'Лорд-охоронець Нахма', ev: nahma };
+    var week = nextReset('week', now);
+    var items = [
+      { id: 'shugo', name: 'Фестиваль Шуго', ev: nextServerEvent(now, hourly, null, 10) },
+      { id: 'rift', name: 'Розлом', ev: r.open ? { start: r.last, end: r.closes } : { start: r.next, end: r.next + G.rift.portalMin * 60000 } },
+      { id: 'invasion', name: 'Вторгнення', ev: nextServerEvent(now, half, null, 0) },
+      { id: 'siege', name: big.name, ev: big.ev },
+      { id: 'weekly', name: 'Тижневий ресет', ev: { start: week, end: week } },
+    ];
+    box.textContent = '';
+    items.forEach(function (it) {
+      if (!it.ev) return;
+      var running = it.ev.start <= now && now < it.ev.end;
+      var el = h('span', { class: 'ev' + (running ? ' on' : ''), title: it.name + ' · ' + (running ? 'йде до ' + clock(it.ev.end) :
+        new Date(it.ev.start).toLocaleString('uk-UA', { weekday: 'short', hour: '2-digit', minute: '2-digit' })) });
+      el.innerHTML = '<svg width="20" height="20" viewBox="0 0 18 18" aria-hidden="true">' + EV_SVG_DEFS + EV_ICONS[it.id] + '</svg>';
+      el.appendChild(h('b', { text: evCountdown(running ? it.ev.end - now : it.ev.start - now) }));
+      el.appendChild(h('small', { text: it.name }));
+      box.appendChild(el);
+    });
+  }
+
   function renderTimerCards() {
     var now = Date.now();
     var r = riftInfo(now);
@@ -2488,6 +2550,8 @@
     syncNotifyButton();
     syncBossSyncNote();
     renderTimerCards();
+    renderEventStrip();
+    setInterval(renderEventStrip, 1000);
     renderBosses(true);
     setInterval(function () { renderTimerCards(); renderBosses(false); syncStocks(active()); renderToday(); checkNotify(); }, 15000);
   }

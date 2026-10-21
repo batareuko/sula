@@ -550,6 +550,8 @@
                         </Button>
                     </StackPanel>
                 </Grid>
+                <!-- 1 HP: timed events as signs with a countdown — Shugo, Rift, Invasion, siege, weekly reset -->
+                <WrapPanel x:Name="EventStrip" Margin="0,4,0,0" Background="Transparent" />
                 <!-- 1 HP: ping / packet loss of the game connection, Rift and daily reset -->
                 <Grid x:Name="NetRow" Margin="{DynamicResource NetMargin}">
                     <Grid.ColumnDefinitions>

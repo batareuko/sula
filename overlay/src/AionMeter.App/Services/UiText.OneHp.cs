@@ -211,6 +211,16 @@ public sealed partial class UiText
     public string PowerTip { get; init; } = "Combat power {0}";
 
     /// <summary>"2:05" for an hour and more, "17 min" below.</summary>
+    /// <summary>1 HP: the event strip's countdown — 27:20 under an hour, then 1h 27m, then 1d 7h.</summary>
+    public string ShortCountdown(TimeSpan d)
+    {
+        if (d < TimeSpan.Zero) d = TimeSpan.Zero;
+        var (h, m, dd) = Code switch { "uk" => ("г", "хв", "д"), "ru" => ("ч", "м", "д"), _ => ("h", "m", "d") };
+        if (d.TotalHours < 1) return $"{(int)d.TotalMinutes}:{d.Seconds:00}";
+        if (d.TotalDays < 1) return $"{(int)d.TotalHours}{h} {d.Minutes}{m}";
+        return $"{(int)d.TotalDays}{dd} {d.Hours}{h}";
+    }
+
     public string Countdown(TimeSpan d) =>
         d.TotalHours >= 1 ? $"{(int)d.TotalHours}:{d.Minutes:00}" : $"{Math.Max(1, (int)Math.Ceiling(d.TotalMinutes))} {MinutesShort}";
 }
