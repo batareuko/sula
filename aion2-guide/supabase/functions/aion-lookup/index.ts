@@ -311,7 +311,10 @@ export function parseMaintenance(lines: string[]): { start: string; end: string 
 // ----- статус серверів: шлюзи регіонів (адреси, які бачить клієнт гри; порт гри 13328) -----
 const GATEWAYS: Record<string, string[]> = { EU: ['193.202.112.138', '193.202.112.102'] };
 const GAME_PORT = 13328;
-let probeCache: { t: number; v: Record<string, { up: boolean; ms: number | null; at: string }> } | null = null;
+// Контроль: адреса з документаційного діапазону TEST-NET-1, якої в мережі немає. Якщо «під'єднується» і вона, то мережа
+// хостингу сама відповідає на будь-яке з'єднання — тоді перевірка нічого не каже, і статус лише за оголошенням.
+const CONTROL_HOST = '192.0.2.1';
+let probeCache: { t: number; v: Record<string, { up: boolean | null; ms: number | null; at: string; unreliable?: boolean }> } | null = null;
 
 async function probe(host: string): Promise<number | null> {
   const t0 = Date.now();
@@ -332,11 +335,15 @@ async function probe(host: string): Promise<number | null> {
 
 async function regions() {
   if (probeCache && Date.now() - probeCache.t < 60_000) return probeCache.v;
-  const v: Record<string, { up: boolean; ms: number | null; at: string }> = {};
+  const v: Record<string, { up: boolean | null; ms: number | null; at: string; unreliable?: boolean }> = {};
+  const control = probe(CONTROL_HOST);
   for (const [region, hosts] of Object.entries(GATEWAYS)) {
     const times = await Promise.all(hosts.map(probe));
     const ok = times.filter((x): x is number => x !== null);
     v[region] = { up: ok.length > 0, ms: ok.length ? Math.min(...ok) : null, at: new Date().toISOString() };
+  }
+  if ((await control) !== null) {
+    for (const r of Object.values(v)) { r.up = null; r.ms = null; r.unreliable = true; }
   }
   probeCache = { t: Date.now(), v };
   return v;
