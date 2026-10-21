@@ -342,7 +342,9 @@ async function regions() {
     const ok = times.filter((x): x is number => x !== null);
     v[region] = { up: ok.length > 0, ms: ok.length ? Math.min(...ok) : null, at: new Date().toISOString() };
   }
-  if ((await control) !== null) {
+  // Ще одна ознака підробки: «відповідь» за кілька мілісекунд — так швидко справжній сервер гри з хостингу не відповідає
+  const tooFast = Object.values(v).some((r) => r.ms !== null && r.ms < 5);
+  if ((await control) !== null || tooFast) {
     for (const r of Object.values(v)) { r.up = null; r.ms = null; r.unreliable = true; }
   }
   probeCache = { t: Date.now(), v };
