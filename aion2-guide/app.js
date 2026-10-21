@@ -394,6 +394,41 @@
       $('systemsList').appendChild(el);
     });
 
+    (G.guides || []).forEach(function (g, gi) {
+      var body = h('div', { class: 'guide-body' }, h('p', { class: 'muted lead' }, rich(g.intro)));
+      g.sections.forEach(function (sec) {
+        var inner;
+        if (sec.table) {
+          var tbl = h('table', { class: 'tbl guide-tbl' });
+          var head = h('tr');
+          sec.table.head.forEach(function (c) { head.appendChild(h('th', { text: c })); });
+          tbl.appendChild(h('thead', null, head));
+          var tb = h('tbody');
+          sec.table.rows.forEach(function (r) {
+            var tr = h('tr');
+            r.forEach(function (c) { tr.appendChild(h('td', null, rich(c))); });
+            tb.appendChild(tr);
+          });
+          tbl.appendChild(tb);
+          inner = h('div', { class: 'table-scroll' }, tbl);
+        } else {
+          inner = h('ul', { class: 'dash' });
+          sec.list.forEach(function (t) { inner.appendChild(h('li', null, rich(t))); });
+        }
+        body.appendChild(h('details', { class: 'guide-sec' }, h('summary', null, rich(sec.title)), inner));
+      });
+      if (g.links) {
+        var src = h('p', { class: 'muted small' }, 'Факти звірено з: ');
+        g.links.forEach(function (l, i) {
+          if (i) src.appendChild(document.createTextNode(' · '));
+          src.appendChild(h('a', { href: l[1], target: '_blank', rel: 'noopener', text: l[0] }));
+        });
+        body.appendChild(src);
+      }
+      $('guidesList').appendChild(h('details', { class: 'panel guide', id: g.id, open: gi === 0 ? '' : null },
+        h('summary', null, h('span', { class: 'h-card' }, rich(g.title)), h('span', { class: 'muted small', text: ' · ' + g.tag })), body));
+    });
+
     if (G.ariel) {
       var A = G.ariel;
       $('arielLead').appendChild(rich(A.lead));

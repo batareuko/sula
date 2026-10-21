@@ -463,6 +463,17 @@ img.broken { visibility: hidden; }
 .g-acts { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
 .g-acts select { min-height: 36px; padding: 4px 8px; background: var(--bg-2); border: 1px solid var(--line); border-radius: var(--radius); color: var(--text); }
 
+/* ---------- Guides ---------- */
+.guide { margin-bottom: 12px; }
+.guide > summary { cursor: pointer; list-style: none; }
+.guide > summary::-webkit-details-marker { display: none; }
+.guide > summary .h-card { display: inline; }
+.guide-body { margin-top: 12px; }
+.guide-sec { border-top: 1px solid var(--line); padding: 10px 0; }
+.guide-sec > summary { cursor: pointer; font-weight: 600; color: var(--text); }
+.guide-sec[open] > summary { color: var(--gold); margin-bottom: 6px; }
+.guide-tbl td, .guide-tbl th { font-size: 13px; vertical-align: top; }
+
 /* ---------- Servers ---------- */
 .srv-status { display: flex; align-items: center; gap: 16px; flex-wrap: wrap; margin-bottom: 14px; }
 .srv-status .srv-dot { width: 14px; height: 14px; border-radius: 50%; background: var(--muted); flex: none; }
