@@ -1069,8 +1069,8 @@ window.GUIDE = {
         stigmas: [['Earth Punishment', 20], ['Light of Protection', 20], ['Prayer of Amplification', 20], ['Noble Aura', 10]],
         daeva: ['Condemnation', 'Divine Aura', 'Bolt'],
         daevaNote: 'помаранчеві (відкати й швидкість) → атака й крит → сині вузли → захист',
-        arcana: [['Chalice', 'Vigor', []], ['Parchment', 'Destiny / Life', []], ['Compass', 'Death / Freedom', []], ['Bell', 'Destruction', []], ['Mirror', 'Wisdom / Illusion', []]],
-        arcanaNote: 'катайте вміння, яким бракує до 20 (Condemnation, Divine Aura, Bolt)',
+        arcana: [['Chalice', 'Vigor · Time', ['Condemnation']], ['Parchment', 'будь-який сет', ['Condemnation']], ['Compass', 'Vigor або Magic · Death', ['Divine Aura']], ['Bell', 'Magic · Destruction', ["Empyrean Lord's Grace"]], ['Mirror', 'Vigor · Illusion', ["Earth's Grace", 'Healing Enhancement']]],
+        arcanaNote: 'Condemnation +4 з Сувою — і до 20 вистачить +2 з кільця; Divine Aura +4 на Компасі — найкращий ролл (для 16 досить +2). Для сету досить двох Vigor (Чаша й Дзеркало). Спершу правильні вміння, потім сет.',
       },
       bar: [
         { label: 'Лінія мітки', key: 'макрос (ПКМ)', skills: ['Condemnation', 'Chain of Torment'] },
@@ -1116,8 +1116,8 @@ window.GUIDE = {
         stigmas: [['Undefeated Mantra', 20], ['Power of the Storm', 20], ["Marchutan's Wrath", 1], ['Focused Defense', 5]],
         daeva: ['Dark Crush', 'Onslaught', 'Spinning Strike', 'Incandescent Blow', 'Impactful Crush', 'Wave Blow', 'Defiance'],
         daevaNote: 'сині вузли в цьому порядку',
-        arcana: [['Chalice', 'Time', []], ['Parchment', 'Life', []], ['Compass', 'Freedom', []], ['Bell', 'Destruction', []], ['Mirror', 'Wisdom', []]],
-        arcanaNote: 'Chalice, Parchment, Compass — Primal Vigor; Bell і Mirror — Magic Armor; у середньому +2 до вміння',
+        arcana: [['Chalice', 'Primal Vigor · Time', ['Dark Crush', 'Onslaught', 'Spinning Strike']], ['Parchment', 'Primal Vigor · Life', ['Dark Crush', 'Onslaught', 'Spinning Strike']], ['Compass', 'Primal Vigor · Freedom', ['Incandescent Blow', 'Recuperation', 'Defiance']], ['Bell', 'Magic Armor · Destruction', ['Attack Preparation']], ['Mirror', 'Magic Armor · Wisdom', ['Impact Hit', "Wind's Promise"]]],
+        arcanaNote: 'На Чаші — те з ключових вмінь, якому ще бракує до 20. Карти дають до +4 випадково, розраховуйте на +2. Дзеркало для чистої підтримки можна брати з Illusion (відкати). Не переплачуйте: у Сезоні 2 карти заміняться.',
       },
       bar: [
         { label: 'Лінія Dark Crush', key: 'макрос, 2 кроки × 10 мс', skills: ['Impactful Crush', "Marchutan's Wrath", 'Spinning Strike', 'Dark Crush'] },
