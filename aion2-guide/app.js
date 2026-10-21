@@ -342,7 +342,9 @@
     TERM_RE.lastIndex = 0;
     while ((m = TERM_RE.exec(s))) {
       if (m.index > last) frag.appendChild(document.createTextNode(s.slice(last, m.index)));
-      frag.appendChild(h('span', { class: 'term' }, m[1], h('span', { class: 'en', lang: 'en' }, ' ', h('span', { text: m[2] }))));
+      // назва, що й так англійська (вміння, як у клієнті), — без дубля в дужках
+      if (m[1] === m[2]) frag.appendChild(h('span', { class: 'term', lang: 'en', text: m[1] }));
+      else frag.appendChild(h('span', { class: 'term' }, m[1], h('span', { class: 'en', lang: 'en' }, ' ', h('span', { text: m[2] }))));
       last = TERM_RE.lastIndex;
     }
     if (last < s.length) frag.appendChild(document.createTextNode(s.slice(last)));
@@ -394,40 +396,8 @@
       $('systemsList').appendChild(el);
     });
 
-    (G.guides || []).forEach(function (g, gi) {
-      var body = h('div', { class: 'guide-body' }, h('p', { class: 'muted lead' }, rich(g.intro)));
-      g.sections.forEach(function (sec) {
-        var inner;
-        if (sec.table) {
-          var tbl = h('table', { class: 'tbl guide-tbl' });
-          var head = h('tr');
-          sec.table.head.forEach(function (c) { head.appendChild(h('th', { text: c })); });
-          tbl.appendChild(h('thead', null, head));
-          var tb = h('tbody');
-          sec.table.rows.forEach(function (r) {
-            var tr = h('tr');
-            r.forEach(function (c) { tr.appendChild(h('td', null, rich(c))); });
-            tb.appendChild(tr);
-          });
-          tbl.appendChild(tb);
-          inner = h('div', { class: 'table-scroll' }, tbl);
-        } else {
-          inner = h('ul', { class: 'dash' });
-          sec.list.forEach(function (t) { inner.appendChild(h('li', null, rich(t))); });
-        }
-        body.appendChild(h('details', { class: 'guide-sec' }, h('summary', null, rich(sec.title)), inner));
-      });
-      if (g.links) {
-        var src = h('p', { class: 'muted small' }, 'Факти звірено з: ');
-        g.links.forEach(function (l, i) {
-          if (i) src.appendChild(document.createTextNode(' · '));
-          src.appendChild(h('a', { href: l[1], target: '_blank', rel: 'noopener', text: l[0] }));
-        });
-        body.appendChild(src);
-      }
-      $('guidesList').appendChild(h('details', { class: 'panel guide', id: g.id, open: gi === 0 ? '' : null },
-        h('summary', null, h('span', { class: 'h-card' }, rich(g.title)), h('span', { class: 'muted small', text: ' · ' + g.tag })), body));
-    });
+    (G.guides || []).forEach(function (g, gi) { $('guidesList').appendChild(guidePanel(g, gi === 0)); });
+    initClassGuides();
 
     if (G.ariel) {
       var A = G.ariel;
@@ -3228,6 +3198,62 @@
       if (prefGet('fold-' + d.id, '0') === '1') d.open = true;
       d.addEventListener('toggle', function () { prefSet('fold-' + d.id, d.open ? '1' : '0'); });
     });
+  }
+
+  /* ---------- Гайди: розгортані панелі з розділами-списками й таблицями (data.js → guides, classGuides) ---------- */
+  function guidePanel(g, open) {
+    var body = h('div', { class: 'guide-body' }, h('p', { class: 'muted lead' }, rich(g.intro)));
+    g.sections.forEach(function (sec) {
+      var inner;
+      if (sec.table) {
+        var tbl = h('table', { class: 'tbl guide-tbl' });
+        var head = h('tr');
+        sec.table.head.forEach(function (c) { head.appendChild(h('th', { text: c })); });
+        tbl.appendChild(h('thead', null, head));
+        var tb = h('tbody');
+        sec.table.rows.forEach(function (r) {
+          var tr = h('tr');
+          r.forEach(function (c) { tr.appendChild(h('td', null, rich(c))); });
+          tb.appendChild(tr);
+        });
+        tbl.appendChild(tb);
+        inner = h('div', { class: 'table-scroll' }, tbl);
+      } else {
+        inner = h('ul', { class: 'dash' });
+        sec.list.forEach(function (t) { inner.appendChild(h('li', null, rich(t))); });
+      }
+      body.appendChild(h('details', { class: 'guide-sec', open: g.cls ? '' : null }, h('summary', null, rich(sec.title)), inner));
+    });
+    if (g.links) {
+      var src = h('p', { class: 'muted small' }, 'Факти звірено з: ');
+      g.links.forEach(function (l, i) {
+        if (i) src.appendChild(document.createTextNode(' · '));
+        src.appendChild(h('a', { href: l[1], target: '_blank', rel: 'noopener', text: l[0] }));
+      });
+      body.appendChild(src);
+    }
+    return h('details', { class: 'panel guide', id: g.id, open: open ? '' : null },
+      h('summary', null, h('span', { class: 'h-card' }, rich(g.title)), h('span', { class: 'muted small', text: ' · ' + g.tag })), body);
+  }
+
+  /* Гайди по класах: вкладки; спершу клас прив'язаного персонажа, далі — останній відкритий */
+  function initClassGuides() {
+    var list = G.classGuides || [];
+    if (!list.length) return;
+    var p = active(), mine = p && p.character && String(p.character.cls || '').toLowerCase();
+    var pick = prefGet('classGuide', '') || (list.filter(function (g) { return g.cls.toLowerCase() === mine || (mine === 'spiritmaster' && g.cls === 'Elementalist'); })[0] || list[0]).id;
+    function show(id) {
+      pick = id;
+      $('classTabs').textContent = '';
+      list.forEach(function (g) {
+        $('classTabs').appendChild(h('button', { class: 'tab', type: 'button', role: 'tab', 'aria-selected': String(g.id === id), text: g.title,
+          onclick: function () { prefSet('classGuide', g.id); show(g.id); } }));
+      });
+      var g = list.filter(function (x) { return x.id === id; })[0] || list[0];
+      $('classGuide').textContent = '';
+      $('classGuide').appendChild(guidePanel(g, true));
+    }
+    show(pick);
   }
 
   /* ---------- Сервери: техобслуговування з оголошення + чи приймає з'єднання ігровий шлюз Європи ---------- */

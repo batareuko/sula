@@ -768,6 +768,293 @@ window.GUIDE = {
     },
   ],
 
+  /* Гайди по класах (PvE + коротко PvP), Сезон 1 Global. Факти — зі зведень aion2-guides.info (автори білдів указані в
+     кожного класу); тексти наші. Порядок «нижній слот лінії — найвищий пріоритет» стосується вбудованих макросів гри. */
+  classGuides: [
+    {
+      id: 'c-gladiator', cls: 'Gladiator', title: 'Гладіатор', tag: 'ближній бій · напівтанк · середня складність',
+      intro: 'Гладіатор б\'є перед собою й живе довго: стійка [Lunge Stance|Lunge Stance] майже постійно відкриває [Overhead Slam|Overhead Slam]. Overhead Slam і Aerial Snare працюють лише по збитих з ніг цілях — крім босів у PvE.',
+      sections: [
+        { title: 'Вміння й рівні', list: [
+          'До 20: [Overhead Slam|Overhead Slam], [Rending Blow|Rending Blow]; до 16: [Ruinous Blow|Ruinous Blow]. Решта — 12 і нижче.',
+          'Порядок очок: Overhead Slam → Rending Blow → Ruinous Blow.',
+        ] },
+        { title: 'Спеціалізації', table: { head: ['Вміння', 'Що брати'], rows: [
+          ['Overhead Slam', '8 — ланцюг Upward Strike · 16 — без відкату · 20 — гарантований крит'],
+          ['Rending Blow', '8 — рухоме вміння · 16 — +50 MP за крит · 20 — до +12% урону по меншій кількості цілей'],
+          ['Ruinous Blow', '8 — +30% криту вміння (або +20% швидкості)'],
+          ['Leaping Slam', 'скидання відкату за вбивство'],
+          ['Aerial Snare (боси)', '8 — +100% урону по цілях з імунітетом до контролю · 12 — ланцюг Forced Fall'],
+        ] } },
+        { title: 'Стигми', list: [
+          '[Lunge Stance|Lunge Stance] 20 (головна: криты скорочують відкати), [Focused Block|Focused Block] 5, [Rage Burst|Rage Burst] 5 (відкриває Overhead Slam на 10 с), [Zikel\'s Blessing|Zikel\'s Blessing] 10.',
+          'Альтернативи: [Lifestealing Blade|Lifestealing Blade] 20 у групі, Blade Toss (дебаф групі), Wave Armor 15 (якщо немає Тамплієра).',
+        ] },
+        { title: 'Ротація й макрос', list: [
+          'Три лінії на одній клавіші, 10 мс між кроками: 1) Overhead Slam, Rage Burst (найнижчий слот — найвищий пріоритет); 2) Rending Blow, Sword Aura Rampage, Ruinous Blow; 3) бафи — Lifestealing Blade, Wave Armor, Lunge Stance, Zikel\'s Blessing.',
+          'Тримайте базову атаку разом з макросом; коли Overhead Slam і Rending Blow досягнуть 16 — достатньо самого макросу.',
+          'Вручну: Focused Block, Mocking Blade, Leaping Slam, Crushing Wave. Відкриття на босі: Lunge Stance + Zikel\'s Blessing → Leaping Slam → Ruinous Blow → тримати макрос.',
+        ] },
+        { title: 'Даеваніон, аркана, спорядження', list: [
+          'Даеваніон: сині вузли Overhead Slam, Rending Blow, Ruinous Blow → помаранчеві → характеристики. Azphel — лише PvP.',
+          'Аркана: Parchment — Overhead Slam і Ruinous Blow; Compass — Rending Blow (краще з Freedom для точності); Chalice — будь-яке. Спершу Overhead Slam до 20.',
+          'Пасивки: Attack Preparation → Experienced Counterstrike → Murderous Burst або Impact Hit.',
+          'Зв\'язування душі на зброї: урон зброї, швидкість бою, посилення урону, Міць. Характеристики: Мудрість, Час, Руйнування, трохи точності.',
+        ] },
+        { title: 'PvP', list: [
+          'Нирця: скорочує дистанцію, збиває з ніг і карає Overhead Slam. Overhead Slam 20, Mocking Blade, Defiance, Aerial Snare — 16.',
+          'Стигми Безодні: Lunge Stance, Armor of Balance, Blade Toss, Tenaciousness; арена — Lunge Stance, Armor of Balance, Tenaciousness, Focused Block.',
+          'Пріоритети: захист від контролю → «липкість» → бурст. Окремого PvP-спорядження поки немає.',
+        ] },
+      ],
+      links: [['aion2-guides.info · Gladiator (Arthars Gaming, Ulfhednar, Grobs та ін.)', 'https://aion2-guides.info/uk/gladiator/']],
+    },
+    {
+      id: 'c-templar', cls: 'Templar', title: 'Тамплієр', tag: 'танк · баф групи · середня складність',
+      intro: 'Меч і щит. Блоки баффають усю групу, а [Judgment|Judgment] перетворює удари щитом на урон. Обмеження Тамплієра — урон, а не виживання.',
+      sections: [
+        { title: 'Вміння й рівні', list: [
+          'До 20: [Judgment|Judgment], [Punishment|Punishment], [Pummel|Pummel]; потім [Annihilate|Annihilate] і [Shield Smite|Shield Smite] (основний білд — по 16; альтернатива — Annihilate 20 заради збивання по площі).',
+          'Judgment спрацьовує від Shield Smite, Warding Strike, Shield Rush і Doom Shield. [Vicious Strike|Vicious Strike] (10) — базова атака, відновлює MP.',
+        ] },
+        { title: 'Спеціалізації', table: { head: ['Вміння', 'Що брати'], rows: [
+          ['Judgment', '8 — додатковий урон · 12 — крит · 16 — без відкату'],
+          ['Punishment', '8 — урон з часом і +30% швидкості вміння · 16 — ігнор блоку/ухилення з критом'],
+          ['Pummel', '12 — −1 с відкату Punishment (або поглинання HP — на вибір)'],
+          ['Annihilate', '8 — +100% по цілях з імунітетом до контролю · 12 — −10 с · 20 — +50% мультиудару'],
+          ['Shield Smite', '8 — 50% шанс Debilitating Smash · 12 — −2 с'],
+          ['Warding / Shield Rush', '+100 блоку; стійкість від кількості цілей / +10 м і −10 с'],
+        ] } },
+        { title: 'Стигми', list: [
+          'PvE: [Empyrean Lord\'s Punishment|Empyrean Lord\'s Punishment] 15, [Battlefield Banner|Battlefield Banner] 15, [Doom Shield|Doom Shield] 15 (на 15 відкат скидається за вбивство), [Taunt|Taunt] 5.',
+          'Для виживання: Nezekan\'s Shield, Comrade in Arms; соло — Executing Blade. Прокачка: по 1 очку в кожну, потім Punishment і Banner до 5 → 10 → 15.',
+        ] },
+        { title: 'Ротація й макрос', list: [
+          'Дві лінії на кнопці миші. Лінія 1: Doom Shield, Judgment, Shield Smite, Warding Strike. Лінія 2: Pummel, Annihilate, Debilitating Smash (Pummel заповнює паузи).',
+          'Vicious Strike відновлює MP, Pummel його витрачає — чергуйте. Punishment, Banner, Empyrean Lord\'s Punishment і Taunt — вручну.',
+        ] },
+        { title: 'Даеваніон, аркана, спорядження', list: [
+          'Даеваніон: сині Judgment, Punishment, Pummel → Shield Smite, Annihilate. Пропускайте вузли мани й Flash Rampage.',
+          'Аркана: Chalice — Pummel, Punishment; Parchment — Judgment, Punishment; Compass — Pummel, Shield Smite; Bell — Fury, Punishing Benediction. Урон важливіший за виживання.',
+          'Характеристики: на старті Блок + Ухилення + Спритність; пізніше Блок + Витривалість + Ironclad Defense. Крила Talisra (−4% відкатів) допомагають тримати Judgment.',
+          'Шлях спорядження: сет ~1600 БМ → Урюгю й Вакрон → Вогненний храм і Лігво (броня Нуакума).',
+        ] },
+        { title: 'PvP', list: [
+          'Та сама трійка вмінь і цикл Judgment. Стигми: Empyrean Lord\'s Punishment, Executing Blade, Battlefield Banner, Doom Shield; Annihilate 20 — масове збивання.',
+        ] },
+      ],
+      links: [['aion2-guides.info · Templar (SolAshur, trueeevil, Leonis та ін.)', 'https://aion2-guides.info/uk/templar/']],
+    },
+    {
+      id: 'c-ranger', cls: 'Ranger', title: 'Рейнджер', tag: 'дальній бій · ~20 м · середня складність',
+      intro: 'Лук, високий урон, мало виживання й підтримки — усе вирішує позиція. Головне вміння — повністю заряджений [Deadshot|Deadshot] під [Precision|Precision].',
+      sections: [
+        { title: 'Вміння й рівні', table: { head: ['Вміння', 'Рівень', 'Спеціалізації'], rows: [
+          ['Deadshot', '20', '8 — +30% швидкості · 12 — рухоме (або ігнор блоку/ухилення, якщо не бігати)'],
+          ['Gale Arrow', '20', '12 — швидкість бою · 16 — −10 с'],
+          ['Drill Dart', '16', '8 — +20% швидкості · 16 — ще одне спрацювання (або поглинання 3% HP)'],
+          ['Snipe (базова)', '16', '12 — −відкат Deadshot за влучання · 16 — ланцюг Tempest Arrow'],
+          ['Tempest Shot', '16', '16 — +20% швидкості'],
+          ['Marking Shot', '12', '+5% ідеального удару, +5 с'],
+          ['Snare Shot / Burst Arrow', '12', 'сповільнення й корені; Burst — лише по сповільнених'],
+        ] } },
+        { title: 'Стигми', list: [
+          '[Vaizel\'s Authority|Vaizel\'s Authority] 20 (першою!), [Bow of Blessing|Bow of Blessing] 15, [Griffon Arrow|Griffon Arrow] 15, [Supporting Fire|Supporting Fire] 10. До 15 Griffon Arrow — Explosive Arrow.',
+          'Пасивки: Focused Eye і Hunter\'s Resolve → Hunter\'s Soul → Concentrated Fire, Rooting Eye.',
+        ] },
+        { title: 'Ротація й макрос', list: [
+          'Відкриття: Marking Shot → бафи (Vaizel\'s Authority, Bow of Blessing, Supporting Fire) → повністю заряджений Deadshot.',
+          'Тримайте Snipe на ЛКМ і макрос на ПКМ: макрос ланцюжить лінії Gale Arrow і Drill Dart з кроком 10 мс. Snipe повертає MP для Tempest Shot.',
+          'Marking Shot оновлюйте за ~1 с до кінця. Deadshot — вручну й лише повністю заряджений.',
+          'Налаштування: Клавіші → Загальні → Макрос; режим бою, черга вмінь, ціль — найближча до камери.',
+        ] },
+        { title: 'Даеваніон, аркана, спорядження', list: [
+          'Сині вузли: Deadshot, Snare Shot, Suppressing Arrow, Marking Shot, Defiance. Вузли опору криту — пропускайте.',
+          'Аркана (з Трансценденції ★4): Chalice/Compass — Deadshot, Gale Arrow; Parchment — Snipe, Tempest Shot; Bell — Hunter\'s Resolve; Mirror — Focused Eye.',
+          'Точність — друга характеристика: ціль ~1100–1200. Кільця: рівні Deadshot і Gale Arrow, потім Міць.',
+        ] },
+        { title: 'PvP', list: [
+          'Окремого PvP-гайду для Global ще немає. Explosion Trap і Suppressing Arrow — для PvP і мобів, не для босів; дехто тягне Tempest Shot до 20 заради відкидання.',
+        ] },
+      ],
+      links: [['aion2-guides.info · Ranger (Whelps, Fubgun, JOHNPAL та ін.)', 'https://aion2-guides.info/uk/ranger/']],
+    },
+    {
+      id: 'c-assassin', cls: 'Assassin', title: 'Асасин', tag: 'ближній бурст · зі спини · складний',
+      intro: 'Кинджали, вибуховий урон від бафів і найсильніші удари зі спини. Крихкий, без блоку — найскладніший клас для новачка.',
+      sections: [
+        { title: 'Вміння й рівні', list: [
+          'Спершу ключові до 16, потім [Heart Gore|Heart Gore] і [Insignia Explosion|Insignia Explosion] до 20; [Quick Slice|Quick Slice] — 12/16 → 20; [Ambush|Ambush] і [Storm Rampage|Storm Rampage] — 16.',
+          'На прокачці найбільший приріст дає зброя приблизно на +10.',
+        ] },
+        { title: 'Спеціалізації', table: { head: ['Вміння', 'Що брати'], rows: [
+          ['Heart Gore', '8 — поглинання 0,7% HP (або +20% криту) · 16 — скидання відкату за крит · 20 — мультиудар'],
+          ['Insignia Explosion', '8 — тримає 2 стаки Знаків · 16 — −3 с · 20 — +50% мультиудару'],
+          ['Quick Slice', '12 — −1 с Insignia Explosion · 16 — ігнор блоку/ухилення й крит'],
+          ['Ambush / Storm Rampage', '16 — +2 використання / −1 с усіх відкатів (краще по оглушеному босу)'],
+          ['Savage Roar · Shadowstrike', '12 — −1 с Shadowstrike · +20% крит. урону на 10 с'],
+        ] } },
+        { title: 'Стигми', list: [
+          '[Illusive Clone|Illusive Clone] 20 — головне вікно бурсту (~20 с, відкат 1:30: Heart Gore без відкату, +20% урону й крит. урону).',
+          '[Swift Contract|Swift Contract] 15 → 20, [Savage Fang|Savage Fang] 15 (п\'ять Знаків одразу, +10% PvE-урону), [Triniel\'s Dagger|Triniel\'s Dagger] 10 (−10% відкатів за влучання, одразу після бафів).',
+        ] },
+        { title: 'Ротація й макрос', list: [
+          'Лінія урону: Insignia Explosion, Heart Gore, Ambush, Savage Roar (Insignia першою). Лінія бафів: Illusive Clone, Swift Contract, Savage Fang, Triniel\'s Dagger — багато хто тисне вручну.',
+          'Стійте за спиною боса, Quick Slice набирає MP, увесь бурст — у вікні Illusive Clone.',
+        ] },
+        { title: 'Даеваніон, аркана, спорядження', list: [
+          'Сині Heart Gore, Insignia Explosion, Quick Slice → зелені Exploit Weakness → Ambush, Storm Rampage.',
+          'Аркана: Chalice (Time) — ключове вміння, якому бракує до 20; Parchment (Life) — Quick Slice, Heart Gore, Insignia; Compass (Freedom) — Storm Rampage, Ambush, Savage Roar; Mirror (Illusion — обов\'язково) — Rear Smite, Exploit Weakness, Impact Hit; Bell — Assault Stance.',
+          'Пасивки: Rear Smite → Exploit Weakness, Assault Stance → Determination → Impact Hit. Пропускайте Apply Poison і Defense Break. Манакамені: атака, крит, точність.',
+        ] },
+        { title: 'PvP', list: [
+          'Спеціалізації на стан, збивання, дальність і злам щитів (Shadowstrike 12 — стан, Shadow Fall 12 — збивання).',
+          'Стигми: Illusive Clone 15, Aerial Bind 5, Shadowstep 5, Shadow Walk 1 — або Illusive Clone, Spiral Slice, Triniel\'s Dagger, Shadowstep.',
+        ] },
+      ],
+      links: [['aion2-guides.info · Assassin (Arthars Gaming, XifanGG, AlanStriker та ін.)', 'https://aion2-guides.info/uk/assassin/']],
+    },
+    {
+      id: 'c-sorcerer', cls: 'Sorcerer', title: 'Чаклун', tag: 'магія з відстані · вогонь і лід · середня складність',
+      intro: 'Крихкий маг: вогонь ([Fire Mark|Fire Mark], [Blaze|Blaze]) — урон, лід і корені — контроль. Бонуси залежать від мани: понад 50% MP — більше криту, понад 25% — +20% урону. Тримайте ману!',
+      sections: [
+        { title: 'Вміння й рівні', list: [
+          'До 16: [Wish of Concentration|Wish of Concentration] (в ендгеймі 20), [Flame Arrow|Flame Arrow] (база й мана), [Firestorm|Firestorm], [Blaze|Blaze], [Bittercold Wind|Bittercold Wind], [Hellfire|Hellfire] (в ендгеймі 20, заряджений, вручну), [Winter\'s Shackles|Winter\'s Shackles] (+20% PvE-урону на 5 с).',
+          'На прокачці: Ice Chain 12, Flame Scattershot 12 (лише по оглушених), Defiance 12.',
+        ] },
+        { title: 'Спеціалізації', table: { head: ['Вміння', 'Що брати'], rows: [
+          ['Wish of Concentration', '8 — +10% атаки · 12 — +10% швидкості · 16 — −10 с усіх відкатів · 20 — +10% швидкості'],
+          ['Firestorm', '8 — −50% MP або +20% швидкості · 12 — −2 с Hellfire за кулю · 16 — до +75% урону'],
+          ['Blaze', '8 — +50% MP · 12 — мультиудар · 16 — −3 с Wish · 20 — відкладений урон'],
+          ['Hellfire', '8 — +30% швидкості · 12 і 20 — ігнор блоку/ухилення, мультиудар · 16 — −15 с'],
+          ['Bittercold Wind', '8 — +1 с · 12 — гарантований крит крізь блок і ухилення'],
+          ['Flame Arrow', '8 — +20% MP або +50% мультиудару · 16 — скидання Blaze на Pyroclasm'],
+        ] } },
+        { title: 'Стигми', list: [
+          '[Element Enhancement|Element Enhancement] 20, [Delayed Explosion|Delayed Explosion] 10, [Fire Wall|Fire Wall] 10, [Cold Storm|Cold Storm] 10. Порядок: усі до 5 → до 10 → Element Enhancement до 20.',
+          'Альтернативи: Glacial Smite (бурст по групах), Divine Burst, Steel Barrier (щит соло).',
+          'Пасивки: Robe of Flame, Fire Mark, Grace of Enhancement, Robe of Earth.',
+        ] },
+        { title: 'Ротація й макрос', list: [
+          'Wish of Concentration (до 16 — першим) → Element Enhancement → Delayed Explosion → Winter\'s Shackles → заряджений Hellfire вручну → поля Fire Wall і Cold Storm → Bittercold Wind, Blaze, Firestorm; Flame Arrow заповнює паузи.',
+          'Лінії на кнопках дали в тесті більше DPS, ніж один макрос на всю ротацію (≈21,1 тис. проти 17,4 тис.). Hellfire і Flame Arrow — на окремих кнопках миші.',
+        ] },
+        { title: 'Даеваніон, аркана, спорядження', list: [
+          'Помаранчеві (швидкість і відкати → атака й урон → крит. урон), потім сині: Wish, Firestorm, Flame Arrow, Blaze, Bittercold Wind, Winter\'s Shackles, Hellfire (хоча б 12).',
+          'Аркана: Chalice — Firestorm, Blaze, Bittercold, Wish; Parchment — Hellfire, Firestorm, Blaze, Wish; Compass — Bittercold, Winter\'s Shackles, Defiance; Mirror — Robe of Flame, Robe of Earth; Bell — Fire Mark.',
+          'Манакамені: атака, крит, точність. Крила Talisra (відкати). Після пачу 21.10 Cold Storm знову дає бонус по стаках Frostbite, а Fire Wall — лише по цілях з Embers.',
+        ] },
+        { title: 'PvP', list: [
+          'Повноцінного PvP-білду ще немає. Спеціалізація Firestorm, що на 5 с ріже вхідне лікування на 60%, — проти хілених цілей.',
+        ] },
+      ],
+      links: [['aion2-guides.info · Sorcerer (EUTOPIA, Krix Domi, aLuckyRO та ін.)', 'https://aion2-guides.info/uk/sorcerer/']],
+    },
+    {
+      id: 'c-elementalist', cls: 'Elementalist', title: 'Елементаліст', tag: 'Spiritmaster · заклинач духів · магія',
+      intro: 'Духи б\'ються поруч, кожне вміння духа дає стихію, чотири стихії живлять [Elemental Fusion|Elemental Fusion]. Прокльони тримаються на цілі.',
+      sections: [
+        { title: 'Вміння й рівні', list: [
+          'До 20: [Elemental Fusion|Elemental Fusion], [Combustion|Combustion], [Summon: Fire Spirit|Summon: Fire Spirit]; до 16: [Cold Shock|Cold Shock], [Summon: Water Spirit|Summon: Water Spirit]. Дух вітру — пропускаємо.',
+          'На прокачці: Jointstrike: Curse, Dimensional Control, Rapid Scattershot. Water Spirit (з 9 рівня) — головний дух прокачки. Soul\'s Cry не качайте (це PvP-страх).',
+        ] },
+        { title: 'Спеціалізації', list: [
+          'Elemental Fusion: відкладений урон через 3 с, +10 до всіх стихій, 25% повернути Чотири стихії.',
+          'Combustion: більше урону по меншій кількості цілей, +20% швидкості, ланцюг Ashy Call на 16.',
+          'Fire Spirit: крит. урон, 10% шанс вміння, +20% характеристик на 16. Water Spirit: +10% атаки, +20% характеристик на 16.',
+          'Cold Shock: мультиудар і +2% атаки за стак Earth Tremor (до 5). Dimensional Control: урон і мультиудар (притягування й сповільнення — пропускаємо).',
+        ] },
+        { title: 'Стигми', list: [
+          '[Summon: Ancient Spirit|Summon: Ancient Spirit] 20, [Enhance: Spirit\'s Benediction|Enhance: Spirit\'s Benediction] 20, [Flame Blessing|Flame Blessing] 20, [Jointstrike: Corrode|Jointstrike: Corrode] 20. (Після пачу 21.10 Древній дух ≤15 рівня знову нормально б\'є.)',
+          'Пасивки: Mental Focus, Spirit Strike, Element Unification, Spirit Revitalization.',
+        ] },
+        { title: 'Ротація й макрос', list: [
+          'Cold Shock на ЛКМ (п\'ять стаків бафу атаки), макрос на ПКМ.',
+          'Лінія духів (згори вниз): Fire, Earth, Water Spirit, Elemental Fusion. Лінія бафів: Ancient Spirit, Flame Blessing, Spirit\'s Benediction — бафи перед Древнім духом, щоб він їх скопіював. Лінія урону: Combustion, Dimensional Control, Curse, Corrode.',
+          'Відкриття: Flame Blessing → Spirit\'s Benediction → Summon: Ancient Spirit; бафи оновлюйте, щойно готові.',
+        ] },
+        { title: 'Даеваніон, аркана, спорядження', list: [
+          'Сині: Elemental Fusion, Combustion, Fire Spirit, Cold Shock, Water Spirit → зелені Mental Focus і Spirit Strike → помаранчеві атаки. Спершу найдешевший вузол кожного вміння.',
+          'Аркана: три Primal Vigor + дві Magic Armor. Цілі: ~25% шансу подвійного удару, 20% скорочення відкатів, 1500 точності.',
+          'Активні вміння — з кілець, зброї, щита; пасивки — з броні, сережок, намиста.',
+        ] },
+        { title: 'PvP', list: [
+          'До 20: Defiance, Cold Shock, Elemental Fusion, Curse, Combustion; Earth Spirit і Dimensional Control — 16. Стигми: Ancient Spirit, Spirit\'s Benediction, Command: Proxy, Seize Magic (Corrode — проти лікування).',
+        ] },
+      ],
+      links: [['aion2-guides.info · Spiritmaster (Evripides, DankRNG, Grobs та ін.)', 'https://aion2-guides.info/uk/elementalist/']],
+    },
+    {
+      id: 'c-cleric', cls: 'Cleric', title: 'Клірик', tag: 'хілер, що б\'є · земля й блискавка',
+      intro: 'Хілер, зібраний на урон: [Chain of Torment|Chain of Torment] позначає ціль, [Condemnation|Condemnation] добиває, і кожен удар лікує групу. Нагороди залежать від внеску — бийте, а лікуйте тих, кого щойно вдарили або в кого мало HP.',
+      sections: [
+        { title: 'Вміння й рівні', list: [
+          'Основні: [Condemnation|Condemnation] 16 → 20, [Divine Aura|Divine Aura] 16 → 20, [Bolt|Bolt] 16 → 20, [Judgment Thunder|Judgment Thunder] 16, Lightning Strike Scattershot 16.',
+          'Альтернатива (Lucia): замість Divine Aura і Scattershot — Radiant Recovery і Chain of Torment. Лікувальні вміння — 16; Healing Light до 16 перед груповими підземеллями.',
+          'Прокачка: Earth\'s Retribution і Judgment Thunder з 1 рівня (режим цілі — базові атаки між вміннями дають MP); з 6 — Chain of Torment + Condemnation в одній лінії (Chain унизу); з 21 — Earth\'s Grace одразу до 10.',
+        ] },
+        { title: 'Спеціалізації', list: [
+          'Condemnation: до +12% урону по одній цілі, скидання відкату за крит, мультиудар на 20.',
+          'Bolt: +300 точності вміння, +30% швидкості, крит на 16 або 20. Divine Aura: швидкість атаки, −10 с, +3 с тривалості на 20.',
+          'Earth\'s Retribution: шанс Discharge і −7 с відкату Bolt за Discharge.',
+        ] },
+        { title: 'Стигми', list: [
+          '[Earth Punishment|Earth Punishment] 20 (Condemnation завжди критує по позначених), [Light of Protection|Light of Protection] 20 (перемикач: лікування, точність, HP, ідеальний удар групі), [Prayer of Amplification|Prayer of Amplification] 20, [Noble Aura|Noble Aura] 10.',
+          'З Чантером у групі: Light of Protection → Absolution. Пасивки: Empyrean Lord\'s Grace, Healing Enhancement, Earth\'s Grace; Radiant Benediction лікує поруч під час атак.',
+        ] },
+        { title: 'Ротація й макрос', list: [
+          'Вбудований макрос на ПКМ (2 кроки по 10 мс): лінія Prayer і лінія Divine Aura; Earth\'s Retribution — на ЛКМ, тримати.',
+          'Вручну: лінія дебафу на відкаті, лікування — на щойно вдареного, заряджений Bolt, Noble Aura на відкаті. Варіант Whelps: макрос тисне лінію Earth Punishment тричі на кожне натискання дебафу.',
+        ] },
+        { title: 'Даеваніон, аркана, спорядження', list: [
+          'Помаранчеві (відкати й швидкість) → атака й крит → сині (+1 рівень вміння) → захист.',
+          'Аркана: Chalice — Vigor (швидкість); Parchment — Destiny або Life; Compass — Death або Freedom; Bell — Destruction; Mirror — Wisdom або Illusion.',
+          'Рядки спорядження: Міць, швидкість бою, урон зброї, Точність; у PvE без опорів і захисту. Кільця — лише активні вміння. Для Лудри — щонайменше 1000 точності й 1000 криту.',
+        ] },
+        { title: 'PvP', list: [
+          'Earth\'s Retribution 20 ігнорує блок і ухилення; Chain of Torment — збивання, Debilitating Mark — стан. Стигми: Prayer of Amplification, Light of Protection, Yustiel\'s Power, Voice of Doom (у групі — Absolution).',
+        ] },
+      ],
+      links: [['aion2-guides.info · Cleric (Lucia, Whelps, Kaeria та ін.)', 'https://aion2-guides.info/uk/cleric/']],
+    },
+    {
+      id: 'c-chanter', cls: 'Chanter', title: 'Чантер', tag: 'ближній бій · баф групи · середня складність',
+      intro: 'Посох, найменший власний урон серед класів при рівному спорядженні, але найкращі бафи групі, виживання й зняття дебафів. Мантри — перемикачі: увімкнули один раз і забули.',
+      sections: [
+        { title: 'Вміння й рівні', list: [
+          'До 20: [Dark Crush|Dark Crush], [Onslaught|Onslaught], [Spinning Strike|Spinning Strike]; [Incandescent Blow|Incandescent Blow] 16; [Recuperation|Recuperation] 12. Спершу все ключове до 16 — 20 прийде з аркани.',
+          'Прокачка: Onslaught і Incandescent Blow першими; Impactful Crush відкриває Dark Crush; Rushing Smash до 12; Spinning Strike до 12 на 13 рівні.',
+        ] },
+        { title: 'Спеціалізації', table: { head: ['Вміння', 'Що брати'], rows: [
+          ['Dark Crush', '16 — без відкату · 20 — гарантований крит'],
+          ['Onslaught', '12 — −1 с Spinning Strike · 16 — ланцюг Storm Chain'],
+          ['Spinning Strike', '8 — −5 с · 16 — ігнор блоку/ухилення й крит'],
+          ['Incandescent Blow', '16 — ігнор блоку/ухилення, мультиудар'],
+          ['Recuperation', '12 — +5% HP · 16 — −3 с (якщо ви єдиний хілер)'],
+          ['Impactful Crush / Rushing Smash / Wave Blow', '+30% швидкості / скидання за вбивство / −урон боса на 10 с'],
+        ] } },
+        { title: 'Стигми й мантри', list: [
+          '[Undefeated Mantra|Undefeated Mantra] 20 — завжди першою (крит, точність, крит. урон, подвійний удар усій групі). [Power of the Storm|Power of the Storm] 5 → 20 (швидкість і відкати), [Marchutan\'s Wrath|Marchutan\'s Wrath] 1 (відкриває Dark Crush на 3 с), [Focused Defense|Focused Defense] 5.',
+          'Соло: Marchutan\'s Wrath, Fracturing Blow, Guardian Blessing. Група: Healing Touch, Impeding Authority, Power of the Storm.',
+          'Undefeated Mantra і Sprint Mantra — перемикачі: ніколи не кладіть їх у макрос, друге натискання їх вимкне.',
+        ] },
+        { title: 'Ротація й макрос', list: [
+          'Лінія Dark Crush (згори вниз): Impactful Crush, Marchutan\'s Wrath, Spinning Strike, Dark Crush; Incandescent Blow — окрема лінія-заповнювач; вбудований макрос — 2 кроки по 10 мс.',
+          'Onslaught — на ЛКМ; Recuperation і Wave Blow — вручну. Вікно Dark Crush: 2 с після Spinning Strike або Impactful Crush, 3 с після Marchutan\'s Wrath.',
+        ] },
+        { title: 'Даеваніон, аркана, спорядження', list: [
+          'Сині: Dark Crush, Onslaught, Spinning Strike, Incandescent Blow → Impactful Crush, Wave Blow, Defiance.',
+          'Аркана: Chalice (Time), Parchment (Life), Compass (Freedom) — Primal Vigor; Bell (Destruction) і Mirror (Wisdom) — Magic Armor. У середньому +2 до вміння.',
+          'Пасивки: Attack Preparation → Inspiring Spell → Wind\'s Promise → Impact Hit → Protection Circle. Кільця — єдине місце для активних вмінь (4–5 рядків). Точності на старті бракує — бийте боса зі спини.',
+        ] },
+        { title: 'PvP', list: [
+          'Ядро — Defiance: змусьте суперника витратити свій, і контролюйте його. Спеціалізації на шанс і тривалість стану (Impactful Crush, Wave Blow, Tremor Crush, Marchutan\'s Wrath); Defiance 8 — +10% HP, 12 — Crushing Strike зі станом.',
+        ] },
+      ],
+      links: [['aion2-guides.info · Chanter (Arthars Gaming, notXeon, WallyJTV, Grobs)', 'https://aion2-guides.info/uk/chanter/']],
+    },
+  ],
+
   /* Сервери Global: id = фракція (1 — Елійці, 2 — Асмодіани) · регіон · номер 01–50; назви однакові в усіх регіонах */
   servers: {
     regions: [
