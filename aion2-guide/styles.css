@@ -463,6 +463,14 @@ img.broken { visibility: hidden; }
 .g-acts { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
 .g-acts select { min-height: 36px; padding: 4px 8px; background: var(--bg-2); border: 1px solid var(--line); border-radius: var(--radius); color: var(--text); }
 
+/* ---------- Ariel board ---------- */
+.ariel-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 16px; margin-bottom: 12px; }
+.ariel-grid .h-card + .h-card, .ariel-grid ol + .h-card { margin-top: 14px; }
+.ariel-grid > .panel { margin: 0; }
+.ariel-order { margin: 0; padding-left: 22px; display: grid; gap: 8px; list-style: decimal; font-size: 13.5px; color: #c4c8d4; }
+.ariel-order li::marker { color: var(--gold); font-weight: 700; }
+@media (max-width: 900px) { .ariel-grid { grid-template-columns: 1fr; } }
+
 /* ---------- Thresholds timeline ---------- */
 .th-status { margin-bottom: 20px; color: var(--muted); }
 .th-status b { color: var(--gold); font-weight: 600; }
