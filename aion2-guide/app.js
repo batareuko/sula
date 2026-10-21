@@ -394,6 +394,25 @@
       $('systemsList').appendChild(el);
     });
 
+    if (G.ariel) {
+      var A = G.ariel;
+      $('arielLead').appendChild(rich(A.lead));
+      A.stats.forEach(function (s) {
+        $('arielStats').appendChild(h('div', null, h('b', { class: s.hot ? 'hot' : null, text: String(s.value) }), h('small', { text: s.label })));
+      });
+      A.gives.forEach(function (t) { $('arielGives').appendChild(h('li', null, rich(t))); });
+      A.sources.forEach(function (t) { $('arielSources').appendChild(h('li', null, rich(t))); });
+      $('arielWarn').appendChild(rich(A.warn));
+      A.order.forEach(function (t) { $('arielOrder').appendChild(h('li', null, rich(t))); });
+      A.tips.forEach(function (t) { $('arielTips').appendChild(h('li', null, rich(t))); });
+      var note = $('arielNote');
+      note.appendChild(document.createTextNode(A.note + ' Джерела: '));
+      A.links.forEach(function (l, i) {
+        if (i) note.appendChild(document.createTextNode(' · '));
+        note.appendChild(h('a', { href: l[1], target: '_blank', rel: 'noopener', text: l[0] }));
+      });
+    }
+
     G.energy.stats.forEach(function (s) {
       $('energyStats').appendChild(h('div', null, h('b', { class: s.hot ? 'hot' : null, text: String(s.value) }), h('small', { text: s.label })));
     });
