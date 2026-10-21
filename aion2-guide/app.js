@@ -3201,8 +3201,48 @@
   }
 
   /* ---------- Гайди: розгортані панелі з розділами-списками й таблицями (data.js → guides, classGuides) ---------- */
+  var ICON_CDN = 'https://assets.playnccdn.com/static-aion2-gamedata/resources/';
+  function skillIcon(cls, name, size) {
+    var file = cls && G.classIcons && G.classIcons[cls] && G.classIcons[cls][name];
+    return file ? h('img', { class: 'skill-ico', src: ICON_CDN + file + '.png', alt: '', width: size || 20, height: size || 20, loading: 'lazy' }) : null;
+  }
+  function emblem(cls, size) {
+    return h('img', { class: 'cls-emblem', src: 'img/classes/' + cls.toLowerCase() + '.png', alt: '', width: size, height: size });
+  }
+
+  /* «Скрін» панелі: лінії макросу з іконками вмінь (у лінії гри останній слот — найвищий пріоритет) */
+  function macroBar(g) {
+    var box = h('div', { class: 'macro' });
+    g.bar.forEach(function (line) {
+      var row = h('div', { class: 'macro-row' + (line.manual ? ' manual' : '') });
+      row.appendChild(h('span', { class: 'macro-label', text: line.label }));
+      var slots = h('div', { class: 'macro-slots' });
+      line.skills.forEach(function (name, i) {
+        if (i && line.seq) slots.appendChild(h('span', { class: 'macro-arrow', text: '›' }));
+        var last = !line.seq && !line.manual && i === line.skills.length - 1;
+        slots.appendChild(h('span', { class: 'macro-slot' + (last ? ' top' : ''), title: name + (last ? ' — найвищий пріоритет у лінії' : '') },
+          skillIcon(g.cls, name, 40) || h('span', { class: 'skill-ph', text: name.slice(0, 2) }), h('small', { text: name })));
+      });
+      row.appendChild(slots);
+      box.appendChild(row);
+    });
+    box.appendChild(h('p', { class: 'muted small', text: 'Лінія макросу гри виконує перше готове вміння з кінця: останній слот (з золотою рамкою) — найвищий пріоритет. Стрілки › — порядок натискань.' }));
+    return box;
+  }
+
+  /* Іконки біля назв вмінь у тексті й таблицях гайду класу */
+  function decorateSkills(root, cls) {
+    if (!cls || !G.classIcons || !G.classIcons[cls]) return;
+    root.querySelectorAll('span.term[lang="en"], td:first-child').forEach(function (el) {
+      if (el.querySelector('.skill-ico')) return;
+      var ico = skillIcon(cls, el.textContent.trim(), 20);
+      if (ico) el.insertBefore(ico, el.firstChild);
+    });
+  }
+
   function guidePanel(g, open) {
     var body = h('div', { class: 'guide-body' }, h('p', { class: 'muted lead' }, rich(g.intro)));
+    if (g.bar) body.appendChild(macroBar(g));
     g.sections.forEach(function (sec) {
       var inner;
       if (sec.table) {
@@ -3232,8 +3272,9 @@
       });
       body.appendChild(src);
     }
+    decorateSkills(body, g.cls);
     return h('details', { class: 'panel guide', id: g.id, open: open ? '' : null },
-      h('summary', null, h('span', { class: 'h-card' }, rich(g.title)), h('span', { class: 'muted small', text: ' · ' + g.tag })), body);
+      h('summary', null, g.cls ? emblem(g.cls, 30) : null, h('span', { class: 'h-card' }, rich(g.title)), h('span', { class: 'muted small', text: ' · ' + g.tag })), body);
   }
 
   /* Гайди по класах: вкладки; спершу клас прив'язаного персонажа, далі — останній відкритий */
@@ -3246,8 +3287,8 @@
       pick = id;
       $('classTabs').textContent = '';
       list.forEach(function (g) {
-        $('classTabs').appendChild(h('button', { class: 'tab', type: 'button', role: 'tab', 'aria-selected': String(g.id === id), text: g.title,
-          onclick: function () { prefSet('classGuide', g.id); show(g.id); } }));
+        $('classTabs').appendChild(h('button', { class: 'tab cls-tab', type: 'button', role: 'tab', 'aria-selected': String(g.id === id),
+          onclick: function () { prefSet('classGuide', g.id); show(g.id); } }, emblem(g.cls, 22), g.title));
       });
       var g = list.filter(function (x) { return x.id === id; })[0] || list[0];
       $('classGuide').textContent = '';
