@@ -3195,6 +3195,132 @@
     });
   }
 
+  /* ---------- Сервери: техобслуговування з оголошення + чи приймає з'єднання ігровий шлюз Європи ---------- */
+  var srv = { data: null, phase: '', err: '', region: prefGet('srvRegion', 0), faction: prefGet('srvFaction', 0), watch: prefGet('srvWatch', []) };
+
+  function srvMine() {
+    var p = active(), sid = p && p.character && +p.character.sid;
+    return sid >= 1000 ? sid : 0;
+  }
+
+  /* Фаза статусу: planned — роботи попереду; maint — триває; late — мали закінчитися, шлюз ще мовчить; online; down */
+  function srvPhase(now) {
+    var d = srv.data, m = d && d.maintenance, eu = d && d.regions && d.regions.EU;
+    if (!d) return { phase: '', title: 'Статус невідомий', text: srv.err || 'Завантажую…' };
+    var up = eu ? eu.up : null;
+    var t = function (ms) { return new Date(ms).toLocaleString('uk-UA', { weekday: 'short', day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' }); };
+    var hm = function (ms) { return new Date(ms).toLocaleTimeString('uk-UA', { hour: '2-digit', minute: '2-digit' }); };
+    var gw = up === true ? 'Шлюз Європи приймає з\'єднання' + (eu.ms != null ? ' (' + eu.ms + ' мс)' : '') + '.' : up === false ? 'Шлюз Європи не відповідає.' : '';
+    if (m) {
+      var start = Date.parse(m.start), end = Date.parse(m.end);
+      if (now < start) return { phase: 'planned', title: 'Онлайн', text: 'Заплановано техобслуговування: ' + t(start) + ' – ' + hm(end) + ' (' + timeLeft(end - start) + '). ' + gw, link: m.id };
+      var back = up === true && now > start + 10 * 60000;
+      if (now < start + 30 * 3600000 && !back && !m.completed) {
+        if (now < end) return { phase: 'maint', title: 'Техобслуговування', text: 'Орієнтовно до ' + hm(end) + ' — ще ' + timeLeft(end - now) + '. ' + gw, link: m.id };
+        if (up !== true) return { phase: 'late', title: 'Мали відкритися о ' + hm(end), text: 'Чекаємо, поки шлюз почне приймати з\'єднання (у Європі). Оголошення може бути продовжено. ' + gw, link: m.id };
+      }
+      if (now < start + 30 * 3600000) return { phase: 'online', title: 'Онлайн', text: 'Техобслуговування ' + t(start) + ' завершено. ' + gw, link: m.id };
+    }
+    if (up === false) return { phase: 'online', title: 'Онлайн (за оголошеннями)', text: 'Техобслуговування не оголошено, але шлюз Європи зараз не відповідає на перевірку. Якщо не вдається зайти — можливий збій, дивіться офіційні оголошення.' };
+    return { phase: 'online', title: 'Онлайн', text: 'Планових робіт не оголошено. ' + gw };
+  }
+
+  function srvNotify(title, body) {
+    toast(title + ' — ' + body);
+    try { if (window.Notification && Notification.permission === 'granted') new Notification(title, { body: body, icon: 'favicon.svg' }); } catch (e) { /* ігноруємо */ }
+  }
+
+  function renderServers() {
+    var S = G.servers, now = Date.now(), st = srvPhase(now);
+    // перехід «не було онлайн» → «онлайн»: сповіщення для тих, хто стежить
+    var wasDown = srv.phase === 'maint' || srv.phase === 'late' || srv.phase === 'down';
+    if (wasDown && st.phase === 'online') {
+      if (prefGet('srvNotify', false)) srvNotify('Aion 2: сервери онлайн', 'Техобслуговування завершено, можна заходити.');
+      var mine = srv.watch.filter(function (id) { return Math.floor(id / 100) % 10 === 3; });
+      if (mine.length) srvNotify('Aion 2: ' + mine.map(srvName).join(', '), 'Сервер знову онлайн.');
+    }
+    if (st.phase) srv.phase = st.phase;
+
+    var box = $('srvStatus');
+    box.className = 'panel srv-status ' + (st.phase || '');
+    box.textContent = '';
+    var info = h('div', null, h('b', { text: st.title }), h('p', { class: 'muted', text: st.text }));
+    if (st.link) info.appendChild(h('a', { href: NEWS_URL.notice + st.link, target: '_blank', rel: 'noopener', class: 'small', text: 'Офіційне оголошення ↗' }));
+    box.append(h('span', { class: 'srv-dot' }), info);
+
+    var nb = $('srvNotify'), on = !!prefGet('srvNotify', false);
+    nb.classList.toggle('on', on);
+    nb.textContent = on ? '🔔 Сповіщу, коли сервери відкриються' : '🔕 Сповістити, коли сервери відкриються';
+
+    var region = S.regions[srv.region] || S.regions[2], fac = srv.faction;
+    $('srvRegions').textContent = '';
+    S.regions.forEach(function (r, i) {
+      $('srvRegions').appendChild(h('button', { class: 'tab', type: 'button', role: 'tab', 'aria-selected': String(r === region), text: r.short,
+        title: r.name, onclick: function () { srv.region = i; prefSet('srvRegion', i); renderServers(); } }));
+    });
+    $('srvFactions').textContent = '';
+    ['Елійці', 'Асмодіани'].forEach(function (n, i) {
+      $('srvFactions').appendChild(h('button', { class: 'tab', type: 'button', role: 'tab', 'aria-selected': String(fac === i), text: n,
+        onclick: function () { srv.faction = i; prefSet('srvFaction', i); renderServers(); } }));
+    });
+    var names = fac === 0 ? S.elyos : S.asmodians, mineId = srvMine();
+    var live = region.short === 'EU' ? st.phase : (st.phase === 'maint' || st.phase === 'late' ? st.phase : '');
+    var grid = $('srvGrid');
+    grid.textContent = '';
+    names.forEach(function (name, i) {
+      var id = (fac + 1) * 1000 + region.id * 100 + i + 1;
+      var watched = srv.watch.indexOf(id) >= 0;
+      var cls = 'srv' + (live === 'online' || live === 'planned' ? ' live' : '') + (id === mineId ? ' mine' : '') + (watched ? ' watch' : '');
+      var sub = id === mineId ? 'ваш сервер' : live === 'maint' ? 'техобслуговування' : live === 'online' || live === 'planned' ? 'онлайн' : region.short === 'EU' ? 'недоступний' : 'за оголошенням';
+      grid.appendChild(h('button', { class: cls, type: 'button', title: watched ? 'Не стежити' : 'Стежити: сповіщення, коли сервер знову онлайн',
+        onclick: function () { srvToggleWatch(id); } }, h('b', null, h('i'), name), h('small', { text: sub })));
+    });
+  }
+
+  function srvName(id) {
+    var S = G.servers, names = Math.floor(id / 1000) === 1 ? S.elyos : S.asmodians;
+    return (names[id % 100 - 1] || '#' + id) + ' (' + ((S.regions.filter(function (r) { return r.id === Math.floor(id / 100) % 10; })[0] || {}).short || '?') + ')';
+  }
+
+  function srvAskPermission() {
+    try { if (window.Notification && Notification.permission === 'default') Notification.requestPermission(); } catch (e) { /* ігноруємо */ }
+  }
+
+  function srvToggleWatch(id) {
+    var i = srv.watch.indexOf(id);
+    if (i >= 0) srv.watch.splice(i, 1); else { srv.watch.push(id); srvAskPermission(); }
+    prefSet('srvWatch', srv.watch);
+    toast(i >= 0 ? 'Більше не стежу за ' + srvName(id) : 'Сповіщу, коли ' + srvName(id) + ' буде онлайн' + (Math.floor(id / 100) % 10 === 3 ? '' : ' (для цього регіону — за оголошенням)'));
+    renderServers();
+  }
+
+  function loadServers() {
+    if (!(Cloud && Cloud.enabled && Cloud.ready)) return;
+    Cloud.lookup({ servers: 'status' }).then(function (d) { srv.data = d; srv.err = ''; })
+      .catch(function () { srv.err = 'Не вдалося отримати статус. Спробую ще раз за хвилину.'; })
+      .then(renderServers);
+  }
+
+  function initServers() {
+    var mine = srvMine();
+    if (mine && prefGet('srvRegion', null) === null) {
+      srv.region = Math.max(0, G.servers.regions.findIndex(function (r) { return r.id === Math.floor(mine / 100) % 10; }));
+      srv.faction = Math.floor(mine / 1000) === 1 ? 0 : 1;
+    } else if (prefGet('srvRegion', null) === null) srv.region = 2;
+    $('srvNotify').addEventListener('click', function () {
+      var on = !prefGet('srvNotify', false);
+      prefSet('srvNotify', on);
+      if (on) srvAskPermission();
+      toast(on ? 'Сповіщу, коли сервери відкриються (поки сторінка відкрита)' : 'Сповіщення вимкнено');
+      renderServers();
+    });
+    renderServers();
+    var tries = 0, wait = setInterval(function () {
+      if (Cloud && Cloud.ready) { clearInterval(wait); loadServers(); } else if (++tries > 30) clearInterval(wait);
+    }, 1000);
+    setInterval(loadServers, 60000);
+  }
+
   /* ---------- Старт ---------- */
   buildStatic();
   renderResetInfo();
@@ -3208,6 +3334,7 @@
   initGlossary();
   initPatches();
   initPatchOpen();
+  initServers();
   initDps();
   $('netcheckCopy').addEventListener('click', function () { copyText($('netcheckCmd').textContent, 'Команду скопійовано: вставте її в PowerShell'); });
   initMeter();

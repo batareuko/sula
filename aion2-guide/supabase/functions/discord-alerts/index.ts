@@ -14,6 +14,9 @@
 //                           порожньо — відмітки всіх серверів
 //   ALERT_RIFT            — '1' сповіщати про Розлом, '0' ні (за замовчуванням 1)
 //   ALERT_GROUP_LEAD_MIN  — за скільки хвилин нагадати про збір групи (за замовчуванням 15)
+//   ALERT_SERVERS         — '1' сповіщати про техобслуговування серверів і про те, що вони знову онлайн, '0' ні
+//                           (за замовчуванням 1); час — з офіційного оголошення, «онлайн» — ігровий шлюз Європи знову
+//                           приймає з'єднання (функція aion-lookup, servers: 'status')
 //   SITE_URL              — посилання в повідомленнях (за замовчуванням https://guide.sulaslova.com/)
 // SUPABASE_URL і SUPABASE_SERVICE_ROLE_KEY Supabase додає сам.
 
@@ -29,6 +32,7 @@ const SERVER_ID = Number(Deno.env.get('ALERT_SERVER_ID') ?? 0) || 0;
 const RIFT = (Deno.env.get('ALERT_RIFT') ?? '1') === '1';
 const GROUP_LEAD_MIN = Number(Deno.env.get('ALERT_GROUP_LEAD_MIN') ?? 15);
 const SITE = Deno.env.get('SITE_URL') ?? 'https://guide.sulaslova.com/';
+const SERVERS = (Deno.env.get('ALERT_SERVERS') ?? '1') === '1';
 
 /* Розлом: кожні 3 год від 00:00 UTC (як на сайті, data.js → rift) */
 const RIFT_EVERY_MS = 3 * 3600_000;
@@ -176,6 +180,37 @@ export async function collect(now: number, kills: any[], groups: any[], opts = {
   return out;
 }
 
+type Maintenance = { id: string; start: string; end: string; completed?: boolean } | null;
+
+/**
+ * Техобслуговування серверів: одне повідомлення, коли воно почалося (з орієнтовним кінцем з оголошення), і одне,
+ * коли сервери знову онлайн — щойно ігровий шлюз Європи знову приймає з'єднання (або оголошення позначене завершеним).
+ */
+export function serverAlerts(now: number, maint: Maintenance, euUp: boolean | null) {
+  const out: { key: string; text: string; ping?: boolean }[] = [];
+  if (!maint) return out;
+  const start = Date.parse(maint.start), end = Date.parse(maint.end);
+  if (!start || !end || now < start || now > start + 30 * 3600_000) return out;
+  // перші хвилини після початку шлюз ще може відповідати: «онлайн» рахуємо лише через 10 хв
+  const back = euUp === true && now > start + 10 * 60_000;
+  if (!back && !maint.completed && now < end) {
+    out.push({ key: `maint-start:${maint.id}`,
+      text: `🔧 Почалося техобслуговування серверів Aion 2 Global — орієнтовно до ${when(end)}. Напишу тут, коли сервери відкриються. ${SITE}#servers` });
+  }
+  if (back) out.push({ key: `maint-online:${maint.id}`, text: `🟢 Сервери Aion 2 знову онлайн — європейський ігровий шлюз приймає з'єднання (${when(now)}).` });
+  else if (maint.completed) out.push({ key: `maint-online:${maint.id}`, text: '🟢 Техобслуговування серверів Aion 2 завершено (офіційне оголошення) — можна заходити.' });
+  return out;
+}
+
+async function serverStatus(): Promise<{ maintenance: Maintenance; regions?: Record<string, { up: boolean }> } | null> {
+  const res = await fetch(`${SUPABASE_URL}/functions/v1/aion-lookup`, {
+    method: 'POST',
+    headers: { Authorization: `Bearer ${SERVICE_KEY}`, apikey: SERVICE_KEY, 'Content-Type': 'application/json' },
+    body: JSON.stringify({ servers: 'status' }),
+  });
+  return res.ok ? await res.json() : null;
+}
+
 export async function handler(_req: Request): Promise<Response> {
   if (!WEBHOOK || !SUPABASE_URL || !SERVICE_KEY) return Response.json({ error: 'not_configured' }, { status: 500 });
   const now = Date.now();
@@ -187,7 +222,16 @@ export async function handler(_req: Request): Promise<Response> {
       rest(`groups?select=id,activity,starts_at,size,note,created_name,created_at,group_members(name,role)&starts_at=gte.${encodeURIComponent(new Date(now).toISOString())}&starts_at=lte.${encodeURIComponent(new Date(now + 7 * 86400_000).toISOString())}`),
     ]);
     let sent = 0;
-    for (const a of await collect(now, kills ?? [], groups ?? [])) {
+    const alerts = await collect(now, kills ?? [], groups ?? []);
+    if (SERVERS) {
+      try {
+        const st = await serverStatus();
+        if (st) alerts.push(...serverAlerts(now, st.maintenance, st.regions?.EU?.up ?? null));
+      } catch (e) {
+        console.error('servers', e); // статус серверів не має зупиняти інші сповіщення
+      }
+    }
+    for (const a of alerts) {
       if (await claim(a.key)) { await post(a.text, a.ping); sent++; }
     }
     // прибираємо старі ключі
