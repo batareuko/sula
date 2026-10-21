@@ -566,6 +566,16 @@ window.GUIDE = {
   reset: { utcHour: 7, weeklyDay: 3 },
   prioritiesNote: 'Пороги [випробувань|Ascension Trial]: 1000 / 1500 / 2000 / 2500. Якщо плануєте підняти бойову міць, збережіть щотижневі входи на пізніші дні тижня.',
 
+  /* Сервери Global: id = фракція (1 — Елійці, 2 — Асмодіани) · регіон · номер 01–50; назви однакові в усіх регіонах */
+  servers: {
+    regions: [
+      { id: 1, name: 'Америка (Схід)', short: 'NA-E' }, { id: 2, name: 'Америка (Захід)', short: 'NA-W' },
+      { id: 3, name: 'Європа', short: 'EU' }, { id: 4, name: 'Пд. Америка', short: 'SA' }, { id: 5, name: 'Азія', short: 'Asia' },
+    ],
+    elyos: ["Siel", "Nezekan", "Vaizel", "Kaisinel", "Yustiel", "Ariel", "Fregion", "Meslamtaeda", "Hithanya", "Nania", "Tahabata", "Luteros", "Phernos", "Daminu", "Kasika", "Bakarma", "Tsenka", "Kochi", "Ishtar", "Tiamat", "Poeta", "Verteron", "Nathara", "Talisra", "Zumion", "Nahid", "Asahr", "Caelid", "Laveis", "Perion", "Dramata", "Reda", "Auldor", "Vakron", "Narun", "Gartua", "Chloris", "Ione", "Teina", "Dymones", "Bargott", "Atheron", "Ruthilis", "Siliator", "Idris", "Satia", "Estian", "Rahu", "Rhanman", "Hebran"],
+    asmodians: ["Israphel", "Zikel", "Triniel", "Lumiel", "Marchutan", "Azphel", "Ereshkigal", "Beritra", "Nemon", "Hadala", "Ludra", "Ulgorn", "Munin", "Odar", "Zemurru", "Kromede", "Quai", "Baba", "Fafnir", "Indnath", "Ishalgen", "Altgard", "Agnita", "Atiel", "Valdemar", "Lagta", "Gerod", "Urd", "Ecco", "Giselle", "Kashapa", "Stof", "Berk", "Nuakum", "Grisilla", "Santras", "Reuben", "Hugo", "Kraki", "Hystan", "Rathman", "Sigebert", "Nazmun", "Gelcos", "Paton", "Pelleir", "Elvida", "Ketu", "Pydeon", "Notun"],
+  },
+
   /* Дошка Даеваніона «Аріель» (PvE). Числа — з англомовних гайдів (частково з тайванського клієнта), див. sources. */
   ariel: {
     lead: '[Аріель|Ariel] — PvE-дошка Даеваніона: урон і захист проти монстрів і босів. У неї власні очки (звичайні очки Даеваніона її не прокачують), відкривається на 45 рівні. У Global її додали 21 жовтня разом з важким режимом Експедицій. Пара до неї — [Азфель|Azphel]: те саме, але для PvP.',

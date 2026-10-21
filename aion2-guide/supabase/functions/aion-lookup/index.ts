@@ -12,6 +12,11 @@
 // Новини з офіційного сайту (пачноути й оголошення англійською):
 // POST { news: 'list' }                       -> { updates: [...], notices: [...] }
 // POST { news: 'article', board, id }         -> { article: { id, title, at, lines } }
+// POST { news: 'maintenance' }                -> { maintenance: { id, title, completed, start, end } | null }
+//      найсвіжіше (за 4 дні) оголошення про техобслуговування ігрових серверів, з часом початку й кінця (UTC)
+// POST { servers: 'status' }                  -> { maintenance, regions: { EU: { up, ms, at } } }
+//      чи приймає ігровий шлюз регіону з'єднання (лише TCP-рукостискання на ігровий порт, раз на хвилину, без
+//      жодних даних гри) — так само перевіряють статус сайти-трекери; офіційного API статусу в NCSOFT немає
 // Білди вмінь з questlog.gg (публічні білди гравців і NCSOFT; сайт без CORS, тому через цю функцію):
 // POST { ql: 'search', classId, page?, q? }   -> { total, pages, builds: [...] }
 // POST { ql: 'build', slug, id }              -> { build }
@@ -270,7 +275,86 @@ function htmlLines(html: string): string[] {
     .split('\n').map((l) => l.trim()).filter(Boolean).slice(0, 300).map((l) => l.slice(0, 600));
 }
 
+const MONTHS = ['jan', 'feb', 'mar', 'apr', 'may', 'jun', 'jul', 'aug', 'sep', 'oct', 'nov', 'dec'];
+const TZ: Record<string, number> = { PDT: -7, PST: -8, CEST: 2, CET: 1 };
+
+/**
+ * Оголошення про техобслуговування → початок і кінець (UTC, ISO). Беремо «When: October 20, 2026 at 23h30 PDT / …»
+ * і «Duration: 5.5 hours»; якщо далі написано про продовження («extended … 14h00 CEST»), кінець — цей час.
+ */
+export function parseMaintenance(lines: string[]): { start: string; end: string } | null {
+  const text = lines.join('\n');
+  const m = text.match(/([A-Z][a-z]+)\.?\s+(\d{1,2}),?\s+(\d{4}),?\s+at\s+(\d{1,2})\s*[h:]\s*(\d{2})\s*(PDT|PST|CEST|CET)/i);
+  if (!m) return null;
+  const mon = MONTHS.indexOf(m[1].slice(0, 3).toLowerCase());
+  const off = TZ[m[6].toUpperCase()];
+  if (mon < 0 || off === undefined) return null;
+  const start = Date.UTC(+m[3], mon, +m[2], +m[4] - off, +m[5]);
+  const d = text.match(/Duration:\s*([\d.,]+)\s*h(?:ou)?rs?(?:\s*(?:and\s*)?(\d+)\s*min)?/i);
+  let end = d ? start + (parseFloat(d[1].replace(',', '.')) * 60 + (d[2] ? +d[2] : 0)) * 60_000 : NaN;
+  const ext = text.search(/extend/i);
+  if (ext >= 0) {
+    const t = [...text.slice(ext).matchAll(/(\d{1,2})\s*[h:]\s*(\d{2})\s*(CEST|CET|PDT|PST)/gi)].pop();
+    if (t) {
+      // той самий день, що й початок (у часовому поясі нового часу); якщо вийшло раніше початку — наступний день
+      const o = TZ[t[3].toUpperCase()];
+      const day = new Date(start + o * 3600_000);
+      let e = Date.UTC(day.getUTCFullYear(), day.getUTCMonth(), day.getUTCDate(), +t[1] - o, +t[2]);
+      if (e <= start) e += 86_400_000;
+      end = e;
+    }
+  }
+  if (!Number.isFinite(end) || end <= start || end - start > 48 * 3600_000) return null;
+  return { start: new Date(start).toISOString(), end: new Date(end).toISOString() };
+}
+
+// ----- статус серверів: шлюзи регіонів (адреси, які бачить клієнт гри; порт гри 13328) -----
+const GATEWAYS: Record<string, string[]> = { EU: ['193.202.112.138', '193.202.112.102'] };
+const GAME_PORT = 13328;
+let probeCache: { t: number; v: Record<string, { up: boolean; ms: number | null; at: string }> } | null = null;
+
+async function probe(host: string): Promise<number | null> {
+  const t0 = Date.now();
+  let timer: number | undefined;
+  try {
+    const conn = await Promise.race([
+      Deno.connect({ hostname: host, port: GAME_PORT }),
+      new Promise<never>((_, reject) => { timer = setTimeout(() => reject(new Error('timeout')), 4000); }),
+    ]);
+    conn.close();
+    return Date.now() - t0;
+  } catch {
+    return null;
+  } finally {
+    clearTimeout(timer);
+  }
+}
+
+async function regions() {
+  if (probeCache && Date.now() - probeCache.t < 60_000) return probeCache.v;
+  const v: Record<string, { up: boolean; ms: number | null; at: string }> = {};
+  for (const [region, hosts] of Object.entries(GATEWAYS)) {
+    const times = await Promise.all(hosts.map(probe));
+    const ok = times.filter((x): x is number => x !== null);
+    v[region] = { up: ok.length > 0, ms: ok.length ? Math.min(...ok) : null, at: new Date().toISOString() };
+  }
+  probeCache = { t: Date.now(), v };
+  return v;
+}
+
 const news = {
+  /** Найсвіжіше оголошення про техобслуговування ігрових серверів (за 4 дні) з його часом, або null */
+  maintenance() {
+    return cached('n:maint', async () => {
+      const { notices } = await news.list();
+      const n = (notices as any[]).find((x) => /maintenance/i.test(x.title) && !/platform|web|launcher/i.test(x.title) &&
+        Date.now() - Date.parse(x.at) < 4 * 86_400_000);
+      if (!n) return null;
+      const a = await news.article('notice', n.id).catch(() => null);
+      const t = a ? parseMaintenance(a.lines) : null;
+      return t ? { id: n.id, title: n.title, completed: /completed|finished|ended/i.test(n.title), ...t } : null;
+    });
+  },
   list() {
     return cached('n:list', async () => {
       const [u, n] = await Promise.all(['update', 'notice'].map((b) =>
@@ -309,8 +393,14 @@ export async function handler(req: Request): Promise<Response> {
   try { body = await req.json(); } catch { return json({ error: 'bad_request' }, 400); }
 
   try {
+    if (body.servers === 'status') {
+      const [maintenance, reg] = await Promise.all([news.maintenance().catch(() => null), regions()]);
+      return json({ maintenance, regions: reg });
+    }
+
     if (body.news) {
       if (body.news === 'list') return json(await news.list());
+      if (body.news === 'maintenance') return json({ maintenance: await news.maintenance() });
       const board = String(body.board ?? ''), id = String(body.id ?? '');
       if (body.news !== 'article' || !NEWS_BOARDS[board] || !/^[a-f0-9]{24}$/.test(id)) return json({ error: 'bad_request' }, 400);
       const article = await news.article(board, id);
