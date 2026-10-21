@@ -536,6 +536,15 @@ img.broken { visibility: hidden; }
 .skill-ph.sm { width: 22px; height: 22px; font-size: 10px; display: grid; place-items: center; background: #252b3a; border-radius: 4px; }
 @media (max-width: 900px) { .cvis-2 { grid-template-columns: 1fr; } .vboards { grid-template-columns: repeat(3, minmax(0, 1fr)); } .varcana { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
 
+/* ---------- Event strip ---------- */
+.ev-strip { display: flex; flex-wrap: wrap; gap: 8px 18px; padding: 10px 16px; margin-bottom: 14px; border-radius: var(--radius);
+            background: linear-gradient(90deg, rgba(40,14,14,.9), rgba(14,19,32,.9)); border: 1px solid var(--line); }
+.ev { display: inline-grid; grid-template-columns: 20px auto; grid-template-rows: auto auto; column-gap: 7px; align-items: center; }
+.ev svg { grid-row: 1 / 3; filter: drop-shadow(0 1px 2px rgba(0,0,0,.7)); }
+.ev b { font: 700 15px var(--font-mono); font-variant-numeric: tabular-nums; color: #E4EAF4; }
+.ev small { font-size: 10.5px; color: var(--muted); line-height: 1.1; }
+.ev.on b { color: var(--green); }
+
 /* ---------- Servers ---------- */
 .srv-status { display: flex; align-items: center; gap: 16px; flex-wrap: wrap; margin-bottom: 14px; }
 .srv-status .srv-dot { width: 14px; height: 14px; border-radius: 50%; background: var(--muted); flex: none; }
