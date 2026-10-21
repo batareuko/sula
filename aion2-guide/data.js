@@ -82,11 +82,14 @@ window.GUIDE = {
     },
     {
       id: 's6', num: '06', from: 2500, range: ['2500', '2800+'], title: 'Підготовка до рейду',
-      badge: 'Підготовка до ендгейму', badgeHot: true,
+      badge: 'Hard на 2600', badgeHot: true,
       items: [
         'Відполіруйте постійні системи та ключові віхи покращення.',
         'Підсильте найкраще спорядження, Аркану та крафтові предмети.',
         'Використовуйте вищі рівні [Випробування Вознесіння|Ascension Trial], коли це реально.',
+        'На 2600 відкривається [важкий режим Експедицій|Expedition (Hard)]: [Печера Крау|Krao Cave] і [Драупнір|Draupnir]. [Лють|Frenzy] боса через 4 хв, 3 воскресіння на гравця — ідіть групою, яка вбиває боса на звичайному [Підкоренні|Conquest] помітно швидше за 4 хв.',
+        'Hard дає [Філософський камінь: Одкровення|Philosopher\'s Stone: Revelation] (можна обрати гарантовано), [Уламки Аріель|Ariel Fragment] для нової дошки Даеваніона та всі унікальні матеріали ремесла.',
+        'Беріть із собою [Камені Воскресіння|Resurrection Spiritstone]: пакети по 30 за кінари щотижня (до 16.12).',
         'Ціль — поширений поріг входу в [рейд Лудри|Ludra raid]: ≈2800 бойової міці.',
       ],
     },
@@ -104,6 +107,10 @@ window.GUIDE = {
     },
     { title: '[Амулет Одкровення|Revelation Amulet]', text: 'Покращується прогресом [Моноліту|Monolith] / пер.' },
     { title: '[Амулет Лютого Бою|Fierce Battle Amulet]', text: 'Пізніший PvP-амулет із [Магазину Безодні|Abyss Shop].' },
+    {
+      title: '[Дошка Даеваніона «Аріель»|Ariel Daevanion Board]',
+      text: 'Нова дошка (з 21.10). Очки дають [Кристали Даеваніона: Аріель|Daevanion Crystal: Ariel]: 100 [Уламків Аріель|Ariel Fragment] з Експедицій (Hard) → 1 кристал у [морфі|Substance Morph] (Special → Daevanion), до 30 на персонажа й з лімітом на кожне підземелля — ходіть і в Крау, і в Драупнір. Зайві уламки: 1 → 5 [Каменів Покращення|Enhance Stones] без ліміту (Special → Consumables).',
+    },
     {
       title: '[Руни Зіткнення|Clash Runes]',
       text: 'Екіпіруйте обидві. Безпечна ціль на початку — низьке покращення, бо руни можуть зламатися.',
@@ -547,7 +554,7 @@ window.GUIDE = {
 
   /* Активності для збору групи */
   groupActivities: [
-    'Krao Cave', 'Draupnir', 'Urugugu Canyon', 'Vakron Sky Island', 'Fire Temple', 'Ferocious Horn Den',
+    'Krao Cave', 'Draupnir', 'Krao Cave (Hard)', 'Draupnir (Hard)', 'Urugugu Canyon', 'Vakron Sky Island', 'Fire Temple', 'Ferocious Horn Den',
     'Transcendence', 'Ascension Trial', 'Nightmare', 'Ludra raid', 'Spacetime Rift', 'Field Boss', 'Abyss',
   ],
   groupRoles: [
@@ -569,6 +576,7 @@ window.GUIDE = {
     { cp: 2000, text: 'Випробування Вознесіння (Складне)' },
     { cp: 2100, text: '[Вогненний храм|Fire Temple] + [Лігво Лютого Рогу|Ferocious Horn Den]' },
     { cp: 2500, text: 'Випробування Вознесіння (Виклик)' },
+    { cp: 2600, text: '[Експедиції Hard|Expedition (Hard)]: Крау + Драупнір' },
     { cp: 2800, text: '[Рейд Лудри|Ludra raid]', final: true },
   ],
 
@@ -582,6 +590,9 @@ window.GUIDE = {
       ['Очки / дошки Даеваніона', 'Daevanion points / Daevanion Boards'],
       ['Камені Мудрості', 'Wisdom Stones'],
       ['Камені Покращення', 'Enhance Stones'],
+      ['Уламки Аріель / Кристал Даеваніона: Аріель', 'Ariel Fragment / Daevanion Crystal: Ariel'],
+      ['Філософський камінь: Одкровення', "Philosopher's Stone: Revelation"],
+      ['Камінь Воскресіння', 'Resurrection Spiritstone'],
       ['Кіна', 'Kinah'],
       ['Очки Безодні', 'Abyss Points'],
     ] },
@@ -611,6 +622,8 @@ window.GUIDE = {
       ['Експедиції (підземелля на 5 гравців)', 'Expeditions'],
       ['Дослідження (легший режим)', 'Exploration'],
       ['Підкорення (звичайний режим)', 'Conquest'],
+      ['Важкий режим Експедицій (з 2600)', 'Expedition (Hard)'],
+      ['Лють боса (таймер)', 'Frenzy'],
       ['Печера Крау', 'Krao Cave'],
       ['Драупнір', 'Draupnir'],
       ['Каньйон Урюгю', 'Urugugu Canyon'],
