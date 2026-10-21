@@ -466,7 +466,7 @@ img.broken { visibility: hidden; }
 /* ---------- Thresholds timeline ---------- */
 .th-status { margin-bottom: 20px; color: var(--muted); }
 .th-status b { color: var(--gold); font-weight: 600; }
-.timeline { display: grid; grid-template-columns: repeat(10, minmax(0, 1fr)); gap: 8px; position: relative; }
+.timeline { display: grid; grid-template-columns: repeat(11, minmax(0, 1fr)); gap: 8px; position: relative; }
 .timeline::before { content: ""; position: absolute; left: 4px; right: 4px; top: 5px; height: 1px; background: var(--line); }
 .timeline li { position: relative; padding-top: 22px; }
 .timeline li::before {
@@ -476,7 +476,7 @@ img.broken { visibility: hidden; }
 .timeline li.reached::before { background: var(--green); border-color: var(--green); }
 .timeline li.final::before { border-color: var(--gold); }
 .timeline li.final.reached::before { background: var(--gold); }
-.timeline b { display: block; font: 600 30px/1 var(--font-head); }
+.timeline b { display: block; font: 600 28px/1 var(--font-head); }
 .timeline li.final b { color: var(--gold); }
 .timeline li:not(.reached) b { color: #aab0c0; }
 .timeline small { display: block; margin-top: 4px; font-size: 12px; line-height: 1.35; color: var(--muted); }
