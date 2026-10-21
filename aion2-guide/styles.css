@@ -491,6 +491,51 @@ img.broken { visibility: hidden; }
 .macro-arrow { align-self: center; margin-top: -14px; color: var(--gold); font-size: 20px; }
 @media (max-width: 600px) { .macro-row { grid-template-columns: 1fr; gap: 6px; } .macro-slot { width: 64px; } }
 
+.macro-key { display: block; margin-top: 3px; font: 500 10.5px var(--font-mono); letter-spacing: 0; text-transform: none; color: #c4c8d4;
+             background: #252b3a; border: 1px solid var(--line); border-radius: 5px; padding: 1px 6px; width: fit-content; }
+.cvis { display: grid; gap: 14px; margin-bottom: 14px; }
+.cvis-2 { display: grid; grid-template-columns: 1.1fr 1fr; gap: 14px; }
+.vblock { background: var(--bg-2); border: 1px solid var(--line); border-radius: var(--radius); padding: 12px 14px; }
+.guide-body > .vblock { margin-bottom: 14px; }
+.vblock .macro { border: 0; padding: 0; margin: 0; background: none; }
+.vblock-title { font: 600 12px var(--font-mono); letter-spacing: .12em; text-transform: uppercase; color: var(--gold); margin: 0 0 10px; }
+.vskills { display: grid; gap: 7px; }
+.vskill { display: grid; grid-template-columns: 28px minmax(0, 1fr) 90px 26px; gap: 9px; align-items: center; font-size: 13px; }
+.vskill img, .vskill .skill-ph { width: 28px; height: 28px; border-radius: 6px; box-shadow: 0 0 0 1px rgba(255,255,255,.15); }
+.vskill-name { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.vlvl-bar { height: 6px; border-radius: 3px; background: rgba(255,255,255,.08); overflow: hidden; }
+.vlvl-bar i { display: block; height: 100%; background: linear-gradient(90deg, #4a7bd1, #6fb3ff); }
+.vskill.max .vlvl-bar i { background: linear-gradient(90deg, #c98a1b, var(--gold)); }
+.vlvl { font: 700 12px var(--font-mono); color: var(--gold); text-align: right; }
+.vstigmas { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; }
+.vstigma { display: grid; justify-items: center; gap: 4px; padding: 10px 6px; border: 1px solid var(--line); border-radius: 10px; text-align: center;
+           background: radial-gradient(circle at 50% 30%, rgba(160,110,255,.12), transparent 70%); }
+.vstigma img, .vstigma .skill-ph { width: 44px; height: 44px; border-radius: 50%; box-shadow: 0 0 0 2px #8a6ad8, 0 0 12px rgba(138,106,216,.45); }
+.vstigma-slot { font: 500 10px var(--font-mono); color: var(--muted); text-transform: uppercase; letter-spacing: .06em; }
+.vstigma-name { font-size: 12.5px; font-weight: 600; line-height: 1.2; }
+.vboards { display: grid; grid-template-columns: repeat(6, minmax(0, 1fr)); gap: 6px; margin-bottom: 10px; }
+.vboard { display: grid; gap: 2px; padding: 8px; border: 1px solid var(--line); border-radius: 8px; background: rgba(255,255,255,.02); }
+.vboard b { font-size: 13px; }
+.vboard-lvl { font: 500 10.5px var(--font-mono); color: var(--gold); }
+.vboard small { font-size: 11px; color: var(--muted); line-height: 1.25; }
+.vboard.pve { border-color: rgba(110,224,122,.5); }
+.vboard.pvp { border-color: rgba(229,72,77,.45); opacity: .85; }
+.vnote { margin: 4px 0 8px; color: #c4c8d4; }
+.vorder { display: flex; flex-wrap: wrap; gap: 6px; align-items: flex-start; margin-bottom: 6px; }
+.vorder .macro-slot { position: relative; }
+.vorder-n { position: absolute; top: -6px; left: 12px; background: var(--gold); color: #111; font: 700 10px var(--font-mono); border-radius: 8px; padding: 0 5px; z-index: 1; }
+.vorder .macro-slot img, .vorder .skill-ph { width: 36px; height: 36px; }
+.varcana { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 8px; margin-bottom: 6px; }
+.varcana-card { display: grid; justify-items: center; gap: 3px; padding: 10px 6px; border: 1px solid var(--line); border-radius: 10px; text-align: center;
+                background: linear-gradient(180deg, rgba(245,166,35,.08), transparent 60%); }
+.varcana-glyph { font-size: 22px; }
+.varcana-card b { font-size: 13px; }
+.varcana-skills { display: grid; gap: 4px; margin-top: 4px; width: 100%; }
+.varcana-skill { display: flex; align-items: center; gap: 5px; font-size: 11px; text-align: left; }
+.varcana-skill img, .varcana-skill .skill-ph { width: 22px; height: 22px; border-radius: 4px; flex: none; }
+.skill-ph.sm { width: 22px; height: 22px; font-size: 10px; display: grid; place-items: center; background: #252b3a; border-radius: 4px; }
+@media (max-width: 900px) { .cvis-2 { grid-template-columns: 1fr; } .vboards { grid-template-columns: repeat(3, minmax(0, 1fr)); } .varcana { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+
 /* ---------- Servers ---------- */
 .srv-status { display: flex; align-items: center; gap: 16px; flex-wrap: wrap; margin-bottom: 14px; }
 .srv-status .srv-dot { width: 14px; height: 14px; border-radius: 50%; background: var(--muted); flex: none; }

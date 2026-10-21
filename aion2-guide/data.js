@@ -774,9 +774,16 @@ window.GUIDE = {
     {
       id: 'c-gladiator', cls: 'Gladiator', title: 'Гладіатор', tag: 'ближній бій · напівтанк · середня складність',
       intro: 'Гладіатор б\'є перед собою й живе довго: стійка [Lunge Stance|Lunge Stance] майже постійно відкриває [Overhead Slam|Overhead Slam]. Overhead Slam і Aerial Snare працюють лише по збитих з ніг цілях — крім босів у PvE.',
+      visual: {
+        skills: [['Overhead Slam', 20], ['Rending Blow', 20], ['Ruinous Blow', 16], ['Aerial Snare', 12], ['Leaping Slam', 12], ['Mocking Blade', 12]],
+        stigmas: [['Lunge Stance', 20], ['Focused Block', 5], ['Rage Burst', 5], ["Zikel's Blessing", 10]],
+        daeva: ['Overhead Slam', 'Rending Blow', 'Ruinous Blow'],
+        daevaNote: 'сині вузли цих вмінь → помаранчеві → характеристики; Azphel — лише PvP',
+        arcana: [['Parchment', 'Vigor', ['Overhead Slam', 'Ruinous Blow']], ['Compass', 'Freedom', ['Rending Blow']], ['Chalice', 'Vigor', ['Overhead Slam']]],
+      },
       bar: [
         { label: 'Відкриття на босі', skills: ['Lunge Stance', "Zikel's Blessing", 'Leaping Slam', 'Ruinous Blow'], seq: true },
-        { label: 'Макрос · лінія 1', skills: ['Overhead Slam', 'Rage Burst'] },
+        { label: 'Макрос · лінія 1', key: 'клавіша макросу', skills: ['Overhead Slam', 'Rage Burst'] },
         { label: 'Макрос · лінія 2', skills: ['Rending Blow', 'Sword Aura Rampage', 'Ruinous Blow'] },
         { label: 'Макрос · бафи', skills: ['Lifestealing Blade', 'Wave Armor', 'Lunge Stance', "Zikel's Blessing"] },
         { label: 'Вручну', skills: ['Focused Block', 'Mocking Blade', 'Leaping Slam', 'Crushing Wave'], manual: true },
@@ -819,9 +826,16 @@ window.GUIDE = {
     {
       id: 'c-templar', cls: 'Templar', title: 'Тамплієр', tag: 'танк · баф групи · середня складність',
       intro: 'Меч і щит. Блоки баффають усю групу, а [Judgment|Judgment] перетворює удари щитом на урон. Обмеження Тамплієра — урон, а не виживання.',
+      visual: {
+        skills: [['Judgment', 20], ['Punishment', 20], ['Pummel', 20], ['Annihilate', 16], ['Shield Smite', 16], ['Warding Strike', 12], ['Shield Rush', 12], ['Vicious Strike', 10]],
+        stigmas: [["Empyrean Lord's Punishment", 15], ['Battlefield Banner', 15], ['Doom Shield', 15], ['Taunt', 5]],
+        daeva: ['Judgment', 'Punishment', 'Pummel', 'Shield Smite', 'Annihilate'],
+        daevaNote: 'сині вузли (+1 рівень вміння); пропускайте вузли мани й Flash Rampage',
+        arcana: [['Chalice', '—', ['Pummel', 'Punishment']], ['Parchment', '—', ['Judgment', 'Punishment']], ['Compass', '—', ['Pummel', 'Shield Smite']], ['Bell', '—', ['Fury', 'Punishing Benediction']]],
+      },
       bar: [
-        { label: 'Лінія 1', skills: ['Doom Shield', 'Judgment', 'Shield Smite', 'Warding Strike'] },
-        { label: 'Лінія 2', skills: ['Pummel', 'Annihilate', 'Debilitating Smash'] },
+        { label: 'Лінія 1', key: 'кнопка миші', skills: ['Doom Shield', 'Judgment', 'Shield Smite', 'Warding Strike'] },
+        { label: 'Лінія 2', key: 'кнопка миші', skills: ['Pummel', 'Annihilate', 'Debilitating Smash'] },
         { label: 'Вручну', skills: ['Punishment', 'Battlefield Banner', "Empyrean Lord's Punishment", 'Taunt'], manual: true },
       ],
       sections: [
@@ -860,10 +874,17 @@ window.GUIDE = {
     {
       id: 'c-ranger', cls: 'Ranger', title: 'Рейнджер', tag: 'дальній бій · ~20 м · середня складність',
       intro: 'Лук, високий урон, мало виживання й підтримки — усе вирішує позиція. Головне вміння — повністю заряджений [Deadshot|Deadshot] під [Precision|Precision].',
+      visual: {
+        skills: [['Deadshot', 20], ['Gale Arrow', 20], ['Drill Dart', 16], ['Snipe', 16], ['Tempest Shot', 16], ['Snare Shot', 12], ['Marking Shot', 12], ['Burst Arrow', 12]],
+        stigmas: [["Vaizel's Authority", 20], ['Bow of Blessing', 15], ['Griffon Arrow', 15], ['Supporting Fire', 10]],
+        daeva: ['Deadshot', 'Snare Shot', 'Suppressing Arrow', 'Marking Shot', 'Defiance'],
+        daevaNote: 'сині вузли; вузли опору криту пропускайте',
+        arcana: [['Chalice', 'Vigor', ['Deadshot', 'Gale Arrow']], ['Parchment', 'Vigor', ['Snipe', 'Tempest Shot']], ['Compass', 'Death / Freedom', ['Deadshot', 'Gale Arrow']], ['Bell', 'Destruction', ["Hunter's Resolve"]], ['Mirror', 'Wisdom', ['Focused Eye']]],
+      },
       bar: [
         { label: 'Відкриття', skills: ['Marking Shot', "Vaizel's Authority", 'Bow of Blessing', 'Supporting Fire', 'Deadshot'], seq: true },
-        { label: 'ЛКМ · затиснути', skills: ['Snipe'], manual: true },
-        { label: 'Макрос (ПКМ)', skills: ['Gale Arrow', 'Drill Dart', 'Tempest Shot'] },
+        { label: 'Базова атака', key: 'ЛКМ · тримати', skills: ['Snipe'], manual: true },
+        { label: 'Макрос', key: 'ПКМ', skills: ['Gale Arrow', 'Drill Dart', 'Tempest Shot'] },
         { label: 'Вручну', skills: ['Deadshot', 'Marking Shot'], manual: true },
       ],
       sections: [
@@ -900,10 +921,17 @@ window.GUIDE = {
     {
       id: 'c-assassin', cls: 'Assassin', title: 'Асасин', tag: 'ближній бурст · зі спини · складний',
       intro: 'Кинджали, вибуховий урон від бафів і найсильніші удари зі спини. Крихкий, без блоку — найскладніший клас для новачка.',
+      visual: {
+        skills: [['Heart Gore', 20], ['Insignia Explosion', 20], ['Quick Slice', 20], ['Ambush', 16], ['Storm Rampage', 16], ['Savage Roar', 12], ['Shadowstrike', 8]],
+        stigmas: [['Illusive Clone', 20], ['Swift Contract', 15], ['Savage Fang', 15], ["Triniel's Dagger", 10]],
+        daeva: ['Heart Gore', 'Insignia Explosion', 'Quick Slice', 'Exploit Weakness', 'Ambush', 'Storm Rampage'],
+        daevaNote: 'сині трьох ключових → зелені Exploit Weakness → Ambush, Storm Rampage',
+        arcana: [['Chalice', 'Time', ['Heart Gore', 'Insignia Explosion']], ['Parchment', 'Life', ['Quick Slice', 'Heart Gore', 'Insignia Explosion']], ['Compass', 'Freedom', ['Storm Rampage', 'Ambush', 'Savage Roar']], ['Mirror', 'Illusion', ['Rear Smite', 'Exploit Weakness', 'Impact Hit']], ['Bell', 'Destruction', ['Assault Stance']]],
+      },
       bar: [
-        { label: 'Лінія урону', skills: ['Savage Roar', 'Ambush', 'Heart Gore', 'Insignia Explosion'] },
+        { label: 'Лінія урону', key: 'макрос', skills: ['Savage Roar', 'Ambush', 'Heart Gore', 'Insignia Explosion'] },
         { label: 'Бафи (часто вручну)', skills: ['Illusive Clone', 'Swift Contract', 'Savage Fang', "Triniel's Dagger"], seq: true },
-        { label: 'Базова (MP)', skills: ['Quick Slice'], manual: true },
+        { label: 'Базова (MP)', key: 'тримати', skills: ['Quick Slice'], manual: true },
       ],
       sections: [
         { title: 'Вміння й рівні', list: [
@@ -940,9 +968,16 @@ window.GUIDE = {
     {
       id: 'c-sorcerer', cls: 'Sorcerer', title: 'Чаклун', tag: 'магія з відстані · вогонь і лід · середня складність',
       intro: 'Крихкий маг: вогонь ([Fire Mark|Fire Mark], [Blaze|Blaze]) — урон, лід і корені — контроль. Бонуси залежать від мани: понад 50% MP — більше криту, понад 25% — +20% урону. Тримайте ману!',
+      visual: {
+        skills: [['Wish of Concentration', 20], ['Hellfire', 20], ['Firestorm', 16], ['Blaze', 16], ['Flame Arrow', 16], ['Bittercold Wind', 16], ["Winter's Shackles", 16], ['Ice Chain', 12]],
+        stigmas: [['Element Enhancement', 20], ['Delayed Explosion', 10], ['Fire Wall', 10], ['Cold Storm', 10]],
+        daeva: ['Wish of Concentration', 'Firestorm', 'Flame Arrow', 'Blaze', 'Bittercold Wind', "Winter's Shackles", 'Hellfire'],
+        daevaNote: 'спершу помаранчеві (швидкість і відкати → атака → крит. урон), потім сині в цьому порядку',
+        arcana: [['Chalice', 'Time', ['Firestorm', 'Blaze', 'Bittercold Wind', 'Wish of Concentration']], ['Parchment', 'Life', ['Hellfire', 'Firestorm', 'Blaze', 'Wish of Concentration']], ['Compass', 'Freedom', ['Bittercold Wind', "Winter's Shackles", 'Defiance']], ['Mirror', 'Illusion', ['Robe of Flame', 'Robe of Earth']], ['Bell', 'Destruction', ['Fire Mark']]],
+      },
       bar: [
         { label: 'Порядок ротації', skills: ['Wish of Concentration', 'Element Enhancement', 'Delayed Explosion', "Winter's Shackles", 'Hellfire', 'Fire Wall', 'Cold Storm', 'Bittercold Wind', 'Blaze', 'Firestorm'], seq: true },
-        { label: 'Окремі кнопки миші', skills: ['Flame Arrow', 'Hellfire'], manual: true },
+        { label: 'Окремі кнопки', key: 'миша', skills: ['Flame Arrow', 'Hellfire'], manual: true },
       ],
       sections: [
         { title: 'Вміння й рівні', list: [
@@ -980,12 +1015,20 @@ window.GUIDE = {
     {
       id: 'c-elementalist', cls: 'Elementalist', title: 'Елементаліст', tag: 'Spiritmaster · заклинач духів · магія',
       intro: 'Духи б\'ються поруч, кожне вміння духа дає стихію, чотири стихії живлять [Elemental Fusion|Elemental Fusion]. Прокльони тримаються на цілі.',
+      visual: {
+        skills: [['Elemental Fusion', 20], ['Combustion', 20], ['Summon: Fire Spirit', 20], ['Cold Shock', 16], ['Summon: Water Spirit', 16], ['Dimensional Control', 12]],
+        stigmas: [['Summon: Ancient Spirit', 20], ["Enhance: Spirit's Benediction", 20], ['Flame Blessing', 20], ['Jointstrike: Corrode', 20]],
+        daeva: ['Elemental Fusion', 'Combustion', 'Summon: Fire Spirit', 'Cold Shock', 'Summon: Water Spirit', 'Mental Focus', 'Spirit Strike'],
+        daevaNote: 'сині → зелені Mental Focus і Spirit Strike → помаранчеві атаки; спершу найдешевший вузол кожного вміння',
+        arcana: [['Chalice', 'Primal Vigor', []], ['Parchment', 'Primal Vigor', []], ['Compass', 'Primal Vigor', []], ['Mirror', 'Magic Armor', []], ['Bell', 'Magic Armor', []]],
+        arcanaNote: 'цілі: ~25% шансу подвійного удару, 20% скорочення відкатів, 1500 точності',
+      },
       bar: [
         { label: 'Відкриття', skills: ['Flame Blessing', "Enhance: Spirit's Benediction", 'Summon: Ancient Spirit'], seq: true },
-        { label: 'Лінія духів', skills: ['Summon: Fire Spirit', 'Summon: Earth Spirit', 'Summon: Water Spirit', 'Elemental Fusion'] },
+        { label: 'Лінія духів', key: 'ПКМ (макрос)', skills: ['Summon: Fire Spirit', 'Summon: Earth Spirit', 'Summon: Water Spirit', 'Elemental Fusion'] },
         { label: 'Лінія бафів', skills: ['Summon: Ancient Spirit', 'Flame Blessing', "Enhance: Spirit's Benediction"] },
         { label: 'Лінія урону', skills: ['Combustion', 'Dimensional Control', 'Jointstrike: Curse', 'Jointstrike: Corrode'] },
-        { label: 'ЛКМ', skills: ['Cold Shock'], manual: true },
+        { label: 'Базова атака', key: 'ЛКМ', skills: ['Cold Shock'], manual: true },
       ],
       sections: [
         { title: 'Вміння й рівні', list: [
@@ -1021,10 +1064,18 @@ window.GUIDE = {
     {
       id: 'c-cleric', cls: 'Cleric', title: 'Клірик', tag: 'хілер, що б\'є · земля й блискавка',
       intro: 'Хілер, зібраний на урон: [Chain of Torment|Chain of Torment] позначає ціль, [Condemnation|Condemnation] добиває, і кожен удар лікує групу. Нагороди залежать від внеску — бийте, а лікуйте тих, кого щойно вдарили або в кого мало HP.',
+      visual: {
+        skills: [['Condemnation', 20], ['Divine Aura', 20], ['Bolt', 20], ['Judgment Thunder', 16], ['Lightning Strike Scattershot', 16], ['Healing Light', 16], ["Earth's Retribution", 10]],
+        stigmas: [['Earth Punishment', 20], ['Light of Protection', 20], ['Prayer of Amplification', 20], ['Noble Aura', 10]],
+        daeva: ['Condemnation', 'Divine Aura', 'Bolt'],
+        daevaNote: 'помаранчеві (відкати й швидкість) → атака й крит → сині вузли → захист',
+        arcana: [['Chalice', 'Vigor', []], ['Parchment', 'Destiny / Life', []], ['Compass', 'Death / Freedom', []], ['Bell', 'Destruction', []], ['Mirror', 'Wisdom / Illusion', []]],
+        arcanaNote: 'катайте вміння, яким бракує до 20 (Condemnation, Divine Aura, Bolt)',
+      },
       bar: [
-        { label: 'Лінія мітки', skills: ['Condemnation', 'Chain of Torment'] },
+        { label: 'Лінія мітки', key: 'макрос (ПКМ)', skills: ['Condemnation', 'Chain of Torment'] },
         { label: 'Бафи й аури', skills: ['Prayer of Amplification', 'Divine Aura', 'Noble Aura', 'Earth Punishment'] },
-        { label: 'ЛКМ · затиснути', skills: ["Earth's Retribution"], manual: true },
+        { label: 'Базова атака', key: 'ЛКМ · тримати', skills: ["Earth's Retribution"], manual: true },
         { label: 'Вручну', skills: ['Bolt', 'Healing Light', 'Radiant Recovery'], manual: true },
       ],
       sections: [
@@ -1060,10 +1111,18 @@ window.GUIDE = {
     {
       id: 'c-chanter', cls: 'Chanter', title: 'Чантер', tag: 'ближній бій · баф групи · середня складність',
       intro: 'Посох, найменший власний урон серед класів при рівному спорядженні, але найкращі бафи групі, виживання й зняття дебафів. Мантри — перемикачі: увімкнули один раз і забули.',
+      visual: {
+        skills: [['Dark Crush', 20], ['Onslaught', 20], ['Spinning Strike', 20], ['Incandescent Blow', 16], ['Recuperation', 12], ['Impactful Crush', 12], ['Rushing Smash', 12], ['Wave Blow', 12]],
+        stigmas: [['Undefeated Mantra', 20], ['Power of the Storm', 20], ["Marchutan's Wrath", 1], ['Focused Defense', 5]],
+        daeva: ['Dark Crush', 'Onslaught', 'Spinning Strike', 'Incandescent Blow', 'Impactful Crush', 'Wave Blow', 'Defiance'],
+        daevaNote: 'сині вузли в цьому порядку',
+        arcana: [['Chalice', 'Time', []], ['Parchment', 'Life', []], ['Compass', 'Freedom', []], ['Bell', 'Destruction', []], ['Mirror', 'Wisdom', []]],
+        arcanaNote: 'Chalice, Parchment, Compass — Primal Vigor; Bell і Mirror — Magic Armor; у середньому +2 до вміння',
+      },
       bar: [
-        { label: 'Лінія Dark Crush', skills: ['Impactful Crush', "Marchutan's Wrath", 'Spinning Strike', 'Dark Crush'] },
+        { label: 'Лінія Dark Crush', key: 'макрос, 2 кроки × 10 мс', skills: ['Impactful Crush', "Marchutan's Wrath", 'Spinning Strike', 'Dark Crush'] },
         { label: 'Заповнювач', skills: ['Incandescent Blow'] },
-        { label: 'ЛКМ', skills: ['Onslaught'], manual: true },
+        { label: 'Базова атака', key: 'ЛКМ', skills: ['Onslaught'], manual: true },
         { label: 'Вручну', skills: ['Recuperation', 'Wave Blow'], manual: true },
         { label: 'Мантри (раз увімкнути)', skills: ['Undefeated Mantra', 'Power of the Storm'], manual: true },
       ],
@@ -1102,9 +1161,19 @@ window.GUIDE = {
     },
   ],
 
+  /* Дошки Даеваніона (однакові для всіх класів): рівень відкриття, на чому фокус, ціна в кристалах */
+  daevaBoards: [
+    { name: 'Nezekan', lvl: 12, focus: 'швидкість бою, відкати', cost: 134 },
+    { name: 'Zikel', lvl: 20, focus: 'урон, стійкість до урону', cost: 134 },
+    { name: 'Vaizel', lvl: 30, focus: 'крит. урон', cost: 134 },
+    { name: 'Triniel', lvl: 40, focus: 'мультиудар', cost: 168 },
+    { name: 'Ariel', lvl: 45, focus: 'PvE-урон і стійкість (з 21.10)', pve: true },
+    { name: 'Azphel', lvl: 45, focus: 'лише PvP, без вузлів умінь', pvp: true },
+  ],
+
   /* Іконки вмінь у гайдах по класах: назва → файл на CDN гри (assets.playnccdn.com), окремо для кожного класу.
      Згенеровано з overlay/data (skills/en.json, skill_icons.json) тим самим правилом, що й в оверлеї. */
-  classIcons: {"Gladiator":{"Rending Blow":"ICON_GL_SKILL_001","Crushing Wave":"ICON_GL_SKILL_005","Blade Toss":"ICON_GL_SKILL_008","Ruinous Blow":"ICON_GL_SKILL_010","Focused Block":"ICON_GL_SKILL_011","Armor of Balance":"ICON_GL_SKILL_013","Overhead Slam":"ICON_GL_SKILL_017","Leaping Slam":"ICON_GL_SKILL_019","Zikel's Blessing":"ICON_GL_SKILL_040","Defiance":"ICON_CO_SKILL_002","Sword Aura Rampage":"ICON_TE_SKILL_034","Mocking Blade":"ICON_GL_SKILL_028","Aerial Snare":"ICON_GL_SKILL_015","Forced Fall":"ICON_GL_SKILL_015","Lifestealing Blade":"ICON_GL_SKILL_034","Tenaciousness":"ICON_GL_SKILL_038","Rage Burst":"ICON_GL_SKILL_039","Lunge Stance":"ICON_GL_SKILL_024","Wave Armor":"ICON_GL_SKILL_041","Upward Strike":"ICON_TE_SKILL_016","Attack Preparation":"ICON_GL_SKILL_Passive_005","Impact Hit":"ICON_GL_SKILL_Passive_006","Experienced Counterstrike":"ICON_GL_SKILL_Passive_008","Murderous Burst":"ICON_GL_SKILL_Passive_010"},"Templar":{"Vicious Strike":"ICON_TE_SKILL_001","Pummel":"ICON_TE_SKILL_006","Doom Shield":"ICON_TE_SKILL_007","Punishment":"ICON_TE_SKILL_009","Shield Smite":"ICON_TE_SKILL_010","Taunt":"ICON_TE_SKILL_012","Fury":"ICON_TE_SKILL_001","Judgment":"ICON_TE_SKILL_004","Comrade in Arms":"ICON_TE_SKILL_001","Debilitating Smash":"ICON_TE_SKILL_025","Annihilate":"ICON_TE_SKILL_028","Empyrean Lord's Punishment":"ICON_TE_SKILL_029","Nezekan's Shield":"ICON_TE_SKILL_030","Flash Rampage":"ICON_GL_SKILL_027","Warding Strike":"ICON_TE_SKILL_035","Executing Blade":"ICON_TE_SKILL_041","Shield Rush":"ICON_TE_SKILL_015","Battlefield Banner":"ICON_TE_SKILL_045","Punishing Benediction":"ICON_TE_SKILL_Passive_003","Ironclad Defense":"ICON_TE_SKILL_Passive_004"},"Ranger":{"Deadshot":"ICON_RA_SKILL_002","Snipe":"ICON_RA_SKILL_001","Drill Dart":"ICON_RA_SKILL_005","Griffon Arrow":"ICON_RA_SKILL_006","Suppressing Arrow":"ICON_RA_SKILL_007","Burst Arrow":"ICON_RA_SKILL_008","Marking Shot":"ICON_RA_SKILL_031","Tempest Arrow":"ICON_RA_SKILL_010","Gale Arrow":"ICON_RA_SKILL_011","Snare Shot":"ICON_RA_SKILL_013","Explosion Trap":"ICON_RA_SKILL_017","Explosion":"ICON_RA_SKILL_017","Bow of Blessing":"ICON_RA_SKILL_030","Explosive Arrow":"ICON_RA_SKILL_023","Defiance":"ICON_RA_SKILL_026","Vaizel's Authority":"ICON_RA_SKILL_022","Tempest Shot":"ICON_RA_SKILL_034","Supporting Fire":"ICON_RA_SKILL_038","Concentrated Fire":"ICON_RA_SKILL_Passive_003","Focused Eye":"ICON_RA_SKILL_Passive_001","Hunter's Resolve":"ICON_RA_SKILL_Passive_011","Rooting Eye":"ICON_RA_SKILL_Passive_008","Hunter's Soul":"ICON_RA_SKILL_Passive_007"},"Assassin":{"Quick Slice":"ICON_AS_SKILL_001","Ambush":"ICON_AS_SKILL_006","Shadowstrike":"ICON_AS_SKILL_007","Savage Roar":"ICON_AS_SKILL_009","Insignia Explosion":"ICON_AS_SKILL_013","Shadowstep":"ICON_AS_SKILL_014","Apply Poison":"ICON_AS_SKILL_014","Shadow Walk":"ICON_AS_SKILL_016","Shadow Fall":"ICON_AS_SKILL_020","Aerial Bind":"ICON_AS_SKILL_026","Savage Fang":"ICON_AS_SKILL_025","Spiral Slice":"ICON_AS_SKILL_022","Triniel's Dagger":"ICON_AS_SKILL_028","Illusive Clone":"ICON_AS_SKILL_029","Storm Rampage":"ICON_AS_SKILL_034","Heart Gore":"ICON_AS_SKILL_035","Swift Contract":"ICON_AS_SKILL_037","Exploit Weakness":"ICON_AS_SKILL_Passive_002","Poison":"ICON_AS_SKILL_Passive_003","Rear Smite":"ICON_AS_SKILL_Passive_004","Assault Stance":"ICON_AS_SKILL_Passive_006","Impact Hit":"ICON_AS_SKILL_Passive_011","Defense Break":"ICON_AS_SKILL_Passive_008","Determination":"ICON_AS_SKILL_Passive_010"},"Sorcerer":{"Flame Scattershot":"ICON_SO_SKILL_001","Burst":"ICON_SO_SKILL_003","Firestorm":"ICON_SO_SKILL_004","Blaze":"ICON_SO_SKILL_005","Hellfire":"ICON_SO_SKILL_006","Ice Chain":"ICON_SO_SKILL_009","Winter's Shackles":"ICON_SO_SKILL_011","Glacial Smite":"ICON_SO_SKILL_012","Steel Barrier":"ICON_SO_SKILL_016","Cold Storm":"ICON_SO_SKILL_019","Flame Arrow":"ICON_SO_SKILL_020","Defiance":"ICON_CO_SKILL_002","Pyroclasm":"ICON_SO_SKILL_023","Bittercold Wind":"ICON_SO_SKILL_025","Wish of Concentration":"ICON_SO_SKILL_028","Delayed Explosion":"ICON_SO_SKILL_032","Divine Burst":"ICON_SO_SKILL_036","Fire Wall":"ICON_SO_SKILL_039","Element Enhancement":"ICON_SO_SKILL_040","Fire Mark":"ICON_SO_SKILL_Passive_002","Robe of Earth":"ICON_SO_SKILL_Passive_006","Robe of Flame":"ICON_SO_SKILL_Passive_004","Grace of Enhancement":"ICON_SO_SKILL_Passive_007"},"Elementalist":{"Cold Shock":"ICON_EL_SKILL_001","Earth Tremor":"ICON_EL_SKILL_003","Combustion":"ICON_EL_SKILL_004","Ashy Call":"ICON_EL_SKILL_005","Soul's Cry":"ICON_EL_SKILL_007","Summon: Fire Spirit":"ICON_EL_SKILL_010","Summon: Water Spirit":"ICON_EL_SKILL_011","Summon: Earth Spirit":"ICON_EL_SKILL_013","Jointstrike: Curse":"ICON_EL_SKILL_014","Jointstrike: Corrode":"ICON_EL_SKILL_015","Command: Proxy":"ICON_EL_SKILL_017","Enhance: Spirit's Benediction":"ICON_EL_SKILL_019","Defiance":"ICON_CO_SKILL_002","Seize Magic":"ICON_EL_SKILL_023","Summon: Ancient Spirit":"ICON_EL_SKILL_025","Elemental Fusion":"ICON_EL_SKILL_030","Dimensional Control":"ICON_EL_SKILL_033","Rapid Scattershot":"ICON_EL_SKILL_034","Flame Blessing":"ICON_EL_SKILL_037","Spirit Strike":"ICON_EL_SKILL_Passive_004","Corrode":"ICON_EL_SKILL_Passive_012","Spirit Revitalization":"ICON_EL_SKILL_Passive_011","Mental Focus":"ICON_EL_SKILL_Passive_006","Element Unification":"ICON_EL_SKILL_Passive_008"},"Cleric":{"Earth's Retribution":"ICON_CL_SKILL_001","Discharge":"ICON_CL_SKILL_003","Judgment Thunder":"ICON_CL_SKILL_004","Bolt":"ICON_CL_SKILL_006","Chain of Torment":"ICON_CL_SKILL_007","Debilitating Mark":"ICON_CL_SKILL_008","Healing Light":"ICON_CL_SKILL_010","Radiant Recovery":"ICON_CL_SKILL_012","Divine Aura":"ICON_CL_SKILL_015","Absolution":"ICON_CL_SKILL_028","Voice of Doom":"ICON_CL_SKILL_029","Condemnation":"ICON_CL_SKILL_035","Lightning Strike Scattershot":"ICON_CL_SKILL_037","Earth Punishment":"ICON_CL_SKILL_030","Light of Protection":"ICON_CL_SKILL_041","Yustiel's Power":"ICON_CL_SKILL_042","Prayer of Amplification":"ICON_CL_SKILL_044","Noble Aura":"ICON_CL_SKILL_046","Empyrean Lord's Grace":"ICON_CL_SKILL_Passive_012","Healing Enhancement":"ICON_CL_SKILL_Passive_003","Earth's Grace":"ICON_CL_SKILL_Passive_008","Radiant Benediction":"ICON_CL_SKILL_Passive_007"},"Chanter":{"Onslaught":"ICON_TE_SKILL_001","Incandescent Blow":"ICON_CH_SKILL_004","Impactful Crush":"ICON_TE_SKILL_001","Wave Blow":"ICON_CH_SKILL_008","Rushing Smash":"ICON_CH_SKILL_009","Dark Crush":"ICON_TE_SKILL_001","Recuperation":"ICON_CH_SKILL_013","Fracturing Blow":"ICON_CH_SKILL_043","Focused Defense":"ICON_CH_SKILL_014","Sprint Mantra":"ICON_CH_SKILL_016","Healing Touch":"ICON_CH_SKILL_017","Undefeated Mantra":"ICON_CH_SKILL_019","Defiance":"ICON_CO_SKILL_002","Tremor Crush":"ICON_CH_SKILL_021","Impeding Authority":"ICON_CH_SKILL_024","Power of the Storm":"ICON_CH_SKILL_025","Spinning Strike":"ICON_CH_SKILL_029","Marchutan's Wrath":"ICON_CH_SKILL_033","Storm Chain":"ICON_CH_SKILL_037","Crushing Strike":"ICON_CH_SKILL_041","Guardian Blessing":"ICON_CH_SKILL_042","Protection Circle":"ICON_CH_SKILL_Passive_001","Inspiring Spell":"ICON_CH_SKILL_Passive_011","Attack Preparation":"ICON_GL_SKILL_Passive_005","Impact Hit":"ICON_GL_SKILL_Passive_006","Wind's Promise":"ICON_CH_SKILL_Passive_008"}},
+  classIcons: {"Gladiator":{"Rending Blow":"ICON_GL_SKILL_001","Crushing Wave":"ICON_GL_SKILL_005","Blade Toss":"ICON_GL_SKILL_008","Ruinous Blow":"ICON_GL_SKILL_010","Focused Block":"ICON_GL_SKILL_011","Armor of Balance":"ICON_GL_SKILL_013","Overhead Slam":"ICON_GL_SKILL_017","Leaping Slam":"ICON_GL_SKILL_019","Zikel's Blessing":"ICON_GL_SKILL_040","Defiance":"ICON_CO_SKILL_002","Sword Aura Rampage":"ICON_TE_SKILL_034","Mocking Blade":"ICON_GL_SKILL_028","Aerial Snare":"ICON_GL_SKILL_015","Forced Fall":"ICON_GL_SKILL_015","Lifestealing Blade":"ICON_GL_SKILL_034","Tenaciousness":"ICON_GL_SKILL_038","Rage Burst":"ICON_GL_SKILL_039","Lunge Stance":"ICON_GL_SKILL_024","Wave Armor":"ICON_GL_SKILL_041","Upward Strike":"ICON_TE_SKILL_016","Attack Preparation":"ICON_GL_SKILL_Passive_005","Impact Hit":"ICON_GL_SKILL_Passive_006","Experienced Counterstrike":"ICON_GL_SKILL_Passive_008","Murderous Burst":"ICON_GL_SKILL_Passive_010"},"Templar":{"Vicious Strike":"ICON_TE_SKILL_001","Pummel":"ICON_TE_SKILL_006","Doom Shield":"ICON_TE_SKILL_007","Punishment":"ICON_TE_SKILL_009","Shield Smite":"ICON_TE_SKILL_010","Taunt":"ICON_TE_SKILL_012","Fury":"ICON_TE_SKILL_001","Judgment":"ICON_TE_SKILL_004","Comrade in Arms":"ICON_TE_SKILL_001","Debilitating Smash":"ICON_TE_SKILL_025","Annihilate":"ICON_TE_SKILL_028","Empyrean Lord's Punishment":"ICON_TE_SKILL_029","Nezekan's Shield":"ICON_TE_SKILL_030","Flash Rampage":"ICON_GL_SKILL_027","Warding Strike":"ICON_TE_SKILL_035","Executing Blade":"ICON_TE_SKILL_041","Shield Rush":"ICON_TE_SKILL_015","Battlefield Banner":"ICON_TE_SKILL_045","Punishing Benediction":"ICON_TE_SKILL_Passive_003","Ironclad Defense":"ICON_TE_SKILL_Passive_004"},"Ranger":{"Deadshot":"ICON_RA_SKILL_002","Snipe":"ICON_RA_SKILL_001","Drill Dart":"ICON_RA_SKILL_005","Griffon Arrow":"ICON_RA_SKILL_006","Suppressing Arrow":"ICON_RA_SKILL_007","Burst Arrow":"ICON_RA_SKILL_008","Marking Shot":"ICON_RA_SKILL_031","Tempest Arrow":"ICON_RA_SKILL_010","Gale Arrow":"ICON_RA_SKILL_011","Snare Shot":"ICON_RA_SKILL_013","Explosion Trap":"ICON_RA_SKILL_017","Explosion":"ICON_RA_SKILL_017","Bow of Blessing":"ICON_RA_SKILL_030","Explosive Arrow":"ICON_RA_SKILL_023","Defiance":"ICON_RA_SKILL_026","Vaizel's Authority":"ICON_RA_SKILL_022","Tempest Shot":"ICON_RA_SKILL_034","Supporting Fire":"ICON_RA_SKILL_038","Concentrated Fire":"ICON_RA_SKILL_Passive_003","Focused Eye":"ICON_RA_SKILL_Passive_001","Hunter's Resolve":"ICON_RA_SKILL_Passive_011","Rooting Eye":"ICON_RA_SKILL_Passive_008","Hunter's Soul":"ICON_RA_SKILL_Passive_007"},"Assassin":{"Quick Slice":"ICON_AS_SKILL_001","Ambush":"ICON_AS_SKILL_006","Shadowstrike":"ICON_AS_SKILL_007","Savage Roar":"ICON_AS_SKILL_009","Insignia Explosion":"ICON_AS_SKILL_013","Shadowstep":"ICON_AS_SKILL_014","Apply Poison":"ICON_AS_SKILL_014","Shadow Walk":"ICON_AS_SKILL_016","Shadow Fall":"ICON_AS_SKILL_020","Aerial Bind":"ICON_AS_SKILL_026","Savage Fang":"ICON_AS_SKILL_025","Spiral Slice":"ICON_AS_SKILL_022","Triniel's Dagger":"ICON_AS_SKILL_028","Illusive Clone":"ICON_AS_SKILL_029","Storm Rampage":"ICON_AS_SKILL_034","Heart Gore":"ICON_AS_SKILL_035","Swift Contract":"ICON_AS_SKILL_037","Exploit Weakness":"ICON_AS_SKILL_Passive_002","Poison":"ICON_AS_SKILL_Passive_003","Rear Smite":"ICON_AS_SKILL_Passive_004","Assault Stance":"ICON_AS_SKILL_Passive_006","Impact Hit":"ICON_AS_SKILL_Passive_011","Defense Break":"ICON_AS_SKILL_Passive_008","Determination":"ICON_AS_SKILL_Passive_010"},"Sorcerer":{"Flame Scattershot":"ICON_SO_SKILL_001","Burst":"ICON_SO_SKILL_003","Firestorm":"ICON_SO_SKILL_004","Blaze":"ICON_SO_SKILL_005","Hellfire":"ICON_SO_SKILL_006","Ice Chain":"ICON_SO_SKILL_009","Winter's Shackles":"ICON_SO_SKILL_011","Glacial Smite":"ICON_SO_SKILL_012","Steel Barrier":"ICON_SO_SKILL_016","Cold Storm":"ICON_SO_SKILL_019","Flame Arrow":"ICON_SO_SKILL_020","Defiance":"ICON_CO_SKILL_002","Pyroclasm":"ICON_SO_SKILL_023","Bittercold Wind":"ICON_SO_SKILL_025","Illusion":"ICON_SO_SKILL_026","Wish of Concentration":"ICON_SO_SKILL_028","Delayed Explosion":"ICON_SO_SKILL_032","Divine Burst":"ICON_SO_SKILL_036","Fire Wall":"ICON_SO_SKILL_039","Element Enhancement":"ICON_SO_SKILL_040","Fire Mark":"ICON_SO_SKILL_Passive_002","Robe of Earth":"ICON_SO_SKILL_Passive_006","Robe of Flame":"ICON_SO_SKILL_Passive_004","Grace of Enhancement":"ICON_SO_SKILL_Passive_007"},"Elementalist":{"Cold Shock":"ICON_EL_SKILL_001","Earth Tremor":"ICON_EL_SKILL_003","Combustion":"ICON_EL_SKILL_004","Ashy Call":"ICON_EL_SKILL_005","Soul's Cry":"ICON_EL_SKILL_007","Summon: Fire Spirit":"ICON_EL_SKILL_010","Summon: Water Spirit":"ICON_EL_SKILL_011","Summon: Earth Spirit":"ICON_EL_SKILL_013","Jointstrike: Curse":"ICON_EL_SKILL_014","Jointstrike: Corrode":"ICON_EL_SKILL_015","Command: Proxy":"ICON_EL_SKILL_017","Enhance: Spirit's Benediction":"ICON_EL_SKILL_019","Defiance":"ICON_CO_SKILL_002","Seize Magic":"ICON_EL_SKILL_023","Summon: Ancient Spirit":"ICON_EL_SKILL_025","Elemental Fusion":"ICON_EL_SKILL_030","Dimensional Control":"ICON_EL_SKILL_033","Rapid Scattershot":"ICON_EL_SKILL_034","Flame Blessing":"ICON_EL_SKILL_037","Spirit Strike":"ICON_EL_SKILL_Passive_004","Corrode":"ICON_EL_SKILL_Passive_012","Spirit Revitalization":"ICON_EL_SKILL_Passive_011","Mental Focus":"ICON_EL_SKILL_Passive_006","Element Unification":"ICON_EL_SKILL_Passive_008"},"Cleric":{"Earth's Retribution":"ICON_CL_SKILL_001","Discharge":"ICON_CL_SKILL_003","Judgment Thunder":"ICON_CL_SKILL_004","Bolt":"ICON_CL_SKILL_006","Chain of Torment":"ICON_CL_SKILL_007","Debilitating Mark":"ICON_CL_SKILL_008","Healing Light":"ICON_CL_SKILL_010","Radiant Recovery":"ICON_CL_SKILL_012","Divine Aura":"ICON_CL_SKILL_015","Absolution":"ICON_CL_SKILL_028","Voice of Doom":"ICON_CL_SKILL_029","Condemnation":"ICON_CL_SKILL_035","Lightning Strike Scattershot":"ICON_CL_SKILL_037","Earth Punishment":"ICON_CL_SKILL_030","Light of Protection":"ICON_CL_SKILL_041","Yustiel's Power":"ICON_CL_SKILL_042","Prayer of Amplification":"ICON_CL_SKILL_044","Noble Aura":"ICON_CL_SKILL_046","Empyrean Lord's Grace":"ICON_CL_SKILL_Passive_012","Healing Enhancement":"ICON_CL_SKILL_Passive_003","Earth's Grace":"ICON_CL_SKILL_Passive_008","Radiant Benediction":"ICON_CL_SKILL_Passive_007"},"Chanter":{"Onslaught":"ICON_TE_SKILL_001","Incandescent Blow":"ICON_CH_SKILL_004","Impactful Crush":"ICON_TE_SKILL_001","Wave Blow":"ICON_CH_SKILL_008","Rushing Smash":"ICON_CH_SKILL_009","Dark Crush":"ICON_TE_SKILL_001","Recuperation":"ICON_CH_SKILL_013","Fracturing Blow":"ICON_CH_SKILL_043","Focused Defense":"ICON_CH_SKILL_014","Sprint Mantra":"ICON_CH_SKILL_016","Healing Touch":"ICON_CH_SKILL_017","Undefeated Mantra":"ICON_CH_SKILL_019","Defiance":"ICON_CO_SKILL_002","Tremor Crush":"ICON_CH_SKILL_021","Impeding Authority":"ICON_CH_SKILL_024","Power of the Storm":"ICON_CH_SKILL_025","Spinning Strike":"ICON_CH_SKILL_029","Marchutan's Wrath":"ICON_CH_SKILL_033","Storm Chain":"ICON_CH_SKILL_037","Crushing Strike":"ICON_CH_SKILL_041","Guardian Blessing":"ICON_CH_SKILL_042","Protection Circle":"ICON_CH_SKILL_Passive_001","Inspiring Spell":"ICON_CH_SKILL_Passive_011","Attack Preparation":"ICON_GL_SKILL_Passive_005","Impact Hit":"ICON_GL_SKILL_Passive_006","Wind's Promise":"ICON_CH_SKILL_Passive_008"}},
 
   /* Сервери Global: id = фракція (1 — Елійці, 2 — Асмодіани) · регіон · номер 01–50; назви однакові в усіх регіонах */
   servers: {

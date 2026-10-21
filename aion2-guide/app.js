@@ -3215,7 +3215,7 @@
     var box = h('div', { class: 'macro' });
     g.bar.forEach(function (line) {
       var row = h('div', { class: 'macro-row' + (line.manual ? ' manual' : '') });
-      row.appendChild(h('span', { class: 'macro-label', text: line.label }));
+      row.appendChild(h('span', { class: 'macro-label' }, line.label, line.key ? h('span', { class: 'macro-key', text: line.key }) : null));
       var slots = h('div', { class: 'macro-slots' });
       line.skills.forEach(function (name, i) {
         if (i && line.seq) slots.appendChild(h('span', { class: 'macro-arrow', text: '›' }));
@@ -3240,9 +3240,68 @@
     });
   }
 
+  var ARCANA_UA = { Chalice: 'Чаша', Parchment: 'Сувій', Compass: 'Компас', Bell: 'Дзвін', Mirror: 'Дзеркало' };
+  var ARCANA_GLYPH = { Chalice: '🏆', Parchment: '📜', Compass: '🧭', Bell: '🔔', Mirror: '🪞' };
+
+  function vBlock(title, content, cls) {
+    return h('div', { class: 'vblock' + (cls ? ' ' + cls : '') }, h('h4', { class: 'vblock-title', text: title }), content);
+  }
+
+  /* Візуальні блоки класу: рівні вмінь, стигми, дошки Даеваніона й порядок вузлів, аркана */
+  function classVisual(g) {
+    var v = g.visual, wrap = h('div', { class: 'cvis' });
+    var skills = h('div', { class: 'vskills' });
+    v.skills.forEach(function (s) {
+      var bar = h('span', { class: 'vlvl-bar' }, h('i', { style: 'width:' + Math.round(s[1] / 20 * 100) + '%' }));
+      skills.appendChild(h('div', { class: 'vskill' + (s[1] >= 20 ? ' max' : '') },
+        skillIcon(g.cls, s[0], 28) || h('span', { class: 'skill-ph sm', text: s[0].slice(0, 2) }),
+        h('span', { class: 'vskill-name', text: s[0] }), bar, h('b', { class: 'vlvl', text: String(s[1]) })));
+    });
+    var stig = h('div', { class: 'vstigmas' });
+    var unlock = [22, 27, 32, 37];
+    v.stigmas.forEach(function (s, i) {
+      stig.appendChild(h('div', { class: 'vstigma' },
+        h('span', { class: 'vstigma-slot', text: 'слот ' + (i + 1) + ' · ' + unlock[i] + ' рів.' }),
+        skillIcon(g.cls, s[0], 44) || h('span', { class: 'skill-ph', text: s[0].slice(0, 2) }),
+        h('span', { class: 'vstigma-name', text: s[0] }), h('b', { class: 'vlvl', text: 'рів. ' + s[1] })));
+    });
+    wrap.appendChild(h('div', { class: 'cvis-2' }, vBlock('Рівні вмінь', skills), vBlock('Стигми', stig)));
+
+    var boards = h('div', { class: 'vboards' });
+    (G.daevaBoards || []).forEach(function (b) {
+      boards.appendChild(h('div', { class: 'vboard' + (b.pvp ? ' pvp' : '') + (b.pve ? ' pve' : '') },
+        h('b', { text: b.name }), h('span', { class: 'vboard-lvl', text: b.lvl + ' рів.' + (b.cost ? ' · ' + b.cost + ' кр.' : '') }),
+        h('small', { text: b.focus })));
+    });
+    var order = h('div', { class: 'vorder' });
+    v.daeva.forEach(function (name, i) {
+      if (i) order.appendChild(h('span', { class: 'macro-arrow', text: '›' }));
+      order.appendChild(h('span', { class: 'macro-slot', title: name },
+        h('span', { class: 'vorder-n', text: String(i + 1) }),
+        skillIcon(g.cls, name, 36) || h('span', { class: 'skill-ph', text: name.slice(0, 2) }), h('small', { text: name })));
+    });
+    wrap.appendChild(vBlock('Даеваніон', h('div', null, boards,
+      h('p', { class: 'small vnote' }, h('b', { text: 'Порядок вузлів: ' }), v.daevaNote), order,
+      h('p', { class: 'muted small', text: 'Чотири PvE-дошки — близько 570 кристалів, усі їх не закрити: беріть вузли за пріоритетом. Аріель — окремі очки, див. розділ «Дошка Аріель».' }))));
+
+    var arc = h('div', { class: 'varcana' });
+    v.arcana.forEach(function (a) {
+      var ic = h('div', { class: 'varcana-skills' });
+      a[2].forEach(function (name) {
+        ic.appendChild(h('span', { class: 'varcana-skill', title: name }, skillIcon(g.cls, name, 26) || h('span', { class: 'skill-ph sm', text: name.slice(0, 2) }), h('small', { text: name })));
+      });
+      arc.appendChild(h('div', { class: 'varcana-card' },
+        h('span', { class: 'varcana-glyph', text: ARCANA_GLYPH[a[0]] || '✦' }),
+        h('b', { text: (ARCANA_UA[a[0]] || a[0]) }), h('span', { class: 'muted small', text: a[0] + (a[1] && a[1] !== '—' ? ' · ' + a[1] : '') }), ic));
+    });
+    wrap.appendChild(vBlock('Аркана', h('div', null, arc, v.arcanaNote ? h('p', { class: 'muted small', text: v.arcanaNote }) : null)));
+    return wrap;
+  }
+
   function guidePanel(g, open) {
     var body = h('div', { class: 'guide-body' }, h('p', { class: 'muted lead' }, rich(g.intro)));
-    if (g.bar) body.appendChild(macroBar(g));
+    if (g.visual) body.appendChild(classVisual(g));
+    if (g.bar) body.appendChild(vBlock('Макрос і ротація', macroBar(g)));
     g.sections.forEach(function (sec) {
       var inner;
       if (sec.table) {
