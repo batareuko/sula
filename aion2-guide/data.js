@@ -150,7 +150,7 @@ window.GUIDE = {
   /* Тижневі ліміти з пачноутів (не входи, тому не рахуються в «Використано X з N тижневих входів») */
   weeklyLimits: [
     { id: 'w-wing-morph', name: '[Морф Запечатаних Крил|Sealed Wings → Enhance Stones]', max: 20, hint: '20 / тиждень на сервер, з 7.10' },
-    { id: 'w-res-stone', name: '[Камінь Воскресіння|Resurrection Spiritstone] за кінари', max: 10, hint: '10 / тиждень по 25 000, до 16.12' },
+    { id: 'w-res-pack', name: 'Пакети [Каменів Воскресіння|Resurrection Spiritstone] за кінари', max: 2, hint: '2 пакети по 30 (25 000 і 50 000) / тиждень на сервер, до 16.12' },
     { id: 'w-odyle', name: '[Енергія Оділе|Odyle Energy] у Торговців Вітерця', max: 20, hint: '20 / тиждень на персонажа, на час перенесення серверів' },
     { id: 'w-candy-keys', name: 'Ключі-цукерки (Хелловін)', max: 3, hint: 'червоний, жовтий, синій — по 60 уламків, до 4.11' },
   ],
@@ -161,6 +161,114 @@ window.GUIDE = {
      kind: plus — на користь гравцям, minus — обмеження, fix — виправлення.
      act — що зробити; counter — id лічильника в «Тижневих лімітах». Новий пачноут — новий об'єкт зверху. */
   patches: [
+    {
+      id: '6ad85be86cfe4756db5b8e92',
+      date: '2026-10-21',
+      title: 'Пачноут 21 жовтня',
+      en: '[Notice] Patch Notes | Oct. 20 (PDT) / Oct. 21 (CEST)',
+      maint: 'Техобслуговування 21 жовтня з 06:30 UTC (09:30 за Києвом), 5 год 30 хв.',
+      tldr: [
+        'Важкий режим Експедицій: Печера Крау й Драупнір, вхід з 2600 ГС, лють боса через 4 хв, 3 воскресіння на гравця.',
+        'Нова дошка Даеваніона «Аріель»: Уламки Аріель з Hard → Кристал Даеваніона: Аріель (до 30 на персонажа) або 5 каменів заточки за уламок.',
+        'Камені Воскресіння (Сезон 1) пакетами по 30: за 25 000 і за 50 000 кінар щотижня, до 16 грудня.',
+        'Безодня: більше гравців, більше HP у босів і Ядра, більші хітбокси Кайри й Арго.',
+        'Чаклун: Cold Storm і Fire Wall рахують бонусний урон як задумано (Frostbite / Embers).',
+      ],
+      groups: [
+        {
+          title: 'Експедиція: важкий режим',
+          items: [
+            {
+              en: 'Hard mode will be added to Krao Cave and Draupnir. Required item level for entry will be 2600. In Hard mode, the boss Frenzy timer will be set to 4 minutes. In Hard mode, each player will be limited to 3 revives.',
+              ua: 'У [Печері Крау|Krao Cave] і [Драупнірі|Draupnir] з\'являється важкий режим (Hard). Вхід — з рівнем предметів 2600. [Лють|Frenzy] боса настає через 4 хвилини, у кожного гравця — лише 3 воскресіння.',
+              why: '4 хвилини до люті — це жорсткий DPS-чек: група має зносити боса швидше, ніж зараз у звичайному режимі. Подивіться в оверлеї прогноз бою (через скільки впаде бос і скільки до люті) на звичайній складності: якщо не встигаєте за 4 хв, у Hard іти рано. 3 воскресіння на людину означають, що Камені Воскресіння знову потрібні.',
+              who: ['raid'], kind: 'plus', act: 'Перевірте свій ГС (треба 2600) і темп групи на звичайній складності: бос має падати швидше ніж за 4 хв.',
+            },
+            {
+              en: 'New rewards will be available in Hard mode: a chance to obtain a Philosopher\'s Stone: Revelation (Bound), selectable as a guaranteed reward; Ariel Fragment (Bound), varying by dungeon; a chance at an Expedition Hero Artwork; more Kina than Normal. All Unique crafting materials (Wrathful Mind, Wrathful Will, Wrathful Ego) will be obtainable from Krao Cave and Draupnir in Hard mode.',
+              ua: 'Нагороди Hard: шанс на «[Філософський камінь: Одкровення|Philosopher\'s Stone: Revelation]» (його можна обрати як гарантовану нагороду), [Уламки Аріель|Ariel Fragment] (кількість залежить від підземелля), шанс на «[Арт героя Експедиції|Expedition Hero Artwork]», більше кінар, ніж у звичайному режимі. Усі унікальні матеріали ремесла — [Wrathful Mind|Wrathful Mind], [Wrathful Will|Wrathful Will] і [Wrathful Ego|Wrathful Ego] — тепер падають у Hard Крау й Драупніра.',
+              why: 'Філософський камінь можна взяти гарантовано — це головна причина ходити в Hard. Ремісникам: унікальні матеріали більше не треба шукати по різних місцях, вони зібрані в двох Експедиціях.',
+              who: ['raid', 'craft'], kind: 'plus',
+            },
+            {
+              en: 'You will be able to use Substance Morph to convert 100 Ariel Fragments into a Daevanion Crystal: Ariel (Bound) up to 30 times per character (Substance Morph > Special > Daevanion), and 1 Ariel Fragment into 5 Enhance Stones an unlimited number of times (Substance Morph > Special > Consumables).',
+              ua: 'Морф Уламків Аріель: 100 уламків → «[Кристал Даеваніона: Аріель|Daevanion Crystal: Ariel]» (до 30 разів на персонажа; Морф → Special → Daevanion) або 1 уламок → 5 [Каменів заточки|Enhance Stones] без обмежень (Морф → Special → Consumables).',
+              why: 'Спершу закрийте дошку Аріель (кристали, 30 × 100 = 3000 уламків на персонажа), а зайві уламки міняйте на камені заточки. Після обмеження морфу Запечатаних Крил (20 на тиждень) це новий безлімітний спосіб отримати камені заточки.',
+              who: ['raid', 'stones'], kind: 'plus', act: 'Уламки Аріель — спершу на Кристали Даеваніона: Аріель, решту — на камені заточки.',
+            },
+            {
+              en: 'New \'Ariel\' Daevanion Board will be added. Ariel Daevanion Points will be earned by collecting Ariel Fragments from Expedition (Hard) and morphing them through Substance Morph. The number obtainable through Substance Morph will be limited for each dungeon.',
+              ua: 'Нова [дошка Даеваніона|Daevanion Board] «Аріель». Її очки дають Кристали Даеваніона: Аріель, які морфуються з Уламків Аріель з Експедицій (Hard). Скільки можна отримати морфом, обмежено для кожного підземелля.',
+              why: 'Ще одна дошка — ще характеристики для персонажа. Ліміт «на кожне підземелля» означає, що доведеться ходити і в Крау, і в Драупнір, а не фармити одне.',
+              who: ['raid', 'all'], kind: 'plus',
+            },
+            {
+              en: 'New achievement will be added for Expedition Hero Artwork Collector. New achievements will be added for Expedition (Hard). You will be able to obtain Unique Skins by completing Expedition (Hard) achievements.',
+              ua: 'Нові досягнення за колекцію Артів героя Експедиції та за Експедиції (Hard). За досягнення Hard дають унікальні скіни.',
+              why: 'Косметика й прогрес досягнень для тих, хто регулярно ходить у Hard.',
+              who: ['raid'], kind: 'plus',
+            },
+          ],
+        },
+        {
+          title: 'Класи',
+          items: [
+            {
+              en: 'Chanter — Spinning Strike: An issue where skill effects were not displaying correctly will be fixed.',
+              ua: '[Чантер|Chanter], «[Обертальний удар|Spinning Strike]»: ефекти вміння знову відображаються правильно.',
+              why: 'Лише візуальне виправлення, на урон не впливає.',
+              who: ['class'], kind: 'fix',
+            },
+            {
+              en: 'Sorcerer — Cold Storm: An issue where attacking targets with stacked Frostbite did not deal extra damage will be fixed. An issue where the Frostbite effect did not match the skill level will be fixed. An issue will be fixed where, when using Specialty 1, Frostbite was applied an additional time to targets within the Cold Storm area after the effect ended.',
+              ua: '[Чаклун|Sorcerer], «[Крижаний шторм|Cold Storm]»: удари по цілях з накладеним [Обмороженням|Frostbite] знову дають додатковий урон; сила Обмороження тепер відповідає рівню вміння; зі спеціалізацією 1 Обмороження більше не накладається зайвий раз після кінця ефекту.',
+              why: 'Гілка холоду загалом стане сильнішою (бонус за стаки і правильний рівень Обмороження), хоча зник зайвий «подвійний» Frostbite зі спеціалізацією 1. Ротацію варто перевірити на манекені.',
+              who: ['class'], kind: 'fix', act: 'Чаклунам: перевірте ротацію холоду на манекені після оновлення.',
+            },
+            {
+              en: 'Sorcerer — Fire Wall: An issue where extra damage was dealt when attacking targets not affected by Embers will be fixed.',
+              ua: 'Чаклун, «[Вогняна стіна|Fire Wall]»: більше немає додаткового урону по цілях без [Жарин|Embers].',
+              why: 'Це був баг на користь гравця — тепер бонус лише по цілях з Жаринами. Тримайте Жарини на цілі, інакше Fire Wall б\'є слабше, ніж раніше.',
+              who: ['class'], kind: 'minus',
+            },
+          ],
+        },
+        {
+          title: 'Подія і магазин',
+          items: [
+            {
+              en: 'Rise to the Challenge: from 10/21/2026 until the start of maintenance on 12/16/2026 (CET), Resurrection Spiritstones (Season 1) will be available for Kina under Shop > Wind Breeze Merchants. STEP 1: x30 for 25,000 Kina; STEP 2: x30 for 50,000 Kina; purchase limit per server per week.',
+              ua: 'Подія «[Прийми виклик|Rise to the Challenge]» з 21 жовтня до техобслуговування 16 грудня: [Камені Воскресіння (Сезон 1)|Resurrection Spiritstone (Season 1)] за кінари в Магазин → Wind Breeze Merchants. Крок 1 — 30 каменів за 25 000, крок 2 — ще 30 за 50 000. Ліміт — на сервер на тиждень.',
+              why: 'Це набагато вигідніше за попередній продаж (10 штук по 25 000 кожен): тепер 30 каменів коштують стільки, скільки раніше один. Разом з Hard Експедиціями (3 воскресіння на гравця) це майже обов\'язкова покупка щотижня.',
+              who: ['raid', 'all'], kind: 'plus', act: 'Щотижня купуйте обидва пакети Каменів Воскресіння (25 000 і 50 000 кінар).', counter: 'w-res-pack',
+            },
+          ],
+        },
+        {
+          title: 'Безодня та інше',
+          items: [
+            {
+              en: 'The maximum number of players allowed to enter the Abyss will be adjusted to accommodate more players. The HP of the Dimensional Core in the Lower Abyss will be increased. The HP of all bosses that spawn in the Abyss will be increased. The collision hitboxes of Abyss bosses Kaira and Argo will be slightly increased in size.',
+              ua: 'У [Безодню|Abyss] пускатимуть більше гравців. Збільшено HP [Ядра виміру|Dimensional Core] в Нижній Безодні та всіх босів Безодні. Хітбокси боса [Кайри|Kaira] й [Арго|Argo] трохи більші.',
+              why: 'Боси Безодні житимуть довше, тож за них буде більше бійки між фракціями. Більші хітбокси — легше влучати в натовпі. Таймери босів на сайті й в оверлеї працюють як і раніше.',
+              who: ['raid'], kind: 'plus',
+            },
+            {
+              en: 'The system that restricts players from listing gathered materials for sale in the Market based on their gameplay history will be adjusted. The system will be improved to allow some previously restricted players to trade normally, while trading restrictions will remain in place for others.',
+              ua: 'Переглянуто обмеження на продаж зібраних матеріалів на [Ринку|Market] залежно від історії гри. Частина гравців знову зможе торгувати, для інших обмеження лишаються.',
+              why: 'Це антибот-система. Якщо раніше не могли виставити матеріали на продаж — спробуйте знову.',
+              who: ['craft', 'all'], kind: 'fix',
+            },
+            {
+              en: 'Empyrean Traces that were inaccessible due to Halloween decorations at the Dawn Legion Base and Zumion Village in Verteron will be moved to accessible locations. An issue where the [Movement Controls] option appears multiple times under Settings > Key Settings will be fixed. An issue where the actual title effect and the effect described in the item tooltip did not match will be fixed.',
+              ua: '[Емпірейські сліди|Empyrean Traces], до яких не можна було дістатися через хелловінські прикраси на базі Легіону Світанку та в селищі Зуміон ([Вертерон|Verteron]), перенесено. Виправлено повтор «Movement Controls» у налаштуваннях клавіш і невідповідність ефекту титулу його опису.',
+              why: 'Елійці можуть знову зібрати ці сліди. Ефект титулів тепер такий, як написано в підказці — перевірте, який титул вигідніший.',
+              who: ['qol', 'elyos'], kind: 'fix',
+            },
+          ],
+        },
+      ],
+    },
     {
       id: '6acf20d007b77e214688a7ac',
       date: '2026-10-14',
@@ -339,7 +447,7 @@ window.GUIDE = {
               en: 'New Kina items will be added to the Wind Breeze Merchants. Item: Resurrection Spiritstone (Season 1) – Limited to 10 purchases per server per week. Price: 25,000 Kina. Sales period: after the maintenance on October 6, 2026 (PDT) through before the maintenance on December 15, 2026 (PST).',
               ua: 'У [Торговців Вітерця|Wind Breeze Merchants] нові товари за кінари: [Камінь Воскресіння (Сезон 1)|Resurrection Spiritstone (Season 1)], 10 штук на тиждень на сервер, 25 000 кінар за штуку. Де: Меню → Магазин → Wind Breeze Merchants → Special. Продаж з техобслуговування 7 жовтня до техобслуговування 16 грудня (за європейським часом).',
               why: 'Судячи з назви, це камінь для воскресіння на місці смерті без забігу від точки відродження. Найкорисніший у рейдах і на польових босах. «Season 1» означає, що він для першого сезону. Повний тижневий ліміт коштує 250 000 кінар. Хто ходить у рейди, хай купує щотижня, поки продаж не закінчився.',
-              who: ['raid', 'all'], kind: 'plus', act: 'Купуйте до 10 каменів щотижня до 16 грудня.', counter: 'w-res-stone',
+              who: ['raid', 'all'], kind: 'plus', act: 'Купуйте до 10 каменів щотижня до 16 грудня.',
             },
           ],
         },
