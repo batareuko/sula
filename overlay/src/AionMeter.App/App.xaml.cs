@@ -98,7 +98,8 @@ public partial class App : Application
         WindowMemory.Use(settings);
         UiText.Use(settings.Language);
         var withGame = settings.WithGame;
-        ThreadPool.QueueUserWorkItem(_ => GameAutostart.Apply(withGame)); // may wait a moment for an old watcher to stop
+        if (!settings.DiagSilent) ThreadPool.QueueUserWorkItem(_ => GameAutostart.Apply(withGame));
+        else Log.Info("Disconnect test: silent — tray only (no window, capture, game search, hotkeys, internet, start-with-game)"); // may wait a moment for an old watcher to stop
         Func<Core.Game.GameData, IEventSource> factory = data => new LiveCapture(data, new LiveCaptureOptions
         {
             DeviceName = settings.CaptureDevice,
@@ -158,7 +159,7 @@ public partial class App : Application
 
         // New versions on GitHub: tray item, the overlay's update button and one notification per version.
         _meter.Updates.Changed += OnUpdatesChanged;
-        _meter.Updates.Start();
+        if (!_meter.Settings.DiagSilent) _meter.Updates.Start();
         Updater.CleanDownloads();
         Updater.CleanOldExe();
         if (e.Args.Contains("--updated")) // started by the installer after an in-app update
@@ -210,6 +211,7 @@ public partial class App : Application
 
     private void OnTick()
     {
+        if (_meter.Settings.DiagSilent) return; // disconnect test: nothing at all
         _meter.Tick();
         UpdateAutoVisibility();
         if (_overlay.IsVisible) _overlay.Refresh();
@@ -305,7 +307,7 @@ public partial class App : Application
     /// </summary>
     private void CheckGameExit()
     {
-        if (!_meter.Settings.WithGame || _meter.DemoRunning || _installing || _meter.Settings.DiagNoGameScan) return;
+        if (!_meter.Settings.WithGame || _meter.DemoRunning || _installing || _meter.Settings.NoGameScan) return;
         var now = Environment.TickCount64;
         if (GameProcessLocator.FindGameProcessIds().Length > 0)
         {
@@ -326,6 +328,7 @@ public partial class App : Application
     {
         if (_hotkeys is null) return;
         _hotkeys.UnregisterAll();
+        if (_meter.Settings.DiagSilent) return;
         var s = _meter.Settings;
         _hotkeys.Register(s.HotkeyToggleOverlay, () => SetOverlayVisible(!_overlay.IsVisible));
         _hotkeys.Register(s.HotkeyReset, RestartMeter);
@@ -651,10 +654,10 @@ public partial class App : Application
     /// <summary>1 HP: the big boss HP bar (Settings → Overlay), made on first use.</summary>
     private void UpdateBossBar()
     {
-        if ((!_meter.Settings.BossBar || _meter.Settings.DiagNoOverlay) && _bossBar is null) return;
-        var snap = _meter.Settings.BossBar && !_meter.Settings.DiagNoOverlay ? _meter.Tracker.Snapshot(null, DateTimeOffset.UtcNow.ToUnixTimeMilliseconds()) : null;
+        if ((!_meter.Settings.BossBar || _meter.Settings.NoOverlay) && _bossBar is null) return;
+        var snap = _meter.Settings.BossBar && !_meter.Settings.NoOverlay ? _meter.Tracker.Snapshot(null, DateTimeOffset.UtcNow.ToUnixTimeMilliseconds()) : null;
         if (snap is not null && _bossBar is null) _bossBar = new BossBarWindow();
-        _bossBar?.Update(snap, _meter.Settings.BossBar && !_meter.Settings.DiagNoOverlay);
+        _bossBar?.Update(snap, _meter.Settings.BossBar && !_meter.Settings.NoOverlay);
     }
 
     private readonly Dictionary<string, DateTimeOffset> _eventsAnnounced = new();

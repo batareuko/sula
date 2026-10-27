@@ -261,6 +261,8 @@
                                       Content="{Binding DiagNoOverlayOn, Source={x:Static s:UiText.Current}}" />
                             <CheckBox x:Name="DiagNoCaptureOn" Style="{StaticResource DarkCheck}" Margin="0,4,0,0"
                                       Content="{Binding DiagNoCaptureOn, Source={x:Static s:UiText.Current}}" />
+                            <CheckBox x:Name="DiagSilentOn" Style="{StaticResource DarkCheck}" Margin="0,4,0,0"
+                                      Content="{Binding DiagSilentOn, Source={x:Static s:UiText.Current}}" />
                             <CheckBox x:Name="DiagNoGameScanOn" Style="{StaticResource DarkCheck}" Margin="0,4,0,8"
                                       Content="{Binding DiagNoGameScanOn, Source={x:Static s:UiText.Current}}" />
                             <CheckBox x:Name="MechanicsOn" Style="{StaticResource DarkCheck}" Margin="0,4,0,0"

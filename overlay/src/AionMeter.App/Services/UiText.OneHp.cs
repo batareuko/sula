@@ -176,6 +176,7 @@ public sealed partial class UiText
     public string DiagNoOverlayOn { get; init; } = "No window over the game (the card and the boss bar stay hidden)";
     public string DiagNoCaptureOn { get; init; } = "No packet capture (Npcap is not opened; the meter counts nothing)";
     public string DiagNoGameScanOn { get; init; } = "Do not look for the game and do not ping (process list, connections)";
+    public string DiagSilentOn { get; init; } = "Complete silence: only the tray icon (no hotkeys, internet, start with the game either)";
     public string DiagCaptureOff { get; init; } = "Packet capture is off (disconnect test in Settings)";
     public string TabAnalysis { get; init; } = "Skill analysis";
     public string ThUses { get; init; } = "Uses";
