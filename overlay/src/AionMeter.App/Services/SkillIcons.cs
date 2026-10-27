@@ -74,9 +74,11 @@ public sealed class SkillIcons
         return $"ICON_{cls}_SKILL_{(passive ? "Passive_" : "")}{sub:D3}";
     }
 
-    public ImageSource? Get(int skillCode)
+    public ImageSource? Get(int skillCode) => IconName(skillCode) is { } name ? GetByName(name) : null;
+
+    /// <summary>1 HP: any picture of the game-data CDN by its file name (event markers, boss portraits …).</summary>
+    public ImageSource? GetByName(string name)
     {
-        if (IconName(skillCode) is not { } name) return null;
         if (_loaded.TryGetValue(name, out var img)) return img;
 
         var file = Path.Combine(_cacheDir, name + ".png");

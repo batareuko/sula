@@ -16,6 +16,23 @@ public sealed class EventIcon : FrameworkElement
     private const double Box = 18;
     private Kind _kind;
 
+    private ImageSource? _image;
+
+    /// <summary>1 HP: the game's own icon (from the game-data CDN); the drawn sign stands in until it is there.</summary>
+    public ImageSource? Image
+    {
+        get => _image;
+        set
+        {
+            if (ReferenceEquals(_image, value)) return;
+            _image = value;
+            InvalidateVisual();
+        }
+    }
+
+    /// <summary>1 HP: how much to enlarge <see cref="Image"/> — the game's map markers have wide transparent margins.</summary>
+    public double Zoom { get; set; } = 1;
+
     public EventIcon(Kind kind)
     {
         _kind = kind;
@@ -53,6 +70,13 @@ public sealed class EventIcon : FrameworkElement
     {
         var s = Math.Min(ActualWidth, ActualHeight) / Box;
         if (s <= 0) return;
+        if (_image is not null)
+        {
+            var w = ActualWidth * Zoom;
+            var h = ActualHeight * Zoom;
+            dc.DrawImage(_image, new Rect((ActualWidth - w) / 2, (ActualHeight - h) / 2, w, h));
+            return;
+        }
         dc.PushTransform(new ScaleTransform(s, s));
         switch (_kind)
         {

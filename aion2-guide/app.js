@@ -2171,6 +2171,11 @@
     siege: '<path d="M3,16.5 L3,5 L5,5 L5,3 L7,3 L7,5 L8,5 L8,3 L10,3 L10,5 L11,5 L11,3 L13,3 L13,5 L15,5 L15,16.5 Z" fill="url(#evst)" stroke="#2A3040" stroke-width=".7"/><path d="M7,16.5 L7,12 A2,2 0 0 1 11,12 L11,16.5 Z" fill="#202634"/>',
     weekly: '<path d="M2.5,4 L15.5,4 L15.5,16 L2.5,16 Z" fill="url(#evte)" stroke="#0E4A42" stroke-width=".7"/><path d="M2.5,4 L15.5,4 L15.5,7.2 L2.5,7.2 Z" fill="#146E62"/><rect x="5" y="2.2" width="1.4" height="3.2" fill="#0E4A42"/><rect x="11.6" y="2.2" width="1.4" height="3.2" fill="#0E4A42"/><path d="M6,11.6 L8.2,13.6 L12.2,9.2" stroke="#0E4A42" stroke-width="1.2" fill="none"/>',
   };
+  /* Ігрові значки подій — з CDN гри (як і значки вмінь); тижневий ресет лишається намальованим календарем */
+  var EV_GAME_ICONS = { shugo: 'UT_FieldEvent_Icon_ShugoFestaEntrance', rift: 'UT_Marker_Rift', invasion: 'UT_NP_FieldEventMarker',
+    siege: 'UT_Marker_AbyssArtifact_Neutral', nahma: 'UT_256_MOB_AbBoss_01' };
+  /* прозорі поля навколо маркерів гри: наскільки збільшити, щоб значки були одного розміру */
+  var EV_ICON_ZOOM = { shugo: 1.5, rift: 1.3, invasion: 2.8, siege: 1.25, nahma: 1 };
   /* Наступний початок події в часі сервера: хвилини доби, дні тижня (0 — неділя) або щодня; поточна, якщо ще йде */
   function nextServerEvent(now, minutes, days, dur) {
     var off = serverOffset(now), wall = now + off, day0 = Math.floor(wall / DAY_MS) * DAY_MS;
@@ -2197,13 +2202,13 @@
     var now = Date.now(), r = riftInfo(now), hourly = [], half = [];
     for (var i = 0; i < 24; i++) { hourly.push(i * 60); half.push(i * 60 + 30); }
     var siege = nextServerEvent(now, [21 * 60], [1, 4, 6], 30), nahma = nextServerEvent(now, [21 * 60], [5, 0], 30);
-    var big = siege && (!nahma || siege.start <= nahma.start) ? { name: 'Облога артефактів', ev: siege } : { name: 'Лорд-охоронець Нахма', ev: nahma };
+    var big = siege && (!nahma || siege.start <= nahma.start) ? { id: 'siege', name: 'Облога артефактів', ev: siege } : { id: 'nahma', name: 'Лорд-охоронець Нахма', ev: nahma };
     var week = nextReset('week', now);
     var items = [
       { id: 'shugo', name: 'Фестиваль Шуго', ev: nextServerEvent(now, hourly, null, 10) },
       { id: 'rift', name: 'Розлом', ev: r.open ? { start: r.last, end: r.closes } : { start: r.next, end: r.next + G.rift.portalMin * 60000 } },
       { id: 'invasion', name: 'Вторгнення', ev: nextServerEvent(now, half, null, 0) },
-      { id: 'siege', name: big.name, ev: big.ev },
+      { id: big.id, name: big.name, ev: big.ev },
       { id: 'weekly', name: 'Тижневий ресет', ev: { start: week, end: week } },
     ];
     box.textContent = '';
@@ -2212,7 +2217,9 @@
       var running = it.ev.start <= now && now < it.ev.end;
       var el = h('span', { class: 'ev' + (running ? ' on' : ''), title: it.name + ' · ' + (running ? 'йде до ' + clock(it.ev.end) :
         new Date(it.ev.start).toLocaleString('uk-UA', { weekday: 'short', hour: '2-digit', minute: '2-digit' })) });
-      el.innerHTML = '<svg width="20" height="20" viewBox="0 0 18 18" aria-hidden="true">' + EV_SVG_DEFS + EV_ICONS[it.id] + '</svg>';
+      el.innerHTML = EV_GAME_ICONS[it.id]
+        ? '<img width="22" height="22" alt="" loading="lazy" style="transform:scale(' + EV_ICON_ZOOM[it.id] + ')" src="https://assets.playnccdn.com/static-aion2-gamedata/resources/' + EV_GAME_ICONS[it.id] + '.png">'
+        : '<svg width="20" height="20" viewBox="0 0 18 18" aria-hidden="true">' + EV_SVG_DEFS + EV_ICONS[it.id] + '</svg>';
       el.appendChild(h('b', { text: evCountdown(running ? it.ev.end - now : it.ev.start - now) }));
       el.appendChild(h('small', { text: it.name }));
       box.appendChild(el);
