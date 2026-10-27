@@ -132,6 +132,10 @@ public sealed class AppSettings
     public bool Frameless { get; set; } = true;
     /// <summary>1 HP: names shimmer in the class colours (yours gold-pink).</summary>
     public bool AnimatedNames { get; set; } = true;
+    /// <summary>1 HP: pet radar — monsters in view that drop a pet's soul (Core/OneHp/PetRadar.cs).</summary>
+    public bool PetRadar { get; set; }
+    /// <summary>1 HP: pets you no longer need (pet ids from data/pet_souls.json), hidden from the pet radar.</summary>
+    public HashSet<int> PetsDone { get; set; } = [];
     public bool BuffEndAlert { get; set; } = true;
     /// <summary>1 HP: your party's cooldowns of a minute and more on the card.</summary>
     public bool ShowPartyCooldowns { get; set; } = true;

@@ -1,0 +1,2916 @@
+{
+ "_source": "https://aion2data.com/pets/map (Aion2Data, AION 2 Global game version 2026.10.21, read 2026-10-27): each pet's family, the territories with its soul monsters (number of spawn points) and the monster that drops its soul. NPC codes matched by English name in npcs/en.json.",
+ "pets": [
+  {
+   "id": 1047,
+   "pet": "Aberrant Armadon",
+   "family": "Fera",
+   "monster": "Highland Wild Armadon",
+   "areas": [
+    [
+     "Verteron",
+     100
+    ]
+   ],
+   "npcs": [
+    2100751
+   ]
+  },
+  {
+   "id": 1118,
+   "pet": "Aberrant Bee",
+   "family": "Fera",
+   "monster": "Black Pattern Bee",
+   "areas": [
+    [
+     "Verteron",
+     38
+    ],
+    [
+     "Altgard",
+     112
+    ]
+   ],
+   "npcs": [
+    2100286
+   ]
+  },
+  {
+   "id": 1119,
+   "pet": "Aberrant Coradon",
+   "family": "Fera",
+   "monster": "Hill Coradon",
+   "areas": [
+    [
+     "Verteron",
+     107
+    ],
+    [
+     "Altgard",
+     9
+    ]
+   ],
+   "npcs": [
+    2100821,
+    2100828
+   ]
+  },
+  {
+   "id": 1053,
+   "pet": "Aberrant Potcrab",
+   "family": "Fera",
+   "monster": "Eternal Moss Crab",
+   "areas": [
+    [
+     "Verteron",
+     33
+    ]
+   ],
+   "npcs": [
+    2101098,
+    2110512
+   ]
+  },
+  {
+   "id": 1089,
+   "pet": "Aberrant Skama",
+   "family": "Fera",
+   "monster": "Yellow-Tailed Skama",
+   "areas": [
+    [
+     "Verteron",
+     30
+    ],
+    [
+     "Chaotic Lower Reshanta",
+     37
+    ]
+   ],
+   "npcs": [
+    2100710
+   ]
+  },
+  {
+   "id": 1126,
+   "pet": "Aberrant Tog",
+   "family": "Fera",
+   "monster": "Hungry Tog",
+   "areas": [
+    [
+     "Verteron",
+     377
+    ],
+    [
+     "Altgard",
+     69
+    ]
+   ],
+   "npcs": [
+    2100145,
+    2101231
+   ]
+  },
+  {
+   "id": 1125,
+   "pet": "Aberrant Zaif",
+   "family": "Fera",
+   "monster": "Yellow-Maned Zaif",
+   "areas": [
+    [
+     "Verteron",
+     27
+    ],
+    [
+     "Altgard",
+     19
+    ]
+   ],
+   "npcs": [
+    2100558
+   ]
+  },
+  {
+   "id": 1193,
+   "pet": "Addicted Shulak Cart Worker",
+   "family": "Cogni",
+   "monster": "Rampaging Shulak Cart Worker",
+   "areas": [
+    [
+     "Altgard",
+     29
+    ]
+   ],
+   "npcs": [
+    2400455
+   ]
+  },
+  {
+   "id": 1207,
+   "pet": "Agrint",
+   "family": "Natura",
+   "monster": "Contaminated Agrint",
+   "areas": [
+    [
+     "Verteron",
+     78
+    ],
+    [
+     "Altgard",
+     53
+    ],
+    [
+     "Chaotic Lower Reshanta",
+     12
+    ],
+    [
+     "Chaotic Middle Reshanta",
+     10
+    ]
+   ],
+   "npcs": [
+    2100306,
+    2100714
+   ]
+  },
+  {
+   "id": 1038,
+   "pet": "Airon",
+   "family": "Fera",
+   "monster": "Hardbeak Airon",
+   "areas": [
+    [
+     "Verteron",
+     31
+    ],
+    [
+     "Altgard",
+     54
+    ]
+   ],
+   "npcs": [
+    2100609
+   ]
+  },
+  {
+   "id": 1046,
+   "pet": "Armadon",
+   "family": "Fera",
+   "monster": "Red Shell Mole",
+   "areas": [
+    [
+     "Altgard",
+     149
+    ]
+   ],
+   "npcs": [
+    2400002
+   ]
+  },
+  {
+   "id": 1208,
+   "pet": "Ashen Agrint",
+   "family": "Natura",
+   "monster": "Unstable Agrint",
+   "areas": [
+    [
+     "Altgard",
+     8
+    ]
+   ],
+   "npcs": [
+    2400750
+   ]
+  },
+  {
+   "id": 1135,
+   "pet": "Ashen Dionae",
+   "family": "Natura",
+   "monster": "Ashen Dionae",
+   "areas": [
+    [
+     "Altgard",
+     14
+    ]
+   ],
+   "npcs": [
+    2400248
+   ]
+  },
+  {
+   "id": 1114,
+   "pet": "Ashen Spider",
+   "family": "Fera",
+   "monster": "White Shell Octaside",
+   "areas": [
+    [
+     "Verteron",
+     14
+    ],
+    [
+     "Altgard",
+     48
+    ]
+   ],
+   "npcs": [
+    2100283
+   ]
+  },
+  {
+   "id": 1040,
+   "pet": "Aullaeu Shaman",
+   "family": "Cogni",
+   "monster": "Aullaeu Apprentice Shaman",
+   "areas": [
+    [
+     "Verteron",
+     15
+    ]
+   ],
+   "npcs": [
+    2100950,
+    2290106
+   ]
+  },
+  {
+   "id": 1008,
+   "pet": "Baby Odyle Spider",
+   "family": "Fera",
+   "monster": "Coastal Odyle Spider",
+   "areas": [
+    [
+     "Verteron",
+     8
+    ]
+   ],
+   "npcs": [
+    2100034
+   ]
+  },
+  {
+   "id": 1163,
+   "pet": "Basilisk",
+   "family": "Fera",
+   "monster": "Black Ash Basilisk",
+   "areas": [
+    [
+     "Altgard",
+     16
+    ]
+   ],
+   "npcs": [
+    2400240
+   ]
+  },
+  {
+   "id": 1065,
+   "pet": "Biruta",
+   "family": "Cogni",
+   "monster": "Biruta Wanderer",
+   "areas": [
+    [
+     "Altgard",
+     4
+    ]
+   ],
+   "npcs": [
+    2100183,
+    2400920
+   ]
+  },
+  {
+   "id": 1105,
+   "pet": "Biruta Herbalist",
+   "family": "Cogni",
+   "monster": "Biruta Herbalist",
+   "areas": [
+    [
+     "Altgard",
+     4
+    ]
+   ],
+   "npcs": [
+    2400919
+   ]
+  },
+  {
+   "id": 1214,
+   "pet": "Black Spirit",
+   "family": "Natura",
+   "monster": "Contaminated Spirit",
+   "areas": [
+    [
+     "Verteron",
+     133
+    ],
+    [
+     "Altgard",
+     18
+    ],
+    [
+     "Chaotic Lower Reshanta",
+     17
+    ]
+   ],
+   "npcs": [
+    2100460
+   ]
+  },
+  {
+   "id": 1110,
+   "pet": "Blue Kalgolem",
+   "family": "Varian",
+   "monster": "Splendent Kalgolem",
+   "areas": [
+    [
+     "Verteron",
+     54
+    ],
+    [
+     "Altgard",
+     24
+    ],
+    [
+     "Chaotic Lower Reshanta",
+     79
+    ],
+    [
+     "Chaotic Middle Reshanta",
+     31
+    ]
+   ],
+   "npcs": [
+    2100454
+   ]
+  },
+  {
+   "id": 1181,
+   "pet": "Brax",
+   "family": "Fera",
+   "monster": "Docile Highland Brax",
+   "areas": [
+    [
+     "Verteron",
+     124
+    ],
+    [
+     "Altgard",
+     21
+    ]
+   ],
+   "npcs": [
+    2100740
+   ]
+  },
+  {
+   "id": 1157,
+   "pet": "Cadaver Cleaner",
+   "family": "Varian",
+   "monster": "Ferocious Cadaver Cleaner",
+   "areas": [
+    [
+     "Altgard",
+     38
+    ]
+   ],
+   "npcs": [
+    2400412,
+    2400418
+   ]
+  },
+  {
+   "id": 1071,
+   "pet": "Cadaver Insectoid",
+   "family": "Fera",
+   "monster": "Drana Cadaver Insectoid",
+   "areas": [
+    [
+     "Altgard",
+     16
+    ]
+   ],
+   "npcs": [
+    2400018
+   ]
+  },
+  {
+   "id": 1041,
+   "pet": "Cave Bat",
+   "family": "Fera",
+   "monster": "Drana Mutated Bat",
+   "areas": [
+    [
+     "Verteron",
+     11
+    ]
+   ],
+   "npcs": [
+    2100911
+   ]
+  },
+  {
+   "id": 1217,
+   "pet": "Congealed Drana",
+   "family": "Varian",
+   "monster": "Congealed Drana",
+   "areas": [
+    [
+     "Altgard",
+     26
+    ]
+   ],
+   "npcs": [
+    2400009
+   ]
+  },
+  {
+   "id": 1062,
+   "pet": "Contaminated Slime",
+   "family": "Varian",
+   "monster": "Contaminated Poison Slime",
+   "areas": [
+    [
+     "Verteron",
+     96
+    ],
+    [
+     "Chaotic Lower Reshanta",
+     69
+    ]
+   ],
+   "npcs": [
+    2100717
+   ]
+  },
+  {
+   "id": 1022,
+   "pet": "Crasaur",
+   "family": "Fera",
+   "monster": "Docile Crasaur",
+   "areas": [
+    [
+     "Verteron",
+     46
+    ],
+    [
+     "Altgard",
+     42
+    ]
+   ],
+   "npcs": [
+    2100608
+   ]
+  },
+  {
+   "id": 1039,
+   "pet": "Crestlich",
+   "family": "Fera",
+   "monster": "Ellun River Crestlich Female",
+   "areas": [
+    [
+     "Verteron",
+     129
+    ]
+   ],
+   "npcs": [
+    2100150
+   ]
+  },
+  {
+   "id": 1216,
+   "pet": "Dark Spirit",
+   "family": "Varian",
+   "monster": "Corrupted Spirit",
+   "areas": [
+    [
+     "Verteron",
+     54
+    ]
+   ],
+   "npcs": [
+    2100600,
+    2290058
+   ]
+  },
+  {
+   "id": 1202,
+   "pet": "Decomposed Lupyllini",
+   "family": "Cogni",
+   "monster": "Contaminated Highland Lupyllini",
+   "areas": [
+    [
+     "Verteron",
+     8
+    ],
+    [
+     "Altgard",
+     33
+    ]
+   ],
+   "npcs": [
+    2100747
+   ]
+  },
+  {
+   "id": 1142,
+   "pet": "Distorted Mutant",
+   "family": "Varian",
+   "monster": "Consumed Spirit Guardian",
+   "areas": [
+    [
+     "Altgard",
+     20
+    ]
+   ],
+   "npcs": [
+    2400312
+   ]
+  },
+  {
+   "id": 1195,
+   "pet": "Dracuni Herbalist",
+   "family": "Cogni",
+   "monster": "Dracuni Processing Laborer",
+   "areas": [
+    [
+     "Verteron",
+     44
+    ],
+    [
+     "Altgard",
+     33
+    ]
+   ],
+   "npcs": [
+    2090686,
+    2100867
+   ]
+  },
+  {
+   "id": 1014,
+   "pet": "Drakan Guard Dog",
+   "family": "Fera",
+   "monster": "Nahid Drakan Guard Dog",
+   "areas": [
+    [
+     "Verteron",
+     16
+    ],
+    [
+     "Altgard",
+     29
+    ],
+    [
+     "Chaotic Lower Reshanta",
+     44
+    ]
+   ],
+   "npcs": [
+    2101009
+   ]
+  },
+  {
+   "id": 1056,
+   "pet": "Drakan Probe",
+   "family": "Varian",
+   "monster": "Intruder Seeker",
+   "areas": [
+    [
+     "Verteron",
+     11
+    ],
+    [
+     "Altgard",
+     73
+    ]
+   ],
+   "npcs": [
+    2101014,
+    2101015
+   ]
+  },
+  {
+   "id": 1184,
+   "pet": "Drakan Watcher",
+   "family": "Cogni",
+   "monster": "Processing Facility Drakan Scout",
+   "areas": [
+    [
+     "Verteron",
+     23
+    ],
+    [
+     "Altgard",
+     32
+    ]
+   ],
+   "npcs": [
+    2100872
+   ]
+  },
+  {
+   "id": 1148,
+   "pet": "Drakana Kalgolem",
+   "family": "Varian",
+   "monster": "Crash Site Kalgolem",
+   "areas": [
+    [
+     "Altgard",
+     13
+    ]
+   ],
+   "npcs": [
+    2400014
+   ]
+  },
+  {
+   "id": 1179,
+   "pet": "Drana Mutant",
+   "family": "Varian",
+   "monster": "Twisted Mutant",
+   "areas": [
+    [
+     "Altgard",
+     50
+    ]
+   ],
+   "npcs": [
+    2400001
+   ]
+  },
+  {
+   "id": 1153,
+   "pet": "Drana Mutant Brute",
+   "family": "Varian",
+   "monster": "Crimson Drana Mutant",
+   "areas": [
+    [
+     "Verteron",
+     48
+    ],
+    [
+     "Altgard",
+     28
+    ]
+   ],
+   "npcs": [
+    2110503
+   ]
+  },
+  {
+   "id": 1174,
+   "pet": "Drana Predator",
+   "family": "Varian",
+   "monster": "Crimson Drana Predator",
+   "areas": [
+    [
+     "Verteron",
+     41
+    ],
+    [
+     "Altgard",
+     20
+    ]
+   ],
+   "npcs": [
+    2110505
+   ]
+  },
+  {
+   "id": 1128,
+   "pet": "Drana Slime",
+   "family": "Varian",
+   "monster": "Drana Slime",
+   "areas": [
+    [
+     "Altgard",
+     21
+    ]
+   ],
+   "npcs": [
+    2400015
+   ]
+  },
+  {
+   "id": 1131,
+   "pet": "Drana Spore",
+   "family": "Natura",
+   "monster": "Crimson Mutated Spore",
+   "areas": [
+    [
+     "Verteron",
+     60
+    ]
+   ],
+   "npcs": [
+    2110502
+   ]
+  },
+  {
+   "id": 1129,
+   "pet": "Drana Swarm",
+   "family": "Varian",
+   "monster": "Crimson Drana Swarm",
+   "areas": [
+    [
+     "Verteron",
+     30
+    ]
+   ],
+   "npcs": [
+    2110501
+   ]
+  },
+  {
+   "id": 1147,
+   "pet": "Dratona",
+   "family": "Cogni",
+   "monster": "Scarlet Forest Dratona",
+   "areas": [
+    [
+     "Verteron",
+     32
+    ],
+    [
+     "Altgard",
+     167
+    ]
+   ],
+   "npcs": [
+    2100901
+   ]
+  },
+  {
+   "id": 1210,
+   "pet": "Dry Leaf Agrint",
+   "family": "Natura",
+   "monster": "Forest Agrint",
+   "areas": [
+    [
+     "Verteron",
+     32
+    ]
+   ],
+   "npcs": [
+    2100179
+   ]
+  },
+  {
+   "id": 1173,
+   "pet": "Duduka Trebuchet Worker",
+   "family": "Varian",
+   "monster": "Duduka Slinger",
+   "areas": [
+    [
+     "Altgard",
+     44
+    ]
+   ],
+   "npcs": [
+    2400613,
+    2702066,
+    2702067
+   ]
+  },
+  {
+   "id": 1172,
+   "pet": "Duduka Worker",
+   "family": "Varian",
+   "monster": "Duduka Worker",
+   "areas": [
+    [
+     "Altgard",
+     75
+    ]
+   ],
+   "npcs": [
+    2400612,
+    2702065
+   ]
+  },
+  {
+   "id": 1196,
+   "pet": "Elite Dratona",
+   "family": "Cogni",
+   "monster": "Predator Colossus Balakh",
+   "areas": [
+    [
+     "Morheim",
+     1
+    ]
+   ],
+   "npcs": [
+    2406035
+   ]
+  },
+  {
+   "id": 1206,
+   "pet": "Elite Guardite",
+   "family": "Varian",
+   "monster": "Divine Ansas",
+   "areas": [
+    [
+     "Verteron",
+     1
+    ]
+   ],
+   "npcs": [
+    2100718
+   ]
+  },
+  {
+   "id": 1099,
+   "pet": "Elite Karnif",
+   "family": "Fera",
+   "monster": "Crimson Blizzard Renulf",
+   "areas": [
+    [
+     "Morheim",
+     1
+    ]
+   ],
+   "npcs": [
+    2406071
+   ]
+  },
+  {
+   "id": 1156,
+   "pet": "Elite Klaw",
+   "family": "Cogni",
+   "monster": "Bodyguard Teegant",
+   "areas": [
+    [
+     "Verteron",
+     1
+    ]
+   ],
+   "npcs": [
+    2100079
+   ]
+  },
+  {
+   "id": 1033,
+   "pet": "Elite Manduri Fighter",
+   "family": "Cogni",
+   "monster": "Wandering Manduri Fighter",
+   "areas": [
+    [
+     "Verteron",
+     27
+    ],
+    [
+     "Altgard",
+     37
+    ]
+   ],
+   "npcs": [
+    2100557,
+    2100569
+   ]
+  },
+  {
+   "id": 1108,
+   "pet": "Enhanced Krall Combatant",
+   "family": "Cogni",
+   "monster": "Enhanced Krall Combatant",
+   "areas": [
+    [
+     "Verteron",
+     27
+    ]
+   ],
+   "npcs": [
+    2100097,
+    2200119
+   ]
+  },
+  {
+   "id": 1109,
+   "pet": "Enhanced Krall Sentry",
+   "family": "Cogni",
+   "monster": "Enhanced Krall Sentry",
+   "areas": [
+    [
+     "Verteron",
+     22
+    ]
+   ],
+   "npcs": [
+    2100072
+   ]
+  },
+  {
+   "id": 1134,
+   "pet": "Eternal Coradon",
+   "family": "Fera",
+   "monster": "Eternal Coradon",
+   "areas": [
+    [
+     "Altgard",
+     32
+    ],
+    [
+     "Chaotic Lower Reshanta",
+     16
+    ],
+    [
+     "Chaotic Middle Reshanta",
+     16
+    ]
+   ],
+   "npcs": [
+    2400941
+   ]
+  },
+  {
+   "id": 1218,
+   "pet": "Faded Drana",
+   "family": "Varian",
+   "monster": "Faded Chunk",
+   "areas": [
+    [
+     "Altgard",
+     13
+    ]
+   ],
+   "npcs": [
+    2360132,
+    2360212,
+    2400478
+   ]
+  },
+  {
+   "id": 1161,
+   "pet": "Faded Floater",
+   "family": "Varian",
+   "monster": "Faded Floater",
+   "areas": [
+    [
+     "Altgard",
+     20
+    ]
+   ],
+   "npcs": [
+    2360133,
+    2360213,
+    2400479
+   ]
+  },
+  {
+   "id": 1180,
+   "pet": "Faded Mutant",
+   "family": "Varian",
+   "monster": "Faded Mutant",
+   "areas": [
+    [
+     "Altgard",
+     43
+    ],
+    [
+     "Chaotic Middle Reshanta",
+     38
+    ]
+   ],
+   "npcs": [
+    2360131,
+    2360211,
+    2400477,
+    2406209
+   ]
+  },
+  {
+   "id": 1154,
+   "pet": "Faded Mutant Brute",
+   "family": "Varian",
+   "monster": "Faded Mutant Brute",
+   "areas": [
+    [
+     "Altgard",
+     7
+    ],
+    [
+     "Chaotic Middle Reshanta",
+     25
+    ]
+   ],
+   "npcs": [
+    2400476
+   ]
+  },
+  {
+   "id": 1175,
+   "pet": "Faded Predator",
+   "family": "Varian",
+   "monster": "Faded Predator",
+   "areas": [
+    [
+     "Altgard",
+     15
+    ]
+   ],
+   "npcs": [
+    2360134,
+    2360214,
+    2400480
+   ]
+  },
+  {
+   "id": 1101,
+   "pet": "Forest Guardian",
+   "family": "Natura",
+   "monster": "Garden Guardian",
+   "areas": [
+    [
+     "Verteron",
+     10
+    ]
+   ],
+   "npcs": [
+    2100660
+   ]
+  },
+  {
+   "id": 1140,
+   "pet": "Forest Monster",
+   "family": "Varian",
+   "monster": "Tolbas Forest Targon",
+   "areas": [
+    [
+     "Verteron",
+     19
+    ],
+    [
+     "Altgard",
+     12
+    ]
+   ],
+   "npcs": [
+    2100350
+   ]
+  },
+  {
+   "id": 1003,
+   "pet": "Forest Specter",
+   "family": "Natura",
+   "monster": "Canyon Vine Spirit",
+   "areas": [
+    [
+     "Verteron",
+     46
+    ]
+   ],
+   "npcs": [
+    2100601
+   ]
+  },
+  {
+   "id": 1048,
+   "pet": "Forest Spirit",
+   "family": "Natura",
+   "monster": "Deep Canyon Forest Spirit",
+   "areas": [
+    [
+     "Verteron",
+     74
+    ],
+    [
+     "Altgard",
+     26
+    ]
+   ],
+   "npcs": [
+    2100611
+   ]
+  },
+  {
+   "id": 1004,
+   "pet": "Fossa",
+   "family": "Fera",
+   "monster": "Patrolling Fossa",
+   "areas": [
+    [
+     "Verteron",
+     18
+    ],
+    [
+     "Altgard",
+     44
+    ]
+   ],
+   "npcs": [
+    2100163
+   ]
+  },
+  {
+   "id": 1086,
+   "pet": "Fungen",
+   "family": "Natura",
+   "monster": "Red Cap Fungen",
+   "areas": [
+    [
+     "Verteron",
+     56
+    ]
+   ],
+   "npcs": [
+    2100456
+   ]
+  },
+  {
+   "id": 1012,
+   "pet": "Fungie",
+   "family": "Natura",
+   "monster": "Red Cap Fungie",
+   "areas": [
+    [
+     "Verteron",
+     32
+    ]
+   ],
+   "npcs": [
+    2100041
+   ]
+  },
+  {
+   "id": 1059,
+   "pet": "Giant Bee",
+   "family": "Fera",
+   "monster": "Giant Stripe Bee",
+   "areas": [
+    [
+     "Verteron",
+     14
+    ]
+   ],
+   "npcs": [
+    2100551
+   ]
+  },
+  {
+   "id": 1034,
+   "pet": "Giant Sparkie",
+   "family": "Fera",
+   "monster": "Highland Giant Odyle Sparkie",
+   "areas": [
+    [
+     "Verteron",
+     192
+    ],
+    [
+     "Altgard",
+     54
+    ]
+   ],
+   "npcs": [
+    2100796
+   ]
+  },
+  {
+   "id": 1050,
+   "pet": "Gravi",
+   "family": "Natura",
+   "monster": "Red Stalk Gravi",
+   "areas": [
+    [
+     "Verteron",
+     26
+    ],
+    [
+     "Altgard",
+     77
+    ]
+   ],
+   "npcs": [
+    2100650
+   ]
+  },
+  {
+   "id": 1194,
+   "pet": "Guardite",
+   "family": "Varian",
+   "monster": "Uncontrollable Guardite",
+   "areas": [
+    [
+     "Verteron",
+     33
+    ]
+   ],
+   "npcs": [
+    2100712
+   ]
+  },
+  {
+   "id": 1165,
+   "pet": "Intermediate Earth Spirit",
+   "family": "Natura",
+   "monster": "Violent Earth Spirit",
+   "areas": [
+    [
+     "Verteron",
+     19
+    ],
+    [
+     "Altgard",
+     7
+    ]
+   ],
+   "npcs": [
+    2101102
+   ]
+  },
+  {
+   "id": 1187,
+   "pet": "Intermediate Fire Spirit",
+   "family": "Natura",
+   "monster": "Violent Fire Spirit",
+   "areas": [
+    [
+     "Verteron",
+     4
+    ],
+    [
+     "Altgard",
+     25
+    ]
+   ],
+   "npcs": [
+    2101100
+   ]
+  },
+  {
+   "id": 1169,
+   "pet": "Intermediate Water Spirit",
+   "family": "Natura",
+   "monster": "Violent Water Spirit",
+   "areas": [
+    [
+     "Verteron",
+     21
+    ],
+    [
+     "Altgard",
+     32
+    ]
+   ],
+   "npcs": [
+    2101101
+   ]
+  },
+  {
+   "id": 1094,
+   "pet": "Intermediate Wind Spirit",
+   "family": "Natura",
+   "monster": "Violent Wind Spirit",
+   "areas": [
+    [
+     "Verteron",
+     18
+    ],
+    [
+     "Altgard",
+     10
+    ]
+   ],
+   "npcs": [
+    2101103
+   ]
+  },
+  {
+   "id": 1015,
+   "pet": "Kailin",
+   "family": "Fera",
+   "monster": "Ellun River Kailin",
+   "areas": [
+    [
+     "Verteron",
+     62
+    ],
+    [
+     "Altgard",
+     112
+    ]
+   ],
+   "npcs": [
+    2101021
+   ]
+  },
+  {
+   "id": 1084,
+   "pet": "Kalgolem",
+   "family": "Varian",
+   "monster": "Ashen Kalgolem",
+   "areas": [
+    [
+     "Verteron",
+     114
+    ],
+    [
+     "Altgard",
+     27
+    ],
+    [
+     "Chaotic Lower Reshanta",
+     9
+    ],
+    [
+     "Chaotic Middle Reshanta",
+     9
+    ]
+   ],
+   "npcs": [
+    2100700
+   ]
+  },
+  {
+   "id": 1097,
+   "pet": "Karnif",
+   "family": "Fera",
+   "monster": "Toughmane Highland Karnif",
+   "areas": [
+    [
+     "Verteron",
+     207
+    ]
+   ],
+   "npcs": [
+    2100742
+   ]
+  },
+  {
+   "id": 1162,
+   "pet": "Kerubar",
+   "family": "Cogni",
+   "monster": "Eternal Kerubar",
+   "areas": [
+    [
+     "Verteron",
+     31
+    ],
+    [
+     "Altgard",
+     94
+    ]
+   ],
+   "npcs": [
+    2101075,
+    2101079
+   ]
+  },
+  {
+   "id": 1170,
+   "pet": "Kerubian",
+   "family": "Cogni",
+   "monster": "Eternal Kerubian",
+   "areas": [
+    [
+     "Verteron",
+     28
+    ],
+    [
+     "Altgard",
+     28
+    ]
+   ],
+   "npcs": [
+    2101076,
+    2101080
+   ]
+  },
+  {
+   "id": 1171,
+   "pet": "Kerubiel",
+   "family": "Cogni",
+   "monster": "Eternal Kerubiel",
+   "areas": [
+    [
+     "Verteron",
+     55
+    ],
+    [
+     "Altgard",
+     38
+    ]
+   ],
+   "npcs": [
+    2101077
+   ]
+  },
+  {
+   "id": 1005,
+   "pet": "Klaw",
+   "family": "Cogni",
+   "monster": "Wandering Klaw",
+   "areas": [
+    [
+     "Verteron",
+     28
+    ],
+    [
+     "Chaotic Lower Reshanta",
+     50
+    ],
+    [
+     "Chaotic Middle Reshanta",
+     30
+    ]
+   ],
+   "npcs": [
+    2100078
+   ]
+  },
+  {
+   "id": 1029,
+   "pet": "Klaw Scout",
+   "family": "Cogni",
+   "monster": "Consumed Klaw",
+   "areas": [
+    [
+     "Altgard",
+     36
+    ],
+    [
+     "Chaotic Lower Reshanta",
+     56
+    ]
+   ],
+   "npcs": [
+    2400313,
+    2500055
+   ]
+  },
+  {
+   "id": 1031,
+   "pet": "Konutin Worker",
+   "family": "Natura",
+   "monster": "Tolbas Konutin Worker",
+   "areas": [
+    [
+     "Verteron",
+     30
+    ]
+   ],
+   "npcs": [
+    2100157,
+    2360178
+   ]
+  },
+  {
+   "id": 1002,
+   "pet": "Krall Laborer",
+   "family": "Cogni",
+   "monster": "Mutated Krall Laborer",
+   "areas": [
+    [
+     "Verteron",
+     57
+    ]
+   ],
+   "npcs": [
+    2100914
+   ]
+  },
+  {
+   "id": 1026,
+   "pet": "Krall Warrior",
+   "family": "Cogni",
+   "monster": "Krall Test Subject",
+   "areas": [
+    [
+     "Verteron",
+     52
+    ]
+   ],
+   "npcs": [
+    2101005
+   ]
+  },
+  {
+   "id": 1017,
+   "pet": "Krall Warshaman",
+   "family": "Cogni",
+   "monster": "Modified Krall Healer",
+   "areas": [
+    [
+     "Verteron",
+     42
+    ]
+   ],
+   "npcs": [
+    2100855,
+    2300612,
+    2310612,
+    2320612,
+    2330612,
+    2340612,
+    2341612,
+    2342612,
+    2343612,
+    2344612,
+    2345612,
+    2346612,
+    2347612
+   ]
+  },
+  {
+   "id": 1115,
+   "pet": "Kuru Overseer",
+   "family": "Cogni",
+   "monster": "Eternal Kuru Overseer",
+   "areas": [
+    [
+     "Verteron",
+     30
+    ],
+    [
+     "Altgard",
+     12
+    ]
+   ],
+   "npcs": [
+    2101139
+   ]
+  },
+  {
+   "id": 1075,
+   "pet": "Kuru Tinkerer",
+   "family": "Cogni",
+   "monster": "Eternal Kuru Tinkerer",
+   "areas": [
+    [
+     "Verteron",
+     59
+    ],
+    [
+     "Altgard",
+     28
+    ]
+   ],
+   "npcs": [
+    2101134,
+    2101137
+   ]
+  },
+  {
+   "id": 1074,
+   "pet": "Kuru Worker",
+   "family": "Cogni",
+   "monster": "Eternal Kuru Worker",
+   "areas": [
+    [
+     "Verteron",
+     81
+    ],
+    [
+     "Altgard",
+     93
+    ]
+   ],
+   "npcs": [
+    2101133,
+    2101136
+   ]
+  },
+  {
+   "id": 1052,
+   "pet": "Large Leaf Gravi",
+   "family": "Natura",
+   "monster": "Ellun River Hill Gravi",
+   "areas": [
+    [
+     "Verteron",
+     18
+    ],
+    [
+     "Altgard",
+     30
+    ]
+   ],
+   "npcs": [
+    2100285
+   ]
+  },
+  {
+   "id": 1164,
+   "pet": "Lesser Earth Spirit",
+   "family": "Natura",
+   "monster": "Eternal Earth Spirit",
+   "areas": [
+    [
+     "Verteron",
+     13
+    ]
+   ],
+   "npcs": [
+    2101089
+   ]
+  },
+  {
+   "id": 1213,
+   "pet": "Lesser Fire Spirit",
+   "family": "Natura",
+   "monster": "Eternal Fire Spirit",
+   "areas": [
+    [
+     "Verteron",
+     15
+    ],
+    [
+     "Altgard",
+     25
+    ]
+   ],
+   "npcs": [
+    2101087
+   ]
+  },
+  {
+   "id": 1168,
+   "pet": "Lesser Water Spirit",
+   "family": "Natura",
+   "monster": "Water Spirit",
+   "areas": [
+    [
+     "Verteron",
+     44
+    ]
+   ],
+   "npcs": [
+    2100231,
+    2290070,
+    2290071,
+    2290072,
+    2920121,
+    2920122,
+    2920123,
+    2920124,
+    2920125,
+    2920126,
+    2920127,
+    2920128,
+    2920129,
+    2920130,
+    2920131,
+    2920132,
+    2920133,
+    2920134,
+    2920135,
+    2920229,
+    2920567,
+    2920707
+   ]
+  },
+  {
+   "id": 1092,
+   "pet": "Lesser Wind Spirit",
+   "family": "Natura",
+   "monster": "Air Spirit",
+   "areas": [
+    [
+     "Verteron",
+     16
+    ],
+    [
+     "Altgard",
+     95
+    ]
+   ],
+   "npcs": [
+    2100605
+   ]
+  },
+  {
+   "id": 1036,
+   "pet": "Lupyllini",
+   "family": "Fera",
+   "monster": "Tail Feather Lupyllini",
+   "areas": [
+    [
+     "Verteron",
+     31
+    ]
+   ],
+   "npcs": [
+    2100746
+   ]
+  },
+  {
+   "id": 1051,
+   "pet": "Magic Gravi",
+   "family": "Natura",
+   "monster": "Illusion Magic Gravi",
+   "areas": [
+    [
+     "Verteron",
+     26
+    ],
+    [
+     "Altgard",
+     116
+    ]
+   ],
+   "npcs": [
+    2100659
+   ]
+  },
+  {
+   "id": 1037,
+   "pet": "Male Crestlich",
+   "family": "Fera",
+   "monster": "Ellun River Crestlich Male",
+   "areas": [
+    [
+     "Verteron",
+     29
+    ]
+   ],
+   "npcs": [
+    2100151
+   ]
+  },
+  {
+   "id": 1010,
+   "pet": "Manduri Fighter",
+   "family": "Cogni",
+   "monster": "Crimson Manduri Fighter",
+   "areas": [
+    [
+     "Verteron",
+     24
+    ],
+    [
+     "Altgard",
+     38
+    ]
+   ],
+   "npcs": [
+    2110506
+   ]
+  },
+  {
+   "id": 1104,
+   "pet": "Manduri Trebuchet Worker",
+   "family": "Cogni",
+   "monster": "Crimson Manduri Slinger",
+   "areas": [
+    [
+     "Verteron",
+     105
+    ],
+    [
+     "Altgard",
+     83
+    ]
+   ],
+   "npcs": [
+    2110507
+   ]
+  },
+  {
+   "id": 1141,
+   "pet": "Marsh Targon",
+   "family": "Varian",
+   "monster": "Marsh Targon",
+   "areas": [
+    [
+     "Verteron",
+     89
+    ],
+    [
+     "Chaotic Middle Reshanta",
+     17
+    ]
+   ],
+   "npcs": [
+    2100021
+   ]
+  },
+  {
+   "id": 1098,
+   "pet": "Modified Karnif",
+   "family": "Fera",
+   "monster": "Unruly Karnif",
+   "areas": [
+    [
+     "Verteron",
+     38
+    ],
+    [
+     "Chaotic Lower Reshanta",
+     84
+    ]
+   ],
+   "npcs": [
+    2100096
+   ]
+  },
+  {
+   "id": 1201,
+   "pet": "Modified Lupyllini",
+   "family": "Cogni",
+   "monster": "Eternal Lupyllini",
+   "areas": [
+    [
+     "Verteron",
+     52
+    ],
+    [
+     "Altgard",
+     71
+    ]
+   ],
+   "npcs": [
+    2101086
+   ]
+  },
+  {
+   "id": 1176,
+   "pet": "Mudthorn",
+   "family": "Varian",
+   "monster": "Addicted Mudthorn",
+   "areas": [
+    [
+     "Altgard",
+     37
+    ]
+   ],
+   "npcs": [
+    2400481
+   ]
+  },
+  {
+   "id": 1054,
+   "pet": "Mumu Warrior",
+   "family": "Cogni",
+   "monster": "Mumu Watcher",
+   "areas": [
+    [
+     "Altgard",
+     83
+    ]
+   ],
+   "npcs": [
+    2090663,
+    2400350,
+    2400606,
+    2590042,
+    2590133,
+    2590154
+   ]
+  },
+  {
+   "id": 1137,
+   "pet": "Mumu Worker",
+   "family": "Cogni",
+   "monster": "Mumu Worker",
+   "areas": [
+    [
+     "Altgard",
+     116
+    ]
+   ],
+   "npcs": [
+    2090664,
+    2400351,
+    2500108,
+    2590041,
+    2590132
+   ]
+  },
+  {
+   "id": 1025,
+   "pet": "Mutated Aberrant Odyle Spider",
+   "family": "Fera",
+   "monster": "Highland Odyle Spider",
+   "areas": [
+    [
+     "Verteron",
+     53
+    ],
+    [
+     "Altgard",
+     32
+    ]
+   ],
+   "npcs": [
+    2100745
+   ]
+  },
+  {
+   "id": 1130,
+   "pet": "Mutated Cadaver Insectoid",
+   "family": "Fera",
+   "monster": "Ridge Spider",
+   "areas": [
+    [
+     "Verteron",
+     35
+    ]
+   ],
+   "npcs": [
+    2100554
+   ]
+  },
+  {
+   "id": 1144,
+   "pet": "Mutated Forest Guardian",
+   "family": "Natura",
+   "monster": "Unstable Forest Guardian",
+   "areas": [
+    [
+     "Altgard",
+     43
+    ]
+   ],
+   "npcs": [
+    2400751
+   ]
+  },
+  {
+   "id": 1049,
+   "pet": "Mutated Forest Spirit",
+   "family": "Natura",
+   "monster": "Contaminated Vine Bundle",
+   "areas": [
+    [
+     "Verteron",
+     59
+    ],
+    [
+     "Altgard",
+     25
+    ]
+   ],
+   "npcs": [
+    2100715
+   ]
+  },
+  {
+   "id": 1143,
+   "pet": "Mutated Ursus",
+   "family": "Fera",
+   "monster": "Ashen Ursus",
+   "areas": [
+    [
+     "Altgard",
+     18
+    ]
+   ],
+   "npcs": [
+    2400217
+   ]
+  },
+  {
+   "id": 1200,
+   "pet": "Naga Elite Priest",
+   "family": "Cogni",
+   "monster": "Abyss Naga Dark Mage",
+   "areas": [
+    [
+     "Chaotic Lower Reshanta",
+     7
+    ]
+   ],
+   "npcs": [
+    2600042,
+    2600437,
+    2600442,
+    2600536,
+    2600556
+   ]
+  },
+  {
+   "id": 1030,
+   "pet": "Nagarant Guardian Warrior",
+   "family": "Cogni",
+   "monster": "Abyss Nagarant Brawler",
+   "areas": [
+    [
+     "Chaotic Lower Reshanta",
+     14
+    ]
+   ],
+   "npcs": [
+    2600036,
+    2600436,
+    2600441,
+    2600537,
+    2600557
+   ]
+  },
+  {
+   "id": 1073,
+   "pet": "Nepenthes",
+   "family": "Natura",
+   "monster": "Scarlet Highland Nepenthes",
+   "areas": [
+    [
+     "Verteron",
+     23
+    ],
+    [
+     "Chaotic Lower Reshanta",
+     67
+    ]
+   ],
+   "npcs": [
+    2100744
+   ]
+  },
+  {
+   "id": 1064,
+   "pet": "Oculazen",
+   "family": "Varian",
+   "monster": "Labor Manager Oculazen",
+   "areas": [
+    [
+     "Verteron",
+     47
+    ],
+    [
+     "Altgard",
+     16
+    ]
+   ],
+   "npcs": [
+    2090684,
+    2100854
+   ]
+  },
+  {
+   "id": 1127,
+   "pet": "Odyle Stone Spirit",
+   "family": "Natura",
+   "monster": "Faded Odyle Spirit",
+   "areas": [
+    [
+     "Altgard",
+     10
+    ]
+   ],
+   "npcs": [
+    2400734
+   ]
+  },
+  {
+   "id": 1066,
+   "pet": "Papis",
+   "family": "Fera",
+   "monster": "Ellun River Papis",
+   "areas": [
+    [
+     "Verteron",
+     231
+    ],
+    [
+     "Altgard",
+     74
+    ]
+   ],
+   "npcs": [
+    2100220
+   ]
+  },
+  {
+   "id": 1159,
+   "pet": "Parasite Swarm",
+   "family": "Varian",
+   "monster": "Giant Ore Insectoid Adult",
+   "areas": [
+    [
+     "Altgard",
+     11
+    ]
+   ],
+   "npcs": [
+    2400473
+   ]
+  },
+  {
+   "id": 1087,
+   "pet": "Pino",
+   "family": "Varian",
+   "monster": "Pino Worker",
+   "areas": [
+    [
+     "Verteron",
+     12
+    ]
+   ],
+   "npcs": [
+    2100953
+   ]
+  },
+  {
+   "id": 1088,
+   "pet": "Pino Worker",
+   "family": "Varian",
+   "monster": "Harsh Pino Worker",
+   "areas": [
+    [
+     "Verteron",
+     22
+    ]
+   ],
+   "npcs": [
+    2100955,
+    2100980
+   ]
+  },
+  {
+   "id": 1186,
+   "pet": "Poison Blood",
+   "family": "Varian",
+   "monster": "Unstable Poison Blood",
+   "areas": [
+    [
+     "Altgard",
+     53
+    ]
+   ],
+   "npcs": [
+    2400743
+   ]
+  },
+  {
+   "id": 1007,
+   "pet": "Potcrab",
+   "family": "Fera",
+   "monster": "Flat Potcrab",
+   "areas": [
+    [
+     "Verteron",
+     80
+    ],
+    [
+     "Altgard",
+     30
+    ]
+   ],
+   "npcs": [
+    2100610
+   ]
+  },
+  {
+   "id": 1103,
+   "pet": "Pretor Veil Administrator",
+   "family": "Cogni",
+   "monster": "Gluttonous Egetis",
+   "areas": [
+    [
+     "Eltnen",
+     1
+    ]
+   ],
+   "npcs": [
+    2101278
+   ]
+  },
+  {
+   "id": 1136,
+   "pet": "Rafflesia",
+   "family": "Natura",
+   "monster": "Crimson Rafflesia",
+   "areas": [
+    [
+     "Verteron",
+     21
+    ],
+    [
+     "Altgard",
+     69
+    ]
+   ],
+   "npcs": [
+    2110513
+   ]
+  },
+  {
+   "id": 1067,
+   "pet": "Scorpion",
+   "family": "Fera",
+   "monster": "Contaminated Scorpion",
+   "areas": [
+    [
+     "Verteron",
+     46
+    ],
+    [
+     "Altgard",
+     19
+    ]
+   ],
+   "npcs": [
+    2100709
+   ]
+  },
+  {
+   "id": 1192,
+   "pet": "Silver Blade Rotan",
+   "family": "Varian",
+   "monster": "Abyss Old Blade Rotan",
+   "areas": [
+    [
+     "Chaotic Lower Reshanta",
+     26
+    ],
+    [
+     "Chaotic Middle Reshanta",
+     10
+    ]
+   ],
+   "npcs": [
+    2600013
+   ]
+  },
+  {
+   "id": 1035,
+   "pet": "Skama",
+   "family": "Fera",
+   "monster": "Lake Skama",
+   "areas": [
+    [
+     "Verteron",
+     49
+    ]
+   ],
+   "npcs": [
+    2100376
+   ]
+  },
+  {
+   "id": 1011,
+   "pet": "Skyray",
+   "family": "Fera",
+   "monster": "Canyon Skyray",
+   "areas": [
+    [
+     "Verteron",
+     124
+    ],
+    [
+     "Altgard",
+     13
+    ]
+   ],
+   "npcs": [
+    2100607
+   ]
+  },
+  {
+   "id": 1061,
+   "pet": "Slime",
+   "family": "Varian",
+   "monster": "Unruly Slime",
+   "areas": [
+    [
+     "Altgard",
+     10
+    ]
+   ],
+   "npcs": [
+    2400320
+   ]
+  },
+  {
+   "id": 1016,
+   "pet": "Slink",
+   "family": "Fera",
+   "monster": "Wetland Slink",
+   "areas": [
+    [
+     "Verteron",
+     122
+    ],
+    [
+     "Altgard",
+     40
+    ],
+    [
+     "Chaotic Lower Reshanta",
+     38
+    ]
+   ],
+   "npcs": [
+    2100188
+   ]
+  },
+  {
+   "id": 1183,
+   "pet": "Soulless Corpse Gnat",
+   "family": "Varian",
+   "monster": "Soulless Corpse Gnat",
+   "areas": [
+    [
+     "Altgard",
+     22
+    ]
+   ],
+   "npcs": [
+    2360110,
+    2360190,
+    2400413,
+    2920273
+   ]
+  },
+  {
+   "id": 1006,
+   "pet": "Sparkie",
+   "family": "Fera",
+   "monster": "Highland Odyle Sparkie",
+   "areas": [
+    [
+     "Verteron",
+     223
+    ]
+   ],
+   "npcs": [
+    2100753,
+    2100795
+   ]
+  },
+  {
+   "id": 1083,
+   "pet": "Spider",
+   "family": "Fera",
+   "monster": "Abyss Odyle Mutated Insectoid",
+   "areas": [
+    [
+     "Chaotic Lower Reshanta",
+     111
+    ]
+   ],
+   "npcs": [
+    2600046,
+    2600446,
+    2600578,
+    2600588
+   ]
+  },
+  {
+   "id": 1178,
+   "pet": "Spirit King's Bodyguard Warrior",
+   "family": "Natura",
+   "monster": "Old Tree Spirit Warrior",
+   "areas": [
+    [
+     "Chaotic Lower Reshanta",
+     18
+    ],
+    [
+     "Chaotic Middle Reshanta",
+     18
+    ]
+   ],
+   "npcs": [
+    2600066
+   ]
+  },
+  {
+   "id": 1060,
+   "pet": "Starturtle",
+   "family": "Fera",
+   "monster": "Coastal Starturtle",
+   "areas": [
+    [
+     "Verteron",
+     90
+    ],
+    [
+     "Altgard",
+     32
+    ]
+   ],
+   "npcs": [
+    2100033,
+    2101521,
+    2406207
+   ]
+  },
+  {
+   "id": 1069,
+   "pet": "Stone Spirit",
+   "family": "Natura",
+   "monster": "Hill Stone Spirit",
+   "areas": [
+    [
+     "Verteron",
+     38
+    ],
+    [
+     "Altgard",
+     5
+    ],
+    [
+     "Chaotic Lower Reshanta",
+     10
+    ]
+   ],
+   "npcs": [
+    2100812
+   ]
+  },
+  {
+   "id": 1166,
+   "pet": "Superior Earth Spirit",
+   "family": "Natura",
+   "monster": "Peculiar Rock Spirit",
+   "areas": [
+    [
+     "Verteron",
+     5
+    ],
+    [
+     "Altgard",
+     55
+    ]
+   ],
+   "npcs": [
+    2100667
+   ]
+  },
+  {
+   "id": 1096,
+   "pet": "Superior Fire Spirit",
+   "family": "Natura",
+   "monster": "Hellfire Spirit",
+   "areas": [
+    [
+     "Verteron",
+     5
+    ],
+    [
+     "Altgard",
+     65
+    ]
+   ],
+   "npcs": [
+    2100664
+   ]
+  },
+  {
+   "id": 1155,
+   "pet": "Superior Water Spirit",
+   "family": "Natura",
+   "monster": "Torrent Spirit",
+   "areas": [
+    [
+     "Verteron",
+     5
+    ],
+    [
+     "Altgard",
+     57
+    ]
+   ],
+   "npcs": [
+    2100665
+   ]
+  },
+  {
+   "id": 1095,
+   "pet": "Superior Wind Spirit",
+   "family": "Natura",
+   "monster": "Brisk Spirit",
+   "areas": [
+    [
+     "Verteron",
+     5
+    ],
+    [
+     "Altgard",
+     93
+    ]
+   ],
+   "npcs": [
+    2100666
+   ]
+  },
+  {
+   "id": 1013,
+   "pet": "Swarm",
+   "family": "Varian",
+   "monster": "Contaminated Swarm",
+   "areas": [
+    [
+     "Altgard",
+     123
+    ],
+    [
+     "Chaotic Lower Reshanta",
+     209
+    ]
+   ],
+   "npcs": [
+    2400080,
+    2400085
+   ]
+  },
+  {
+   "id": 1045,
+   "pet": "Sylphen",
+   "family": "Fera",
+   "monster": "Ridge Sylphen",
+   "areas": [
+    [
+     "Verteron",
+     61
+    ],
+    [
+     "Altgard",
+     39
+    ]
+   ],
+   "npcs": [
+    2100565
+   ]
+  },
+  {
+   "id": 1203,
+   "pet": "Tamed Karnif",
+   "family": "Fera",
+   "monster": "Blades Karnif",
+   "areas": [
+    [
+     "Altgard",
+     64
+    ]
+   ],
+   "npcs": [
+    2200015,
+    2400257,
+    2405060,
+    2405065,
+    2590019
+   ]
+  },
+  {
+   "id": 1189,
+   "pet": "Tamed Zaif",
+   "family": "Fera",
+   "monster": "Marauders Zaif",
+   "areas": [
+    [
+     "Verteron",
+     6
+    ],
+    [
+     "Chaotic Middle Reshanta",
+     44
+    ]
+   ],
+   "npcs": [
+    2100566
+   ]
+  },
+  {
+   "id": 1106,
+   "pet": "Tayga",
+   "family": "Fera",
+   "monster": "Tamed Tayga",
+   "areas": [
+    [
+     "Altgard",
+     115
+    ]
+   ],
+   "npcs": [
+    2400611,
+    2590155
+   ]
+  },
+  {
+   "id": 1209,
+   "pet": "Thin Agrint",
+   "family": "Natura",
+   "monster": "Crimson Agrint",
+   "areas": [
+    [
+     "Verteron",
+     15
+    ],
+    [
+     "Altgard",
+     5
+    ],
+    [
+     "Chaotic Lower Reshanta",
+     30
+    ]
+   ],
+   "npcs": [
+    2110508
+   ]
+  },
+  {
+   "id": 1072,
+   "pet": "Tog",
+   "family": "Fera",
+   "monster": "Tog",
+   "areas": [
+    [
+     "Altgard",
+     30
+    ]
+   ],
+   "npcs": [
+    2200066,
+    2200067,
+    2400912
+   ]
+  },
+  {
+   "id": 1117,
+   "pet": "Unstable Spider",
+   "family": "Fera",
+   "monster": "Crimson Spider",
+   "areas": [
+    [
+     "Verteron",
+     77
+    ],
+    [
+     "Altgard",
+     117
+    ],
+    [
+     "Chaotic Lower Reshanta",
+     22
+    ]
+   ],
+   "npcs": [
+    2110509
+   ]
+  },
+  {
+   "id": 1042,
+   "pet": "Ursus",
+   "family": "Fera",
+   "monster": "Ridge Ursus",
+   "areas": [
+    [
+     "Verteron",
+     144
+    ],
+    [
+     "Altgard",
+     24
+    ]
+   ],
+   "npcs": [
+    2100552
+   ]
+  },
+  {
+   "id": 1018,
+   "pet": "Varg Berserker",
+   "family": "Cogni",
+   "monster": "Chief's Bodyguard",
+   "areas": [
+    [
+     "Altgard",
+     47
+    ]
+   ],
+   "npcs": [
+    2400609
+   ]
+  },
+  {
+   "id": 1063,
+   "pet": "Vigilant Oculazen",
+   "family": "Varian",
+   "monster": "Vigilant Oculazen",
+   "areas": [
+    [
+     "Altgard",
+     19
+    ]
+   ],
+   "npcs": [
+    2400109,
+    2400364,
+    2405043,
+    2405049,
+    2405232,
+    2405252,
+    2407095
+   ]
+  },
+  {
+   "id": 1188,
+   "pet": "Vivel",
+   "family": "Fera",
+   "monster": "Highland Vivel",
+   "areas": [
+    [
+     "Verteron",
+     50
+    ],
+    [
+     "Altgard",
+     71
+    ]
+   ],
+   "npcs": [
+    2100583
+   ]
+  },
+  {
+   "id": 1197,
+   "pet": "Watcher Guardite",
+   "family": "Varian",
+   "monster": "Contaminated Guardite",
+   "areas": [
+    [
+     "Verteron",
+     44
+    ]
+   ],
+   "npcs": [
+    2100716
+   ]
+  },
+  {
+   "id": 1027,
+   "pet": "Withered Agrint",
+   "family": "Natura",
+   "monster": "Withered Canyon Agrint",
+   "areas": [
+    [
+     "Verteron",
+     36
+    ],
+    [
+     "Chaotic Lower Reshanta",
+     27
+    ]
+   ],
+   "npcs": [
+    2100612
+   ]
+  },
+  {
+   "id": 1116,
+   "pet": "Withered Branch Spider",
+   "family": "Fera",
+   "monster": "Withered Branch Spider",
+   "areas": [
+    [
+     "Altgard",
+     44
+    ]
+   ],
+   "npcs": [
+    2000956,
+    2000957,
+    2400902,
+    2400931,
+    2400932,
+    2400933,
+    2400939,
+    2400946,
+    2400948,
+    2500003
+   ]
+  },
+  {
+   "id": 1120,
+   "pet": "Young Kailin",
+   "family": "Fera",
+   "monster": "Ellun River Young Kailin",
+   "areas": [
+    [
+     "Verteron",
+     62
+    ],
+    [
+     "Altgard",
+     130
+    ]
+   ],
+   "npcs": [
+    2101022
+   ]
+  },
+  {
+   "id": 1121,
+   "pet": "Young Slink",
+   "family": "Fera",
+   "monster": "Young Wetland Slink",
+   "areas": [
+    [
+     "Verteron",
+     76
+    ],
+    [
+     "Altgard",
+     12
+    ],
+    [
+     "Chaotic Lower Reshanta",
+     6
+    ]
+   ],
+   "npcs": [
+    2100189
+   ]
+  },
+  {
+   "id": 1123,
+   "pet": "Young Ursus",
+   "family": "Fera",
+   "monster": "Hill Young Ursus",
+   "areas": [
+    [
+     "Verteron",
+     72
+    ],
+    [
+     "Altgard",
+     32
+    ]
+   ],
+   "npcs": [
+    2100818,
+    2100825
+   ]
+  },
+  {
+   "id": 1124,
+   "pet": "Zaif",
+   "family": "Fera",
+   "monster": "Rock Hill Zaif",
+   "areas": [
+    [
+     "Verteron",
+     187
+    ]
+   ],
+   "npcs": [
+    2100573
+   ]
+  },
+  {
+   "id": 1219,
+   "pet": "Zelophi",
+   "family": "Natura",
+   "monster": "Coastal Zelophi",
+   "areas": [
+    [
+     "Verteron",
+     56
+    ],
+    [
+     "Altgard",
+     31
+    ],
+    [
+     "Chaotic Lower Reshanta",
+     60
+    ]
+   ],
+   "npcs": [
+    2100458
+   ]
+  }
+ ]
+}

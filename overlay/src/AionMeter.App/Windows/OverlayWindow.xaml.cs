@@ -697,6 +697,7 @@ public partial class OverlayWindow : Window
 
         var now = DateTimeOffset.UtcNow;
         UpdateEventStrip(now);
+        UpdatePetPanel();
         var rift = Core.OneHp.GlobalSchedule.Rift(now, _meter.Timers.CurrentServer);
         var reset = Core.OneHp.GlobalSchedule.NextDailyReset(now);
         var weekly = Core.OneHp.GlobalSchedule.NextWeeklyReset(now);
@@ -776,6 +777,63 @@ public partial class OverlayWindow : Window
             cell.ToolTip = t.EventName(ev.Id) + " · " + (running ? "▶ " + end.ToLocalTime().ToString("HH:mm") : start.ToLocalTime().ToString("ddd HH:mm", t.Culture));
         }
     }
+
+    private string _petsShown = "";
+
+    /// <summary>
+    /// 1 HP: pet radar — the soul monsters in view, grouped by pet, most monsters first. Pets marked as owned (a click
+    /// on the row) are left out.
+    /// </summary>
+    private void UpdatePetPanel()
+    {
+        var nearby = _settings.PetRadar ? _meter.Pets.InView(_meter.Tracker.LastEventMs, _settings.PetsDone) : [];
+        var key = string.Join("|", nearby.Take(5).Select(n => n.Soul.PetId + "x" + n.Count));
+        if (key == _petsShown) return;
+        _petsShown = key;
+        PetPanel.Children.Clear();
+        PetPanel.Visibility = nearby.Count > 0 ? Visibility.Visible : Visibility.Collapsed;
+        if (nearby.Count == 0) return;
+
+        var t = UiText.Current;
+        var font = (double)FindResource("FooterFont");
+        PetPanel.Children.Add(new TextBlock
+        {
+            Text = t.PetRadarTitle + (nearby.Count > 5 ? $" · {nearby.Count}" : ""),
+            FontSize = font - 0.5, FontWeight = FontWeights.SemiBold, Margin = new Thickness(0, 0, 0, 1),
+            Foreground = new SolidColorBrush(Color.FromRgb(0x8A, 0x94, 0xA6)),
+        });
+        foreach (var n in nearby.Take(5))
+        {
+            var soul = n.Soul;
+            var row = new StackPanel { Orientation = Orientation.Horizontal, Background = Brushes.Transparent, Cursor = Cursors.Hand, Margin = new Thickness(0, 0, 0, 1) };
+            row.Children.Add(new System.Windows.Shapes.Ellipse { Width = 7, Height = 7, Fill = FamilyBrush(soul.Family), Margin = new Thickness(1, 0, 6, 0), VerticalAlignment = VerticalAlignment.Center });
+            row.Children.Add(new TextBlock { Text = soul.Pet, FontSize = font + 0.5, FontWeight = FontWeights.SemiBold, Foreground = Brushes.White });
+            row.Children.Add(new TextBlock
+            {
+                Text = $"  ×{n.Count} · {soul.Monster}", FontSize = font, VerticalAlignment = VerticalAlignment.Center,
+                Foreground = new SolidColorBrush(Color.FromRgb(0xA8, 0xB2, 0xC4)), TextTrimming = TextTrimming.CharacterEllipsis,
+            });
+            var areas = string.Join(", ", soul.Areas.Select(a => $"{a.Area} ({a.Spots})"));
+            row.ToolTip = string.Format(t.PetRadarTip, soul.Pet, soul.Family, soul.Monster, n.Count, areas);
+            row.MouseLeftButtonUp += (_, _) =>
+            {
+                _settings.PetsDone.Add(soul.PetId);
+                _settings.Save();
+                _petsShown = "";
+                UpdatePetPanel();
+            };
+            PetPanel.Children.Add(row);
+        }
+    }
+
+    private static Brush FamilyBrush(string family) => new SolidColorBrush(family switch
+    {
+        "Fera" => Color.FromRgb(0xFF, 0x7A, 0x5C),
+        "Natura" => Color.FromRgb(0x6C, 0xD8, 0x7A),
+        "Varian" => Color.FromRgb(0x5C, 0xB4, 0xFF),
+        "Cogni" => Color.FromRgb(0xC0, 0x8C, 0xFF),
+        _ => Color.FromRgb(0xFF, 0xD2, 0x6A),
+    });
 
     private (string Text, DateTime Until)? _notice;
 
