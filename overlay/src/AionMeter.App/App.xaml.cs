@@ -231,7 +231,7 @@ public partial class App : Application
                 if (_meter.Analysis.ShouldAutoStop()) _ = FinishAnalysisAsync();
             }
         }
-        if (_ticks % 25 == 0) CheckGameExit();
+        if (_ticks % 150 == 0) CheckGameExit(); // every 30 s
         if (_ticks % 900 == 30) _ = PullSharedBossesAsync(); // every 3 min (5 ticks a second)
     }
 

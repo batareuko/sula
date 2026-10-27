@@ -74,7 +74,7 @@ public sealed class NetMonitor : IDisposable
             var started = Environment.TickCount64;
             try
             {
-                if (tick++ % 10 == 0) FindTargets();
+                if (tick++ % 60 == 0) FindTargets(); // 1 HP: once a minute — the game is not looked at more often than needed
                 var now = Environment.TickCount64;
 
                 var tasks = new List<Task>();
