@@ -26,6 +26,11 @@ public sealed class MeterService : IDisposable
         Tracker = new CombatTracker(Data, Options);
         Pets = Core.OneHp.PetRadar.Load(Path.Combine(DataDirectory, "pet_souls.json"));
         Tracker.Pets = Pets;
+        // 1 HP: monster skills worth a line on the card — not plain attacks, potions or anything of the players
+        Casts = new Core.OneHp.BossCasts(code => GameData.IsNpcSkill(code) && code is < 2_000_000 or > 2_999_999 &&
+                                                 !Data.SkillName(code).Equals("Attack", StringComparison.OrdinalIgnoreCase));
+        Tracker.Casts = Casts;
+        Mechanics = LoadMechanics(Path.Combine(DataDirectory, "boss_mechanics.json"));
         History = new HistoryStore(Path.Combine(AppSettings.AppDataDir, "fights"));
         Timers = new BossTimers(Path.Combine(AppSettings.AppDataDir, "boss-timers.json"), Data, DataDirectory, persistent: !settings.Transient);
         Updates = new Updater(settings);
@@ -64,6 +69,7 @@ public sealed class MeterService : IDisposable
         }
         _savedNamesVersion = Tracker.CacheVersion;
         if (!settings.Transient) LoadBuffSkills();
+        if (!settings.Transient) LoadBossCasts();
 
         // Boss timers are per server: follow the character's (from the cache now, then on every login).
         Timers.SetCurrentServer(Tracker.SelfServerId);
@@ -90,6 +96,64 @@ public sealed class MeterService : IDisposable
     public CombatTracker Tracker { get; }
     /// <summary>1 HP: monsters in view that drop a pet's soul.</summary>
     public Core.OneHp.PetRadar Pets { get; }
+    /// <summary>1 HP: monster casts in the fight and the gaps learnt between them (boss-casts.json).</summary>
+    public Core.OneHp.BossCasts Casts { get; }
+    /// <summary>1 HP: tips per boss NPC code, from the site's mechanics guide (data/boss_mechanics.json, by English name).</summary>
+    public IReadOnlyDictionary<int, string[]> Mechanics { get; }
+
+    private static IReadOnlyDictionary<int, string[]> LoadMechanics(string path)
+    {
+        try
+        {
+            using var doc = System.Text.Json.JsonDocument.Parse(File.ReadAllText(path));
+            var byName = doc.RootElement.GetProperty("uk").EnumerateObject()
+                .ToDictionary(p => p.Name, p => p.Value.EnumerateArray().Select(x => x.GetString() ?? "").Where(x => x.Length > 0).ToArray(),
+                    StringComparer.OrdinalIgnoreCase);
+            // the tips are keyed by the English name: every NPC code with that name gets them, whatever the UI language
+            using var npcs = System.Text.Json.JsonDocument.Parse(File.ReadAllText(Path.Combine(Path.GetDirectoryName(path)!, "npcs", "en.json")));
+            var byCode = new Dictionary<int, string[]>();
+            foreach (var n in npcs.RootElement.EnumerateObject())
+                if (int.TryParse(n.Name, out var code) && n.Value.TryGetProperty("name", out var name) &&
+                    name.GetString() is { } en && byName.TryGetValue(en, out var tips))
+                    byCode[code] = tips;
+            return byCode;
+        }
+        catch (Exception ex) when (ex is IOException or UnauthorizedAccessException or System.Text.Json.JsonException or KeyNotFoundException)
+        {
+            return new Dictionary<int, string[]>();
+        }
+    }
+
+    private static string BossCastsPath => Path.Combine(AppSettings.AppDataDir, "boss-casts.json");
+
+    private void LoadBossCasts()
+    {
+        try
+        {
+            if (!File.Exists(BossCastsPath)) return;
+            var saved = System.Text.Json.JsonSerializer.Deserialize<Dictionary<string, Core.OneHp.BossCasts.Timing>>(File.ReadAllText(BossCastsPath));
+            if (saved is not null) Casts.Import(saved);
+        }
+        catch (Exception ex) when (ex is IOException or System.Text.Json.JsonException or UnauthorizedAccessException)
+        {
+            Log.Info("boss-casts.json not read: " + ex.Message);
+        }
+    }
+
+    private void SaveBossCasts()
+    {
+        if (!Casts.Changed || Settings.Transient) return;
+        try
+        {
+            var tmp = BossCastsPath + ".tmp";
+            File.WriteAllText(tmp, System.Text.Json.JsonSerializer.Serialize(Casts.Export()));
+            File.Move(tmp, BossCastsPath, overwrite: true);
+        }
+        catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
+        {
+            Log.Info("boss-casts.json not saved: " + ex.Message);
+        }
+    }
     public HistoryStore History { get; }
     public BossTimers Timers { get; }
     /// <summary>New versions on GitHub; checks only run once the app calls <see cref="Updater.Start"/>.</summary>
@@ -324,6 +388,7 @@ public sealed class MeterService : IDisposable
     private void SaveNames()
     {
         SaveBuffSkills();
+        SaveBossCasts();
         var version = Tracker.CacheVersion;
         if (version == _savedNamesVersion) return;
         _savedNamesVersion = version;

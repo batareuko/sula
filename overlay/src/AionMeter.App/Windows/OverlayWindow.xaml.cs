@@ -347,6 +347,7 @@ public partial class OverlayWindow : Window
         else ApplyOneHp(shown, _saved?.Entry.FileName);
         var tt = UiText.Current;
         var pvpMode = _pvpShown is not null && shown?.Id == _pvpShown.Id;
+        UpdateMechPanel(_segment is null && _saved is null && !pvpMode ? shown : null);
         UpdateTiles(shown, pvpMode || (_death is { } d0 && shown?.Id == d0.Id) || (_runShown is { } r0 && shown?.Id == r0.Id));
         HeadDps.Text = pvpMode ? tt.PvpDealt : tt.ColDps;
         HeadDamage.Text = pvpMode ? tt.PvpTaken : tt.ColDamage;
@@ -966,6 +967,46 @@ public partial class OverlayWindow : Window
         _settings.MeterMetric = metric;
         _settings.Save();
         Refresh();
+    }
+
+    private int _mechTipFor;
+    private int _mechTipIndex;
+    private long _mechTipAt;
+
+    /// <summary>
+    /// 1 HP: boss mechanics in a live boss fight — the boss's cast of the last 4 s, the next casts with the gaps learnt in
+    /// earlier fights, and one of the guide's tips at a time (all of them on hover).
+    /// </summary>
+    private void UpdateMechPanel(EncounterSnapshot? shown)
+    {
+        if (!_settings.BossMechanics || shown is not { IsActive: true, Boss: { } boss } || boss.Hp == 0)
+        {
+            MechPanel.Visibility = Visibility.Collapsed;
+            return;
+        }
+        var t = UiText.Current;
+        var now = _meter.Tracker.LastEventMs;
+        var last = _meter.Casts.Recent(boss.ActorId, now - 4_000).LastOrDefault();
+        MechCast.Text = last is null ? "" : "⚠ " + _meter.Data.SkillName(last.SkillCode);
+        var next = _meter.Casts.Next(boss.ActorId, now).Take(2)
+            .Select(u => $"{_meter.Data.SkillName(u.SkillCode)} {(u.DueMs - now <= 1_000 ? t.MechNow : "~" + Math.Ceiling((u.DueMs - now) / 1000.0) + " " + t.Seconds)}")
+            .ToList();
+        var castSeen = _meter.Casts.Recent(boss.ActorId, 0).Count > 0;
+        MechNext.Text = next.Count > 0 ? string.Format(t.MechNext, string.Join(" · ", next)) : castSeen ? t.MechLearning : "";
+        MechNext.Visibility = MechNext.Text.Length > 0 ? Visibility.Visible : Visibility.Collapsed;
+
+        var tips = _meter.Mechanics.GetValueOrDefault(boss.NpcCode);
+        if (tips is { Length: > 0 })
+        {
+            if (_mechTipFor != boss.NpcCode) { _mechTipFor = boss.NpcCode; _mechTipIndex = 0; _mechTipAt = Environment.TickCount64; }
+            else if (Environment.TickCount64 - _mechTipAt > 12_000) { _mechTipIndex = (_mechTipIndex + 1) % tips.Length; _mechTipAt = Environment.TickCount64; }
+            MechTip.Text = tips[_mechTipIndex];
+            MechTipsLabel.Text = string.Format(t.MechTips, $"{_mechTipIndex + 1}/{tips.Length}");
+            MechTipsChip.ToolTip = string.Join("\n\n", tips.Select((x, i) => $"{i + 1}. {x}"));
+        }
+        MechTip.Visibility = MechTipsChip.Visibility = tips is { Length: > 0 } ? Visibility.Visible : Visibility.Collapsed;
+        var any = MechCast.Text.Length > 0 || MechNext.Visibility == Visibility.Visible || tips is { Length: > 0 };
+        MechPanel.Visibility = any ? Visibility.Visible : Visibility.Collapsed;
     }
 
     /// <summary>1 HP: the tiles' numbers and the active tab for the metric shown.</summary>

@@ -369,6 +369,7 @@ public static class SampleRenderer
                 }
                 _events.Add(new NpcHpEvent(start + at, Boss, Math.Max(1, BossHp - dealt), BossHp));
                 if (at == 4_000) _events.Add(new DeathEvent(start + at, 6)); // a death on the rows (the skull and its count)
+                if (at % 6_000 == 1_500) _events.Add(new CastEvent(start + at, Boss, 2, 1000720)); // the boss's rhythm: Overhead Slam every 6 s
             }
         }
 
