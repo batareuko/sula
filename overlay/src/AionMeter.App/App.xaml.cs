@@ -97,6 +97,15 @@ public partial class App : Application
         settings.Save(); // persist any migration done while loading
         WindowMemory.Use(settings);
         UiText.Use(settings.Language);
+        // 1 HP: since 27.10 the game closes itself while this meter runs — say so at every start, closing is the default
+        if (MessageBox.Show(UiText.Current.GameClosesWarning, AppInfo.Name, MessageBoxButton.YesNo, MessageBoxImage.Warning,
+                MessageBoxResult.Yes) == MessageBoxResult.Yes)
+        {
+            Log.Info("Start: closed after the warning that the game closes while the meter runs");
+            Shutdown();
+            return;
+        }
+        Log.Info("Start: started anyway after the warning that the game closes while the meter runs");
         var withGame = settings.WithGame;
         if (!settings.DiagSilent) ThreadPool.QueueUserWorkItem(_ => GameAutostart.Apply(withGame));
         else Log.Info("Disconnect test: silent — tray only (no window, capture, game search, hotkeys, internet, start-with-game)"); // may wait a moment for an old watcher to stop
@@ -124,6 +133,7 @@ public partial class App : Application
         _meter.BossKilled += (count, boss) => Dispatcher.BeginInvoke(() => OnBossKilled(count, boss));
         _meter.Tracker.PartyRequested += r => Dispatcher.BeginInvoke(() => OnPartyRequest(r));
 
+        _overlay.ShowNotice("⚠ " + UiText.Current.GameClosesShort, TimeSpan.FromHours(12));
         _hotkeys = new HotkeyManager(new WindowInteropHelper(_overlay).Handle);
         RegisterHotkeys();
 
