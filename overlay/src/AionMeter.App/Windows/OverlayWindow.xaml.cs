@@ -1086,7 +1086,7 @@ public partial class OverlayWindow : Window
         Resources["ColDpsWidth"] = new GridLength(Math.Round(104 * f));
         Resources["ColDamageWidth"] = new GridLength(two ? 0 : Math.Round(74 * f)); // two-line rows: damage under the name
         Resources["RowSubFont"] = Math.Max(10, Math.Round(12 * f, 1));
-        Resources["TileFont"] = Math.Round((compact ? 15 : 19) * f, 1);
+        Resources["TileFont"] = Math.Round((compact ? 17 : 21) * f, 1);
         Resources["ColShareWidth"] = new GridLength(Math.Round(68 * f));
     }
 
