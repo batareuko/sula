@@ -461,6 +461,13 @@ public partial class App : Application
 
     public void SetOverlayVisible(bool visible)
     {
+        // 1 HP disconnect test without a window: "show" (a second start, the hotkey) opens the settings instead, so the
+        // test can be switched off even when Windows hides the tray icon
+        if (visible && _meter.Settings.NoOverlay)
+        {
+            ShowSettings();
+            return;
+        }
         _autoShown = false; // the user decided: automatic hiding no longer applies
         if (visible)
         {
