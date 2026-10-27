@@ -862,7 +862,7 @@ public partial class OverlayWindow : Window
     /// <summary>1 HP disconnect test (Settings → "no window over the game"): the card is never shown.</summary>
     public new void Show()
     {
-        if (_settings.DiagNoOverlay)
+        if (_settings.NoOverlay)
         {
             if (IsVisible) Hide();
             return;

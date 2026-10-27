@@ -134,6 +134,14 @@ public sealed class AppSettings
     public bool AnimatedNames { get; set; } = true;
     /// <summary>1 HP: boss mechanics on the card in boss fights — the last cast, what comes next, the guide's tips.</summary>
     public bool BossMechanics { get; set; } = true;
+    /// <summary>
+    /// 1 HP disconnect test, the strictest: the meter only sits in the tray — no window, no capture, no game search,
+    /// no hotkeys, no internet (updates, guild timers), no start-with-game. Implies the three below.
+    /// </summary>
+    public bool DiagSilent { get; set; }
+    [System.Text.Json.Serialization.JsonIgnore] public bool NoOverlay => DiagSilent || DiagNoOverlay;
+    [System.Text.Json.Serialization.JsonIgnore] public bool NoCapture => DiagSilent || DiagNoCapture;
+    [System.Text.Json.Serialization.JsonIgnore] public bool NoGameScan => DiagSilent || DiagNoGameScan;
     /// <summary>1 HP disconnect test: no window over the game (the overlay and the boss bar stay hidden; tray, history work).</summary>
     public bool DiagNoOverlay { get; set; }
     /// <summary>1 HP disconnect test: no packet capture at all (Npcap is not opened).</summary>

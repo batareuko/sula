@@ -52,6 +52,8 @@ public partial class SettingsWindow : Window
         _devices.Add((null, T.AdapterAuto));
         try
         {
+            // a disconnect test without capture must not load Npcap here either
+            if (s.NoCapture) throw new DllNotFoundException("capture off");
             foreach (var (name, description) in LiveCapture.ListDevices()) _devices.Add((name, description));
         }
         catch (Exception ex) when (ex is DllNotFoundException or TypeInitializationException)
@@ -102,6 +104,7 @@ public partial class SettingsWindow : Window
         DiagNoOverlayOn.IsChecked = s.DiagNoOverlay;
         DiagNoCaptureOn.IsChecked = s.DiagNoCapture;
         DiagNoGameScanOn.IsChecked = s.DiagNoGameScan;
+        DiagSilentOn.IsChecked = s.DiagSilent;
         ThemeBox.ItemsSource = T.ThemeNames;
         ThemeBox.SelectedIndex = Math.Max(0, Array.IndexOf(Themes, s.ColorTheme));
         ShowPetsReset();
@@ -183,7 +186,8 @@ public partial class SettingsWindow : Window
         s.DiagNoOverlay = DiagNoOverlayOn.IsChecked == true;
         s.DiagNoCapture = DiagNoCaptureOn.IsChecked == true;
         s.DiagNoGameScan = DiagNoGameScanOn.IsChecked == true;
-        if (s.DiagNoOverlay) AppHost.Current.SetOverlayVisible(false);
+        s.DiagSilent = DiagSilentOn.IsChecked == true;
+        if (s.NoOverlay) AppHost.Current.SetOverlayVisible(false);
         _meter.Net.PingEnabled = s.NetPing;
         s.ColorTheme = Themes[Math.Clamp(ThemeBox.SelectedIndex, 0, Themes.Length - 1)];
         s.BuffEndAlert = BuffEndOn.IsChecked == true;
