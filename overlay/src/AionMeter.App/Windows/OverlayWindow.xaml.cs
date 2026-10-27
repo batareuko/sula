@@ -732,7 +732,19 @@ public partial class OverlayWindow : Window
         }
     }
 
-    private readonly List<(EventIcon.Kind Kind, TextBlock Text, FrameworkElement Cell)> _eventCells = [];
+    private readonly List<(EventIcon.Kind Kind, TextBlock Text, FrameworkElement Cell, EventIcon Icon)> _eventCells = [];
+
+    /// <summary>1 HP: the game's own icons for the event strip (game-data CDN); the weekly reset keeps the drawn calendar.</summary>
+    private static (string Name, double Zoom)? GameIconOf(Core.OneHp.EventSchedule.GameEvent ev) => ev.Id switch
+    {
+        // zoom: the map markers have wide transparent margins
+        "shugo" => ("UT_FieldEvent_Icon_ShugoFestaEntrance", 1.5),
+        "rift" => ("UT_Marker_Rift", 1.3),
+        "invasion" => ("UT_NP_FieldEventMarker", 2.8),
+        "siege" => ("UT_Marker_AbyssArtifact_Neutral", 1.25),
+        "nahma" => ("UT_256_MOB_AbBoss_01", 1),
+        _ => null,
+    };
 
     /// <summary>
     /// 1 HP: the event strip — a sign and a countdown per event (Shugo, Rift, Invasion, siege or Nahma, weekly reset), in
@@ -754,14 +766,15 @@ public partial class OverlayWindow : Window
                     VerticalAlignment = VerticalAlignment.Center,
                 };
                 var cell = new StackPanel { Orientation = Orientation.Horizontal, Margin = new Thickness(0, 0, 12, 2), Background = Brushes.Transparent };
-                cell.Children.Add(new EventIcon(kind) { Width = 16, Height = 16, Margin = new Thickness(0, 0, 5, 0), VerticalAlignment = VerticalAlignment.Center });
+                var icon = new EventIcon(kind) { Width = 18, Height = 18, Margin = new Thickness(0, 0, 5, 0), VerticalAlignment = VerticalAlignment.Center };
+                cell.Children.Add(icon);
                 cell.Children.Add(text);
                 EventStrip.Children.Add(cell);
-                _eventCells.Add((kind, text, cell));
+                _eventCells.Add((kind, text, cell, icon));
             }
         }
         var idle = new SolidColorBrush(Color.FromRgb(0xE4, 0xEA, 0xF4));
-        foreach (var (kind, text, cell) in _eventCells)
+        foreach (var (kind, text, cell, icon) in _eventCells)
         {
             Core.OneHp.EventSchedule.GameEvent ev = kind switch
             {
@@ -773,6 +786,11 @@ public partial class OverlayWindow : Window
                     ? Core.OneHp.EventSchedule.Siege : Core.OneHp.EventSchedule.Nahma,
             };
             var start = ev.Next(now, includeRunning: true, serverId: server);
+            if (GameIconOf(ev) is { } game)
+            {
+                icon.Zoom = game.Zoom;
+                icon.Image = _meter.Icons.GetByName(game.Name);
+            }
             if (start == DateTimeOffset.MaxValue) { cell.Visibility = Visibility.Collapsed; continue; }
             cell.Visibility = Visibility.Visible;
             var running = start <= now;
