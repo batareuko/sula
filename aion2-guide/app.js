@@ -3534,6 +3534,98 @@
       .then(renderServers);
   }
 
+  /* ---------- Пети: душі, моби, території, колекція (позначки — localStorage) ---------- */
+  var PET_FAMILIES = { Fera: { name: 'Фера', color: '#ff7a5c' }, Natura: { name: 'Натура', color: '#6cd87a' },
+    Varian: { name: 'Варіан', color: '#5cb4ff' }, Cogni: { name: 'Когні', color: '#c08cff' } };
+  var PET_AREAS = { Verteron: 'Вертерон', Altgard: 'Альтгард', Eltnen: 'Ельтнен', Morheim: 'Моргейм',
+    'Chaotic Lower Reshanta': 'Нижня Решанта (хаос)', 'Chaotic Middle Reshanta': 'Середня Решанта (хаос)' };
+  var pet = { family: '', area: '', q: '' };
+
+  function petHave() { var v = prefGet('petsHave', []); return Array.isArray(v) ? v : []; }
+
+  function renderPets() {
+    var all = G.pets || [], have = petHave();
+    var owned = function (p) { return have.indexOf(p[0]) >= 0; };
+    // прогрес по родинах
+    var prog = $('petProgress');
+    prog.textContent = '';
+    Object.keys(PET_FAMILIES).forEach(function (f) {
+      var list = all.filter(function (p) { return p[2] === f; }), got = list.filter(owned).length;
+      var bar = h('div', { class: 'pet-prog' });
+      bar.appendChild(h('span', { class: 'pet-dot', style: 'background:' + PET_FAMILIES[f].color }));
+      bar.appendChild(h('b', { text: PET_FAMILIES[f].name }));
+      bar.appendChild(h('span', { class: 'mono', text: ' ' + got + ' / ' + list.length }));
+      var track = h('i', {});
+      track.appendChild(h('i', { style: 'width:' + (list.length ? Math.round(100 * got / list.length) : 0) + '%;background:' + PET_FAMILIES[f].color }));
+      bar.appendChild(track);
+      prog.appendChild(bar);
+    });
+    // фільтри
+    var fam = $('petFamilies');
+    fam.textContent = '';
+    [''].concat(Object.keys(PET_FAMILIES)).forEach(function (f) {
+      fam.appendChild(h('button', { class: 'tab', type: 'button', role: 'tab', 'aria-selected': String(pet.family === f),
+        text: f ? PET_FAMILIES[f].name : 'Усі', onclick: function () { pet.family = f; renderPets(); } }));
+    });
+    var ar = $('petAreas');
+    ar.textContent = '';
+    [''].concat(Object.keys(PET_AREAS)).forEach(function (a) {
+      ar.appendChild(h('button', { class: 'tab', type: 'button', role: 'tab', 'aria-selected': String(pet.area === a),
+        text: a ? PET_AREAS[a] : 'Усі території', onclick: function () { pet.area = a; renderPets(); } }));
+    });
+    var q = pet.q.trim().toLowerCase(), hide = $('petHideHave').checked;
+    var shown = all.filter(function (p) {
+      if (pet.family && p[2] !== pet.family) return false;
+      if (pet.area && !p[5].some(function (x) { return x[0] === pet.area; })) return false;
+      if (q && (p[1] + ' ' + p[3]).toLowerCase().indexOf(q) < 0) return false;
+      return !(hide && owned(p));
+    });
+    var grid = $('petGrid');
+    grid.textContent = '';
+    if (!shown.length) { grid.appendChild(h('p', { class: 'muted', text: 'Нічого не знайдено.' })); return; }
+    shown.forEach(function (p) {
+      var f = PET_FAMILIES[p[2]] || { name: p[2], color: '#ffd26a' }, got = owned(p);
+      var card = h('article', { class: 'pet-card' + (got ? ' have' : ''), style: '--fam:' + f.color });
+      var img = h('img', { alt: '', width: '56', height: '56', loading: 'lazy',
+        src: 'https://assets.playnccdn.com/static-aion2-gamedata/resources/' + p[4] + '.png' });
+      img.onerror = function () { img.style.visibility = 'hidden'; };
+      card.appendChild(img);
+      var body = h('div', { class: 'pet-body' });
+      var head = h('div', { class: 'pet-head' });
+      head.appendChild(h('b', { text: p[1] }));
+      head.appendChild(h('span', { class: 'pet-fam', text: f.name }));
+      body.appendChild(head);
+      body.appendChild(h('div', { class: 'small', text: 'Душа: ' + p[3] }));
+      var areas = h('div', { class: 'pet-areas' });
+      p[5].forEach(function (a) {
+        areas.appendChild(h('a', { href: 'https://aion2data.com' + a[2], target: '_blank', rel: 'noopener',
+          text: (PET_AREAS[a[0]] || a[0]) + ' (' + a[1] + ') ↗', title: 'Точки спавну на карті Aion2Data' }));
+      });
+      body.appendChild(areas);
+      card.appendChild(body);
+      var box = h('label', { class: 'pet-have', title: 'Цей улюбленець уже є' });
+      var cb = h('input', { type: 'checkbox' });
+      cb.checked = got;
+      cb.addEventListener('change', function () {
+        var list = petHave().filter(function (id) { return id !== p[0]; });
+        if (cb.checked) list.push(p[0]);
+        prefSet('petsHave', list);
+        renderPets();
+      });
+      box.appendChild(cb);
+      box.appendChild(h('span', { text: 'є' }));
+      card.appendChild(box);
+      grid.appendChild(card);
+    });
+  }
+
+  function initPets() {
+    if (!$('petGrid') || !G.pets) return;
+    $('petSearch').addEventListener('input', function (e) { pet.q = e.target.value; renderPets(); });
+    $('petHideHave').addEventListener('change', renderPets);
+    renderPets();
+  }
+
   function initServers() {
     var mine = srvMine();
     if (mine && prefGet('srvRegion', null) === null) {
@@ -3568,6 +3660,7 @@
   initPatches();
   initPatchOpen();
   initServers();
+  initPets();
   initDps();
   $('netcheckCopy').addEventListener('click', function () { copyText($('netcheckCmd').textContent, 'Команду скопійовано: вставте її в PowerShell'); });
   initMeter();
