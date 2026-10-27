@@ -95,6 +95,8 @@ public partial class SettingsWindow : Window
         BuffsOn.IsChecked = s.ShowBuffs;
         FramelessOn.IsChecked = s.Frameless;
         AnimatedNamesOn.IsChecked = s.AnimatedNames;
+        PetRadarOn.IsChecked = s.PetRadar;
+        ShowPetsReset();
         BuffEndOn.IsChecked = s.BuffEndAlert;
         CooldownsOn.IsChecked = s.ShowPartyCooldowns;
         PartyRequestOn.IsChecked = s.PartyRequestAlert;
@@ -166,6 +168,7 @@ public partial class SettingsWindow : Window
         s.ShowBuffs = BuffsOn.IsChecked == true;
         s.Frameless = FramelessOn.IsChecked == true;
         s.AnimatedNames = AnimatedNamesOn.IsChecked == true;
+        s.PetRadar = PetRadarOn.IsChecked == true;
         s.BuffEndAlert = BuffEndOn.IsChecked == true;
         s.ShowPartyCooldowns = CooldownsOn.IsChecked == true;
         s.PartyRequestAlert = PartyRequestOn.IsChecked == true;
@@ -193,6 +196,19 @@ public partial class SettingsWindow : Window
     }
 
     private void Cancel_Click(object sender, RoutedEventArgs e) => Close();
+
+    private void ShowPetsReset()
+    {
+        PetsResetButton.Content = string.Format(T.PetRadarReset, _meter.Settings.PetsDone.Count);
+        PetsResetButton.Visibility = _meter.Settings.PetsDone.Count > 0 ? Visibility.Visible : Visibility.Collapsed;
+    }
+
+    private void PetsReset_Click(object sender, RoutedEventArgs e)
+    {
+        _meter.Settings.PetsDone.Clear();
+        _meter.Settings.Save();
+        ShowPetsReset();
+    }
 
     /// <summary>The overlay follows the slider at once, so the size can be judged on the real rows.</summary>
     private void RowSize_Changed(object sender, RoutedPropertyChangedEventArgs<double> e)

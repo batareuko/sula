@@ -170,6 +170,10 @@ public sealed partial class UiText
     public string BuffsOn { get; init; } = "Your lasting buffs on the card (10 s and more)";
     public string FramelessOn { get; init; } = "No frame: a dark header and the rows straight over the game";
     public string AnimatedNamesOn { get; init; } = "Shimmering names in the class colours";
+    public string PetRadarOn { get; init; } = "Pet radar: monsters in view that drop a pet's soul (data: Aion2Data)";
+    public string PetRadarReset { get; init; } = "Show hidden pets again ({0})";
+    public string PetRadarTitle { get; init; } = "SOULS NEARBY";
+    public string PetRadarTip { get; init; } = "{0} ({1}) — soul from {2}\nIn view: {3}\nWhere: {4}\n\nClick: I have this pet, hide it";
     public string BuffEndOn { get; init; } = "Notice 10 s before a buff of a minute or more runs out";
     public string BuffEnding { get; init; } = "{0} ends in {1} s";
     public string CooldownsOn { get; init; } = "Your party's cooldowns of a minute and more on the card";

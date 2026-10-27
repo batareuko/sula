@@ -255,6 +255,10 @@
                                       Content="{Binding FramelessOn, Source={x:Static s:UiText.Current}}" />
                             <CheckBox x:Name="AnimatedNamesOn" Style="{StaticResource DarkCheck}" Margin="0,4,0,0"
                                       Content="{Binding AnimatedNamesOn, Source={x:Static s:UiText.Current}}" />
+                            <CheckBox x:Name="PetRadarOn" Style="{StaticResource DarkCheck}" Margin="0,4,0,0"
+                                      Content="{Binding PetRadarOn, Source={x:Static s:UiText.Current}}" />
+                            <Button x:Name="PetsResetButton" Style="{StaticResource GhostButton}" Margin="22,4,0,0" HorizontalAlignment="Left"
+                                    Click="PetsReset_Click" />
                             <CheckBox x:Name="BuffsOn" Style="{StaticResource DarkCheck}" Margin="0,4,0,0"
                                       Content="{Binding BuffsOn, Source={x:Static s:UiText.Current}}" />
                             <CheckBox x:Name="BuffEndOn" Style="{StaticResource DarkCheck}" Margin="0,4,0,0"

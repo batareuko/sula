@@ -10,6 +10,7 @@ open-source meters licensed under GPL-3.0, which is why AionMeter as a whole is 
 | `healing_skill_ids.json` | [Kuroukihime/AIon2-Dps-Meter](https://github.com/Kuroukihime/AIon2-Dps-Meter) `GameData/Assets`, commit `2e8d67d` (2026-10-01), GPL-3.0 |
 | `src/AionMeter.App/Assets/Classes/*.png` (class emblems; brawler downscaled to 128 px) | same repository, `AionDpsMeter.UI/Assets/Classes`, commit `2e8d67d`, GPL-3.0 |
 | `boss_portraits.json` (NPC code → portrait file) | built from [MetaBot.GG's boss list](https://metabot.gg/en/aion-2/bosses) (2026-10-05): each dungeon boss's portrait file, matched to every NPC code with the same English name in `npcs/en.json`. The portraits themselves are not bundled: the app downloads them from MetaBot.GG at runtime (credit: [MetaBot.GG](https://metabot.gg)) |
+| `pet_souls.json` (pet → family, soul monster, territories) | built from [Aion2Data's pet map](https://aion2data.com/pets/map) (AION 2 Global 2026.10.21, read 2026-10-27), which allows reuse with a link back; soul monsters matched to NPC codes by English name in `npcs/en.json` (credit: [Aion2Data](https://aion2data.com)) |
 
 Formats AionMeter reads (every file is optional):
 
@@ -23,5 +24,7 @@ Formats AionMeter reads (every file is optional):
   2026-10-06 EU capture against the in-game list (24 of 24 slots).
 - `boss_portraits.json` — `{ "portraits": { "2300471": "2300471", "2300104": "f/mob_berc_01", … } }` (file name on
   metabot.gg/web/aion2/npcs/ without `.webp`; NPCs not listed are tried under their own code)
+- `pet_souls.json` — `{ "pets": [ { "id": 1026, "pet": "Krall Warrior", "family": "Cogni", "monster": "Krall Test Subject",
+  "areas": [["Verteron", 52]], "npcs": [2000123, …] }, … ] }` (areas: territory and number of spawn points)
 
 Missing languages fall back to `en`.

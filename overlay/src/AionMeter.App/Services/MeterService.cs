@@ -24,6 +24,8 @@ public sealed class MeterService : IDisposable
         Options = new MeterOptions();
         settings.ApplyTo(Options);
         Tracker = new CombatTracker(Data, Options);
+        Pets = Core.OneHp.PetRadar.Load(Path.Combine(DataDirectory, "pet_souls.json"));
+        Tracker.Pets = Pets;
         History = new HistoryStore(Path.Combine(AppSettings.AppDataDir, "fights"));
         Timers = new BossTimers(Path.Combine(AppSettings.AppDataDir, "boss-timers.json"), Data, DataDirectory, persistent: !settings.Transient);
         Updates = new Updater(settings);
@@ -85,6 +87,8 @@ public sealed class MeterService : IDisposable
     public BossPortraits Portraits { get; }
     public MeterOptions Options { get; }
     public CombatTracker Tracker { get; }
+    /// <summary>1 HP: monsters in view that drop a pet's soul.</summary>
+    public Core.OneHp.PetRadar Pets { get; }
     public HistoryStore History { get; }
     public BossTimers Timers { get; }
     /// <summary>New versions on GitHub; checks only run once the app calls <see cref="Updater.Start"/>.</summary>
