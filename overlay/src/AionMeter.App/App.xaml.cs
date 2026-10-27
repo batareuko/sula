@@ -139,6 +139,7 @@ public partial class App : Application
             Update: () => ShowUpdate(),
             CheckUpdates: () => _ = CheckUpdatesFromTrayAsync(),
             Analysis: ToggleAnalysis,
+            SendLog: () => _ = SendLogsAsync(),
             Exit: () =>
             {
                 Log.Info("Exit chosen in the tray menu");
@@ -367,6 +368,44 @@ public partial class App : Application
             return;
         }
         _ = FinishAnalysisAsync();
+    }
+
+    /// <summary>
+    /// 1 HP: the tray's "send the log" — the last day's logs (with the disconnect notes of the net watch) zipped and
+    /// uploaded like an analysis recording; the link goes to the clipboard, the zip to the Desktop when it cannot go up.
+    /// </summary>
+    private async Task SendLogsAsync()
+    {
+        var t = UiText.Current;
+        if (_analysisBusy) return;
+        _analysisBusy = true;
+        try
+        {
+            _overlay.ShowNotice("⏳ " + t.AnalysisSending, TimeSpan.FromMinutes(2));
+            var zip = await Task.Run(AnalysisRecorder.PackLogs);
+            var (link, error) = await _meter.Cloud.UploadAnalysisAsync(zip);
+            if (link is not null)
+            {
+                AppHost.CopyText(link);
+                Log.Info("Logs sent: " + link);
+                _overlay.ShowNotice("✔ " + t.LogSent, TimeSpan.FromSeconds(30));
+                _tray?.ShowBalloon(AppInfo.Name, t.LogSent, () => AppHost.CopyText(link));
+                return;
+            }
+            var local = AnalysisRecorder.ToDesktop(zip);
+            var why = error == "no_key" ? t.AnalysisNoKey : string.Format(t.AnalysisFailed, error);
+            _overlay.ShowNotice("📁 " + why, TimeSpan.FromSeconds(30));
+            _tray?.ShowBalloon(AppInfo.Name, why + "\n" + Path.GetFileName(local));
+        }
+        catch (Exception ex)
+        {
+            Log.Error("Sending the logs failed", ex);
+            _overlay.ShowNotice("⚠ " + string.Format(t.AnalysisFailed, ex.Message), TimeSpan.FromSeconds(20));
+        }
+        finally
+        {
+            _analysisBusy = false;
+        }
     }
 
     private async Task FinishAnalysisAsync()

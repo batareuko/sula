@@ -11,6 +11,7 @@ public sealed class TrayIcon : IDisposable
     private readonly ToolStripMenuItem _toggle;
     private readonly ToolStripMenuItem _clickThrough;
     private readonly ToolStripMenuItem _reset;
+    private readonly ToolStripMenuItem _sendLog;
     private readonly ToolStripMenuItem _history;
     private readonly ToolStripMenuItem _timers;
     private readonly ToolStripMenuItem _settings;
@@ -51,9 +52,10 @@ public sealed class TrayIcon : IDisposable
         _site = new ToolStripMenuItem("", null, (_, _) => OpenUrl("https://guide.sulaslova.com/"));
         _netCheck = new ToolStripMenuItem("", null, (_, _) => OpenUrl("https://guide.sulaslova.com/#netcheck"));
         _analysis = new ToolStripMenuItem("", null, (_, _) => actions.Analysis());
+        _sendLog = new ToolStripMenuItem("", null, (_, _) => actions.SendLog());
         menu.Items.AddRange([
             _update, _updateSeparator,
-            _toggle, _clickThrough, _reset, _analysis, new ToolStripSeparator(),
+            _toggle, _clickThrough, _reset, _analysis, _sendLog, new ToolStripSeparator(),
             _history, _timers, _settings, _language, _demo, _replay, _checkUpdates, new ToolStripSeparator(),
             _site, _netCheck, new ToolStripSeparator(),
             _exit,
@@ -104,6 +106,7 @@ public sealed class TrayIcon : IDisposable
         _site.Text = t.TraySite;
         _netCheck.Text = t.TrayNetCheck;
         _analysis.Text = _analysisRunning ? t.AnalysisTrayStop : t.AnalysisTrayStart;
+        _sendLog.Text = t.SendLogTray;
         if (_updateVersion is not null) _update.Text = string.Format(t.TrayUpdate, _updateVersion);
     }
 
@@ -181,4 +184,5 @@ public sealed record TrayActions(
     Action Update,
     Action CheckUpdates,
     Action Analysis,
+    Action SendLog,
     Action Exit);
