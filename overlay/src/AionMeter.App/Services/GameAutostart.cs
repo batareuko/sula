@@ -60,8 +60,7 @@ public static class GameAutostart
         if (fresh)
         {
             Directory.CreateDirectory(Path.GetDirectoryName(watcher)!);
-            if (embedded is not null) File.WriteAllBytes(watcher, embedded);
-            else File.Copy(bundled, watcher, overwrite: true);
+            WriteWatcher(watcher, embedded, bundled);
         }
         if (registered != command)
         {
@@ -70,6 +69,46 @@ public static class GameAutostart
         }
         if (!WatcherRunning())
             using (Process.Start(new ProcessStartInfo(watcher, $"\"{overlay}\"") { UseShellExecute = false })) { }
+    }
+
+    /// <summary>
+    /// 1 HP: replaces the installed watcher. An old watcher can hold its file a moment after it was asked to stop (or
+    /// not hear the request at all): wait a little, then end our own watcher process and try once more.
+    /// </summary>
+    private static void WriteWatcher(string watcher, byte[]? embedded, string bundled)
+    {
+        for (var attempt = 0; ; attempt++)
+        {
+            try
+            {
+                if (embedded is not null) File.WriteAllBytes(watcher, embedded);
+                else File.Copy(bundled, watcher, overwrite: true);
+                return;
+            }
+            catch (Exception ex) when (ex is IOException or UnauthorizedAccessException && attempt < 6)
+            {
+                if (attempt == 3) KillInstalledWatcher(watcher);
+                Thread.Sleep(500);
+            }
+        }
+    }
+
+    private static void KillInstalledWatcher(string watcher)
+    {
+        foreach (var p in Process.GetProcessesByName(Path.GetFileNameWithoutExtension(WatcherFile)))
+        {
+            try
+            {
+                if (string.Equals(p.MainModule?.FileName, watcher, StringComparison.OrdinalIgnoreCase))
+                {
+                    p.Kill();
+                    p.WaitForExit(2_000);
+                    Log.Info("Start with the game: the old watcher did not stop, ended it");
+                }
+            }
+            catch (Exception ex) when (ex is Win32Exception or InvalidOperationException) { }
+            finally { p.Dispose(); }
+        }
     }
 
     private static void Disable()
