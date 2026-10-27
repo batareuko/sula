@@ -948,3 +948,25 @@ main section.meter-hero { margin-top: 0; }
 .guide-tools { margin: 4px 0 0; padding: 0; }
 .guide-tools .btn-sm { margin-left: 0; }
 .nowrap { white-space: nowrap; }
+
+/* Пети */
+.pet-progress { display: grid; grid-template-columns: repeat(auto-fit, minmax(170px, 1fr)); gap: 8px; margin: 10px 0 12px; }
+.pet-prog { display: grid; grid-template-columns: auto auto 1fr; align-items: center; column-gap: 6px; row-gap: 5px;
+  padding: 8px 10px; border: 1px solid var(--line); border-radius: var(--radius); background: var(--panel); }
+.pet-prog > i { grid-column: 1 / -1; height: 5px; border-radius: 3px; background: rgba(255,255,255,.08); overflow: hidden; }
+.pet-prog > i > i { display: block; height: 100%; }
+.pet-dot { width: 9px; height: 9px; border-radius: 50%; display: inline-block; }
+.pet-tools { display: grid; gap: 8px; margin-bottom: 12px; }
+.pet-search { display: flex; gap: 12px; align-items: center; flex-wrap: wrap; }
+.pet-search input[type=search] { flex: 1; min-width: 200px; padding: 8px 12px; border: 1px solid var(--line); border-radius: var(--radius);
+  background: var(--bg-2); color: inherit; font: inherit; }
+.pet-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(290px, 1fr)); gap: 8px; margin-bottom: 10px; }
+.pet-card { display: grid; grid-template-columns: 56px 1fr auto; gap: 10px; align-items: start; padding: 10px;
+  border: 1px solid var(--line); border-left: 3px solid var(--fam); border-radius: var(--radius); background: var(--panel); }
+.pet-card.have { opacity: .55; }
+.pet-card img { width: 56px; height: 56px; object-fit: cover; border-radius: 8px; background: var(--bg-2); }
+.pet-body { min-width: 0; display: grid; gap: 3px; }
+.pet-head { display: flex; gap: 8px; align-items: baseline; flex-wrap: wrap; }
+.pet-fam { font-size: 11px; color: var(--fam); }
+.pet-areas { display: flex; gap: 6px; flex-wrap: wrap; font-size: 12px; }
+.pet-have { display: flex; gap: 4px; align-items: center; font-size: 12px; cursor: pointer; white-space: nowrap; }
