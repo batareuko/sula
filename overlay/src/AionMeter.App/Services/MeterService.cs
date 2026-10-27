@@ -275,6 +275,12 @@ public sealed class MeterService : IDisposable
         lock (_captureGate)
         {
             if (CaptureFactory is null || _capture is not null) return;
+            if (Settings.DiagNoCapture)
+            {
+                Log.Info("Disconnect test: packet capture is off");
+                _capture = new FailedSource(UiText.Current.DiagCaptureOff);
+                return;
+            }
             try
             {
                 _capture = CaptureFactory(Data);
@@ -283,7 +289,8 @@ public sealed class MeterService : IDisposable
                 _capture.EventDecoded += Analysis.Write;
                 Analysis.Attach(_capture as LiveCapture);
                 _capture.Start();
-                Net.Start();
+                if (Settings.DiagNoGameScan) Log.Info("Disconnect test: no game search and no pings");
+                else Net.Start();
             }
             catch (Exception ex)
             {

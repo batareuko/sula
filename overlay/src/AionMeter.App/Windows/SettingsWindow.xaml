@@ -255,6 +255,14 @@
                                       Content="{Binding FramelessOn, Source={x:Static s:UiText.Current}}" />
                             <CheckBox x:Name="AnimatedNamesOn" Style="{StaticResource DarkCheck}" Margin="0,4,0,0"
                                       Content="{Binding AnimatedNamesOn, Source={x:Static s:UiText.Current}}" />
+                            <TextBlock Text="{Binding DiagTitle, Source={x:Static s:UiText.Current}}" Margin="0,10,0,2" FontWeight="SemiBold"
+                                       TextWrapping="Wrap" Foreground="#FFC857" />
+                            <CheckBox x:Name="DiagNoOverlayOn" Style="{StaticResource DarkCheck}" Margin="0,2,0,0"
+                                      Content="{Binding DiagNoOverlayOn, Source={x:Static s:UiText.Current}}" />
+                            <CheckBox x:Name="DiagNoCaptureOn" Style="{StaticResource DarkCheck}" Margin="0,4,0,0"
+                                      Content="{Binding DiagNoCaptureOn, Source={x:Static s:UiText.Current}}" />
+                            <CheckBox x:Name="DiagNoGameScanOn" Style="{StaticResource DarkCheck}" Margin="0,4,0,8"
+                                      Content="{Binding DiagNoGameScanOn, Source={x:Static s:UiText.Current}}" />
                             <CheckBox x:Name="MechanicsOn" Style="{StaticResource DarkCheck}" Margin="0,4,0,0"
                                       Content="{Binding MechanicsOn, Source={x:Static s:UiText.Current}}" />
                             <CheckBox x:Name="NetPingOn" Style="{StaticResource DarkCheck}" Margin="0,4,0,0"

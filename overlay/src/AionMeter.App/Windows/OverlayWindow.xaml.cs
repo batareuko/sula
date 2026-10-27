@@ -859,6 +859,17 @@ public partial class OverlayWindow : Window
         _ => Color.FromRgb(0xFF, 0xD2, 0x6A),
     });
 
+    /// <summary>1 HP disconnect test (Settings → "no window over the game"): the card is never shown.</summary>
+    public new void Show()
+    {
+        if (_settings.DiagNoOverlay)
+        {
+            if (IsVisible) Hide();
+            return;
+        }
+        base.Show();
+    }
+
     private (string Text, DateTime Until)? _notice;
 
     /// <summary>1 HP: a short notice on the card's reminders line (event alerts), for <paramref name="duration"/>.</summary>

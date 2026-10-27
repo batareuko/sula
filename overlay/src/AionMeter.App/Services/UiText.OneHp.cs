@@ -172,6 +172,11 @@ public sealed partial class UiText
     public string BuffsOn { get; init; } = "Your lasting buffs on the card (10 s and more)";
     public string FramelessOn { get; init; } = "No frame: a dark header and the rows straight over the game";
     public string AnimatedNamesOn { get; init; } = "Shimmering names in the class colours";
+    public string DiagTitle { get; init; } = "Disconnect test (switch one thing off, restart the meter, play 20 min)";
+    public string DiagNoOverlayOn { get; init; } = "No window over the game (the card and the boss bar stay hidden)";
+    public string DiagNoCaptureOn { get; init; } = "No packet capture (Npcap is not opened; the meter counts nothing)";
+    public string DiagNoGameScanOn { get; init; } = "Do not look for the game and do not ping (process list, connections)";
+    public string DiagCaptureOff { get; init; } = "Packet capture is off (disconnect test in Settings)";
     public string TabAnalysis { get; init; } = "Skill analysis";
     public string ThUses { get; init; } = "Uses";
     public string ThPerUse { get; init; } = "Per use";
