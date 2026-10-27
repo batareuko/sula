@@ -32,6 +32,9 @@ public sealed class NetMonitor : IDisposable
         _lockedFlows = lockedFlows;
     }
 
+    /// <summary>1 HP: ping the game server and the router once a second (Settings; off leaves only the stream counters).</summary>
+    public bool PingEnabled { get; set; } = true;
+
     public IPAddress? Server { get; private set; }
     /// <summary>How the game is connected: not running, at the login screen, through a local ping accelerator, or directly.</summary>
     public GameLink Link { get; private set; }
@@ -75,12 +78,15 @@ public sealed class NetMonitor : IDisposable
                 var now = Environment.TickCount64;
 
                 var tasks = new List<Task>();
-                if (Server is { } s) tasks.Add(Probe(serverPing, s, _server, now));
-                if (Gateway is { } g) tasks.Add(Probe(gatewayPing, g, _gateway, now));
+                if (PingEnabled && Server is { } s) tasks.Add(Probe(serverPing, s, _server, now));
+                if (PingEnabled && Gateway is { } g) tasks.Add(Probe(gatewayPing, g, _gateway, now));
                 await Task.WhenAll(tasks).ConfigureAwait(false);
 
                 if (_stream() is { } c)
+                {
                     lock (_gate) _loss.Add(now, c.Segments, c.Holes, c.Upstream, c.UpstreamResends, c.Stalls, c.StallMs);
+                    WatchStream(now, c);
+                }
             }
             catch (Exception ex) when (ex is not OperationCanceledException)
             {
@@ -89,6 +95,53 @@ public sealed class NetMonitor : IDisposable
             var wait = 1_000 - (int)(Environment.TickCount64 - started);
             try { await Task.Delay(Math.Max(100, wait), ct).ConfigureAwait(false); } catch (OperationCanceledException) { break; }
         }
+    }
+
+    private long _lastSegments = -1, _lastSegmentAt, _silentSince;
+    private GameLink _loggedLink = GameLink.Unknown;
+    private IPAddress? _loggedServer;
+
+    /// <summary>
+    /// 1 HP: disconnect diagnostics in the log — the game stream going quiet (15 s without a packet from the server)
+    /// and coming back, and every change of the game connection, each with what the meter itself was doing then.
+    /// </summary>
+    private void WatchStream(long now, StreamCounters c)
+    {
+        if (c.Segments != _lastSegments)
+        {
+            if (_silentSince != 0)
+                Log.Info($"Net watch: game stream back after {(now - _silentSince + 15_000) / 1000} s of silence · {Context()}");
+            _silentSince = 0;
+            _lastSegments = c.Segments;
+            _lastSegmentAt = now;
+            return;
+        }
+        if (_silentSince == 0 && Link == GameLink.Connected && _lastSegments > 0 && now - _lastSegmentAt >= 15_000)
+        {
+            _silentSince = now;
+            Log.Info($"Net watch: no packet from the game server for 15 s (since {DateTime.Now.AddMilliseconds(_lastSegmentAt - now):HH:mm:ss}) · {Context()}");
+        }
+    }
+
+    private void LogLink()
+    {
+        if (Link == _loggedLink && Equals(Server, _loggedServer)) return;
+        if (_loggedLink != GameLink.Unknown || Link != GameLink.Unknown)
+            Log.Info($"Net watch: game link {_loggedLink} → {Link}, server {_loggedServer?.ToString() ?? "—"} → {Server?.ToString() ?? "—"} · {Context()}");
+        _loggedLink = Link;
+        _loggedServer = Server;
+    }
+
+    /// <summary>What the meter was doing: its own pings and what they saw, the stream's loss and freezes.</summary>
+    private string Context()
+    {
+        var s = _server.Summary();
+        var g = _gateway.Summary();
+        string Line(NetSummary x) => x.AnyReply ? $"{Math.Round(x.AvgMs ?? 0)} ms, loss {x.LossPct:0.#}%" : "no reply";
+        StreamCounters? c = null;
+        try { c = _stream(); } catch (Exception) { }
+        return (PingEnabled ? $"meter pings on (server {Line(s)}; router {Line(g)})" : "meter pings off") +
+               (c is null ? "" : $" · stream {c.Segments} segments, {c.Holes} holes, {c.UpstreamResends} resends, {c.Stalls} freezes");
     }
 
     private static async Task Probe(Ping ping, IPAddress ip, NetStats stats, long now)
@@ -140,6 +193,7 @@ public sealed class NetMonitor : IDisposable
             Server = server;
             _server.Clear();
         }
+        LogLink();
 
         var gateway = NetworkInterface.GetAllNetworkInterfaces()
             .Where(n => n.OperationalStatus == OperationalStatus.Up && n.NetworkInterfaceType != NetworkInterfaceType.Loopback)

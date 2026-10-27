@@ -132,6 +132,8 @@ public sealed class AppSettings
     public bool Frameless { get; set; } = true;
     /// <summary>1 HP: names shimmer in the class colours (yours gold-pink).</summary>
     public bool AnimatedNames { get; set; } = true;
+    /// <summary>1 HP: ping the game server and the router once a second for the network strip (off: stream counters only).</summary>
+    public bool NetPing { get; set; } = true;
     /// <summary>1 HP: rows in two lines — name, deaths and trend over damage, crit, gear and server; tiles above the rows.</summary>
     public bool TwoLineRows { get; set; } = true;
     /// <summary>1 HP: what the rows rank by: "dps", "hps" (healing) or "taken" (damage taken).</summary>
