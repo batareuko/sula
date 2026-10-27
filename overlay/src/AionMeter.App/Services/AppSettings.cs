@@ -134,6 +134,12 @@ public sealed class AppSettings
     public bool AnimatedNames { get; set; } = true;
     /// <summary>1 HP: boss mechanics on the card in boss fights — the last cast, what comes next, the guide's tips.</summary>
     public bool BossMechanics { get; set; } = true;
+    /// <summary>1 HP disconnect test: no window over the game (the overlay and the boss bar stay hidden; tray, history work).</summary>
+    public bool DiagNoOverlay { get; set; }
+    /// <summary>1 HP disconnect test: no packet capture at all (Npcap is not opened).</summary>
+    public bool DiagNoCapture { get; set; }
+    /// <summary>1 HP disconnect test: no looking for the game (process list, TCP table) and no pings.</summary>
+    public bool DiagNoGameScan { get; set; }
     /// <summary>1 HP: ping the game server and the router once a second for the network strip (off: stream counters only).</summary>
     public bool NetPing { get; set; } = true;
     /// <summary>1 HP: rows in two lines — name, deaths and trend over damage, crit, gear and server; tiles above the rows.</summary>

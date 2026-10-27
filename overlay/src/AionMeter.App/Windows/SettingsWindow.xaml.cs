@@ -99,6 +99,9 @@ public partial class SettingsWindow : Window
         TwoLineRowsOn.IsChecked = s.TwoLineRows;
         NetPingOn.IsChecked = s.NetPing;
         MechanicsOn.IsChecked = s.BossMechanics;
+        DiagNoOverlayOn.IsChecked = s.DiagNoOverlay;
+        DiagNoCaptureOn.IsChecked = s.DiagNoCapture;
+        DiagNoGameScanOn.IsChecked = s.DiagNoGameScan;
         ThemeBox.ItemsSource = T.ThemeNames;
         ThemeBox.SelectedIndex = Math.Max(0, Array.IndexOf(Themes, s.ColorTheme));
         ShowPetsReset();
@@ -177,6 +180,10 @@ public partial class SettingsWindow : Window
         s.TwoLineRows = TwoLineRowsOn.IsChecked == true;
         s.NetPing = NetPingOn.IsChecked == true;
         s.BossMechanics = MechanicsOn.IsChecked == true;
+        s.DiagNoOverlay = DiagNoOverlayOn.IsChecked == true;
+        s.DiagNoCapture = DiagNoCaptureOn.IsChecked == true;
+        s.DiagNoGameScan = DiagNoGameScanOn.IsChecked == true;
+        if (s.DiagNoOverlay) AppHost.Current.SetOverlayVisible(false);
         _meter.Net.PingEnabled = s.NetPing;
         s.ColorTheme = Themes[Math.Clamp(ThemeBox.SelectedIndex, 0, Themes.Length - 1)];
         s.BuffEndAlert = BuffEndOn.IsChecked == true;

@@ -305,7 +305,7 @@ public partial class App : Application
     /// </summary>
     private void CheckGameExit()
     {
-        if (!_meter.Settings.WithGame || _meter.DemoRunning || _installing) return;
+        if (!_meter.Settings.WithGame || _meter.DemoRunning || _installing || _meter.Settings.DiagNoGameScan) return;
         var now = Environment.TickCount64;
         if (GameProcessLocator.FindGameProcessIds().Length > 0)
         {
@@ -651,10 +651,10 @@ public partial class App : Application
     /// <summary>1 HP: the big boss HP bar (Settings → Overlay), made on first use.</summary>
     private void UpdateBossBar()
     {
-        if (!_meter.Settings.BossBar && _bossBar is null) return;
-        var snap = _meter.Settings.BossBar ? _meter.Tracker.Snapshot(null, DateTimeOffset.UtcNow.ToUnixTimeMilliseconds()) : null;
+        if ((!_meter.Settings.BossBar || _meter.Settings.DiagNoOverlay) && _bossBar is null) return;
+        var snap = _meter.Settings.BossBar && !_meter.Settings.DiagNoOverlay ? _meter.Tracker.Snapshot(null, DateTimeOffset.UtcNow.ToUnixTimeMilliseconds()) : null;
         if (snap is not null && _bossBar is null) _bossBar = new BossBarWindow();
-        _bossBar?.Update(snap, _meter.Settings.BossBar);
+        _bossBar?.Update(snap, _meter.Settings.BossBar && !_meter.Settings.DiagNoOverlay);
     }
 
     private readonly Dictionary<string, DateTimeOffset> _eventsAnnounced = new();
