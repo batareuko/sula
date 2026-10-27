@@ -33,6 +33,11 @@ public sealed record CombatantSnapshot(
     int ServerId = 0,
     long Power = 0)
 {
+    /// <summary>1 HP: healing this player did in the fight.</summary>
+    public long Healing { get; init; }
+    /// <summary>1 HP: times this player died in the fight.</summary>
+    public int Deaths { get; init; }
+
     /// <summary>The "summons, owner unknown" pseudo-row (see <see cref="Combatant.UnknownSummonsId"/>).</summary>
     [System.Text.Json.Serialization.JsonIgnore]
     public bool IsUnknownSummons => ActorId == Combatant.UnknownSummonsId;

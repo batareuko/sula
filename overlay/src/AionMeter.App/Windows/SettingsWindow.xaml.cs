@@ -96,6 +96,9 @@ public partial class SettingsWindow : Window
         FramelessOn.IsChecked = s.Frameless;
         AnimatedNamesOn.IsChecked = s.AnimatedNames;
         PetRadarOn.IsChecked = s.PetRadar;
+        TwoLineRowsOn.IsChecked = s.TwoLineRows;
+        ThemeBox.ItemsSource = T.ThemeNames;
+        ThemeBox.SelectedIndex = Math.Max(0, Array.IndexOf(Themes, s.ColorTheme));
         ShowPetsReset();
         BuffEndOn.IsChecked = s.BuffEndAlert;
         CooldownsOn.IsChecked = s.ShowPartyCooldowns;
@@ -169,6 +172,8 @@ public partial class SettingsWindow : Window
         s.Frameless = FramelessOn.IsChecked == true;
         s.AnimatedNames = AnimatedNamesOn.IsChecked == true;
         s.PetRadar = PetRadarOn.IsChecked == true;
+        s.TwoLineRows = TwoLineRowsOn.IsChecked == true;
+        s.ColorTheme = Themes[Math.Clamp(ThemeBox.SelectedIndex, 0, Themes.Length - 1)];
         s.BuffEndAlert = BuffEndOn.IsChecked == true;
         s.ShowPartyCooldowns = CooldownsOn.IsChecked == true;
         s.PartyRequestAlert = PartyRequestOn.IsChecked == true;
@@ -196,6 +201,8 @@ public partial class SettingsWindow : Window
     }
 
     private void Cancel_Click(object sender, RoutedEventArgs e) => Close();
+
+    private static readonly string[] Themes = ["slate", "crimson", "emerald", "violet", "amber"];
 
     private void ShowPetsReset()
     {

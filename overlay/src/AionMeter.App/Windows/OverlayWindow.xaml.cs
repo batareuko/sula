@@ -49,10 +49,12 @@ public partial class OverlayWindow : Window
         ApplyLock();
         ApplyCompact();
         ApplyFrameless();
+        ApplyLook();
         ApplyRowSize(_settings.RowSize);
         ApplyDynamic();
         UpdateModeLabel();
         ApplyHotkeyTips();
+        _vm.ServerName = _meter.Data.ServerName;
         _meter.Updates.Changed += ShowUpdateBanner;
         _meter.Tracker.DeathRecapped += r => _death = r; // 1 HP: shown on the card right after you die
         _meter.Tracker.DungeonRunEnded += r => { if (r.Fights.Count > 0) _runDone = r; }; // 1 HP: the run's summary after you leave
@@ -295,7 +297,7 @@ public partial class OverlayWindow : Window
         {
             shown = saved.Record.Summary;
             _vm.Apply(saved.Record.Summary with { Title = saved.Title, Zone = _meter.DisplayZone(saved.Record.Summary.Zone) },
-                _settings.MaxRows, _settings.BarsRelativeToTop);
+                _settings.MaxRows, _settings.BarsRelativeToTop, CurrentMetric);
             _vm.SetSegment("saved", saved.Entry.StartedAt.ToString("dd.MM HH:mm"));
             _vm.Portrait = _meter.PortraitOf(saved.Entry);
         }
@@ -331,7 +333,9 @@ public partial class OverlayWindow : Window
                 snap = PvpSnapshot(pvp);
             }
             shown = snap;
-            _vm.Apply(snap, _settings.MaxRows, _settings.BarsRelativeToTop);
+            _vm.HomeServer = _meter.Tracker.SelfServerId;
+            var plain = _death is null && _runShown is null && _pvpShown is null;
+            _vm.Apply(snap, _settings.MaxRows, _settings.BarsRelativeToTop, plain ? CurrentMetric : OverlayViewModel.Metric.Dps);
             _vm.SetSegment(_segment is null ? "live" : "session", snap?.StartedAt.ToString("HH:mm"));
             _vm.Portrait = snap is null ? null : _meter.PortraitOf(snap);
         }
@@ -343,6 +347,7 @@ public partial class OverlayWindow : Window
         else ApplyOneHp(shown, _saved?.Entry.FileName);
         var tt = UiText.Current;
         var pvpMode = _pvpShown is not null && shown?.Id == _pvpShown.Id;
+        UpdateTiles(shown, pvpMode || (_death is { } d0 && shown?.Id == d0.Id) || (_runShown is { } r0 && shown?.Id == r0.Id));
         HeadDps.Text = pvpMode ? tt.PvpDealt : tt.ColDps;
         HeadDamage.Text = pvpMode ? tt.PvpTaken : tt.ColDamage;
         HeadShare.Text = pvpMode ? "HP" : tt.ColShare;
@@ -889,9 +894,92 @@ public partial class OverlayWindow : Window
         OpacitySlider.Value = _settings.BackgroundOpacity;
         ApplyCompact();
         ApplyFrameless();
+        ApplyLook();
         ApplyRowSize(_settings.RowSize);
         ApplyDynamic();
         UpdateModeLabel();
+    }
+
+    private OverlayViewModel.Metric CurrentMetric => _settings.MeterMetric switch
+    {
+        "hps" => OverlayViewModel.Metric.Hps,
+        "taken" => OverlayViewModel.Metric.Taken,
+        _ => OverlayViewModel.Metric.Dps,
+    };
+
+    /// <summary>
+    /// 1 HP: the two-line look (Settings → Overlay, on by default) — name, deaths and trend over damage, crit, gear and
+    /// server; tiles with DPS, duration and total above the rows and DPS / HPS / taken tabs in place of the column labels.
+    /// </summary>
+    private void ApplyLook()
+    {
+        var two = _settings.TwoLineRows;
+        Resources["OneLineVisibility"] = two ? Visibility.Collapsed : Visibility.Visible;
+        Resources["TwoLineVisibility"] = two ? Visibility.Visible : Visibility.Collapsed;
+        MetricTabs.Visibility = two ? Visibility.Visible : Visibility.Collapsed;
+        ColumnLabels.Visibility = two ? Visibility.Collapsed : Visibility.Visible;
+        if (!two) _settings.MeterMetric = "dps";
+        ApplyTheme();
+    }
+
+    /// <summary>1 HP: the card's colours — the background, the panels, the row tracks and the tiles take the theme's tint.</summary>
+    private void ApplyTheme()
+    {
+        var (bg, tile) = _settings.ColorTheme switch
+        {
+            "crimson" => (Color.FromRgb(0x1A, 0x0C, 0x12), Color.FromRgb(0x33, 0x18, 0x22)),
+            "emerald" => (Color.FromRgb(0x0A, 0x17, 0x14), Color.FromRgb(0x14, 0x2E, 0x27)),
+            "violet" => (Color.FromRgb(0x14, 0x0E, 0x22), Color.FromRgb(0x27, 0x1D, 0x40)),
+            "amber" => (Color.FromRgb(0x1A, 0x14, 0x0A), Color.FromRgb(0x33, 0x28, 0x14)),
+            _ => (Color.FromRgb(0x0E, 0x13, 0x20), Color.FromRgb(0x1C, 0x23, 0x33)),
+        };
+        _themeBase = bg;
+        FrameBackground.Color = bg;
+        HeadPanel.Background = FootPanel.Background = new SolidColorBrush(bg);
+        Resources["TileBrush"] = new SolidColorBrush(tile);
+        ApplyOpacity();
+    }
+
+    private Color _themeBase = Color.FromRgb(0x0E, 0x13, 0x20);
+
+    private void Metric_Click(object sender, RoutedEventArgs e)
+    {
+        if (sender is not FrameworkElement { Tag: string metric }) return;
+        _settings.MeterMetric = metric;
+        _settings.Save();
+        Refresh();
+    }
+
+    /// <summary>1 HP: the tiles' numbers and the active tab for the metric shown.</summary>
+    private void UpdateTiles(EncounterSnapshot? shown, bool special)
+    {
+        var two = _settings.TwoLineRows;
+        Tiles.Visibility = two && shown is not null ? Visibility.Visible : Visibility.Collapsed;
+        MetricTabs.Visibility = two && !special ? Visibility.Visible : Visibility.Collapsed;
+        if (!two || shown is null) return;
+        var t = UiText.Current;
+        var metric = special ? OverlayViewModel.Metric.Dps : CurrentMetric;
+        var seconds = Math.Max(1, shown.CombatMs) / 1000.0;
+        var players = shown.Combatants.Where(c => !c.IsUnknownSummons).ToList();
+        var total = metric switch
+        {
+            OverlayViewModel.Metric.Hps => players.Sum(c => c.Healing),
+            OverlayViewModel.Metric.Taken => players.Sum(c => c.DamageTaken),
+            _ => shown.TotalDamage,
+        };
+        TileRateLabel.Text = metric switch { OverlayViewModel.Metric.Hps => t.TileHps, OverlayViewModel.Metric.Taken => t.TileTakenPs, _ => t.TileDps };
+        TileRate.Text = Format.Compact(metric == OverlayViewModel.Metric.Dps ? shown.PartyDps : total / seconds) + "/s";
+        TileTimeLabel.Text = t.TileDuration;
+        TileTotalLabel.Text = t.TileTotal;
+        TileTotal.Text = Format.Compact(total);
+        TabTaken.Content = t.TabTaken;
+        var accent = (Brush)FindResource("Accent");
+        foreach (var tab in new[] { TabDps, TabHps, TabTaken })
+        {
+            var on = (string)tab.Tag == _settings.MeterMetric;
+            tab.BorderBrush = on ? accent : Brushes.Transparent;
+            tab.Foreground = on ? Brushes.White : new SolidColorBrush(Color.FromRgb(0x9A, 0xA4, 0xB8));
+        }
     }
 
     private bool? _compact;
@@ -965,7 +1053,7 @@ public partial class OverlayWindow : Window
         FrameBackground.Opacity = frameless ? 0 : o;
         HeadPanel.Opacity = FootPanel.Opacity = o;
         Resources["RowTrackBrush"] = frameless
-            ? new SolidColorBrush(Color.FromArgb((byte)Math.Round(0xD0 * o), 0x0E, 0x13, 0x20))
+            ? new SolidColorBrush(Color.FromArgb((byte)Math.Round(0xD0 * o), _themeBase.R, _themeBase.G, _themeBase.B))
             : new SolidColorBrush(Color.FromArgb(0x14, 0xFF, 0xFF, 0xFF));
     }
 
@@ -982,7 +1070,8 @@ public partial class OverlayWindow : Window
         var compact = _settings.Compact;
         var k = Math.Clamp(percent, AppSettings.MinRowSize, AppSettings.MaxRowSize) / 100.0 * (compact ? 0.62 : 1);
         var f = Math.Sqrt(k);
-        var height = Math.Round(42 * k);
+        var two = _settings.TwoLineRows;
+        var height = Math.Round(42 * k * (two ? (compact ? 1.5 : 1.3) : 1));
         Resources["RowHeight"] = height;
         Resources["RowMargin"] = new Thickness(0, 0, 0, compact ? 2 : Math.Max(2, Math.Round(6 * k)));
         Resources["RowGlossHeight"] = Math.Round(19 * k);
@@ -995,7 +1084,9 @@ public partial class OverlayWindow : Window
         Resources["ColRankWidth"] = new GridLength(_settings.Frameless ? 0 : Math.Round(30 * f));
         Resources["ColGlyphWidth"] = new GridLength(Math.Round(32 * f));
         Resources["ColDpsWidth"] = new GridLength(Math.Round(104 * f));
-        Resources["ColDamageWidth"] = new GridLength(Math.Round(74 * f));
+        Resources["ColDamageWidth"] = new GridLength(two ? 0 : Math.Round(74 * f)); // two-line rows: damage under the name
+        Resources["RowSubFont"] = Math.Max(10, Math.Round(12 * f, 1));
+        Resources["TileFont"] = Math.Round((compact ? 17 : 21) * f, 1);
         Resources["ColShareWidth"] = new GridLength(Math.Round(68 * f));
     }
 
