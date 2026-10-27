@@ -33,6 +33,8 @@ public sealed partial class UiText
     public string ScheduleTip { get; init; } = "Spacetime Rift every 3 h from 00:00 UTC, open 10 min (next at {0}). Daily reset at {1}, weekly {2}.";
     public string TraySite { get; init; } = "1 HP guide (site)";
     public string TrayNetCheck { get; init; } = "Network check…";
+    public string SendLogTray { get; init; } = "📄 Send the log (disconnects, errors)";
+    public string LogSent { get; init; } = "Log sent — the link is in the clipboard: paste it (Ctrl+V) in the chat.";
     public string AnalysisTrayStart { get; init; } = "● Record for analysis";
     public string AnalysisTrayStop { get; init; } = "■ Stop recording and send";
     public string AnalysisStartTip { get; init; } = "Record for analysis: packets and events of the fight, sent with one more click";

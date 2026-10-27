@@ -130,14 +130,27 @@ public sealed class AnalysisRecorder
         return zip;
     }
 
+    /// <summary>1 HP: the last day's logs alone, zipped (tray → send the log), for disconnects and other trouble.</summary>
+    public static string PackLogs()
+    {
+        var name = "logs-" + DateTime.Now.ToString("yyyyMMdd-HHmmss");
+        var folder = Path.Combine(Root, name);
+        Directory.CreateDirectory(folder);
+        CopyLogs(folder, hours: 30, files: 6);
+        var zip = Path.Combine(Root, name + ".zip");
+        ZipFile.CreateFromDirectory(folder, zip, CompressionLevel.SmallestSize, includeBaseDirectory: false);
+        try { Directory.Delete(folder, recursive: true); } catch (IOException) { }
+        return zip;
+    }
+
     /// <summary>Today's log (and the boss list log): what the meter thought while the packets came in.</summary>
-    private static void CopyLogs(string folder)
+    private static void CopyLogs(string folder, int hours = 12, int files = 3)
     {
         try
         {
             foreach (var file in Directory.GetFiles(Log.Directory)
-                         .Where(f => File.GetLastWriteTime(f) > DateTime.Now.AddHours(-12))
-                         .OrderByDescending(File.GetLastWriteTime).Take(3))
+                         .Where(f => File.GetLastWriteTime(f) > DateTime.Now.AddHours(-hours))
+                         .OrderByDescending(File.GetLastWriteTime).Take(files))
             {
                 // The log is still open for writing: read it shared instead of File.Copy.
                 using var src = new FileStream(file, FileMode.Open, FileAccess.Read, FileShare.ReadWrite | FileShare.Delete);
