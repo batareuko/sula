@@ -132,6 +132,8 @@ public sealed class AppSettings
     public bool Frameless { get; set; } = true;
     /// <summary>1 HP: names shimmer in the class colours (yours gold-pink).</summary>
     public bool AnimatedNames { get; set; } = true;
+    /// <summary>1 HP: boss mechanics on the card in boss fights — the last cast, what comes next, the guide's tips.</summary>
+    public bool BossMechanics { get; set; } = true;
     /// <summary>1 HP: ping the game server and the router once a second for the network strip (off: stream counters only).</summary>
     public bool NetPing { get; set; } = true;
     /// <summary>1 HP: rows in two lines — name, deaths and trend over damage, crit, gear and server; tiles above the rows.</summary>

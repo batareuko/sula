@@ -133,10 +133,13 @@ public sealed class CombatTracker
 
     /// <summary>1 HP: sees every event too (soul monsters in view).</summary>
     public OneHp.PetRadar? Pets { get; set; }
+    /// <summary>1 HP: sees every event too (NPC casts for the boss mechanics).</summary>
+    public OneHp.BossCasts? Casts { get; set; }
 
     public void Process(GameEvent e)
     {
         Pets?.Observe(e);
+        Casts?.Observe(e);
         string? selfName = null;
         lock (_gate)
         {

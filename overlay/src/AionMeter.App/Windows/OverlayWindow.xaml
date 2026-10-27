@@ -524,11 +524,29 @@
                 <Grid.RowDefinitions>
                     <RowDefinition Height="Auto" />
                     <RowDefinition Height="Auto" />
+                    <RowDefinition Height="Auto" />
                     <RowDefinition Height="*" />
                 </Grid.RowDefinitions>
 
+                <!-- 1 HP: boss mechanics — the boss's last cast, what comes next, and the guide's tips (hover) -->
+                <Border x:Name="MechPanel" Margin="0,0,0,6" Padding="10,5,10,6" CornerRadius="8" Background="{DynamicResource TileBrush}"
+                        Visibility="Collapsed">
+                    <StackPanel>
+                        <DockPanel LastChildFill="False">
+                            <TextBlock x:Name="MechCast" DockPanel.Dock="Left" FontSize="13" FontWeight="Bold" Foreground="#FFC857"
+                                       TextTrimming="CharacterEllipsis" VerticalAlignment="Center" />
+                            <Border x:Name="MechTipsChip" DockPanel.Dock="Right" Padding="7,1,7,2" CornerRadius="5" Background="#33FFC857"
+                                    VerticalAlignment="Center" Cursor="Help" ToolTipService.ShowDuration="60000">
+                                <TextBlock x:Name="MechTipsLabel" FontSize="11" FontWeight="Bold" Foreground="#FFE3A3" />
+                            </Border>
+                        </DockPanel>
+                        <TextBlock x:Name="MechNext" FontSize="11.5" Foreground="#C9D2E0" Margin="0,2,0,0" TextTrimming="CharacterEllipsis" />
+                        <TextBlock x:Name="MechTip" FontSize="11.5" Foreground="#E4EAF4" Margin="0,3,0,0" TextWrapping="Wrap" />
+                    </StackPanel>
+                </Border>
+
                 <!-- 1 HP two-line look: DPS (or HPS / taken per second), duration and total as tiles -->
-                <UniformGrid x:Name="Tiles" Rows="1" Margin="0,0,0,6" Visibility="Collapsed">
+                <UniformGrid x:Name="Tiles" Grid.Row="1" Rows="1" Margin="0,0,0,6" Visibility="Collapsed">
                     <Border Style="{StaticResource StatTile}" Margin="0,0,4,0">
                         <StackPanel>
                             <TextBlock x:Name="TileRateLabel" Style="{StaticResource StatTileLabel}" />
@@ -550,14 +568,14 @@
                 </UniformGrid>
 
                 <!-- 1 HP: what the rows rank by — damage, healing, damage taken -->
-                <StackPanel x:Name="MetricTabs" Grid.Row="1" Orientation="Horizontal" Margin="0,0,0,5" Visibility="Collapsed">
+                <StackPanel x:Name="MetricTabs" Grid.Row="2" Orientation="Horizontal" Margin="0,0,0,5" Visibility="Collapsed">
                     <Button x:Name="TabDps" Style="{StaticResource MetricTab}" Content="DPS" Tag="dps" Click="Metric_Click" />
                     <Button x:Name="TabHps" Style="{StaticResource MetricTab}" Content="HPS" Tag="hps" Click="Metric_Click" />
                     <Button x:Name="TabTaken" Style="{StaticResource MetricTab}" Tag="taken" Click="Metric_Click" />
                 </StackPanel>
 
                 <!-- Column labels (same widths as the rows below) -->
-                <Grid x:Name="ColumnLabels" Grid.Row="1" Margin="8,0,14,5" Visibility="{Binding HasData, Converter={StaticResource VisibleIf}}"
+                <Grid x:Name="ColumnLabels" Grid.Row="2" Margin="8,0,14,5" Visibility="{Binding HasData, Converter={StaticResource VisibleIf}}"
                      >
                     <Grid.ColumnDefinitions>
                         <ColumnDefinition Width="{DynamicResource ColRankWidth}" />
@@ -578,11 +596,11 @@
                                ToolTip="{Binding T.TipShare}" />
                 </Grid>
 
-                <ScrollViewer Grid.Row="2" VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled" Focusable="False"
+                <ScrollViewer Grid.Row="3" VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled" Focusable="False"
                               Padding="10,4,7,0" Margin="-10,-4,-7,0" PreviewMouseWheel="Rows_PreviewMouseWheel">
                     <ItemsControl ItemsSource="{Binding Rows}" ItemTemplate="{StaticResource RowTemplate}" Focusable="False" />
                 </ScrollViewer>
-                <TextBlock Grid.RowSpan="3" Text="{Binding T.EmptyParty}" FontSize="12"
+                <TextBlock Grid.RowSpan="4" Text="{Binding T.EmptyParty}" FontSize="12"
                            Foreground="#6B7590" HorizontalAlignment="Center" VerticalAlignment="Center" TextWrapping="Wrap" TextAlignment="Center"
                            Visibility="{Binding HasData, Converter={StaticResource VisibleIf}, ConverterParameter=!}" />
             </Grid>

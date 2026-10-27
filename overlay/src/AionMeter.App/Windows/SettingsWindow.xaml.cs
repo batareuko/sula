@@ -98,6 +98,7 @@ public partial class SettingsWindow : Window
         PetRadarOn.IsChecked = s.PetRadar;
         TwoLineRowsOn.IsChecked = s.TwoLineRows;
         NetPingOn.IsChecked = s.NetPing;
+        MechanicsOn.IsChecked = s.BossMechanics;
         ThemeBox.ItemsSource = T.ThemeNames;
         ThemeBox.SelectedIndex = Math.Max(0, Array.IndexOf(Themes, s.ColorTheme));
         ShowPetsReset();
@@ -175,6 +176,7 @@ public partial class SettingsWindow : Window
         s.PetRadar = PetRadarOn.IsChecked == true;
         s.TwoLineRows = TwoLineRowsOn.IsChecked == true;
         s.NetPing = NetPingOn.IsChecked == true;
+        s.BossMechanics = MechanicsOn.IsChecked == true;
         _meter.Net.PingEnabled = s.NetPing;
         s.ColorTheme = Themes[Math.Clamp(ThemeBox.SelectedIndex, 0, Themes.Length - 1)];
         s.BuffEndAlert = BuffEndOn.IsChecked == true;
