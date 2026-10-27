@@ -115,6 +115,9 @@ public sealed class LiveCapture : IEventSource
         }
     }
 
+    private const long QuietAfterMs = 5_000, RescanMs = 3_000;
+    private long _lastScanMs;
+
     private void Refresh()
     {
         if (_options.DeviceName is { Length: > 0 } forced)
@@ -129,6 +132,24 @@ public sealed class LiveCapture : IEventSource
             ReportFlowStatus(dev);
             return;
         }
+
+        // 1 HP quiet capture: while the game stream flows, the game is not looked at again; it is looked for only at the
+        // start and when the stream went quiet (a teleport or a loading screen moves it to another server), at most every 3 s.
+        var now = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds();
+        if (_device is { } open)
+        {
+            if (_pipeline.GameFlows > 0 && now - _pipeline.LastGameDataMs < QuietAfterMs)
+            {
+                ReportFlowStatus(open);
+                return;
+            }
+            if (now - _lastScanMs < RescanMs)
+            {
+                ReportFlowStatus(open);
+                return;
+            }
+        }
+        _lastScanMs = now;
 
         var pids = GameProcessLocator.FindGameProcessIds();
         if (pids.Length == 0)
