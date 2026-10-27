@@ -170,6 +170,7 @@ public sealed partial class UiText
     public string BuffsOn { get; init; } = "Your lasting buffs on the card (10 s and more)";
     public string FramelessOn { get; init; } = "No frame: a dark header and the rows straight over the game";
     public string AnimatedNamesOn { get; init; } = "Shimmering names in the class colours";
+    public string NetPingOn { get; init; } = "Ping the game server and the router (for the network strip); the log notes every drop of the game connection either way";
     public string TwoLineRowsOn { get; init; } = "Two-line rows: deaths and trend by the name, crit, gear and server below; DPS / time / total tiles";
     public string ThemeLabel { get; init; } = "Card colours";
     public string[] ThemeNames { get; init; } = ["Slate", "Crimson", "Emerald", "Violet", "Amber"];

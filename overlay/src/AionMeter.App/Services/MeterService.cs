@@ -32,6 +32,7 @@ public sealed class MeterService : IDisposable
         // 1 HP: ping / packet-loss strip; reads the game stream counters of whatever capture is running
         Net = new NetMonitor(() => _capture is LiveCapture live ? live.Pipeline.Health : null,
             () => _capture is LiveCapture live ? live.Pipeline.LockedFlows.ToList() : []);
+        Net.PingEnabled = settings.NetPing;
         Cloud = new OneHpCloud(settings);
         Dummies = new Core.OneHp.DummyRuns(settings.Transient ? null : Path.Combine(AppSettings.AppDataDir, "dummy-runs.json"));
         Stream = new StreamServer(this);
