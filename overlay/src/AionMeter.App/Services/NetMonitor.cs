@@ -175,7 +175,6 @@ public sealed class NetMonitor : IDisposable
             }
             else
             {
-                WatchGameExit(pids);
                 var conns = GameProcessLocator.FindConnections(pids);
                 // A ping accelerator relays the game through a local proxy: pinging 127.0.0.1 tells nothing.
                 server = conns.Where(c => !IPAddress.IsLoopback(c.RemoteIp))
@@ -205,39 +204,6 @@ public sealed class NetMonitor : IDisposable
         {
             Gateway = gateway;
             _gateway.Clear();
-        }
-    }
-
-    private readonly HashSet<int> _watchedPids = new();
-
-    /// <summary>
-    /// 1 HP: logs how the game process ends — its exit code tells a crash (0xC0000005 …) from a normal close (0) or
-    /// one closed from outside. The game may run with higher rights: then only that it ended is known.
-    /// </summary>
-    private void WatchGameExit(int[] pids)
-    {
-        foreach (var pid in pids)
-        {
-            if (!_watchedPids.Add(pid)) continue;
-            try
-            {
-                var p = System.Diagnostics.Process.GetProcessById(pid);
-                var name = p.ProcessName;
-                var started = DateTime.Now;
-                p.EnableRaisingEvents = true;
-                p.Exited += (_, _) =>
-                {
-                    string code;
-                    try { code = $"{p.ExitCode} (0x{p.ExitCode:X8})"; }
-                    catch (Exception) { code = "unknown"; }
-                    Log.Info($"Net watch: game process {name} ({pid}) ended, exit code {code}, watched since {started:HH:mm:ss} · {Context()}");
-                    p.Dispose();
-                };
-            }
-            catch (Exception ex) when (ex is ArgumentException or InvalidOperationException or System.ComponentModel.Win32Exception)
-            {
-                Log.Info($"Net watch: cannot watch the game process {pid}: {ex.Message}");
-            }
         }
     }
 

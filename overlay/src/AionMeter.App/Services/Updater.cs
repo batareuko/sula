@@ -154,10 +154,30 @@ public sealed class Updater : IDisposable
     }
 
     /// <summary>Downloads the release's installer (or zip) to the temp folder, checked against GitHub's size and SHA-256.</summary>
-    public Task<string> DownloadUpdateAsync(ReleaseInfo release, IProgress<double>? progress, CancellationToken ct) =>
-        UpdateAsset(release) is { } asset
-            ? _feed.DownloadAsync(asset, DownloadFolder, progress, ct)
-            : throw new InvalidOperationException($"Release {release.Tag} has nothing this copy can install");
+    private readonly SemaphoreSlim _downloadGate = new(1, 1);
+
+    /// <summary>
+    /// One download at a time: the window's "update" waits for a background download of the same release and then
+    /// takes its file, instead of writing the same .part file at once (IOException "used by another process").
+    /// </summary>
+    public async Task<string> DownloadUpdateAsync(ReleaseInfo release, IProgress<double>? progress, CancellationToken ct)
+    {
+        if (UpdateAsset(release) is not { } asset) throw new InvalidOperationException($"Release {release.Tag} has nothing this copy can install");
+        await _downloadGate.WaitAsync(ct).ConfigureAwait(false);
+        try
+        {
+            if (Downloaded?.Version == release.Version && _downloadedPath is { } done && File.Exists(done))
+            {
+                progress?.Report(1);
+                return done;
+            }
+            return await _feed.DownloadAsync(asset, DownloadFolder, progress, ct).ConfigureAwait(false);
+        }
+        finally
+        {
+            _downloadGate.Release();
+        }
+    }
 
     /// <summary>Fetches the update in the background, so it can go in at the next quiet moment.</summary>
     private async Task PrepareAsync(ReleaseInfo release)
