@@ -84,6 +84,8 @@ public sealed class Combatant
     public long DamageTaken { get; set; }
     public int HitsTaken { get; set; }
     public long Healing { get; set; }
+    /// <summary>1 HP: times this player died during the fight.</summary>
+    public int Deaths { get; set; }
 
     /// <summary>1 HP: healing this player received, by healer (actor id → amount, heals).</summary>
     public Dictionary<uint, (long Amount, int Hits)> HealedBy { get; } = new();
@@ -121,6 +123,7 @@ public sealed class Combatant
         DamageTaken += other.DamageTaken;
         HitsTaken += other.HitsTaken;
         Healing += other.Healing;
+        Deaths += other.Deaths;
         foreach (var (id, v) in other.HealedBy) HealedBy[id] = Add(HealedBy.GetValueOrDefault(id), v.Amount, v.Hits);
         foreach (var (id, v) in other.TakenFrom) TakenFrom[id] = Add(TakenFrom.GetValueOrDefault(id), v.Amount, v.Hits);
         if (FirstHitMs == 0 || (other.FirstHitMs != 0 && other.FirstHitMs < FirstHitMs)) FirstHitMs = other.FirstHitMs;

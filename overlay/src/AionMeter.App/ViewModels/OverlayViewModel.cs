@@ -33,6 +33,18 @@ public sealed class RowViewModel : ObservableObject
     /// <summary>1 HP: item level from the site lookup ("2155"), empty while unknown.</summary>
     public string Gear { get => _gear; set => Set(ref _gear, value); }
 
+    private string _crit = "", _server = "", _deaths = "", _trend = "";
+    private Brush _trendBrush = Brushes.Transparent;
+    /// <summary>1 HP (two-line rows): "Crit 33%", empty without hits.</summary>
+    public string Crit { get => _crit; set => Set(ref _crit, value); }
+    /// <summary>1 HP (two-line rows): the player's server, empty when it is yours or unknown.</summary>
+    public string Server { get => _server; set => Set(ref _server, value); }
+    /// <summary>1 HP: deaths in this fight ("1"), empty when none.</summary>
+    public string Deaths { get => _deaths; set => Set(ref _deaths, value); }
+    /// <summary>1 HP: ▲ / ▼ when the DPS rose or fell over the last seconds, empty when steady.</summary>
+    public string Trend { get => _trend; set => Set(ref _trend, value); }
+    public Brush TrendBrush { get => _trendBrush; set => Set(ref _trendBrush, value); }
+
     private string _threatText = "";
     private Brush _threatBrush = Brushes.Transparent;
     /// <summary>1 HP (PvP): the gap to you as a badge ("+1 240 GS"), empty outside PvP or while it is not known.</summary>
@@ -284,9 +296,34 @@ public sealed class OverlayViewModel : ObservableObject
     public Brush SelfPlaceForeground { get => _selfPlaceForeground; set => Set(ref _selfPlaceForeground, value); }
 
     public Guid? SegmentId { get; private set; }
+
+    /// <summary>1 HP: server id → name for the two-line rows (set by the window).</summary>
+    public Func<int, string>? ServerName { get; set; }
+    /// <summary>1 HP: the server of the character playing; players from it show no server.</summary>
+    public int HomeServer { get; set; }
+
+    private static readonly Brush TrendUp = Frozen(Color.FromRgb(0x5E, 0xE0, 0x8C));
+    private static readonly Brush TrendDown = Frozen(Color.FromRgb(0xFF, 0x6B, 0x6B));
+    private readonly Dictionary<uint, Queue<(long At, double Rate)>> _trend = new();
+    private Guid? _trendFor;
     public string Version { get; } = "v" + (typeof(OverlayViewModel).Assembly.GetName().Version?.ToString(3) ?? "0.1.0");
 
-    public void Apply(EncounterSnapshot? snap, int maxRows, bool relativeToTop)
+    /// <summary>1 HP: what the rows rank by — damage (DPS), healing (HPS) or damage taken.</summary>
+    public enum Metric { Dps, Hps, Taken }
+
+    /// <summary>The fight's rows ranked by <paramref name="metric"/>: value, per second and share for each.</summary>
+    private static List<(CombatantSnapshot C, long Value, double Rate, double Share)> Ranked(EncounterSnapshot snap, Metric metric)
+    {
+        if (metric == Metric.Dps) return snap.Combatants.Select(c => (c, c.Damage, c.Dps, c.Share)).ToList();
+        var seconds = Math.Max(1, snap.CombatMs) / 1000.0;
+        var players = snap.Combatants.Where(c => !c.IsUnknownSummons).ToList();
+        long Of(CombatantSnapshot c) => metric == Metric.Hps ? c.Healing : c.DamageTaken;
+        var total = Math.Max(1, players.Sum(Of));
+        return players.Select(c => (c, Of(c), Of(c) / seconds, (double)Of(c) / total))
+            .OrderByDescending(x => x.Item2).ToList();
+    }
+
+    public void Apply(EncounterSnapshot? snap, int maxRows, bool relativeToTop, Metric metric = Metric.Dps)
     {
         if (snap is null)
         {
@@ -354,33 +391,45 @@ public sealed class OverlayViewModel : ObservableObject
             ApplyForecast(null);
         }
 
-        var list = snap.Combatants;
+        var ranked = Ranked(snap, metric);
+        var list = ranked.Select(x => x.C).ToList();
         var count = Math.Min(maxRows, list.Count);
         // Always keep the local player visible even when they are outside the top N.
         var selfIndex = -1;
         for (var i = 0; i < list.Count; i++)
             if (list[i].IsSelf) { selfIndex = i; break; }
+        if (_trendFor != snap.Id || !snap.IsActive)
+        {
+            _trend.Clear();
+            _trendFor = snap.Id;
+        }
+        var tick = Environment.TickCount64;
         var showSelfExtra = selfIndex >= count;
         var rowsNeeded = count + (showSelfExtra ? 1 : 0);
 
         while (Rows.Count > rowsNeeded) Rows.RemoveAt(Rows.Count - 1);
         while (Rows.Count < rowsNeeded) Rows.Add(new RowViewModel());
 
-        var best = list.Count > 0 ? Math.Max(1, list[0].Damage) : 1;
+        var best = ranked.Count > 0 ? Math.Max(1, ranked[0].Value) : 1;
         for (var r = 0; r < rowsNeeded; r++)
         {
             var i = showSelfExtra && r == rowsNeeded - 1 ? selfIndex : r;
             var cb = list[i];
+            var (_, value, rate, share) = ranked[i];
             var row = Rows[r];
             row.ActorId = cb.ActorId;
             row.Rank = cb.IsUnknownSummons ? 0 : i + 1;
             row.Name = T.CombatantLabel(cb.ActorId, cb.Name, cb.Class);
             row.Class = cb.Class;
             row.IsSelf = cb.IsSelf;
-            row.Dps = Format.Compact(cb.Dps) + "/s";
-            row.Damage = Format.Compact(cb.Damage);
-            row.Share = Format.Share(cb.Share);
-            row.Fill = relativeToTop ? (double)cb.Damage / best : cb.Share;
+            row.Dps = Format.Compact(rate) + "/s";
+            row.Damage = Format.Compact(value);
+            row.Share = Format.Share(share);
+            row.Fill = relativeToTop ? (double)value / best : share;
+            row.Crit = cb.Hits > 0 ? $"{T.RowCrit} {Format.Percent(cb.CritRate, 0)}" : "";
+            row.Server = cb.ServerId != 0 && cb.ServerId != HomeServer ? ServerName?.Invoke(cb.ServerId) ?? "" : "";
+            row.Deaths = cb.Deaths > 0 ? cb.Deaths.ToString() : "";
+            SetTrend(row, cb.ActorId, rate, tick, snap.IsActive);
             var heading = cb.IsUnknownSummons ? T.UnknownSummonsTip : $"#{i + 1} {cb.Name} · {T.ClassName(cb.Class)}";
             row.Tooltip = $"{heading}\n" +
                           $"{T.RowDamage} {Format.Grouped(cb.Damage)} ({Format.Share(cb.Share)}) · DPS {Format.Compact(cb.Dps)}\n" +
@@ -389,6 +438,23 @@ public sealed class OverlayViewModel : ObservableObject
         SelfPlace = selfIndex >= 0 ? $"{selfIndex + 1} / {snap.PlayerCount}" : "";
         SelfPlaceBrush = RankBrushes.For(selfIndex + 1).Bg;
         SelfPlaceForeground = RankBrushes.For(selfIndex + 1).Fg;
+    }
+
+    /// <summary>1 HP: the arrow — the rate now against about 5 s ago (live fights only).</summary>
+    private void SetTrend(RowViewModel row, uint id, double rate, long tick, bool live)
+    {
+        if (!live)
+        {
+            row.Trend = "";
+            return;
+        }
+        if (!_trend.TryGetValue(id, out var q)) _trend[id] = q = new Queue<(long, double)>();
+        q.Enqueue((tick, rate));
+        while (q.Count > 1 && tick - q.Peek().At > 8_000) q.Dequeue();
+        var (at, before) = q.Peek();
+        var change = tick - at >= 4_000 && before > 0 ? (rate - before) / before : 0;
+        row.Trend = change > 0.04 ? "▲" : change < -0.04 ? "▼" : "";
+        row.TrendBrush = change > 0 ? TrendUp : TrendDown;
     }
 
     /// <summary>Card label above the title. <paramref name="kind"/>: live / last / segment / saved.</summary>

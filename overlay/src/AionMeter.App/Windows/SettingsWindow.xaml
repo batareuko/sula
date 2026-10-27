@@ -255,6 +255,12 @@
                                       Content="{Binding FramelessOn, Source={x:Static s:UiText.Current}}" />
                             <CheckBox x:Name="AnimatedNamesOn" Style="{StaticResource DarkCheck}" Margin="0,4,0,0"
                                       Content="{Binding AnimatedNamesOn, Source={x:Static s:UiText.Current}}" />
+                            <CheckBox x:Name="TwoLineRowsOn" Style="{StaticResource DarkCheck}" Margin="0,4,0,0"
+                                      Content="{Binding TwoLineRowsOn, Source={x:Static s:UiText.Current}}" />
+                            <StackPanel Orientation="Horizontal" Margin="0,6,0,0">
+                                <TextBlock Text="{Binding ThemeLabel, Source={x:Static s:UiText.Current}}" VerticalAlignment="Center" Margin="0,0,10,0" />
+                                <ComboBox x:Name="ThemeBox" MinWidth="140" />
+                            </StackPanel>
                             <CheckBox x:Name="PetRadarOn" Style="{StaticResource DarkCheck}" Margin="0,4,0,0"
                                       Content="{Binding PetRadarOn, Source={x:Static s:UiText.Current}}" />
                             <Button x:Name="PetsResetButton" Style="{StaticResource GhostButton}" Margin="22,4,0,0" HorizontalAlignment="Left"

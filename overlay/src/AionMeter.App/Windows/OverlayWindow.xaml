@@ -3,6 +3,7 @@
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:c="clr-namespace:AionMeter.App.Controls"
         xmlns:vm="clr-namespace:AionMeter.App.ViewModels"
+        xmlns:s="clr-namespace:AionMeter.App.Services"
         xmlns:sys="clr-namespace:System;assembly=mscorlib"
         x:Name="Root"
         Title="1 HP Overlay" Width="470" Height="540" MinWidth="340" MinHeight="220"
@@ -25,6 +26,10 @@
         <GridLength x:Key="ColDamageWidth">74</GridLength>
         <GridLength x:Key="ColShareWidth">68</GridLength>
         <sys:Double x:Key="RowHeight">42</sys:Double>
+        <!-- 1 HP two-line rows (OverlayWindow.ApplyLook) -->
+        <Visibility x:Key="OneLineVisibility">Visible</Visibility>
+        <Visibility x:Key="TwoLineVisibility">Collapsed</Visibility>
+        <sys:Double x:Key="RowSubFont">11.5</sys:Double>
         <!-- 1 HP: header, boss bar and footer sizes; the compact layout replaces them (OverlayWindow.ApplyCompact) -->
         <Thickness x:Key="CardPadding">20,14,20,10</Thickness>
         <!-- 1 HP: the frameless look replaces these (OverlayWindow.ApplyFrameless) -->
@@ -176,6 +181,48 @@
             </Setter>
         </Style>
 
+        <!-- 1 HP two-line look: stat tiles over the rows and the DPS / HPS / taken tabs -->
+        <Style x:Key="StatTile" TargetType="Border">
+            <Setter Property="CornerRadius" Value="8" />
+            <Setter Property="Padding" Value="10,5,10,6" />
+            <Setter Property="Background" Value="{DynamicResource TileBrush}" />
+        </Style>
+        <Style x:Key="StatTileLabel" TargetType="TextBlock">
+            <Setter Property="FontSize" Value="11" />
+            <Setter Property="Foreground" Value="#9AA4B8" />
+        </Style>
+        <Style x:Key="StatTileValue" TargetType="TextBlock">
+            <Setter Property="FontFamily" Value="{StaticResource NumberFont}" />
+            <Setter Property="FontSize" Value="{DynamicResource TileFont}" />
+            <Setter Property="FontWeight" Value="Bold" />
+            <Setter Property="Foreground" Value="White" />
+        </Style>
+        <Style x:Key="MetricTab" TargetType="Button">
+            <Setter Property="Foreground" Value="#9AA4B8" />
+            <Setter Property="FontSize" Value="11.5" />
+            <Setter Property="FontWeight" Value="Bold" />
+            <Setter Property="Cursor" Value="Hand" />
+            <Setter Property="Margin" Value="0,0,4,0" />
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="Button">
+                        <Border x:Name="Box" Background="{DynamicResource TileBrush}" CornerRadius="6" Padding="10,2,10,3"
+                                BorderThickness="0,0,0,2" BorderBrush="{TemplateBinding BorderBrush}">
+                            <ContentPresenter HorizontalAlignment="Center" />
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter Property="Foreground" Value="White" />
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+            <Setter Property="BorderBrush" Value="Transparent" />
+        </Style>
+        <SolidColorBrush x:Key="TileBrush" Color="#1C2333" />
+        <sys:Double x:Key="TileFont">18</sys:Double>
+
         <!-- One player: a full-height class-coloured bar (AionFlex style) with place medal, emblem, name,
              DPS in a light class tint, total damage and share -->
         <DataTemplate x:Key="RowTemplate" DataType="{x:Type vm:RowViewModel}">
@@ -222,18 +269,40 @@
                                       Height="{DynamicResource RowGlyphSize}" />
                     </Border>
 
-                    <DockPanel Grid.Column="2" LastChildFill="False" Margin="4,0,8,1">
+                    <StackPanel Grid.Column="2" Margin="4,0,8,1" VerticalAlignment="Center">
+                    <DockPanel LastChildFill="False">
                         <TextBlock x:Name="NameText" DockPanel.Dock="Left" Text="{Binding Name}" FontSize="{DynamicResource RowNameFont}" FontWeight="Bold"
                                    Foreground="{Binding NameFill}" TextTrimming="CharacterEllipsis" VerticalAlignment="Center" />
+                        <!-- 1 HP: deaths in this fight (skull + count) and the DPS trend arrow -->
+                        <StackPanel DockPanel.Dock="Left" Orientation="Horizontal" Margin="6,0,0,0" VerticalAlignment="Center"
+                                    Visibility="{Binding Deaths, Converter={StaticResource VisibleIf}}" ToolTip="{Binding DeathsTip, Source={x:Static s:UiText.Current}}">
+                            <Path Data="M12 3 C7 3 4 6.5 4 11 C4 14 5.5 15.5 7 16.5 L7 19 L9.5 19 L9.5 17.5 L11 17.5 L11 19 L13 19 L13 17.5 L14.5 17.5 L14.5 19 L17 19 L17 16.5 C18.5 15.5 20 14 20 11 C20 6.5 17 3 12 3 Z M8.8 9.8 A1.9 1.9 0 1 0 8.81 9.8 Z M15.2 9.8 A1.9 1.9 0 1 0 15.21 9.8 Z"
+                                  Fill="#FF6B6B" Stretch="Uniform" Width="11" Height="11" VerticalAlignment="Center" />
+                            <TextBlock Text="{Binding Deaths}" FontFamily="{StaticResource NumberFont}" FontSize="11.5" FontWeight="Bold" Foreground="#FF8A8A"
+                                       Margin="3,0,0,0" VerticalAlignment="Center" />
+                        </StackPanel>
+                        <TextBlock DockPanel.Dock="Left" Text="{Binding Trend}" Foreground="{Binding TrendBrush}" FontSize="10" Margin="6,1,0,0"
+                                   VerticalAlignment="Center" ToolTip="{Binding TrendTip, Source={x:Static s:UiText.Current}}" />
                         <!-- 1 HP: combat power right after the name (party list in the game, else the site's gear lookup) -->
                         <TextBlock DockPanel.Dock="Left" Text="{Binding Gear}" FontFamily="{StaticResource NumberFont}" FontSize="11"
-                                   FontWeight="SemiBold" Foreground="#C8FFF6" Opacity="0.85" VerticalAlignment="Center" Margin="7,1,0,0" />
+                                   FontWeight="SemiBold" Foreground="#C8FFF6" Opacity="0.85" VerticalAlignment="Center" Margin="7,1,0,0"
+                                   Visibility="{DynamicResource OneLineVisibility}" />
                         <Border DockPanel.Dock="Left" Background="{Binding ThreatBrush}" CornerRadius="5" Padding="5,0,5,1" Margin="7,0,0,0"
                                 VerticalAlignment="Center" Visibility="{Binding ThreatText, Converter={StaticResource VisibleIf}}">
                             <TextBlock Text="{Binding ThreatText}" FontFamily="{StaticResource NumberFont}" FontSize="11" FontWeight="Bold"
                                        Foreground="White" />
                         </Border>
                     </DockPanel>
+                    <!-- 1 HP two-line rows: damage, crit, gear and server under the name -->
+                    <StackPanel Orientation="Horizontal" Margin="0,1,0,0" Visibility="{DynamicResource TwoLineVisibility}"
+                                TextElement.FontSize="{DynamicResource RowSubFont}" TextElement.Foreground="#C9D2E0">
+                        <TextBlock Text="{Binding Damage}" FontFamily="{StaticResource NumberFont}" FontWeight="SemiBold" />
+                        <TextBlock Text="{Binding Crit}" Margin="9,0,0,0" Visibility="{Binding Crit, Converter={StaticResource VisibleIf}}" />
+                        <TextBlock Text="{Binding Gear}" FontFamily="{StaticResource NumberFont}" Foreground="#C8FFF6" Margin="9,0,0,0"
+                                   Visibility="{Binding Gear, Converter={StaticResource VisibleIf}}" />
+                        <TextBlock Text="{Binding Server}" Margin="9,0,0,0" Opacity="0.85" Visibility="{Binding Server, Converter={StaticResource VisibleIf}}" />
+                    </StackPanel>
+                    </StackPanel>
 
                     <TextBlock Grid.Column="3" Text="{Binding Dps}" Style="{StaticResource RowNumber}" />
                     <TextBlock Grid.Column="4" Text="{Binding Damage}" Style="{StaticResource RowNumber}" />
@@ -454,11 +523,41 @@
             <Grid x:Name="PartyRow" Grid.Row="3" Margin="{DynamicResource PartyMargin}">
                 <Grid.RowDefinitions>
                     <RowDefinition Height="Auto" />
+                    <RowDefinition Height="Auto" />
                     <RowDefinition Height="*" />
                 </Grid.RowDefinitions>
 
+                <!-- 1 HP two-line look: DPS (or HPS / taken per second), duration and total as tiles -->
+                <UniformGrid x:Name="Tiles" Rows="1" Margin="0,0,0,6" Visibility="Collapsed">
+                    <Border Style="{StaticResource StatTile}" Margin="0,0,4,0">
+                        <StackPanel>
+                            <TextBlock x:Name="TileRateLabel" Style="{StaticResource StatTileLabel}" />
+                            <TextBlock x:Name="TileRate" Style="{StaticResource StatTileValue}" />
+                        </StackPanel>
+                    </Border>
+                    <Border Style="{StaticResource StatTile}" Margin="2,0,2,0">
+                        <StackPanel>
+                            <TextBlock x:Name="TileTimeLabel" Style="{StaticResource StatTileLabel}" />
+                            <TextBlock Text="{Binding Clock}" Style="{StaticResource StatTileValue}" />
+                        </StackPanel>
+                    </Border>
+                    <Border Style="{StaticResource StatTile}" Margin="4,0,0,0">
+                        <StackPanel>
+                            <TextBlock x:Name="TileTotalLabel" Style="{StaticResource StatTileLabel}" />
+                            <TextBlock x:Name="TileTotal" Style="{StaticResource StatTileValue}" />
+                        </StackPanel>
+                    </Border>
+                </UniformGrid>
+
+                <!-- 1 HP: what the rows rank by — damage, healing, damage taken -->
+                <StackPanel x:Name="MetricTabs" Grid.Row="1" Orientation="Horizontal" Margin="0,0,0,5" Visibility="Collapsed">
+                    <Button x:Name="TabDps" Style="{StaticResource MetricTab}" Content="DPS" Tag="dps" Click="Metric_Click" />
+                    <Button x:Name="TabHps" Style="{StaticResource MetricTab}" Content="HPS" Tag="hps" Click="Metric_Click" />
+                    <Button x:Name="TabTaken" Style="{StaticResource MetricTab}" Tag="taken" Click="Metric_Click" />
+                </StackPanel>
+
                 <!-- Column labels (same widths as the rows below) -->
-                <Grid x:Name="ColumnLabels" Margin="8,0,14,5" Visibility="{Binding HasData, Converter={StaticResource VisibleIf}}"
+                <Grid x:Name="ColumnLabels" Grid.Row="1" Margin="8,0,14,5" Visibility="{Binding HasData, Converter={StaticResource VisibleIf}}"
                      >
                     <Grid.ColumnDefinitions>
                         <ColumnDefinition Width="{DynamicResource ColRankWidth}" />
@@ -479,11 +578,11 @@
                                ToolTip="{Binding T.TipShare}" />
                 </Grid>
 
-                <ScrollViewer Grid.Row="1" VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled" Focusable="False"
+                <ScrollViewer Grid.Row="2" VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled" Focusable="False"
                               Padding="10,4,7,0" Margin="-10,-4,-7,0" PreviewMouseWheel="Rows_PreviewMouseWheel">
                     <ItemsControl ItemsSource="{Binding Rows}" ItemTemplate="{StaticResource RowTemplate}" Focusable="False" />
                 </ScrollViewer>
-                <TextBlock Grid.RowSpan="2" Text="{Binding T.EmptyParty}" FontSize="12"
+                <TextBlock Grid.RowSpan="3" Text="{Binding T.EmptyParty}" FontSize="12"
                            Foreground="#6B7590" HorizontalAlignment="Center" VerticalAlignment="Center" TextWrapping="Wrap" TextAlignment="Center"
                            Visibility="{Binding HasData, Converter={StaticResource VisibleIf}, ConverterParameter=!}" />
             </Grid>

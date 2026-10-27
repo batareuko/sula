@@ -170,6 +170,16 @@ public sealed partial class UiText
     public string BuffsOn { get; init; } = "Your lasting buffs on the card (10 s and more)";
     public string FramelessOn { get; init; } = "No frame: a dark header and the rows straight over the game";
     public string AnimatedNamesOn { get; init; } = "Shimmering names in the class colours";
+    public string TwoLineRowsOn { get; init; } = "Two-line rows: deaths and trend by the name, crit, gear and server below; DPS / time / total tiles";
+    public string ThemeLabel { get; init; } = "Card colours";
+    public string[] ThemeNames { get; init; } = ["Slate", "Crimson", "Emerald", "Violet", "Amber"];
+    public string TabTaken { get; init; } = "Taken";
+    public string TileHps { get; init; } = "HPS";
+    public string TileTakenPs { get; init; } = "Taken/s";
+    public string TileDuration { get; init; } = "Duration";
+    public string TileTotal { get; init; } = "Total";
+    public string DeathsTip { get; init; } = "Deaths in this fight";
+    public string TrendTip { get; init; } = "DPS over the last 5 seconds";
     public string PetRadarOn { get; init; } = "Pet radar: monsters in view that drop a pet's soul (data: Aion2Data)";
     public string PetRadarReset { get; init; } = "Show hidden pets again ({0})";
     public string PetRadarTitle { get; init; } = "SOULS NEARBY";

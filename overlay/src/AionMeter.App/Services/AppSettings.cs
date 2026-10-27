@@ -132,6 +132,12 @@ public sealed class AppSettings
     public bool Frameless { get; set; } = true;
     /// <summary>1 HP: names shimmer in the class colours (yours gold-pink).</summary>
     public bool AnimatedNames { get; set; } = true;
+    /// <summary>1 HP: rows in two lines — name, deaths and trend over damage, crit, gear and server; tiles above the rows.</summary>
+    public bool TwoLineRows { get; set; } = true;
+    /// <summary>1 HP: what the rows rank by: "dps", "hps" (healing) or "taken" (damage taken).</summary>
+    public string MeterMetric { get; set; } = "dps";
+    /// <summary>1 HP: the card's colours: slate, crimson, emerald, violet, amber.</summary>
+    public string ColorTheme { get; set; } = "slate";
     /// <summary>1 HP: pet radar — monsters in view that drop a pet's soul (Core/OneHp/PetRadar.cs).</summary>
     public bool PetRadar { get; set; }
     /// <summary>1 HP: pets you no longer need (pet ids from data/pet_souls.json), hidden from the pet radar.</summary>
