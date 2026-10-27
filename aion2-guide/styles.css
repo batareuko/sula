@@ -970,3 +970,8 @@ main section.meter-hero { margin-top: 0; }
 .pet-fam { font-size: 11px; color: var(--fam); }
 .pet-areas { display: flex; gap: 6px; flex-wrap: wrap; font-size: 12px; }
 .pet-have { display: flex; gap: 4px; align-items: center; font-size: 12px; cursor: pointer; white-space: nowrap; }
+
+/* Попередження про оверлей */
+.meter-warn { margin: 12px 0 14px; padding: 12px 14px; border: 1px solid #e5484d; border-left-width: 4px; border-radius: var(--radius);
+  background: rgba(229, 72, 77, .12); line-height: 1.5; }
+.meter-warn b { display: block; color: #ff8a8a; margin-bottom: 4px; }
