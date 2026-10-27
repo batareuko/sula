@@ -331,7 +331,8 @@ public static class SampleRenderer
         {
             var rnd = new Random(2305);
             _events.Add(new SelfIdentifiedEvent(start, 2, "Sylvaen", 2305, GameClass.Elementalist));
-            foreach (var m in Party.Where(m => m.Id != 2)) _events.Add(new PlayerSeenEvent(start, m.Id, m.Name, 2305, m.Class));
+            // one player from another server (the two-line rows name it)
+            foreach (var m in Party.Where(m => m.Id != 2)) _events.Add(new PlayerSeenEvent(start, m.Id, m.Name, m.Id == 9 ? 2309 : 2305, m.Class));
             // The game's party list, with each member's combat power (shown next to the names)
             _events.Add(new PartyRosterEvent(start, Party.Select(m => m.Name).ToList(), Complete: true,
                 Party.ToDictionary(m => m.Name, m => 36_000L + m.Id * 1_370 % 9_000, StringComparer.OrdinalIgnoreCase)));
@@ -367,6 +368,7 @@ public static class SampleRenderer
                     _events.Add(hits[i++]);
                 }
                 _events.Add(new NpcHpEvent(start + at, Boss, Math.Max(1, BossHp - dealt), BossHp));
+                if (at == 4_000) _events.Add(new DeathEvent(start + at, 6)); // a death on the rows (the skull and its count)
             }
         }
 
