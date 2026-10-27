@@ -208,6 +208,7 @@
                         <RadioButton x:Name="TabAccuracy" Style="{StaticResource TabToggle}" Content="{Binding TabAccuracy, Source={x:Static s:UiText.Current}}" Checked="Tab_Checked" />
                         <RadioButton x:Name="TabRotation" Style="{StaticResource TabToggle}" Content="{Binding TabRotation, Source={x:Static s:UiText.Current}}" Checked="Tab_Checked" />
                         <RadioButton x:Name="TabDefense" Style="{StaticResource TabToggle}" Content="{Binding TabDefense, Source={x:Static s:UiText.Current}}" Checked="Tab_Checked" />
+                        <RadioButton x:Name="TabAnalysis" Style="{StaticResource TabToggle}" Content="{Binding TabAnalysis, Source={x:Static s:UiText.Current}}" Checked="Tab_Checked" />
                     </StackPanel>
                 </Border>
 
@@ -370,6 +371,70 @@
                         <ScrollViewer Grid.Row="1" VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
                             <c:RotationStrip x:Name="Rotation" Margin="0,0,8,0" />
                         </ScrollViewer>
+                    </Grid>
+
+                    <!-- 1 HP: skill analysis — active DPS, peaks, and per skill its uses, damage per use and when it was used -->
+                    <Grid x:Name="PageAnalysis" Visibility="Collapsed">
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="Auto" />
+                            <RowDefinition Height="Auto" />
+                            <RowDefinition Height="*" />
+                            <RowDefinition Height="Auto" />
+                        </Grid.RowDefinitions>
+                        <UniformGrid x:Name="AnalysisTiles" Rows="1" Margin="-6,0,0,0" />
+                        <Grid Grid.Row="1" Margin="8,14,14,4" TextElement.Foreground="{StaticResource TextMute}" TextElement.FontSize="11">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*" />
+                                <ColumnDefinition Width="50" />
+                                <ColumnDefinition Width="72" />
+                                <ColumnDefinition Width="72" />
+                                <ColumnDefinition Width="56" />
+                                <ColumnDefinition Width="56" />
+                                <ColumnDefinition Width="170" />
+                            </Grid.ColumnDefinitions>
+                            <TextBlock Text="{Binding ThSkill, Source={x:Static s:UiText.Current}}" />
+                            <TextBlock Grid.Column="1" Text="{Binding ThUses, Source={x:Static s:UiText.Current}}" TextAlignment="Right" />
+                            <TextBlock Grid.Column="2" Text="{Binding ThPerUse, Source={x:Static s:UiText.Current}}" TextAlignment="Right" />
+                            <TextBlock Grid.Column="3" Text="{Binding ThBestUse, Source={x:Static s:UiText.Current}}" TextAlignment="Right" />
+                            <TextBlock Grid.Column="4" Text="{Binding ThPerMinute, Source={x:Static s:UiText.Current}}" TextAlignment="Right" />
+                            <TextBlock Grid.Column="5" Text="{Binding ThShare, Source={x:Static s:UiText.Current}}" TextAlignment="Right" />
+                            <TextBlock Grid.Column="6" Text="{Binding ThWhen, Source={x:Static s:UiText.Current}}" Margin="14,0,0,0" />
+                        </Grid>
+                        <ScrollViewer Grid.Row="2" VerticalScrollBarVisibility="Auto">
+                            <ItemsControl x:Name="AnalysisList">
+                                <ItemsControl.ItemTemplate>
+                                    <DataTemplate>
+                                        <Grid Height="30" Margin="0,0,0,2" ToolTip="{Binding Tooltip}">
+                                            <Border CornerRadius="6" Background="#0AFFFFFF" />
+                                            <Grid Margin="8,0,14,0">
+                                                <Grid.ColumnDefinitions>
+                                                    <ColumnDefinition Width="*" />
+                                                    <ColumnDefinition Width="50" />
+                                                    <ColumnDefinition Width="72" />
+                                                    <ColumnDefinition Width="72" />
+                                                    <ColumnDefinition Width="56" />
+                                                    <ColumnDefinition Width="56" />
+                                                    <ColumnDefinition Width="170" />
+                                                </Grid.ColumnDefinitions>
+                                                <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                                                    <Grid Width="22" Height="22"><Border CornerRadius="4" Background="{Binding Swatch}" /><Image Source="{Binding Icon}" Stretch="UniformToFill"><Image.Clip><RectangleGeometry Rect="0,0,22,22" RadiusX="4" RadiusY="4" /></Image.Clip></Image></Grid>
+                                                    <TextBlock Text="{Binding Name}" Margin="8,0,0,0" FontSize="12.5" FontWeight="SemiBold"
+                                                               TextTrimming="CharacterEllipsis" VerticalAlignment="Center" />
+                                                </StackPanel>
+                                                <TextBlock Grid.Column="1" Text="{Binding Uses}" Style="{StaticResource Td}" />
+                                                <TextBlock Grid.Column="2" Text="{Binding PerUse}" Style="{StaticResource Td}" FontWeight="SemiBold" />
+                                                <TextBlock Grid.Column="3" Text="{Binding BestUse}" Style="{StaticResource Td}" Foreground="{StaticResource TextDim}" />
+                                                <TextBlock Grid.Column="4" Text="{Binding PerMinute}" Style="{StaticResource Td}" Foreground="{StaticResource TextDim}" />
+                                                <TextBlock Grid.Column="5" Text="{Binding Share}" Style="{StaticResource Td}" />
+                                                <c:SparkBars Grid.Column="6" Margin="14,5,0,5" Values="{Binding Timeline}" Fill="{Binding Swatch}" />
+                                            </Grid>
+                                        </Grid>
+                                    </DataTemplate>
+                                </ItemsControl.ItemTemplate>
+                            </ItemsControl>
+                        </ScrollViewer>
+                        <TextBlock Grid.Row="3" Margin="0,10,0,0" Foreground="{StaticResource TextMute}" FontSize="11" TextWrapping="Wrap"
+                                   Text="{Binding AnalysisNote, Source={x:Static s:UiText.Current}}" />
                     </Grid>
 
                     <!-- Defense -->

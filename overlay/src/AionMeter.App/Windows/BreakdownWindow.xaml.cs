@@ -36,6 +36,10 @@ public partial class BreakdownWindow : Window
         string Share, double ShareWidth, string DotTag, string Tooltip,
         string Back, string Front, string Perfect, string Heavy, string Multi);
 
+    /// <summary>1 HP: a row of the skill analysis.</summary>
+    public sealed record UseItem(string Name, Brush Swatch, ImageSource? Icon, string Uses, string PerUse, string BestUse, string PerMinute,
+        string Share, IReadOnlyList<long> Timeline, string Tooltip);
+
     private static UiText T => UiText.Current;
 
     // Each table sorts by a clicked column header; a new breakdown starts with the order chosen last (while the app runs).
@@ -106,6 +110,7 @@ public partial class BreakdownWindow : Window
             "accuracy" => TabAccuracy,
             "rotation" => TabRotation,
             "defense" => TabDefense,
+            "analysis" => TabAnalysis,
             _ => TabDps,
         };
         tab.IsChecked = true;
@@ -193,12 +198,37 @@ public partial class BreakdownWindow : Window
         FillSources(HealedByList, T.DefHealedBy, d.HealedBy, received);
 
         Rotation.SetData(d.Casts, _skillName, _icons.Get);
+        ShowAnalysis(d);
 
         // Party DPS timeline: the selected player filled, everyone else as thin class-coloured lines.
         var series = new List<ChartSeries> { new(d.Name, d.PerSecond, ClassVisuals.ColorOf(d.Class), true) };
         foreach (var other in _view.AllDetails().Where(o => o.ActorId != d.ActorId))
             series.Add(new ChartSeries(other.Name, other.PerSecond, ClassVisuals.ColorOf(other.Class), false));
         Chart.SetData(series);
+    }
+
+    /// <summary>1 HP: the skill analysis tab — active DPS, the best 5 and 10 seconds, and the table of uses.</summary>
+    private void ShowAnalysis(CombatantDetail d)
+    {
+        var a = SkillAnalysis.Of(d);
+        AnalysisTiles.Children.Clear();
+        var fight = Math.Max(1, d.CombatMs);
+        AddTile(AnalysisTiles, T.AnActiveDps, Format.Compact(a.ActiveDps), string.Format(T.AnActiveTime, Format.Clock(a.ActiveMs),
+            Format.Percent(Math.Min(1, (double)a.ActiveMs / fight), 0)));
+        AddTile(AnalysisTiles, T.AnPeak5, Format.Compact(a.Peak5), string.Format(T.AnPeakAt, Format.Clock(a.Peak5At * 1000L)));
+        AddTile(AnalysisTiles, T.AnPeak10, Format.Compact(a.Peak10), string.Format(T.AnPeakAt, Format.Clock(a.Peak10At * 1000L)));
+        AddTile(AnalysisTiles, T.AnSkills, a.Skills.Count.ToString(), string.Format(T.AnUsesTotal, a.Skills.Sum(s => s.Uses)));
+        AnalysisList.ItemsSource = a.Skills.Select(s =>
+        {
+            var swatch = new SolidColorBrush(RotationStrip.SkillColor(s.SkillCode));
+            swatch.Freeze();
+            var name = _skillName(s.SkillCode);
+            var tip = $"{name} ({s.SkillCode})\n{T.TipSkillDamage} {Format.Grouped(s.Damage)} · {Format.Percent(s.Share)}" +
+                      (s.Uses > 0 ? $"\n{T.ThUses}: ~{s.Uses} · {T.ThPerUse} {Format.Compact(s.PerUse)} · {T.ThBestUse} {Format.Compact(s.BestUse)}" : "\nDoT");
+            return new UseItem(name, swatch, _icons.Get(s.SkillCode), s.Uses > 0 ? "~" + s.Uses : "DoT",
+                s.Uses > 0 ? Format.Compact(s.PerUse) : "—", s.Uses > 0 ? Format.Compact(s.BestUse) : "—",
+                s.CastsPerMinute is { } m ? m.ToString("0.#", T.Culture) : "—", Format.Percent(s.Share), s.PerSecond, tip);
+        }).ToList();
     }
 
     private SkillItem ToItem(SkillRow s, double maxShare)
@@ -315,6 +345,7 @@ public partial class BreakdownWindow : Window
         PageAccuracy.Visibility = TabAccuracy.IsChecked == true ? Visibility.Visible : Visibility.Collapsed;
         PageRotation.Visibility = TabRotation.IsChecked == true ? Visibility.Visible : Visibility.Collapsed;
         PageDefense.Visibility = TabDefense.IsChecked == true ? Visibility.Visible : Visibility.Collapsed;
+        PageAnalysis.Visibility = TabAnalysis.IsChecked == true ? Visibility.Visible : Visibility.Collapsed;
     }
 
     /// <summary>Copies the whole window as an image — ready to paste into Discord.</summary>
