@@ -162,6 +162,8 @@ public sealed class LiveCapture : IEventSource
         var connections = GameProcessLocator.FindConnections(pids);
         if (connections.Count == 0)
         {
+            // between connections (character select): hear everything, so the next one is caught from its first packet
+            lock (_gate) if (_device is { } between && _filter != "tcp") { between.Filter = "tcp"; _filter = "tcp"; }
             SetStatus(CaptureState.WaitingForGame, "Waiting for the game to connect…");
             return;
         }
@@ -181,8 +183,13 @@ public sealed class LiveCapture : IEventSource
             return;
         }
 
+        // 1 HP: while the game stream is quiet (character select, a loading screen) every TCP packet on this adapter is
+        // heard, so a new connection — to another port, another server or through a local proxy (ExitLag …) — is caught
+        // from its first packet: that login burst carries your character and the map. Once game data flows again the
+        // filter narrows back to the game's connections.
+        var quiet = _pipeline.GameFlows == 0 || now - _pipeline.LastGameDataMs >= QuietAfterMs;
         var hosts = connections.Select(c => $"(host {c.RemoteIp} and port {c.RemotePort})").Distinct().OrderBy(s => s);
-        EnsureDevice(device, "tcp and (" + string.Join(" or ", hosts) + ")");
+        EnsureDevice(device, quiet ? "tcp" : "tcp and (" + string.Join(" or ", hosts) + ")");
         ReportFlowStatus(device);
     }
 
