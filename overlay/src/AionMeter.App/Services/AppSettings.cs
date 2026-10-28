@@ -167,6 +167,39 @@ public sealed class AppSettings
     public double PetRadarRange { get; set; } = 100;
     public int PetRadarRotation { get; set; }
     public string HotkeyPetRadar { get; set; } = "Ctrl+Shift+P";
+
+    // ---------------------------------------------------------------- Hidden Cube tracker (Services/CubeTracker.cs)
+    /// <summary>1 HP: track Hidden Cubes and show a green arrow pointing at the nearest one (Services/CubeTracker.cs).</summary>
+    public bool CubeEnabled { get; set; }
+    /// <summary>1 HP: the arrow overlay (Windows/CubeArrowOverlay.cs) is shown; F10 toggles it off and on.</summary>
+    public bool CubeOverlayOn { get; set; } = true;
+    /// <summary>Screen area captured and scanned, in physical pixels. 0×0 = the whole virtual screen.</summary>
+    public double CubeLeft { get; set; }
+    public double CubeTop { get; set; }
+    public double CubeWidth { get; set; }
+    public double CubeHeight { get; set; }
+    public int CubeMinSize { get; set; } = 10;
+    public int CubeMaxSize { get; set; } = 60;
+    // red cube: R > CubeRedR, G < CubeRedG, B < CubeRedB
+    public int CubeRedR { get; set; } = 170;
+    public int CubeRedG { get; set; } = 100;
+    public int CubeRedB { get; set; } = 100;
+    // yellow cube: R > CubeYellowR, G > CubeYellowG, B < CubeYellowB
+    public int CubeYellowR { get; set; } = 190;
+    public int CubeYellowG { get; set; } = 150;
+    public int CubeYellowB { get; set; } = 110;
+    /// <summary>1..100; 50 = the exact thresholds above, higher relaxes them (finds cubes easier), lower is stricter.</summary>
+    public int CubeSensitivity { get; set; } = 50;
+    public string CubeArrowColor { get; set; } = "#39FF14";
+    public int CubeArrowLength { get; set; } = 120;
+    public int CubeArrowThickness { get; set; } = 22;
+    /// <summary>Arrow anchor height, per cent of the screen height (default 30 %).</summary>
+    public int CubeArrowYPercent { get; set; } = 30;
+    /// <summary>How long the arrow stays after the cube is gone (ms).</summary>
+    public int CubeHideDelayMs { get; set; } = 400;
+    public string HotkeyCubeToggle { get; set; } = "F8";
+    public string HotkeyCubeRegion { get; set; } = "F9";
+    public string HotkeyCubeOverlay { get; set; } = "F10";
     public bool BuffEndAlert { get; set; } = true;
     /// <summary>1 HP: your party's cooldowns of a minute and more on the card.</summary>
     public bool ShowPartyCooldowns { get; set; } = true;
