@@ -212,6 +212,9 @@ public sealed partial class UiText
     public string PetRadarReset { get; init; } = "Clear the \"have\" marks ({0})";
     public string PetRadarTitle { get; init; } = "SOULS NEARBY";
     public string PetRadarTip { get; init; } = "{0} ({1}) — soul from {2}\nIn view: {3}\nWhere: {4}\n\nClick: I have it / I do not";
+    public string PetRadarTray { get; init; } = "🐾 Pet radar (Ctrl+Shift+P)";
+    public string PetRadarNoCenter { get; init; } = "hit a monster: the radar centres on you";
+    public string PetRadarWindowTip { get; init; } = "Soul monsters around you: bright — pets you do not have yet, grey — you have them.\nThe centre is the monster you hit last.\nWheel — range, right click — turn a quarter (line it up with the map), drag — move.";
     public string PetRadarCount { get; init; } = "missing {0} · have {1}";
     public string PetHave { get; init; } = "✓ have";
     public string PetMissing { get; init; } = "missing";

@@ -127,12 +127,15 @@ public partial class App : Application
         _hotkeys = new HotkeyManager(new WindowInteropHelper(_overlay).Handle);
         RegisterHotkeys();
 
+        if (settings.PetRadarWindow && !settings.NoOverlay) ShowPetRadar(true);
+
         _tray = new TrayIcon(new TrayActions(
             ToggleOverlay: () => SetOverlayVisible(!_overlay.IsVisible),
             ToggleClickThrough: ToggleClickThrough,
             Reset: RestartMeter,
             History: ShowHistory,
             BossTimers: ShowBossTimers,
+            PetRadar: TogglePetRadar,
             Settings: ShowSettings,
             Demo: () => _meter.StartDemo(),
             Replay: PickReplay,
@@ -335,6 +338,7 @@ public partial class App : Application
         _overlay.ApplyHotkeyTips();
         _hotkeys.Register(s.HotkeyClickThrough, ToggleClickThrough);
         _hotkeys.Register(s.HotkeyTimers, ToggleBossTimers);
+        _hotkeys.Register(s.HotkeyPetRadar, TogglePetRadar);
     }
 
     /// <summary>
@@ -458,6 +462,23 @@ public partial class App : Application
     }
 
     // ------------------------------------------------------------ window management (used by windows via AppHost)
+
+    private PetRadarWindow? _petRadar;
+
+    /// <summary>1 HP: the pet radar window on / off (tray, Ctrl+Shift+P); remembered for the next start.</summary>
+    public void TogglePetRadar() => ShowPetRadar(!(_petRadar?.IsVisible ?? false));
+
+    private void ShowPetRadar(bool on)
+    {
+        _meter.Settings.PetRadarWindow = on;
+        _meter.Settings.Save();
+        if (on && !_meter.Settings.NoOverlay)
+        {
+            _petRadar ??= new PetRadarWindow(_meter);
+            _petRadar.Show();
+        }
+        else _petRadar?.Hide();
+    }
 
     public void SetOverlayVisible(bool visible)
     {

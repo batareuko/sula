@@ -162,6 +162,11 @@ public sealed class AppSettings
     public HashSet<int> PetsDone { get; set; } = [];
     /// <summary>1 HP: leave the pets you have out of the radar (off: they show dimmed with a tick).</summary>
     public bool PetHideOwned { get; set; }
+    /// <summary>1 HP: the pet radar window (Windows/PetRadarWindow.cs) is open; its range in metres and quarter turns.</summary>
+    public bool PetRadarWindow { get; set; }
+    public double PetRadarRange { get; set; } = 100;
+    public int PetRadarRotation { get; set; }
+    public string HotkeyPetRadar { get; set; } = "Ctrl+Shift+P";
     public bool BuffEndAlert { get; set; } = true;
     /// <summary>1 HP: your party's cooldowns of a minute and more on the card.</summary>
     public bool ShowPartyCooldowns { get; set; } = true;
