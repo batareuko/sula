@@ -176,8 +176,6 @@ public sealed partial class UiText
     public string DiagNoOverlayOn { get; init; } = "No window over the game (the card and the boss bar stay hidden)";
     public string DiagNoCaptureOn { get; init; } = "No packet capture (Npcap is not opened; the meter counts nothing)";
     public string DiagNoGameScanOn { get; init; } = "Do not look for the game and do not ping (process list, connections)";
-    public string GameClosesWarning { get; init; } = "Do not run the overlay while playing.\n\nSince 27.10 AION 2 closes itself 5–15 minutes after this meter starts — even when the meter does nothing. The game seems to recognise the program, so we will not try to get around it.\n\nYour recorded fights, breakdowns and the rating can be opened without the game.\n\nClose the meter now?\nYes — close it. No — start it anyway.";
-    public string GameClosesShort { get; init; } = "The game closes itself while this meter runs (since 27.10) — do not keep it on while playing";
     public string DiagSilentOn { get; init; } = "Complete silence: only the tray icon (no hotkeys, internet, start with the game either)";
     public string DiagCaptureOff { get; init; } = "Packet capture is off (disconnect test in Settings)";
     public string TabAnalysis { get; init; } = "Skill analysis";
