@@ -26,6 +26,7 @@ public sealed class MeterService : IDisposable
         Tracker = new CombatTracker(Data, Options);
         Pets = Core.OneHp.PetRadar.Load(Path.Combine(DataDirectory, "pet_souls.json"));
         Tracker.Pets = Pets;
+        Pets.SelfId = () => Tracker.SelfActorId;
         // 1 HP: monster skills worth a line on the card — not plain attacks, potions or anything of the players
         Casts = new Core.OneHp.BossCasts(code => GameData.IsNpcSkill(code) && code is < 2_000_000 or > 2_999_999 &&
                                                  !Data.SkillName(code).Equals("Attack", StringComparison.OrdinalIgnoreCase));

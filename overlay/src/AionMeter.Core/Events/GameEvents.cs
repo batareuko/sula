@@ -73,6 +73,9 @@ public sealed record SummonSeenEvent(long TimeMs, uint ActorId, uint OwnerId, st
 /// true when the record itself says the entity is an NPC; otherwise it may be a player and only updates known NPCs.</summary>
 public sealed record NpcHpEvent(long TimeMs, uint ActorId, long CurrentHp, long MaxHp, bool IsNpc = true) : GameEvent(TimeMs);
 
+/// <summary>1 HP: an entity moved to x, y, z (centimetres; packet 1b 37).</summary>
+public sealed record MoveEvent(long TimeMs, uint ActorId, float X, float Y, float Z) : GameEvent(TimeMs);
+
 /// <summary>An entity died, or (<paramref name="AlreadyDead"/>) came into view already dead.</summary>
 public sealed record DeathEvent(long TimeMs, uint ActorId, bool AlreadyDead = false) : GameEvent(TimeMs);
 

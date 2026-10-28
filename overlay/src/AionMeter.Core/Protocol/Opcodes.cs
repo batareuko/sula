@@ -36,11 +36,13 @@ public static class Opcodes
     public const ushort ResourceUpdate = 0x0C61; // 1 HP: one of them changed
     public const ushort BuffList = 0x2A38;       // 1 HP: buffs and debuffs put on an actor (target, count × buff)
     public const ushort BuffRefresh = 0x2B38;    // 1 HP: one buff refreshed (target, buff, bool)
+    public const ushort Move = 0x1B37;           // 1 HP: an entity moved: actor varint, 1–2 bytes, x y z f32 (cm), …
     public const ushort FieldBossList = 0x0191;  // a map's field bosses: alive since / back at (in-game map list)
 
     public static string Name(ushort op) => op switch
     {
         Heartbeat => "Heartbeat",
+        Move => "Move",
         SelfInfo => "SelfInfo",
         PlayerGear => "PlayerGear",
         PlayerInfo or PlayerInfoOld => "PlayerInfo",

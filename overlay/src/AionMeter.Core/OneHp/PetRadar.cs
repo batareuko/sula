@@ -28,6 +28,12 @@ public sealed class PetRadar
     private readonly Dictionary<uint, (Soul Soul, long SeenMs)> _inView = new();
     private readonly Dictionary<uint, (float X, float Y, float Z)> _where = new(); // every NPC in view: where it appeared
     private uint? _self;
+    private (float X, float Y, long AtMs)? _me; // where you are (your own moves)
+
+    /// <summary>Your actor id when it is known from elsewhere (the meter's tracker, restored from the cache).</summary>
+    public Func<uint?>? SelfId { get; set; }
+
+    private uint? Self => _self ?? SelfId?.Invoke();
     private (float X, float Y, long AtMs)? _anchor; // the monster you hit last
     private readonly object _gate = new();
 
@@ -86,7 +92,11 @@ public sealed class PetRadar
                 case SelfIdentifiedEvent s:
                     _self = s.ActorId;
                     break;
-                case DamageEvent d when d.SourceId == _self && _where.TryGetValue(d.TargetId, out var hit):
+                case MoveEvent m:
+                    if (m.ActorId == Self) _me = (m.X, m.Y, m.TimeMs);
+                    else if (_where.ContainsKey(m.ActorId)) _where[m.ActorId] = (m.X, m.Y, m.Z); // monsters walk: follow them
+                    break;
+                case DamageEvent d when d.SourceId == Self && _where.TryGetValue(d.TargetId, out var hit):
                     _anchor = (hit.X, hit.Y, d.TimeMs);
                     break;
                 case NpcHpEvent hp when _inView.TryGetValue(hp.ActorId, out var seen):
@@ -99,6 +109,7 @@ public sealed class PetRadar
                     _inView.Clear();
                     _where.Clear();
                     _anchor = null;
+                    _me = null;
                     break;
             }
         }
@@ -114,7 +125,9 @@ public sealed class PetRadar
             var dots = _inView.Where(kv => _where.ContainsKey(kv.Key))
                 .Select(kv => { var p = _where[kv.Key]; return new Dot(kv.Key, kv.Value.Soul, p.X, p.Y, p.Z); })
                 .ToList();
-            var center = _anchor is { } a && nowMs - a.AtMs < 120_000 ? (a.X, a.Y) : ((float, float)?)null;
+            // you (your last move, 30 s), else the monster you hit (2 min), else unknown
+            var center = _me is { } me && nowMs - me.AtMs < 30_000 ? (me.X, me.Y)
+                : _anchor is { } a && nowMs - a.AtMs < 120_000 ? (a.X, a.Y) : ((float, float)?)null;
             return new Picture(center, dots);
         }
     }

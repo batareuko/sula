@@ -83,6 +83,9 @@ public sealed class CombatTracker
     }
 
     /// <summary>The local character's server (0 until known; restored with the name cache).</summary>
+    /// <summary>1 HP: your character's actor id, once known.</summary>
+    public uint? SelfActorId { get { lock (_gate) return _entities.SelfId; } }
+
     public int SelfServerId
     {
         get { lock (_gate) return _entities.Self?.ServerId ?? 0; }
