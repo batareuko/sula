@@ -81,6 +81,7 @@ jobs:
               @('--render-sample', 'dist/preview/pvp-uk.png', '--lang', 'uk', '--backdrop', 'dark', '--window', 'overlay-pvp'),
               @('--render-sample', 'dist/preview/run-uk.png', '--lang', 'uk', '--backdrop', 'dark', '--window', 'overlay-run'),
               @('--render-sample', 'dist/preview/settings-uk.png', '--lang', 'uk', '--window', 'settings'),
+              @('--render-sample', 'dist/preview/petradar-uk.png', '--lang', 'uk', '--window', 'petradar'),
               @('--render-sample', 'dist/preview/analysis-uk.png', '--lang', 'uk', '--window', 'breakdown', '--tab', 'analysis'))) {
             $p = Start-Process $exe -ArgumentList $shot -PassThru
             if (-not $p.WaitForExit(120000)) { $p.Kill(); Write-Host "timed out: $shot" }

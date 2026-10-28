@@ -64,6 +64,12 @@ public static class SampleRenderer
                 host = timers;
                 refresh = timers.ReloadNow;
                 break;
+            case "petradar":
+                FeedPetRadar(meter);
+                var radar = new PetRadarWindow(meter) { Width = o.Width ?? 300, Height = o.Height ?? 330 };
+                host = radar;
+                refresh = radar.Refresh;
+                break;
             case "settings":
                 host = new SettingsWindow(meter) { Width = o.Width ?? 640, Height = o.Height ?? 900 };
                 refresh = () => { };
@@ -428,5 +434,20 @@ public static class SampleRenderer
         meter.Timers.SetRespawn(2305, 2701250, 120);
         meter.Timers.SetWatch(2305, 2400800, true);
         foreach (var t in meter.Timers.All().Where(t => t.NpcCode > 0)) meter.Portraits.Get(t.NpcCode);
+    }
+
+    /// <summary>1 HP: soul monsters around you for the pet radar preview (you just hit the first one).</summary>
+    private static void FeedPetRadar(MeterService meter)
+    {
+        var now = meter.Tracker.LastEventMs > 0 ? meter.Tracker.LastEventMs : DateTimeOffset.UtcNow.ToUnixTimeMilliseconds();
+        meter.Settings.PetsDone.Add(1118); // Aberrant Bee: already in the collection
+        (uint Id, int Code, float X, float Y)[] mobs =
+        [
+            (9001, 2100751, 0, 0), (9002, 2100286, 2400, -1800), (9003, 2100821, -3100, 2600), (9004, 2101098, 5200, 4100),
+            (9005, 2100710, -6400, -2200), (9006, 2100145, 900, 7300), (9007, 2100286, -1500, -6900), (9008, 2100558, 14000, -3000),
+        ];
+        meter.Pets.Observe(new SelfIdentifiedEvent(now - 5_000, 2, "Sylvaen", 2305, GameClass.Elementalist));
+        foreach (var m in mobs) meter.Pets.Observe(new NpcSeenEvent(now - 4_000, m.Id, m.Code, X: -52000 + m.X, Y: 31000 + m.Y, Z: 9800));
+        meter.Pets.Observe(new DamageEvent(now - 1_000, 2, 9001, 16010000, 1000, HitFlags.None));
     }
 }

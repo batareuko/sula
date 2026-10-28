@@ -18,8 +18,17 @@ public sealed class PetRadar
     /// <param name="Count">Monsters of this soul in view.</param>
     public sealed record Nearby(Soul Soul, int Count, long LastSeenMs);
 
+    /// <summary>A soul monster on the radar: where it came into view (game units, centimetres).</summary>
+    public sealed record Dot(uint ActorId, Soul Soul, float X, float Y, float Z);
+
+    /// <param name="Center">The monster you hit last (you stand next to it), or null when you have not hit one lately.</param>
+    public sealed record Picture((float X, float Y)? Center, IReadOnlyList<Dot> Dots);
+
     private readonly Dictionary<int, Soul> _byNpc = new();
     private readonly Dictionary<uint, (Soul Soul, long SeenMs)> _inView = new();
+    private readonly Dictionary<uint, (float X, float Y, float Z)> _where = new(); // every NPC in view: where it appeared
+    private uint? _self;
+    private (float X, float Y, long AtMs)? _anchor; // the monster you hit last
     private readonly object _gate = new();
 
     public IReadOnlyCollection<Soul> All { get; }
@@ -64,11 +73,21 @@ public sealed class PetRadar
         {
             switch (e)
             {
-                case NpcSeenEvent n when _byNpc.TryGetValue(n.NpcCode, out var soul):
-                    _inView[n.ActorId] = (soul, n.TimeMs);
-                    break;
                 case NpcSeenEvent n:
-                    _inView.Remove(n.ActorId); // the id now belongs to another monster
+                    if (n.X != 0 || n.Y != 0)
+                    {
+                        if (_where.Count > 4_000) _where.Clear();
+                        _where[n.ActorId] = (n.X, n.Y, n.Z);
+                    }
+                    else _where.Remove(n.ActorId);
+                    if (_byNpc.TryGetValue(n.NpcCode, out var soul)) _inView[n.ActorId] = (soul, n.TimeMs);
+                    else _inView.Remove(n.ActorId); // the id now belongs to another monster
+                    break;
+                case SelfIdentifiedEvent s:
+                    _self = s.ActorId;
+                    break;
+                case DamageEvent d when d.SourceId == _self && _where.TryGetValue(d.TargetId, out var hit):
+                    _anchor = (hit.X, hit.Y, d.TimeMs);
                     break;
                 case NpcHpEvent hp when _inView.TryGetValue(hp.ActorId, out var seen):
                     _inView[hp.ActorId] = (seen.Soul, hp.TimeMs);
@@ -76,10 +95,27 @@ public sealed class PetRadar
                 case DeathEvent d:
                     _inView.Remove(d.ActorId);
                     break;
-                case ZoneChangedEvent { IsTeleport: false }:
+                case ZoneChangedEvent:
                     _inView.Clear();
+                    _where.Clear();
+                    _anchor = null;
                     break;
             }
+        }
+    }
+
+    /// <summary>The radar's picture: soul monsters with a known place, centred on the monster you hit in the last 2 minutes.</summary>
+    public Picture Map(long nowMs)
+    {
+        lock (_gate)
+        {
+            foreach (var id in _inView.Where(kv => nowMs - kv.Value.SeenMs > ForgetAfterMs).Select(kv => kv.Key).ToList())
+                _inView.Remove(id);
+            var dots = _inView.Where(kv => _where.ContainsKey(kv.Key))
+                .Select(kv => { var p = _where[kv.Key]; return new Dot(kv.Key, kv.Value.Soul, p.X, p.Y, p.Z); })
+                .ToList();
+            var center = _anchor is { } a && nowMs - a.AtMs < 120_000 ? (a.X, a.Y) : ((float, float)?)null;
+            return new Picture(center, dots);
         }
     }
 

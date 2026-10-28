@@ -1,4 +1,5 @@
 using AionMeter.Core.Events;
+using AionMeter.Core.Game;
 using AionMeter.Core.OneHp;
 
 namespace AionMeter.Tests;
@@ -38,6 +39,22 @@ public class PetRadarTests
         r.Observe(new NpcSeenEvent(0, 2, 2100010));
         r.Observe(new ZoneChangedEvent(10, 1110, "Altgard", false));
         Assert.Empty(r.InView(20));
+    }
+
+    [Fact]
+    public void Map_centres_on_the_monster_you_hit()
+    {
+        var r = Radar();
+        r.Observe(new SelfIdentifiedEvent(0, 2, "Me", 2305, GameClass.Elementalist));
+        r.Observe(new NpcSeenEvent(0, 50, 2999999, X: 100, Y: 200)); // no soul, but you hit it
+        r.Observe(new NpcSeenEvent(0, 1, 2100001, X: 1100, Y: 200));
+        Assert.Null(r.Map(10).Center);
+        r.Observe(new DamageEvent(5, 2, 50, 16010000, 10, HitFlags.None));
+        var map = r.Map(10);
+        Assert.Equal((100f, 200f), map.Center);
+        var dot = Assert.Single(map.Dots);
+        Assert.Equal(1100f, dot.X);
+        Assert.Null(r.Map(130_000).Center); // the hit is too old to say where you are
     }
 
     [Fact]
