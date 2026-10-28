@@ -12,6 +12,9 @@ public partial class SettingsWindow : Window
 {
     private readonly MeterService _meter;
     private readonly List<(string? Name, string Label)> _devices = new();
+    private readonly List<ScreenRegion> _monitors = ScreenCapture.Monitors().ToList();
+    private bool _loadingCube;
+    private bool _cubeUpdating;
 
     public SettingsWindow(MeterService meter)
     {
@@ -48,6 +51,41 @@ public partial class SettingsWindow : Window
         HkReset.Text = s.HotkeyReset;
         HkClick.Text = s.HotkeyClickThrough;
         HkTimers.Text = s.HotkeyTimers;
+
+        // 1 HP: hidden cube tracker
+        _loadingCube = true;
+        CubeOn.IsChecked = s.CubeEnabled;
+        CubeOverlayOn.IsChecked = s.CubeOverlayOn;
+        foreach (var m in _monitors)
+            CubeMonitor.Items.Add($"{CubeMonitor.Items.Count + 1}: {m.Width}×{m.Height} @ {m.Left},{m.Top}");
+        var cubeRegion = ScreenCapture.ResolveRegion(s);
+        CubeFullScreen.IsChecked = s.CubeWidth <= 0 || s.CubeHeight <= 0;
+        CubeLeft.Text = CubeFullScreen.IsChecked == true ? "0" : ((int)Math.Round(s.CubeLeft)).ToString();
+        CubeTop.Text = CubeFullScreen.IsChecked == true ? "0" : ((int)Math.Round(s.CubeTop)).ToString();
+        CubeWidth.Text = CubeFullScreen.IsChecked == true ? "0" : ((int)Math.Round(s.CubeWidth)).ToString();
+        CubeHeight.Text = CubeFullScreen.IsChecked == true ? "0" : ((int)Math.Round(s.CubeHeight)).ToString();
+        if (_monitors.Count > 0)
+            CubeMonitor.SelectedIndex = Math.Max(0, _monitors.FindIndex(m =>
+                m.Left == cubeRegion.Left && m.Top == cubeRegion.Top && m.Width == cubeRegion.Width && m.Height == cubeRegion.Height));
+        CubeMinSize.Text = s.CubeMinSize.ToString();
+        CubeMaxSize.Text = s.CubeMaxSize.ToString();
+        CubeRedR.Text = s.CubeRedR.ToString();
+        CubeRedG.Text = s.CubeRedG.ToString();
+        CubeRedB.Text = s.CubeRedB.ToString();
+        CubeYellowR.Text = s.CubeYellowR.ToString();
+        CubeYellowG.Text = s.CubeYellowG.ToString();
+        CubeYellowB.Text = s.CubeYellowB.ToString();
+        CubeSensitivity.Value = s.CubeSensitivity;
+        CubeArrowColor.Text = s.CubeArrowColor;
+        CubeArrowLength.Text = s.CubeArrowLength.ToString();
+        CubeArrowThickness.Text = s.CubeArrowThickness.ToString();
+        CubeArrowY.Value = s.CubeArrowYPercent;
+        CubeHideDelay.Text = s.CubeHideDelayMs.ToString();
+        HkCubeToggle.Text = s.HotkeyCubeToggle;
+        HkCubeRegion.Text = s.HotkeyCubeRegion;
+        HkCubeOverlay.Text = s.HotkeyCubeOverlay;
+        _loadingCube = false;
+        CubeMonitor.IsEnabled = CubeFullScreen.IsChecked != true;
 
         _devices.Add((null, T.AdapterAuto));
         try
@@ -211,6 +249,47 @@ public partial class SettingsWindow : Window
         s.HotkeyClickThrough = HkClick.Text.Trim();
         s.HotkeyTimers = HkTimers.Text.Trim();
 
+        // 1 HP: hidden cube tracker
+        s.CubeEnabled = CubeOn.IsChecked == true;
+        s.CubeOverlayOn = CubeOverlayOn.IsChecked == true;
+        static int CubeCoord(TextBox box, double fallback) =>
+            double.TryParse(box.Text.Replace(" ", ""), System.Globalization.NumberStyles.Float,
+                System.Globalization.CultureInfo.InvariantCulture, out var v) && v is >= -100000 and <= 100000
+                ? (int)Math.Round(v) : (int)Math.Round(fallback);
+        static int CubeNum(TextBox box, int fallback, int min, int max) =>
+            int.TryParse(box.Text.Replace(" ", ""), out var v) ? Math.Clamp(v, min, max) : fallback;
+        if (CubeFullScreen.IsChecked == true)
+        {
+            s.CubeLeft = 0;
+            s.CubeTop = 0;
+            s.CubeWidth = 0;
+            s.CubeHeight = 0;
+        }
+        else
+        {
+            s.CubeLeft = CubeCoord(CubeLeft, s.CubeLeft);
+            s.CubeTop = CubeCoord(CubeTop, s.CubeTop);
+            s.CubeWidth = CubeCoord(CubeWidth, s.CubeWidth);
+            s.CubeHeight = CubeCoord(CubeHeight, s.CubeHeight);
+        }
+        s.CubeMinSize = CubeNum(CubeMinSize, s.CubeMinSize, 4, 200);
+        s.CubeMaxSize = CubeNum(CubeMaxSize, s.CubeMaxSize, s.CubeMinSize, 400);
+        s.CubeRedR = CubeNum(CubeRedR, s.CubeRedR, 0, 255);
+        s.CubeRedG = CubeNum(CubeRedG, s.CubeRedG, 0, 255);
+        s.CubeRedB = CubeNum(CubeRedB, s.CubeRedB, 0, 255);
+        s.CubeYellowR = CubeNum(CubeYellowR, s.CubeYellowR, 0, 255);
+        s.CubeYellowG = CubeNum(CubeYellowG, s.CubeYellowG, 0, 255);
+        s.CubeYellowB = CubeNum(CubeYellowB, s.CubeYellowB, 0, 255);
+        s.CubeSensitivity = (int)Math.Round(CubeSensitivity.Value);
+        s.CubeArrowLength = CubeNum(CubeArrowLength, s.CubeArrowLength, 20, 2000);
+        s.CubeArrowThickness = CubeNum(CubeArrowThickness, s.CubeArrowThickness, 4, 200);
+        s.CubeArrowYPercent = (int)Math.Round(CubeArrowY.Value);
+        s.CubeHideDelayMs = CubeNum(CubeHideDelay, s.CubeHideDelayMs, 0, 10000);
+        s.CubeArrowColor = CubeArrowColor.Text.Trim();
+        s.HotkeyCubeToggle = HkCubeToggle.Text.Trim();
+        s.HotkeyCubeRegion = HkCubeRegion.Text.Trim();
+        s.HotkeyCubeOverlay = HkCubeOverlay.Text.Trim();
+
         _meter.ApplySettings();
         if (captureChanged) _meter.RestartCapture();
         Close();
@@ -219,6 +298,75 @@ public partial class SettingsWindow : Window
     }
 
     private void Cancel_Click(object sender, RoutedEventArgs e) => Close();
+
+    // ------------------------------------------------------------ 1 HP: hidden cube tracker
+
+    private void CubeSensitivity_Changed(object sender, RoutedPropertyChangedEventArgs<double> e)
+    {
+        if (CubeSensitivityText is null) return;
+        CubeSensitivityText.Text = ((int)Math.Round(e.NewValue)).ToString();
+    }
+
+    private void CubeArrowY_Changed(object sender, RoutedPropertyChangedEventArgs<double> e)
+    {
+        if (CubeArrowYText is null) return;
+        CubeArrowYText.Text = $"{(int)Math.Round(e.NewValue)}%";
+    }
+
+    private void CubeFullScreen_Changed(object sender, RoutedEventArgs e)
+    {
+        if (_loadingCube || _cubeUpdating) return;
+        var full = CubeFullScreen.IsChecked == true;
+        CubeMonitor.IsEnabled = !full;
+        if (full)
+        {
+            CubeLeft.Text = "0";
+            CubeTop.Text = "0";
+            CubeWidth.Text = "0";
+            CubeHeight.Text = "0";
+        }
+        else if (_monitors.Count > 0 && CubeMonitor.SelectedIndex >= 0)
+            SetCubeRegion(_monitors[Math.Min(CubeMonitor.SelectedIndex, _monitors.Count - 1)]);
+    }
+
+    private void CubeMonitor_Changed(object sender, SelectionChangedEventArgs e)
+    {
+        if (_loadingCube || _cubeUpdating || CubeMonitor.SelectedIndex < 0 || _monitors.Count == 0) return;
+        SetCubeRegion(_monitors[Math.Min(CubeMonitor.SelectedIndex, _monitors.Count - 1)]);
+    }
+
+    private void CubePick_Click(object sender, RoutedEventArgs e) => AppHost.Current.PickCubeRegion();
+
+    private void SetCubeRegion(ScreenRegion r)
+    {
+        _cubeUpdating = true;
+        try
+        {
+            CubeFullScreen.IsChecked = false;
+            CubeMonitor.IsEnabled = true;
+            CubeLeft.Text = r.Left.ToString();
+            CubeTop.Text = r.Top.ToString();
+            CubeWidth.Text = r.Width.ToString();
+            CubeHeight.Text = r.Height.ToString();
+        }
+        finally
+        {
+            _cubeUpdating = false;
+        }
+    }
+
+    /// <summary>After F9 / the pick button chose an area (already saved): reflect it in the form.</summary>
+    public void ApplyCubeRegion(ScreenRegion r)
+    {
+        SetCubeRegion(r);
+        var idx = _monitors.FindIndex(m => m.Left == r.Left && m.Top == r.Top && m.Width == r.Width && m.Height == r.Height);
+        if (idx >= 0)
+        {
+            _cubeUpdating = true;
+            try { CubeMonitor.SelectedIndex = idx; }
+            finally { _cubeUpdating = false; }
+        }
+    }
 
     private static readonly string[] Themes = ["slate", "crimson", "emerald", "violet", "amber"];
 

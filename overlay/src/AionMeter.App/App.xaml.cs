@@ -46,6 +46,9 @@ public partial class App : Application
     private HistoryWindow? _history;
     private SettingsWindow? _settingsWindow;
     private BossTimersWindow? _timersWindow;
+    private CubeTracker? _cubeTracker;
+    private CubeArrowOverlay? _cubeOverlay;
+    private RegionPickerWindow? _regionPicker;
     private readonly Dictionary<object, BreakdownWindow> _breakdowns = new();
     private int _ticks;
 
@@ -126,6 +129,9 @@ public partial class App : Application
 
         _hotkeys = new HotkeyManager(new WindowInteropHelper(_overlay).Handle);
         RegisterHotkeys();
+
+        // 1 HP: hidden cube tracker — starts right away when it was on last time.
+        ApplyCubeTracker();
 
         if (settings.PetRadarWindow && !settings.NoOverlay) ShowPetRadar(true);
 
@@ -339,6 +345,9 @@ public partial class App : Application
         _hotkeys.Register(s.HotkeyClickThrough, ToggleClickThrough);
         _hotkeys.Register(s.HotkeyTimers, ToggleBossTimers);
         _hotkeys.Register(s.HotkeyPetRadar, TogglePetRadar);
+        _hotkeys.Register(s.HotkeyCubeToggle, ToggleCubeTracker);
+        _hotkeys.Register(s.HotkeyCubeRegion, PickCubeRegion);
+        _hotkeys.Register(s.HotkeyCubeOverlay, ToggleCubeOverlay);
     }
 
     /// <summary>
@@ -478,6 +487,84 @@ public partial class App : Application
             _petRadar.Show();
         }
         else _petRadar?.Hide();
+    }
+
+    // ------------------------------------------------------------ 1 HP: hidden cube tracker (F8 / F9 / F10)
+
+    private CubeArrowOverlay EnsureCubeOverlay()
+    {
+        if (_cubeOverlay is null) _cubeOverlay = new CubeArrowOverlay(_meter.Settings);
+        return _cubeOverlay;
+    }
+
+    /// <summary>Starts or stops the tracker thread and shows/hides the arrow window to match the current settings.</summary>
+    private void ApplyCubeTracker()
+    {
+        var s = _meter.Settings;
+        var track = s.CubeEnabled && !s.NoOverlay && !s.DiagSilent;
+        if (track)
+        {
+            var overlay = EnsureCubeOverlay();
+            _cubeTracker ??= new CubeTracker(s, overlay);
+            _cubeTracker.Start();
+            if (s.CubeOverlayOn)
+            {
+                if (!overlay.IsVisible) overlay.Show();
+            }
+            else
+            {
+                overlay.UpdateTarget(null, default);
+                overlay.Hide();
+            }
+        }
+        else
+        {
+            _cubeTracker?.Stop();
+            _cubeOverlay?.UpdateTarget(null, default);
+            _cubeOverlay?.Hide();
+        }
+    }
+
+    /// <summary>F8: the scan itself on/off. Remembered, so it comes back the same way after a restart.</summary>
+    private void ToggleCubeTracker()
+    {
+        var s = _meter.Settings;
+        s.CubeEnabled = !s.CubeEnabled;
+        s.Save();
+        ApplyCubeTracker();
+        var t = UiText.Current;
+        _tray?.ShowBalloon(AppInfo.Name, s.CubeEnabled ? t.CubeTrackerOn : t.CubeTrackerOff);
+    }
+
+    /// <summary>F10: hides/shows the arrow only; the scan keeps running so the log still records cubes.</summary>
+    private void ToggleCubeOverlay()
+    {
+        var s = _meter.Settings;
+        s.CubeOverlayOn = !s.CubeOverlayOn;
+        s.Save();
+        ApplyCubeTracker();
+        Log.Info(s.CubeOverlayOn ? "Cube overlay shown" : "Cube overlay hidden");
+    }
+
+    /// <summary>F9 (and the settings' pick button): drag the area the tracker screenshots. Esc / right click cancels.</summary>
+    public void PickCubeRegion()
+    {
+        if (_regionPicker is not null) return;
+        _regionPicker = new RegionPickerWindow(region =>
+        {
+            _regionPicker = null;
+            if (region is not { } r) return;
+            var s = _meter.Settings;
+            s.CubeLeft = r.Left;
+            s.CubeTop = r.Top;
+            s.CubeWidth = r.Width;
+            s.CubeHeight = r.Height;
+            s.Save();
+            _settingsWindow?.ApplyCubeRegion(r);
+            ApplyCubeTracker();
+            Log.Info($"Cube region {r.Left},{r.Top} {r.Width}x{r.Height}");
+        });
+        _regionPicker.Show();
     }
 
     public void SetOverlayVisible(bool visible)
@@ -867,6 +954,7 @@ public partial class App : Application
         RegisterHotkeys();
         _overlay.ApplyAppearance();
         _overlay.Refresh();
+        ApplyCubeTracker();
     }
 
     /// <summary>The Settings window's row size slider, shown on the overlay before it is saved.</summary>
@@ -896,6 +984,7 @@ public partial class App : Application
         _showWait?.Unregister(null);
         _showRequest?.Dispose();
         _hotkeys?.Dispose();
+        _cubeTracker?.Dispose();
         _tray?.Dispose();
         if (_meter is not null)
         {
