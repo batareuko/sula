@@ -29,10 +29,12 @@ jobs:
     env:
       ANTHROPIC_BASE_URL: https://api.deepseek.com/anthropic
       ANTHROPIC_AUTH_TOKEN: ${{ secrets.DEEPSEEK_API_KEY }}
-      # моделі DeepSeek за їхньою інструкцією для Claude Code (api-docs.deepseek.com); pro — сильніша, flash — дешевша
-      ANTHROPIC_MODEL: deepseek-v4-flash
+      # моделі DeepSeek за їхньою інструкцією для Claude Code (api-docs.deepseek.com): «@claude pro …» — deepseek-v4-pro
+      # (сильніша, дорожча), просто «@claude …» — deepseek-v4-flash (швидша, дешевша). Дивимось текст коментаря / рев'ю,
+      # а для нового issue — його заголовок і текст.
+      ANTHROPIC_MODEL: ${{ contains(github.event.comment.body || github.event.review.body || format('{0} {1}', github.event.issue.title, github.event.issue.body), '@claude pro') && 'deepseek-v4-pro' || 'deepseek-v4-flash' }}
       ANTHROPIC_DEFAULT_OPUS_MODEL: deepseek-v4-pro
-      ANTHROPIC_DEFAULT_SONNET_MODEL: deepseek-v4-flash
+      ANTHROPIC_DEFAULT_SONNET_MODEL: ${{ contains(github.event.comment.body || github.event.review.body || format('{0} {1}', github.event.issue.title, github.event.issue.body), '@claude pro') && 'deepseek-v4-pro' || 'deepseek-v4-flash' }}
       ANTHROPIC_DEFAULT_HAIKU_MODEL: deepseek-v4-flash
       CLAUDE_CODE_SUBAGENT_MODEL: deepseek-v4-flash
     steps:
