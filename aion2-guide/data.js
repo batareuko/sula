@@ -82,12 +82,13 @@ window.GUIDE = {
     },
     {
       id: 's6', num: '06', from: 2500, range: ['2500', '2800+'], title: 'Підготовка до рейду',
-      badge: 'Hard на 2600', badgeHot: true,
+      badge: 'Hard на 2600 / 2700', badgeHot: true,
       items: [
         'Відполіруйте постійні системи та ключові віхи покращення.',
         'Підсильте найкраще спорядження, Аркану та крафтові предмети.',
         'Використовуйте вищі рівні [Випробування Вознесіння|Ascension Trial], коли це реально.',
         'На 2600 відкривається [важкий режим Експедицій|Expedition (Hard)]: [Печера Крау|Krao Cave] і [Драупнір|Draupnir]. [Лють|Frenzy] боса через 4 хв, 3 воскресіння на гравця — ідіть групою, яка вбиває боса на звичайному [Підкоренні|Conquest] помітно швидше за 4 хв.',
+        'На 2700 — Hard [Каньйону Урюгю|Urugugu Canyon] і [Вакрона|Vakron Sky Island] (з 28.10): ті самі правила, власні Уламки Аріель — окремий ліміт морфу на кожне підземелля.',
         'Hard дає [Філософський камінь: Одкровення|Philosopher\'s Stone: Revelation] (можна обрати гарантовано), [Уламки Аріель|Ariel Fragment] для нової дошки Даеваніона та всі унікальні матеріали ремесла.',
         'Беріть із собою [Камені Воскресіння|Resurrection Spiritstone]: пакети по 30 за кінари щотижня (до 16.12).',
         'Ціль — поширений поріг входу в [рейд Лудри|Ludra raid]: ≈2800 бойової міці.',
@@ -164,7 +165,9 @@ window.GUIDE = {
     { id: 'w-res-pack', name: 'Пакети [Каменів Воскресіння|Resurrection Spiritstone] за кінари', max: 2, hint: '2 пакети по 30 (25 000 і 50 000) / тиждень на сервер, до 16.12' },
     { id: 'w-odyle-craft', name: 'Морф [Енергії Оділе|Odyle Energy]', max: 4, hint: '4 / тиждень на персонажа (+16 спільно на сервер), по 40 енергії' },
     { id: 'w-abyss-orders', name: '[Накази Безодні|Abyss Order Scrolls]', max: 20, hint: '4 ґатунки по 5 / тиждень на сервер; продаються в неділю, 15 000–150 000 кінар' },
-    { id: 'w-odyle', name: '[Енергія Оділе|Odyle Energy] у Торговців Вітерця', max: 20, hint: '20 / тиждень на персонажа, на час перенесення серверів' },
+    { id: 'w-odyle', name: '[Енергія Оділе|Odyle Energy] у Торговців Вітерця', max: 4, hint: '4 / тиждень на персонажа + 16 спільно на сервер, з 28.10' },
+    { id: 'w-nm-ticket', name: '[Квитки миттєвого проходження: Кошмар|Instant Clear Ticket: Nightmare]', max: 14, hint: '14 / тиждень на сервер, 30 000 кінар, з 28.10' },
+    { id: 'w-dd-ticket', name: '[Квитки миттєвого проходження: щоденне підземелля|Instant Clear Ticket: Daily Dungeon]', max: 14, hint: '14 / тиждень на сервер, 30 000 кінар, з 28.10' },
     { id: 'w-candy-keys', name: 'Ключі-цукерки (Хелловін)', max: 3, hint: 'червоний, жовтий, синій — по 60 уламків, до 4.11' },
   ],
 
@@ -174,6 +177,108 @@ window.GUIDE = {
      kind: plus — на користь гравцям, minus — обмеження, fix — виправлення.
      act — що зробити; counter — id лічильника в «Тижневих лімітах». Новий пачноут — новий об'єкт зверху. */
   patches: [
+    {
+      id: '6ae19668577e8c01355e0210',
+      date: '2026-10-28',
+      title: 'Пачноут 28 жовтня',
+      en: '[Notice] Patch Notes | Oct. 27 (PDT) / Oct. 28 (CET)',
+      maint: 'Техобслуговування 28 жовтня з 06:30 UTC (08:30 за Києвом), 4 год 30 хв.',
+      tldr: [
+        'Важкий режим для Каньйону Урюгю і Вакрона: вхід з 2700, лють через 4 хв, 3 воскресіння.',
+        'Боси Експедицій і Трансценденції слабші: −15% атаки (звичайні й етап 1), −10% атаки й посилення урону (Hard, етапи 2–4), −6,5% HP (етапи 1–2).',
+        'Усім класам більше базового HP: Гладіатор і Темплар +1500, решта +1000. Асасин: Illusive Clone — відкат 60 с замість 90.',
+        'Нове щоденне підземелля «Сховище Одиліуму» (спільні входи з Біодослідною базою).',
+        'Магазин: Енергія Оділе тепер 4 / тиждень на персонажа + 16 на сервер; квитки миттєвого проходження Кошмару й щоденного підземелля — по 14 на сервер за 30 000.',
+        'Подія відвідування «Atreia\'s Call» на 28 днів (до 2 грудня).',
+      ],
+      groups: [
+        {
+          title: 'Експедиції й Трансценденція',
+          items: [
+            {
+              en: 'Boss balance will be adjusted for Expedition and Transcendence content. Normal Expedition and Transcendence Stage 1: Boss Attack will be reduced by 15%. Hard Expedition and Transcendence Stages 2–4: Boss Attack and Damage Boost will each be reduced by 10%. Transcendence Stages 1–2: Boss HP will be reduced by 6.5%.',
+              ua: 'Боси [Експедицій|Expedition] і [Трансценденції|Transcendence] слабшають. Звичайна Експедиція й Трансценденція етап 1 — атака боса −15%. Hard Експедиції й Трансценденція етапи 2–4 — атака й [посилення урону|Damage Boost] боса −10%. Трансценденція етапи 1–2 — HP боса −6,5%.',
+              why: 'Менше смертей «з одного удару» у слабко вдягнених і менше вайпів через лють: на 6,5% менше HP — це ті самі секунди, яких часто бракувало до таймера. Прогноз «через скільки впаде бос» в оверлеї тепер покаже кращий запас.',
+              who: ['raid', 'all'], kind: 'plus',
+            },
+            {
+              en: 'Urugugu Canyon and Vakron Sky Island Hard mode will be added. The required item level for entry will be 2700, and the boss Frenzy timer will be set to 4 minutes. In Hard mode, each player will be limited to 3 revives. Rewards: Philosopher\'s Stone: Revelation (Bound) — chance or selectable as guaranteed; guaranteed Ariel Fragment: Urugugu / Vakron (Bound); a chance at an Expedition Hero Artwork; more Kina than Normal. All Unique crafting materials (Wrathful Mind, Wrathful Will, Wrathful Ego) will be obtainable there. New Expedition (Hard) achievements with Unique Skins.',
+              ua: 'Важкий режим для [Каньйону Урюгю|Urugugu Canyon] і [Вакрона|Vakron Sky Island]: вхід з рівнем предметів 2700, [лють|Frenzy] боса через 4 хвилини, 3 воскресіння на гравця. Нагороди — як у Hard Крау й Драупніра: [Філософський камінь: Одкровення|Philosopher\'s Stone: Revelation] (можна обрати гарантовано), гарантовані [Уламки Аріель|Ariel Fragment] свого підземелля, шанс на [Арт героя Експедиції|Expedition Hero Artwork], більше кінар; усі унікальні матеріали ремесла. Нові досягнення Hard з унікальними скінами.',
+              why: 'Ліміт морфу Уламків Аріель рахується окремо для кожного підземелля, тож дві нові Hard-експедиції — це ще два джерела Кристалів Даеваніона: Аріель. Поріг 2700 — на сотню вищий, ніж для Крау й Драупніра.',
+              who: ['raid', 'craft'], kind: 'plus', act: 'Маєте 2700 — додайте Урюгю й Вакрон Hard до тижневого плану: це окремі Уламки Аріель.',
+            },
+          ],
+        },
+        {
+          title: 'Класи',
+          items: [
+            {
+              en: 'Base HP at Level 45 will be increased: Gladiator and Templar 4,702 → 6,202 (+1,500); Assassin, Ranger, Sorcerer, Spiritmaster, Chanter, Cleric 4,702 → 5,702 (+1,000).',
+              ua: 'Базове HP на 45 рівні: [Гладіатор|Gladiator] і [Темплар|Templar] 4 702 → 6 202 (+1 500); [Асасин|Assassin], [Рейнджер|Ranger], [Чаклун|Sorcerer], [Заклинач|Spiritmaster], [Чантер|Chanter], [Клірик|Cleric] 4 702 → 5 702 (+1 000).',
+              why: 'Разом зі слабшими босами це насамперед виживання ближнього бою перед босом. Хілам легше: менше «миттєвих» смертей.',
+              who: ['all'], kind: 'plus',
+            },
+            {
+              en: 'Assassin — Heightened Sixth Sense: the HP effect will be increased (1,000 / 2,000 / 4,000 at skill level 5 / 10 / 20). Illusive Clone: base cooldown reduced from 90 seconds to 60 seconds.',
+              ua: '[Асасин|Assassin]: «[Загострене шосте чуття|Heightened Sixth Sense]» дає більше HP (1 000 / 2 000 / 4 000 на рівнях 5 / 10 / 20); «[Ілюзорний двійник|Illusive Clone]» — відкат 60 с замість 90.',
+              why: 'Головне вікно бурсту Асасина приходить на третину частіше — ротацію варто переглянути: більше вмінь під Illusive Clone за бій. Перевірте на манекені в оверлеї (аналіз скілів покаже, скільки разів за хвилину).',
+              who: ['class'], kind: 'plus', act: 'Асасинам: перебудуйте ротацію під Illusive Clone раз на 60 с.',
+            },
+          ],
+        },
+        {
+          title: 'Щоденне підземелля, магазин, сезон',
+          items: [
+            {
+              en: 'Odylium Repository will be added as a new Daily Dungeon. You will be able to obtain a set number of Soul Crystals (Bound) based on your clear points. Entry count will be shared with the Daily Dungeon: Daeva Bio-Research Base.',
+              ua: 'Нове [щоденне підземелля|Daily Dungeon] — «[Сховище Одиліуму|Odylium Repository]»: [Кристали душі|Soul Crystal] (зв\'язані) за очки проходження. Входи спільні з «[Біодослідною базою Даев|Daeva Bio-Research Base]».',
+              why: 'Входи не додаються — це вибір: кристали душі в Сховищі або звичні нагороди Біобази. Обирайте те, чого бракує.',
+              who: ['all'], kind: 'plus',
+            },
+            {
+              en: 'With the end of the server transfer period: Instant Clear Ticket: Daily Dungeon (Bound) and Soul Crystal (Bound) move from Shop > Wind Breeze Merchants > Special to Substance Morph > Special > Wind Breeze Merchants. The Odyle Energy (Bound) item with a limit of 20 per character will be removed; Odyle Energy (Bound) with a weekly limit of 4 per character and one with a weekly limit of 16 per server will be added. Lower Abyss Rift Stone (7-day) sale ends. Instant Clear Ticket: Nightmare (Bound) added: up to 14 per server each week, 30,000 Kina each. Instant Clear Ticket: Daily Dungeon (Bound): up to 14 per server each week, 30,000 Kina each.',
+              ua: 'Кінець перенесення серверів. [Енергія Оділе|Odyle Energy] у [Торговців Вітерця|Wind Breeze Merchants]: замість 20 на персонажа — 4 / тиждень на персонажа і ще 16 / тиждень на сервер. Новий «[Квиток миттєвого проходження: Кошмар|Instant Clear Ticket: Nightmare]» — до 14 на сервер щотижня по 30 000 кінар; квиток щоденного підземелля — так само 14 на сервер по 30 000. Продаж [Каменя розлому Нижньої Безодні|Lower Abyss Rift Stone] (7 днів) завершено. Квиток щоденного підземелля й Кристали душі тепер у Морф → Special → Wind Breeze Merchants.',
+              why: 'Енергії Оділе стало менше на персонажа, зате 16 спільних на сервер — розподіліть між основним і твінками. 14 квитків Кошмару на сервер — зручно закривати Кошмар твінам без проходження.',
+              who: ['all'], kind: 'minus', act: 'Щотижня: 4 Енергії Оділе на кожного персонажа + 16 на сервер; за потреби — квитки Кошмару й щоденного підземелля.', counter: 'w-odyle',
+            },
+            {
+              en: 'Weekly Season Missions: Abyss Points will be removed and Lower Abyss Rift Stone will be added as a reward for the Land Grabs mission; Lower Abyss Rift Stone will be added for the Watcher Kaira mission.',
+              ua: 'Тижневі [сезонні місії|Season Mission]: за «Land Grabs» замість [Очок Безодні|Abyss Points] — [Камінь розлому Нижньої Безодні|Lower Abyss Rift Stone]; за «[Вартовий Кайра|Watcher Kaira]» його теж додали.',
+              why: 'Камені розлому більше не продають, тож місії — тепер основне джерело.',
+              who: ['raid'], kind: 'plus',
+            },
+          ],
+        },
+        {
+          title: 'Спорядження',
+          items: [
+            {
+              en: 'The Amplify cap for Crafted Gear will be increased; Crafted and Expedition Gear with comparable stats will have the same maximum Amplify level. Transfer from Tier 3 Expedition Gear to Tier 2 Crafted Gear and from Tier 2 Expedition Gear to Tier 1 Crafted Gear will be possible (e.g. Enraged Kromede Necklace → White Dragon Lord Necklace). Max Amplify: True Dragon / Star Dragon and Splendent versions 1 → 3; White Dragon / Dark Dragon and Splendent versions 3 → 5.',
+              ua: '[Підсилення|Amplify] крафтового спорядження: Справжній / Зоряний Дракон (і «сяйливі» версії) — до 3 замість 1; Білий / Темний Дракон (і «сяйливі») — до 5 замість 3. [Перенесення|Transfer] з Експедиційного спорядження на крафтове: тір 3 → тір 2, тір 2 → тір 1 (наприклад, намисто Кромеди → намисто Білого Дракона).',
+              why: 'Крафт і Експедиції тепер рівноцінні за підсиленням, а прогрес з Експедицій не пропадає при переході на крафт. Перед крафтом перевірте, що можна перенести.',
+              who: ['craft', 'all'], kind: 'plus',
+            },
+          ],
+        },
+        {
+          title: 'Подія й інше',
+          items: [
+            {
+              en: '28-day Attendance Event: Atreia\'s Call — from after the maintenance on October 28 until before the maintenance on December 2, 2026 (CET). Rewards include Resurrection Spiritstones, Soul Codex: Reset, Life Crystals, Battle Enhance Scrolls, 2,000 Soul Crystals every 7 days, Odyle Energy, Content Usage Ticket Selection Chests and Unknown Fissure Challenge Tickets.',
+              ua: 'Подія відвідування «[Поклик Атреї|Atreia\'s Call]» на 28 днів (з 28 жовтня до техобслуговування 2 грудня): Камені Воскресіння, [Кодекс душі: скидання|Soul Codex: Reset], Кристали життя, сувої посилення, щотижня 2 000 Кристалів душі й 2 Енергії Оділе, скрині з квитками на контент і квитки [Невідомого розлому|Unknown Fissure].',
+              why: 'Просто заходьте щодня — 28 днів розтягнуто на 5 тижнів, тож можна пропустити кілька днів.',
+              who: ['all'], kind: 'plus',
+            },
+            {
+              en: 'Server Matchmaking (October 28): new Abyss server pairings; the same faction may now be matched together. Server transfers resume with Europe; level requirement to transfer is now 45.',
+              ua: 'Нові пари серверів для Безодні й розломів (з 28 жовтня) — тепер можуть зустрітися й однакові фракції (Асмодіани проти Асмодіан). Перенесення серверів відновлено з Європи, вимога — 45 рівень.',
+              why: 'Перевірте, з ким тепер ваш сервер у Безодні: таймери босів Безодні це не змінює.',
+              who: ['raid'], kind: 'fix',
+            },
+          ],
+        },
+      ],
+    },
     {
       id: '6ad85be86cfe4756db5b8e92',
       date: '2026-10-21',
@@ -946,7 +1051,7 @@ window.GUIDE = {
           ['Savage Roar · Shadowstrike', '12 — −1 с Shadowstrike · +20% крит. урону на 10 с'],
         ] } },
         { title: 'Стигми', list: [
-          '[Illusive Clone|Illusive Clone] 20 — головне вікно бурсту (~20 с, відкат 1:30: Heart Gore без відкату, +20% урону й крит. урону).',
+          '[Illusive Clone|Illusive Clone] 20 — головне вікно бурсту (~20 с, відкат 1:00 з 28.10, раніше 1:30: Heart Gore без відкату, +20% урону й крит. урону).',
           '[Swift Contract|Swift Contract] 15 → 20, [Savage Fang|Savage Fang] 15 (п\'ять Знаків одразу, +10% PvE-урону), [Triniel\'s Dagger|Triniel\'s Dagger] 10 (−10% відкатів за влучання, одразу після бафів).',
         ] },
         { title: 'Ротація й макрос', list: [
@@ -1240,6 +1345,7 @@ window.GUIDE = {
     { cp: 2100, text: '[Вогненний храм|Fire Temple] + [Лігво Лютого Рогу|Ferocious Horn Den]' },
     { cp: 2500, text: 'Випробування Вознесіння (Виклик)' },
     { cp: 2600, text: '[Експедиції Hard|Expedition (Hard)]: Крау + Драупнір' },
+    { cp: 2700, text: 'Hard: [Каньйон Урюгю|Urugugu Canyon] + [Вакрон|Vakron Sky Island]' },
     { cp: 2800, text: '[Рейд Лудри|Ludra raid]', final: true },
   ],
 
