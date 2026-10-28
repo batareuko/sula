@@ -881,6 +881,8 @@ public partial class OverlayWindow : Window
     {
         if (_settings.NoOverlay)
         {
+            // the window is not shown, but its handle must exist: the hotkeys and the tray hang on it
+            new System.Windows.Interop.WindowInteropHelper(this).EnsureHandle();
             if (IsVisible) Hide();
             return;
         }
