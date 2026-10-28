@@ -79,7 +79,9 @@ public sealed class RadarView : FrameworkElement
                 {
                     var text = new FormattedText($"{d.Soul.Pet} · {Dist(d, cx, cy) / 100:0} м", CultureInfo.CurrentUICulture,
                         FlowDirection.LeftToRight, Face, 10, Brushes.White, dpi);
-                    dc.DrawText(text, new Point(Math.Min(p.X + 6, w - text.Width - 2), p.Y - 7));
+                    // to the right of the dot, or to its left when it would run off the radar
+                    var x = p.X + 7 + text.Width <= w - 2 ? p.X + 7 : p.X - 7 - text.Width;
+                    dc.DrawText(text, new Point(Math.Max(2, x), p.Y - 7));
                 }
             }
         }
