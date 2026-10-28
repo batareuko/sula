@@ -301,6 +301,60 @@
                         </StackPanel>
                     </Border>
 
+                    <!-- 1 HP: Hidden Cube radar -->
+                    <Border Style="{StaticResource Section}">
+                        <StackPanel>
+                            <TextBlock Text="{Binding SecCubeRadar, Source={x:Static s:UiText.Current}}" Style="{StaticResource SectionLabel}" Margin="0,0,0,8" />
+                            <CheckBox x:Name="CubeRadarOn" Style="{StaticResource DarkCheck}"
+                                      Content="{Binding CubeRadarOn, Source={x:Static s:UiText.Current}}" />
+                            <CheckBox x:Name="CubeShowArrowOn" Style="{StaticResource DarkCheck}" Margin="22,4,0,0"
+                                      Content="{Binding CubeShowArrowOn, Source={x:Static s:UiText.Current}}" />
+                            <CheckBox x:Name="CubeShowDistanceOn" Style="{StaticResource DarkCheck}" Margin="22,4,0,0"
+                                      Content="{Binding CubeShowDistanceOn, Source={x:Static s:UiText.Current}}" />
+                            <CheckBox x:Name="CubeAllCubesOn" Style="{StaticResource DarkCheck}" Margin="22,4,0,0"
+                                      Content="{Binding CubeAllCubesOn, Source={x:Static s:UiText.Current}}" />
+                            <StackPanel Orientation="Horizontal" Margin="22,4,0,0">
+                                <TextBlock Text="{Binding CubeFilterLabel, Source={x:Static s:UiText.Current}}" Style="{StaticResource Label}" Width="120" />
+                                <ComboBox x:Name="CubeFilterBox" MinWidth="140" />
+                            </StackPanel>
+                            <StackPanel Orientation="Horizontal" Margin="22,4,0,0">
+                                <TextBlock Text="{Binding CubeColorLabel, Source={x:Static s:UiText.Current}}" Style="{StaticResource Label}" Width="120" />
+                                <TextBox x:Name="CubeColor" Width="80" />
+                            </StackPanel>
+                            <StackPanel Orientation="Horizontal" Margin="22,4,0,0">
+                                <TextBlock Text="{Binding CubeLengthLabel, Source={x:Static s:UiText.Current}}" Style="{StaticResource Label}" Width="120" />
+                                <TextBox x:Name="CubeArrowLength" Width="60" />
+                            </StackPanel>
+                            <StackPanel Orientation="Horizontal" Margin="22,4,0,0">
+                                <TextBlock Text="{Binding CubeThicknessLabel, Source={x:Static s:UiText.Current}}" Style="{StaticResource Label}" Width="120" />
+                                <TextBox x:Name="CubeArrowThickness" Width="60" />
+                            </StackPanel>
+                            <StackPanel Orientation="Horizontal" Margin="22,4,0,0">
+                                <TextBlock Text="{Binding CubeVerticalLabel, Source={x:Static s:UiText.Current}}" Style="{StaticResource Label}" Width="120" />
+                                <TextBox x:Name="CubeVertical" Width="60" />
+                            </StackPanel>
+                            <StackPanel Orientation="Horizontal" Margin="22,4,0,0">
+                                <TextBlock Text="{Binding CubeFadeLabel, Source={x:Static s:UiText.Current}}" Style="{StaticResource Label}" Width="120" />
+                                <TextBox x:Name="CubeFadeSeconds" Width="60" />
+                            </StackPanel>
+                            <CheckBox x:Name="CubeResearchOn" Style="{StaticResource DarkCheck}" Margin="0,8,0,0"
+                                      Content="{Binding CubeResearchOn, Source={x:Static s:UiText.Current}}" />
+                            <TextBlock Style="{StaticResource Hint}" Text="{Binding CubeResearchHint, Source={x:Static s:UiText.Current}}" />
+                            <StackPanel Orientation="Horizontal" Margin="0,4,0,0">
+                                <TextBlock Text="{Binding CubeLogLabel, Source={x:Static s:UiText.Current}}" Style="{StaticResource Label}" Width="250" />
+                                <TextBox x:Name="CubeLogPath" Width="300" />
+                            </StackPanel>
+                            <StackPanel Orientation="Horizontal" Margin="0,4,0,0">
+                                <TextBlock Text="{Binding CubeHkAppeared, Source={x:Static s:UiText.Current}}" Style="{StaticResource Label}" Width="250" />
+                                <TextBox x:Name="HkCubeAppeared" />
+                            </StackPanel>
+                            <StackPanel Orientation="Horizontal" Margin="0,4,0,0">
+                                <TextBlock Text="{Binding CubeHkGone, Source={x:Static s:UiText.Current}}" Style="{StaticResource Label}" Width="250" />
+                                <TextBox x:Name="HkCubeGone" />
+                            </StackPanel>
+                        </StackPanel>
+                    </Border>
+
                     <!-- 1 HP: event alerts -->
                     <Border Style="{StaticResource Section}">
                         <StackPanel>

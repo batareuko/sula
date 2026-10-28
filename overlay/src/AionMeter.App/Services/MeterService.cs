@@ -31,6 +31,12 @@ public sealed class MeterService : IDisposable
         Casts = new Core.OneHp.BossCasts(code => GameData.IsNpcSkill(code) && code is < 2_000_000 or > 2_999_999 &&
                                                  !Data.SkillName(code).Equals("Attack", StringComparison.OrdinalIgnoreCase));
         Tracker.Casts = Casts;
+        // 1 HP: Hidden Cubes in view (data/cubes.json), and the packet research that fills that table in
+        Cubes = Core.OneHp.CubeRadar.Load(Path.Combine(DataDirectory, "cubes.json"));
+        Tracker.Cubes = Cubes;
+        Cubes.SelfId = () => Tracker.SelfActorId;
+        Research = new Core.OneHp.PacketResearch(string.IsNullOrWhiteSpace(settings.CubeLogPath)
+            ? Path.Combine(AppSettings.AppDataDir, "cube-research") : settings.CubeLogPath) { Enabled = settings.CubeResearch };
         Mechanics = LoadMechanics(Path.Combine(DataDirectory, "boss_mechanics.json"));
         History = new HistoryStore(Path.Combine(AppSettings.AppDataDir, "fights"));
         Timers = new BossTimers(Path.Combine(AppSettings.AppDataDir, "boss-timers.json"), Data, DataDirectory, persistent: !settings.Transient);
@@ -99,6 +105,10 @@ public sealed class MeterService : IDisposable
     public Core.OneHp.PetRadar Pets { get; }
     /// <summary>1 HP: monster casts in the fight and the gaps learnt between them (boss-casts.json).</summary>
     public Core.OneHp.BossCasts Casts { get; }
+    /// <summary>1 HP: Hidden Cubes in view (data/cubes.json).</summary>
+    public Core.OneHp.CubeRadar Cubes { get; }
+    /// <summary>1 HP: packet research mode — marks cube appearance / disappearance to find their NPC code.</summary>
+    public Core.OneHp.PacketResearch Research { get; }
     /// <summary>1 HP: tips per boss NPC code, from the site's mechanics guide (data/boss_mechanics.json, by English name).</summary>
     public IReadOnlyDictionary<int, string[]> Mechanics { get; }
 
@@ -288,6 +298,8 @@ public sealed class MeterService : IDisposable
                 _capture.EventDecoded += Tracker.Process;
                 _capture.EventDecoded += LogParty;
                 _capture.EventDecoded += Analysis.Write;
+                _capture.EventDecoded += Research.Observe;
+                if (_capture is LiveCapture live) live.Pipeline.Parser.Tap = Research.OnPacket;
                 Analysis.Attach(_capture as LiveCapture);
                 _capture.Start();
                 if (Settings.NoGameScan) Log.Info("Disconnect test: no game search and no pings");
@@ -419,6 +431,9 @@ public sealed class MeterService : IDisposable
         Settings.ApplyTo(Options);
         Icons.Enabled = Settings.DownloadIcons;
         Portraits.Enabled = Settings.DownloadIcons;
+        Research.Enabled = Settings.CubeResearch;
+        Research.LogPath = string.IsNullOrWhiteSpace(Settings.CubeLogPath)
+            ? Path.Combine(AppSettings.AppDataDir, "cube-research") : Settings.CubeLogPath;
         if (!Settings.Transient) Stream.Apply(Settings.StreamEnabled, Settings.StreamPort);
         Settings.Save();
     }

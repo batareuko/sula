@@ -39,6 +39,15 @@ public static class Opcodes
     public const ushort Move = 0x1B37;           // 1 HP: an entity moved: actor varint, 1–2 bytes, x y z f32 (cm), …
     public const ushort FieldBossList = 0x0191;  // a map's field bosses: alive since / back at (in-game map list)
 
+    /// <summary>Every opcode the parser knows; anything else is worth a look in the packet research mode.</summary>
+    public static readonly IReadOnlySet<ushort> Known = new HashSet<ushort>
+    {
+        Heartbeat, SelfInfo, PlayerInfo, PlayerInfoOld, Spawn, Death, MapLoad, Teleport, Cast, Damage, Dot,
+        RemainHp, KillCredit, BattleToggle, HpMp, PartyRoster, PlayerGear, PartyMember, PartyList, PartyJoin,
+        PartyLeave, PartyGone, PartyRequest, SelfPower, ResourceList, ResourceUpdate, BuffList, BuffRefresh, Move,
+        FieldBossList,
+    };
+
     public static string Name(ushort op) => op switch
     {
         Heartbeat => "Heartbeat",

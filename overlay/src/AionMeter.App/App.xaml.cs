@@ -6,6 +6,7 @@ using AionMeter.App.Services;
 using AionMeter.App.ViewModels;
 using AionMeter.App.Windows;
 using AionMeter.Core.Capture;
+using AionMeter.Core.OneHp;
 
 namespace AionMeter.App;
 
@@ -339,6 +340,18 @@ public partial class App : Application
         _hotkeys.Register(s.HotkeyClickThrough, ToggleClickThrough);
         _hotkeys.Register(s.HotkeyTimers, ToggleBossTimers);
         _hotkeys.Register(s.HotkeyPetRadar, TogglePetRadar);
+        _hotkeys.Register(s.HotkeyCubeAppeared, () => MarkCube(CubeMark.Appeared));
+        _hotkeys.Register(s.HotkeyCubeGone, () => MarkCube(CubeMark.Gone));
+    }
+
+    /// <summary>1 HP: a marker for the packet research mode — the cube appeared / disappeared just now.</summary>
+    private void MarkCube(CubeMark mark)
+    {
+        if (!_meter.Settings.CubeResearch) return;
+        _meter.Research.Mark(mark, DateTimeOffset.UtcNow.ToUnixTimeMilliseconds());
+        var text = mark == CubeMark.Appeared ? UiText.Current.CubeMarkedAppeared : UiText.Current.CubeMarkedGone;
+        _overlay.ShowNotice("🔍 " + text, TimeSpan.FromSeconds(4));
+        Log.Info($"Cube research: {mark}");
     }
 
     /// <summary>

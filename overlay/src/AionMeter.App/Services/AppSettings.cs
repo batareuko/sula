@@ -167,6 +167,27 @@ public sealed class AppSettings
     public double PetRadarRange { get; set; } = 100;
     public int PetRadarRotation { get; set; }
     public string HotkeyPetRadar { get; set; } = "Ctrl+Shift+P";
+    /// <summary>1 HP: Hidden Cube radar — the direction arrow to the nearest cube (Core/OneHp/CubeRadar.cs).</summary>
+    public bool CubeRadar { get; set; }
+    public bool CubeShowArrow { get; set; } = true;
+    public bool CubeShowDistance { get; set; } = true;
+    /// <summary>True: point at every cube; false: only the nearest one.</summary>
+    public bool CubeAllCubes { get; set; }
+    /// <summary>Arrow colour, #RRGGBB.</summary>
+    public string CubeColor { get; set; } = "39FF14";
+    public double CubeArrowLength { get; set; } = 60;
+    public double CubeArrowThickness { get; set; } = 14;
+    /// <summary>Arrow height on the screen, percent from the top (the character is around 50).</summary>
+    public double CubeVertical { get; set; } = 38;
+    /// <summary>Seconds the arrow keeps fading after the cube disappears.</summary>
+    public double CubeFadeSeconds { get; set; } = 0.5;
+    /// <summary>Which cubes to show: "all", "red" or "yellow".</summary>
+    public string CubeFilter { get; set; } = "all";
+    /// <summary>1 HP: packet research mode — log packets, mark cube appearance / disappearance (Core/OneHp/PacketResearch.cs).</summary>
+    public bool CubeResearch { get; set; }
+    public string CubeLogPath { get; set; } = Path.Combine(AppDataDir, "cube-research");
+    public string HotkeyCubeAppeared { get; set; } = "Ctrl+Shift+M";
+    public string HotkeyCubeGone { get; set; } = "Ctrl+Shift+N";
     public bool BuffEndAlert { get; set; } = true;
     /// <summary>1 HP: your party's cooldowns of a minute and more on the card.</summary>
     public bool ShowPartyCooldowns { get; set; } = true;
