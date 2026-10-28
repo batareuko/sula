@@ -1,0 +1,38 @@
+name: Claude Code
+
+# @claude у коментарі до issue чи PR запускає Claude Code Action. Запити йдуть на Anthropic-сумісний API DeepSeek:
+# ключ — у секреті репозиторію DEEPSEEK_API_KEY (Settings → Secrets and variables → Actions), ніколи не в коді.
+on:
+  issue_comment:
+    types: [created]
+  pull_request_review_comment:
+    types: [created]
+
+jobs:
+  claude:
+    if: contains(github.event.comment.body, '@claude')
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      pull-requests: write
+      issues: write
+      actions: read
+      id-token: write
+    env:
+      ANTHROPIC_BASE_URL: https://api.deepseek.com/anthropic
+      ANTHROPIC_AUTH_TOKEN: ${{ secrets.DEEPSEEK_API_KEY }}
+      # моделі DeepSeek за їхньою інструкцією для Claude Code (api-docs.deepseek.com); pro — сильніша, flash — дешевша
+      ANTHROPIC_MODEL: deepseek-v4-flash
+      ANTHROPIC_DEFAULT_OPUS_MODEL: deepseek-v4-pro
+      ANTHROPIC_DEFAULT_SONNET_MODEL: deepseek-v4-flash
+      ANTHROPIC_DEFAULT_HAIKU_MODEL: deepseek-v4-flash
+      CLAUDE_CODE_SUBAGENT_MODEL: deepseek-v4-flash
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 1
+
+      - name: Run Claude Code
+        uses: anthropics/claude-code-action@v1
+        with:
+          anthropic_api_key: ${{ secrets.DEEPSEEK_API_KEY }}
