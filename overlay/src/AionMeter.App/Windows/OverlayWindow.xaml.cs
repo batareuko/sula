@@ -810,28 +810,45 @@ public partial class OverlayWindow : Window
     /// </summary>
     private void UpdatePetPanel()
     {
-        var nearby = _settings.PetRadar ? _meter.Pets.InView(_meter.Tracker.LastEventMs, _settings.PetsDone) : [];
-        var key = string.Join("|", nearby.Take(5).Select(n => n.Soul.PetId + "x" + n.Count));
+        // 1 HP: every soul in view; the pets missing from your collection first and bright, the ones you have dimmed
+        // with a tick (or left out, Settings → hide the ones I have). A click marks a pet as had / not had.
+        var have = _settings.PetsDone;
+        var nearby = _settings.PetRadar ? _meter.Pets.InView(_meter.Tracker.LastEventMs) : [];
+        var shown = nearby.Where(n => !(_settings.PetHideOwned && have.Contains(n.Soul.PetId)))
+            .OrderBy(n => have.Contains(n.Soul.PetId)).ThenByDescending(n => n.Count).ToList();
+        var key = string.Join("|", shown.Take(6).Select(n => n.Soul.PetId + "x" + n.Count + (have.Contains(n.Soul.PetId) ? "h" : "")));
         if (key == _petsShown) return;
         _petsShown = key;
         PetPanel.Children.Clear();
-        PetPanel.Visibility = nearby.Count > 0 ? Visibility.Visible : Visibility.Collapsed;
-        if (nearby.Count == 0) return;
+        PetPanel.Visibility = shown.Count > 0 ? Visibility.Visible : Visibility.Collapsed;
+        if (shown.Count == 0) return;
 
         var t = UiText.Current;
         var font = (double)FindResource("FooterFont");
+        var missing = shown.Count(n => !have.Contains(n.Soul.PetId));
         PetPanel.Children.Add(new TextBlock
         {
-            Text = t.PetRadarTitle + (nearby.Count > 5 ? $" · {nearby.Count}" : ""),
+            Text = t.PetRadarTitle + " · " + string.Format(t.PetRadarCount, missing, shown.Count - missing),
             FontSize = font - 0.5, FontWeight = FontWeights.SemiBold, Margin = new Thickness(0, 0, 0, 1),
             Foreground = new SolidColorBrush(Color.FromRgb(0x8A, 0x94, 0xA6)),
         });
-        foreach (var n in nearby.Take(5))
+        foreach (var n in shown.Take(6))
         {
             var soul = n.Soul;
-            var row = new StackPanel { Orientation = Orientation.Horizontal, Background = Brushes.Transparent, Cursor = Cursors.Hand, Margin = new Thickness(0, 0, 0, 1) };
+            var owned = have.Contains(soul.PetId);
+            var row = new StackPanel
+            {
+                Orientation = Orientation.Horizontal, Background = Brushes.Transparent, Cursor = Cursors.Hand,
+                Margin = new Thickness(0, 0, 0, 1), Opacity = owned ? 0.5 : 1,
+            };
             row.Children.Add(new System.Windows.Shapes.Ellipse { Width = 7, Height = 7, Fill = FamilyBrush(soul.Family), Margin = new Thickness(1, 0, 6, 0), VerticalAlignment = VerticalAlignment.Center });
             row.Children.Add(new TextBlock { Text = soul.Pet, FontSize = font + 0.5, FontWeight = FontWeights.SemiBold, Foreground = Brushes.White });
+            row.Children.Add(new Border
+            {
+                Margin = new Thickness(6, 0, 0, 0), Padding = new Thickness(5, 0, 5, 1), CornerRadius = new CornerRadius(4), VerticalAlignment = VerticalAlignment.Center,
+                Background = new SolidColorBrush(owned ? Color.FromArgb(0x40, 0x8A, 0x94, 0xA6) : Color.FromArgb(0x55, 0x22, 0xC5, 0x5E)),
+                Child = new TextBlock { Text = owned ? t.PetHave : t.PetMissing, FontSize = font - 1, FontWeight = FontWeights.Bold, Foreground = owned ? Brushes.Gainsboro : new SolidColorBrush(Color.FromRgb(0x9E, 0xF5, 0xB8)) },
+            });
             row.Children.Add(new TextBlock
             {
                 Text = $"  ×{n.Count} · {soul.Monster}", FontSize = font, VerticalAlignment = VerticalAlignment.Center,
@@ -841,7 +858,7 @@ public partial class OverlayWindow : Window
             row.ToolTip = string.Format(t.PetRadarTip, soul.Pet, soul.Family, soul.Monster, n.Count, areas);
             row.MouseLeftButtonUp += (_, _) =>
             {
-                _settings.PetsDone.Add(soul.PetId);
+                if (!_settings.PetsDone.Remove(soul.PetId)) _settings.PetsDone.Add(soul.PetId);
                 _settings.Save();
                 _petsShown = "";
                 UpdatePetPanel();

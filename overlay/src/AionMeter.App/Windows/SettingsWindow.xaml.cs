@@ -98,6 +98,7 @@ public partial class SettingsWindow : Window
         FramelessOn.IsChecked = s.Frameless;
         AnimatedNamesOn.IsChecked = s.AnimatedNames;
         PetRadarOn.IsChecked = s.PetRadar;
+        PetHideOwnedOn.IsChecked = s.PetHideOwned;
         TwoLineRowsOn.IsChecked = s.TwoLineRows;
         NetPingOn.IsChecked = s.NetPing;
         MechanicsOn.IsChecked = s.BossMechanics;
@@ -180,6 +181,7 @@ public partial class SettingsWindow : Window
         s.Frameless = FramelessOn.IsChecked == true;
         s.AnimatedNames = AnimatedNamesOn.IsChecked == true;
         s.PetRadar = PetRadarOn.IsChecked == true;
+        s.PetHideOwned = PetHideOwnedOn.IsChecked == true;
         s.TwoLineRows = TwoLineRowsOn.IsChecked == true;
         s.NetPing = NetPingOn.IsChecked == true;
         s.BossMechanics = MechanicsOn.IsChecked == true;

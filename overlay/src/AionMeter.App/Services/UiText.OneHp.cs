@@ -209,9 +209,13 @@ public sealed partial class UiText
     public string DeathsTip { get; init; } = "Deaths in this fight";
     public string TrendTip { get; init; } = "DPS over the last 5 seconds";
     public string PetRadarOn { get; init; } = "Pet radar: monsters in view that drop a pet's soul (data: Aion2Data)";
-    public string PetRadarReset { get; init; } = "Show hidden pets again ({0})";
+    public string PetRadarReset { get; init; } = "Clear the \"have\" marks ({0})";
     public string PetRadarTitle { get; init; } = "SOULS NEARBY";
-    public string PetRadarTip { get; init; } = "{0} ({1}) — soul from {2}\nIn view: {3}\nWhere: {4}\n\nClick: I have this pet, hide it";
+    public string PetRadarTip { get; init; } = "{0} ({1}) — soul from {2}\nIn view: {3}\nWhere: {4}\n\nClick: I have it / I do not";
+    public string PetRadarCount { get; init; } = "missing {0} · have {1}";
+    public string PetHave { get; init; } = "✓ have";
+    public string PetMissing { get; init; } = "missing";
+    public string PetHideOwnedOn { get; init; } = "Pet radar: leave out the pets I already have";
     public string BuffEndOn { get; init; } = "Notice 10 s before a buff of a minute or more runs out";
     public string BuffEnding { get; init; } = "{0} ends in {1} s";
     public string CooldownsOn { get; init; } = "Your party's cooldowns of a minute and more on the card";
