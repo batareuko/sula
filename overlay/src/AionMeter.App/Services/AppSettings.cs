@@ -188,7 +188,7 @@ public sealed class AppSettings
 
     /// <summary>Bumped when the overlay layout changes enough that saved sizes no longer fit.</summary>
     public int LayoutVersion { get; set; } // 0 when missing from an older settings file; new installs get it in Load()
-    private const int CurrentLayout = 6;
+    private const int CurrentLayout = 7;
 
     public static AppSettings Load()
     {
@@ -218,6 +218,13 @@ public sealed class AppSettings
                 {
                     // v6 = slimmer compact rows (~26 px): a card already made compact in v5 gets shorter by what ten rows save.
                     s.OverlayHeight = Math.Max(220, s.OverlayHeight - 150);
+                }
+                if (s.LayoutVersion < 7)
+                {
+                    // v7 = the disconnects are over (game update 28.10): switches left on from the disconnect test kept
+                    // the meter in the tray with no window, so they are cleared once and the overlay shown again.
+                    s.DiagSilent = s.DiagNoOverlay = s.DiagNoCapture = s.DiagNoGameScan = false;
+                    s.OverlayVisible = true;
                 }
                 s.Language = UiText.Normalize(s.Language);
                 s.LayoutVersion = CurrentLayout;
