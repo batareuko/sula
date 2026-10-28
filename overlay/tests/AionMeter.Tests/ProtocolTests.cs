@@ -243,4 +243,16 @@ public class ProtocolTests
         dec.Feed([.. dmg.AsSpan(5), .. Heartbeat, .. Packet(0x4136, new byte[5])]);
         Assert.Equal([Opcodes.Heartbeat, (ushort)0x4136], seen);
     }
+
+    // 1 HP: movement records from a live EU capture (2026-10-28): a monster around you, and a two-byte variant
+    [Theory]
+    [InlineData("8e830204678 26bc8a5227848000058 43b874b87401", 33166u, -241162f, 254090f)]
+    [InlineData("c4300101a96c6cc82ab97d488eb848434 23b233b", 6212u, -242099f, 259813f)]
+    public void Move_is_read(string hex, uint actor, float x, float y)
+    {
+        var move = Assert.Single(Parse(Opcodes.Move, hex.Replace(" ", "")).OfType<MoveEvent>());
+        Assert.Equal(actor, move.ActorId);
+        Assert.InRange(move.X, x - 2, x + 2); // centimetres
+        Assert.InRange(move.Y, y - 2, y + 2);
+    }
 }

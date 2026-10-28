@@ -69,6 +69,9 @@ public sealed class PacketParser
             case Opcodes.Spawn:
                 ParseSpawn(body);
                 break;
+            case Opcodes.Move:
+                ParseMove(body);
+                break;
             case Opcodes.Death:
                 ParseDeath(body);
                 break;
@@ -636,6 +639,31 @@ public sealed class PacketParser
                 .ToDictionary(g => g.Key, g => g.First().CombatPower, StringComparer.OrdinalIgnoreCase),
             roster.Members.Where(m => m.GearScore > 0).GroupBy(m => m.Name)
                 .ToDictionary(g => g.Key, g => g.First().GearScore, StringComparer.OrdinalIgnoreCase)));
+
+    // ------------------------------------------------------------------ movement (1b 37)
+
+    /// <summary>
+    /// <c>actor varint, 04 | x y z f32, u16, u16, 01</c> for monsters and players around you; your own character's
+    /// corrections carry two bytes before the position (<c>01 01</c>, <c>05 03</c> …). Positions are in centimetres.
+    /// </summary>
+    private void ParseMove(ReadOnlySpan<byte> b)
+    {
+        var o = 0;
+        if (!Wire.TryVarint(b, ref o, out var rawId) || rawId == 0) return;
+        var id = rawId > 1_000_000 ? (rawId & 0x3FFF) | 0x4000 : rawId;
+        foreach (var skip in (ReadOnlySpan<int>)[b.Length > o && b[o] == 0x04 ? 1 : 2, 1])
+        {
+            var at = o + skip;
+            if (at + 12 > b.Length) continue;
+            var x = BitConverter.ToSingle(b.Slice(at, 4));
+            var y = BitConverter.ToSingle(b.Slice(at + 4, 4));
+            var z = BitConverter.ToSingle(b.Slice(at + 8, 4));
+            if (!float.IsFinite(x) || !float.IsFinite(y) || !float.IsFinite(z) || Math.Abs(x) > 2e6f || Math.Abs(y) > 2e6f || Math.Abs(z) > 2e5f ||
+                (Math.Abs(x) < 1 && Math.Abs(y) < 1)) continue;
+            Emit(new MoveEvent(TimeMs, id, x, y, z));
+            return;
+        }
+    }
 
     // ------------------------------------------------------------------ spawns (41 36)
 
