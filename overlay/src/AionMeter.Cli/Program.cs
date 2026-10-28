@@ -27,6 +27,7 @@ return args.FirstOrDefault() switch
     "deaths" when args.Length > 1 => Deaths(args[1]),
     "times" when args.Length > 1 => Times(args[1]),
     "fieldbosses" when args.Length > 1 => FieldBosses(args[1]),
+    "ids" when args.Length > 2 => Ids(args[1], args[2]),
     "hex" when args.Length > 2 => HexDump(args[1], Convert.ToUInt16(args[2], 16), args.Length > 3 ? int.Parse(args[3]) : 5),
     "update-check" => UpdateCheck(args.Skip(1).ToArray()),
     _ => Usage(),
@@ -588,6 +589,29 @@ void PrintFights(CombatTracker tracker)
         foreach (var c in snap.Combatants)
             Console.WriteLine($"   {c.Name,-16} {c.Class,-13} {Format.Compact(c.Dps),9}/s {Format.Compact(c.Damage),9} {Format.Percent(c.Share),7}  crit {Format.Percent(c.CritRate)}");
     }
+}
+
+
+// 1 HP: packets that carry several of the given ids (one per line in a text file) as u16, u32 or varint — to find a
+// list the game sends (a collection, an inventory) without knowing its opcode.
+int Ids(string path, string idsFile)
+{
+    var ids = File.ReadAllLines(idsFile).Select(l => int.TryParse(l.Trim(), out var v) ? v : -1).Where(v => v > 0).ToHashSet();
+    var replay = new PcapReplaySource(data, path, realtime: false);
+    replay.Pipeline.Parser.Tap = (t, op, body) =>
+    {
+        var found = new SortedSet<int>();
+        for (var i = 0; i + 2 <= body.Length; i++)
+        {
+            var u16 = body[i] | body[i + 1] << 8;
+            if (ids.Contains(u16)) found.Add(u16);
+            if (Wire.TryVarint(body, i, out var v, out _) && v < int.MaxValue && ids.Contains((int)v)) found.Add((int)v);
+        }
+        if (found.Count >= 4)
+            Console.WriteLine($"{DateTimeOffset.FromUnixTimeMilliseconds(t).ToLocalTime():HH:mm:ss.fff} {Opcodes.Name(op),-12} len={body.Length,5} ids={found.Count}: {string.Join(",", found.Take(12))}");
+    };
+    replay.RunToEnd();
+    return 0;
 }
 
 sealed class EventStats(GameData data)
