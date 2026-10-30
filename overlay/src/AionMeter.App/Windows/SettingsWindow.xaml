@@ -288,6 +288,8 @@
                             </StackPanel>
                             <CheckBox x:Name="PetRadarOn" Style="{StaticResource DarkCheck}" Margin="0,4,0,0"
                                       Content="{Binding PetRadarOn, Source={x:Static s:UiText.Current}}" />
+                            <CheckBox x:Name="CubeRadarOn" Style="{StaticResource DarkCheck}" Margin="0,4,0,0"
+                                      Content="{Binding CubeRadarOn, Source={x:Static s:UiText.Current}}" />
                             <CheckBox x:Name="PetHideOwnedOn" Style="{StaticResource DarkCheck}" Margin="22,4,0,0"
                                       Content="{Binding PetHideOwnedOn, Source={x:Static s:UiText.Current}}" />
                             <Button x:Name="PetsResetButton" Style="{StaticResource GhostButton}" Margin="22,4,0,0" HorizontalAlignment="Left"

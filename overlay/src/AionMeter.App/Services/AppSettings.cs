@@ -177,6 +177,10 @@ public sealed class AppSettings
     public double PetRadarRange { get; set; } = 100;
     public int PetRadarRotation { get; set; }
     public string HotkeyPetRadar { get; set; } = "Ctrl+Shift+P";
+    /// <summary>1 HP: Hidden Cube radar — "Cube detected" while a hidden cube is near (Core/OneHp/CubeRadar.cs).</summary>
+    public bool CubeRadar { get; set; }
+    /// <summary>1 HP: keep showing "Cube detected" this long after the last cube disappears, in ms.</summary>
+    public int CubeRadarFadeMs { get; set; } = 500;
     public bool BuffEndAlert { get; set; } = true;
     /// <summary>1 HP: your party's cooldowns of a minute and more on the card.</summary>
     public bool ShowPartyCooldowns { get; set; } = true;

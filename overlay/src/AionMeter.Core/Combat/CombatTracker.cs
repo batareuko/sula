@@ -138,11 +138,14 @@ public sealed class CombatTracker
     public OneHp.PetRadar? Pets { get; set; }
     /// <summary>1 HP: sees every event too (NPC casts for the boss mechanics).</summary>
     public OneHp.BossCasts? Casts { get; set; }
+    /// <summary>1 HP: sees every event too (hidden cubes near).</summary>
+    public OneHp.CubeRadar? Cubes { get; set; }
 
     public void Process(GameEvent e)
     {
         Pets?.Observe(e);
         Casts?.Observe(e);
+        Cubes?.Observe(e);
         string? selfName = null;
         lock (_gate)
         {

@@ -72,6 +72,24 @@ public sealed class PacketParser
             case Opcodes.Move:
                 ParseMove(body);
                 break;
+            case Opcodes.CubeNear:
+                ParseCubeNear(body);
+                break;
+            case Opcodes.CubeSpawn:
+                ParseCubeSpawn(body);
+                break;
+            case Opcodes.CubeInteract:
+                ParseCubeInteract(body);
+                break;
+            case Opcodes.CubeFocus:
+                ParseCubeFocus(body);
+                break;
+            case Opcodes.CubeGone:
+                ParseCubeGone(body);
+                break;
+            case Opcodes.CubeCollected:
+                ParseCubeCollected(body);
+                break;
             case Opcodes.Death:
                 ParseDeath(body);
                 break;
@@ -663,6 +681,60 @@ public sealed class PacketParser
             Emit(new MoveEvent(TimeMs, id, x, y, z));
             return;
         }
+    }
+
+    // ------------------------------------------------------------------ hidden cube (38 36 / 37 36 / 3a 36 / 6d 8d / 05 8d / 35 36)
+
+    /// <summary><c>cube varint, you varint</c> — the cube came near; your id also marks you.</summary>
+    private void ParseCubeNear(ReadOnlySpan<byte> b)
+    {
+        var o = 0;
+        if (!Wire.TryVarint(b, ref o, out var cube) || !IsEntityId(cube)) return;
+        if (!Wire.TryVarint(b, ref o, out var you) || !IsEntityId(you)) return;
+        Emit(new CubeEvent(TimeMs, CubePhase.Near, cube, you));
+    }
+
+    /// <summary><c>00 00 00, cube varint, 8 × 00</c> — the cube's spawn record.</summary>
+    private void ParseCubeSpawn(ReadOnlySpan<byte> b)
+    {
+        if (b.Length < 4 || b[0] != 0 || b[1] != 0 || b[2] != 0) return;
+        var o = 3;
+        if (!Wire.TryVarint(b, ref o, out var cube) || !IsEntityId(cube)) return;
+        if (b[o..].IndexOfAnyExcept((byte)0) >= 0) return; // the tail is zero padding
+        Emit(new CubeEvent(TimeMs, CubePhase.SpawnRecord, cube));
+    }
+
+    /// <summary><c>cube varint, you varint, 00 00 00, u32</c> — you start collecting.</summary>
+    private void ParseCubeInteract(ReadOnlySpan<byte> b)
+    {
+        var o = 0;
+        if (!Wire.TryVarint(b, ref o, out var cube) || !IsEntityId(cube)) return;
+        if (!Wire.TryVarint(b, ref o, out var you) || !IsEntityId(you)) return;
+        Emit(new CubeEvent(TimeMs, CubePhase.Interact, cube, you));
+    }
+
+    /// <summary><c>cube varint</c> — the cube is in focus.</summary>
+    private void ParseCubeFocus(ReadOnlySpan<byte> b)
+    {
+        var o = 0;
+        if (!Wire.TryVarint(b, ref o, out var cube) || !IsEntityId(cube)) return;
+        Emit(new CubeEvent(TimeMs, CubePhase.Focus, cube));
+    }
+
+    /// <summary><c>cube varint</c> — the cube was collected / is gone.</summary>
+    private void ParseCubeGone(ReadOnlySpan<byte> b)
+    {
+        var o = 0;
+        if (!Wire.TryVarint(b, ref o, out var cube) || !IsEntityId(cube)) return;
+        Emit(new CubeEvent(TimeMs, CubePhase.Gone, cube));
+    }
+
+    /// <summary><c>cube varint, 04 03 00</c> — the collection is confirmed.</summary>
+    private void ParseCubeCollected(ReadOnlySpan<byte> b)
+    {
+        var o = 0;
+        if (!Wire.TryVarint(b, ref o, out var cube) || !IsEntityId(cube)) return;
+        Emit(new CubeEvent(TimeMs, CubePhase.Collected, cube));
     }
 
     // ------------------------------------------------------------------ spawns (41 36)
