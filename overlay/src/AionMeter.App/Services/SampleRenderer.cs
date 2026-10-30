@@ -491,6 +491,9 @@ public static class SampleRenderer
         t.Process(new SkillCooldownEvent(now - 4_000, 7, 17010000, 12_000));
         t.Process(new SkillCooldownEvent(now - 10_000, 7, 17020000, 30_000));
         t.Process(new SkillCooldownEvent(now - 30_000, 7, 17040000, 300_000));
+        // the skill icons of those cooldowns, downloaded before the window is drawn
+        foreach (var code in new[] { 11040000, 18040000, 17010000, 17020000, 17040000 }) meter.Icons.Get(code);
+        for (var i = 0; i < 80 && meter.Icons.Busy; i++) Thread.Sleep(100);
     }
 
     private static void FeedPetRadar(MeterService meter)

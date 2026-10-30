@@ -25,6 +25,9 @@ public sealed class SkillIcons
     private readonly Dictionary<int, string> _overrides = new();   // first 4 digits → icon name
     private readonly ConcurrentDictionary<string, ImageSource?> _loaded = new();
     private readonly ConcurrentDictionary<string, byte> _pending = new();
+
+    /// <summary>Icons are still downloading (the preview renderer waits for them).</summary>
+    public bool Busy => !_pending.IsEmpty;
     private readonly HttpClient _http = new() { Timeout = TimeSpan.FromSeconds(15) };
 
     public SkillIcons(string dataDirectory, bool enabled)
