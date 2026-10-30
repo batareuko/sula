@@ -193,6 +193,9 @@ public sealed class AppSettings
     /// <summary>1 HP: the checklist's ticks per character: task id → [count, start of its day / week in minutes since 1970].</summary>
     public Dictionary<string, Dictionary<string, int[]>> ChecklistMarks { get; set; } = new();
     public string HotkeyChecklist { get; set; } = "Ctrl+Shift+J";
+    /// <summary>1 HP: the party window (Windows/PartyWindow.cs) is open.</summary>
+    public bool PartyWindow { get; set; }
+    public string HotkeyParty { get; set; } = "Ctrl+Shift+G";
     /// <summary>The meter as a web page for OBS (Services/StreamServer.cs); only this computer can open it.</summary>
     public bool StreamEnabled { get; set; }
     public int StreamPort { get; set; } = StreamServer.DefaultPort;

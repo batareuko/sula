@@ -733,3 +733,32 @@ public class PartyTests
         Assert.Null(t.CurrentRun(61_000));
     }
 }
+
+public class PartyFrameTests
+{
+    [Fact]
+    public void YouFirstThenThePartyWithHpBuffsAndCooldowns()
+    {
+        var t = new AionMeter.Core.Combat.CombatTracker(AionMeter.Core.Game.GameData.Empty, new AionMeter.Core.Combat.MeterOptions());
+        t.Process(new AionMeter.Core.Events.SelfIdentifiedEvent(0, 100, "Ilvane", 1304, AionMeter.Core.Events.GameClass.Cleric));
+        t.Process(new AionMeter.Core.Events.PlayerSeenEvent(0, 200, "Borgrim", 1304, AionMeter.Core.Events.GameClass.Gladiator));
+        t.Process(new AionMeter.Core.Events.PartyRosterEvent(0, ["Ilvane", "Borgrim", "Faraway"], Complete: true));
+        t.Process(new AionMeter.Core.Events.NpcHpEvent(1_000, 200, 4_500, 9_000, IsNpc: false));
+        t.Process(new AionMeter.Core.Events.SkillCooldownEvent(1_000, 200, 11_000_000, 120_000));
+        t.Process(new AionMeter.Core.Events.SkillCooldownEvent(1_000, 200, 11_010_000, 5_000)); // short: not shown for the party
+        t.Process(new AionMeter.Core.Events.SkillCooldownEvent(1_000, 100, 17_000_000, 8_000)); // yours: shown from 1 s
+
+        var rows = t.PartyFrame(2_000);
+        Assert.Equal(["Ilvane", "Borgrim", "Faraway"], rows.Select(r => r.Name));
+        Assert.True(rows[0].IsSelf);
+        Assert.Single(rows[0].Cooldowns);
+        Assert.Equal(0.5, rows[1].HpFraction, 3);
+        Assert.Single(rows[1].Cooldowns);
+        Assert.Equal(119_000, rows[1].Cooldowns[0].LeftMs);
+        Assert.Null(rows[2].ActorId); // not seen yet: a row without HP
+        Assert.Equal(-1, rows[2].HpFraction);
+
+        t.Process(new AionMeter.Core.Events.DeathEvent(3_000, 200));
+        Assert.Equal(0, t.PartyFrame(3_500)[1].HpFraction);
+    }
+}

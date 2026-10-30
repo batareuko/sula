@@ -15,6 +15,7 @@ public sealed class TrayIcon : IDisposable
     private readonly ToolStripMenuItem _petRadar;
     private readonly ToolStripMenuItem _map;
     private readonly ToolStripMenuItem _checklist;
+    private readonly ToolStripMenuItem _party;
     private readonly ToolStripMenuItem _history;
     private readonly ToolStripMenuItem _timers;
     private readonly ToolStripMenuItem _settings;
@@ -50,6 +51,7 @@ public sealed class TrayIcon : IDisposable
         _petRadar = new ToolStripMenuItem("", null, (_, _) => actions.PetRadar());
         _map = new ToolStripMenuItem("", null, (_, _) => actions.Map());
         _checklist = new ToolStripMenuItem("", null, (_, _) => actions.Checklist());
+        _party = new ToolStripMenuItem("", null, (_, _) => actions.Party());
         _settings = new ToolStripMenuItem("", null, (_, _) => actions.Settings());
         _language = new ToolStripMenuItem("", null, (_, _) => actions.ToggleLanguage());
         _demo = new ToolStripMenuItem("", null, (_, _) => actions.Demo());
@@ -62,7 +64,7 @@ public sealed class TrayIcon : IDisposable
         menu.Items.AddRange([
             _update, _updateSeparator,
             _toggle, _clickThrough, _reset, _analysis, _sendLog, new ToolStripSeparator(),
-            _history, _timers, _petRadar, _map, _checklist, _settings, _language, _demo, _replay, _checkUpdates, new ToolStripSeparator(),
+            _history, _timers, _petRadar, _map, _checklist, _party, _settings, _language, _demo, _replay, _checkUpdates, new ToolStripSeparator(),
             _site, _netCheck, new ToolStripSeparator(),
             _exit,
         ]);
@@ -106,6 +108,7 @@ public sealed class TrayIcon : IDisposable
         _petRadar.Text = t.PetRadarTray;
         _map.Text = t.MapTray;
         _checklist.Text = t.ChecklistTray;
+        _party.Text = t.PartyTray;
         _settings.Text = t.TraySettings;
         _language.Text = t.SwitchLanguage;
         _demo.Text = t.TrayDemo;
@@ -189,6 +192,7 @@ public sealed record TrayActions(
     Action PetRadar,
     Action Map,
     Action Checklist,
+    Action Party,
     Action Settings,
     Action Demo,
     Action Replay,

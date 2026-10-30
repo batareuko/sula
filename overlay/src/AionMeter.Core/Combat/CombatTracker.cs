@@ -201,6 +201,7 @@ public sealed class CombatTracker
                     OnNpcHp(hp);
                     break;
                 case DeathEvent death:
+                    if (_playerHp.TryGetValue(death.ActorId, out var lastHp)) _playerHp[death.ActorId] = (0, lastHp.Max, death.TimeMs);
                     if (!death.AlreadyDead && _current is { IsActive: true } fight && fight.Combatants.TryGetValue(death.ActorId, out var died)) died.Deaths++;
                     RunDeath(death);
                     OnDeath(death);
@@ -277,6 +278,7 @@ public sealed class CombatTracker
                     if (z.IsTeleport) break;
                     _manualIds.Clear(); // ids are handed out again in the new zone
                     _buffBook.Clear();
+                    _playerHp.Clear();
                     if (_current is { IsActive: true }) Finish(EncounterEndReason.ZoneChange, _current.LastDamageMs);
                     // 1 HP: dungeon runs — leaving the instance ends the run, entering one starts it
                     if (_run is { } run && run.MapId != z.MapId)
@@ -461,7 +463,12 @@ public sealed class CombatTracker
     private void OnNpcHp(NpcHpEvent e)
     {
         if (_pvp.Tracks(e.ActorId)) _pvp.Hp(e.ActorId, e.CurrentHp); // 1 HP: an opponent's HP (PvP)
-        if (_entities.IsPlayerLike(e.ActorId)) return;
+        if (_entities.IsPlayerLike(e.ActorId))
+        {
+            // 1 HP: a player's HP for the party window (the HP/MP packet carries the max too)
+            if (!e.IsNpc && e.MaxHp > 0) _playerHp[e.ActorId] = (e.CurrentHp, e.MaxHp, e.TimeMs);
+            return;
+        }
         // HP/MP updates are sent for players too: only trust them for entities already known to be NPCs.
         if (!e.IsNpc && !_entities.IsKnownNpc(e.ActorId)) return;
         var npc = _entities.UpsertNpc(e.ActorId);
@@ -1174,6 +1181,38 @@ public sealed class CombatTracker
                 list.Add(new PartyCooldown(p.Name, _data.SkillName(code), ready - nowMs, ready - start, code));
             }
             return list.OrderBy(c => c.LeftMs).ToList();
+        }
+    }
+
+    // 1 HP: players' HP as the game last sent it: actor → hp, max, when.
+    private readonly Dictionary<uint, (long Hp, long Max, long AtMs)> _playerHp = new();
+
+    /// <summary>
+    /// 1 HP: the party window — you first, then your party: class, HP (as last sent), the buffs and debuffs on them, and
+    /// their running cooldowns (yours from <paramref name="selfMinMs"/>, the others' from <paramref name="partyMinMs"/>).
+    /// A member the meter has not seen yet (no actor id) still has a row, without HP.
+    /// </summary>
+    public IReadOnlyList<PartyFrameMember> PartyFrame(long nowMs, long selfMinMs = 1_000, long partyMinMs = 30_000)
+    {
+        lock (_gate)
+        {
+            var rows = new List<PartyFrameMember>();
+            var selfName = (_entities.Self?.Name ?? KnownSelfName)?.Trim();
+            if (_entities.SelfId is { } me) rows.Add(Member(me, selfName ?? "", true, selfMinMs));
+            foreach (var name in PartySet().Where(n => !IsSelfName(n)).OrderBy(n => n, StringComparer.OrdinalIgnoreCase))
+                rows.Add(_entities.FindPlayerByName(name) is { } id ? Member(id, name, false, partyMinMs)
+                    : new PartyFrameMember(name, GameClass.Unknown, false, null, -1, 0, 0, [], []));
+            return rows;
+
+            PartyFrameMember Member(uint id, string name, bool self, long minMs)
+            {
+                _entities.TryGetPlayer(id, out var p);
+                var (hp, max, at) = _playerHp.TryGetValue(id, out var v) ? v : (-1L, 0L, 0L);
+                var cds = _cooldowns.Where(kv => kv.Key.Actor == id && kv.Value.ReadyMs > nowMs && kv.Value.ReadyMs - kv.Value.StartMs >= minMs)
+                    .Select(kv => new PartyCooldown(name, _data.SkillName(kv.Value.Code), kv.Value.ReadyMs - nowMs, kv.Value.ReadyMs - kv.Value.StartMs, kv.Value.Code))
+                    .OrderBy(c => c.LeftMs).ToList();
+                return new PartyFrameMember(p?.Name is { Length: > 0 } n ? n : name, p?.Class ?? GameClass.Unknown, self, id, hp, max, at, _buffBook.On(id, nowMs), cds);
+            }
         }
     }
 
