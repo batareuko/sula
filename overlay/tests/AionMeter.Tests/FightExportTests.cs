@@ -132,3 +132,41 @@ public class WhereaboutsMidGameTests
         Assert.Null(radar.Where(60_000)); // the view is old and there was no teleport
     }
 }
+
+public class ChecklistTests
+{
+    [Fact]
+    public void DaysStartAtSevenUtcAndWeeksOnWednesday()
+    {
+        var friday = new DateTimeOffset(2026, 10, 30, 6, 59, 0, TimeSpan.Zero);
+        Assert.Equal(new DateTimeOffset(2026, 10, 29, 7, 0, 0, TimeSpan.Zero), AionMeter.Core.OneHp.Checklist.PeriodStart(false, friday));
+        Assert.Equal(new DateTimeOffset(2026, 10, 30, 7, 0, 0, TimeSpan.Zero), AionMeter.Core.OneHp.Checklist.PeriodStart(false, friday.AddMinutes(1)));
+        Assert.Equal(new DateTimeOffset(2026, 10, 28, 7, 0, 0, TimeSpan.Zero), AionMeter.Core.OneHp.Checklist.PeriodStart(true, friday));
+        // Wednesday before 07:00 still belongs to the week before
+        var wednesday = new DateTimeOffset(2026, 11, 4, 6, 0, 0, TimeSpan.Zero);
+        Assert.Equal(new DateTimeOffset(2026, 10, 28, 7, 0, 0, TimeSpan.Zero), AionMeter.Core.OneHp.Checklist.PeriodStart(true, wednesday));
+        Assert.Equal(new DateTimeOffset(2026, 11, 4, 7, 0, 0, TimeSpan.Zero), AionMeter.Core.OneHp.Checklist.NextReset(true, friday));
+    }
+
+    [Fact]
+    public void ATickedCountLastsUntilTheReset()
+    {
+        var now = new DateTimeOffset(2026, 10, 30, 12, 0, 0, TimeSpan.Zero);
+        var saved = AionMeter.Core.OneHp.Checklist.Save(2, weekly: false, now);
+        Assert.Equal(2, AionMeter.Core.OneHp.Checklist.Count(saved, false, now.AddHours(10)));
+        Assert.Equal(0, AionMeter.Core.OneHp.Checklist.Count(saved, false, now.AddDays(1)));
+        Assert.Equal(0, AionMeter.Core.OneHp.Checklist.Count(null, false, now));
+    }
+
+    [Fact]
+    public void TheTableLoads()
+    {
+        string path = "";
+        for (var dir = new DirectoryInfo(AppContext.BaseDirectory); dir is not null; dir = dir.Parent)
+            if (File.Exists(Path.Combine(dir.FullName, "data", "checklist.json"))) { path = Path.Combine(dir.FullName, "data", "checklist.json"); break; }
+        var c = AionMeter.Core.OneHp.Checklist.Load(path);
+        Assert.True(c.Daily.Count >= 5);
+        Assert.Contains(c.Weekly, t => t.Runs == "Krao Cave" && t.Max == 7);
+        Assert.Equal("Кошмар", c.Daily.First(t => t.Id == "d-nightmare").Name("uk"));
+    }
+}

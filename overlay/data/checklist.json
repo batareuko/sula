@@ -1,0 +1,29 @@
+{
+  "_note": "1 HP checklist (overlay → tray ✅, Ctrl+Shift+J): daily tasks reset at 07:00 UTC, weekly ones on Wednesday at 07:00 UTC (AION 2 Global). max 1 = a tick, more = a counter. 'res' shows the count the game sends for that ticket / key (ResourceEvent ids); 'runs' counts this week's runs of that dungeon the meter saw you in (English name from dungeons/en.json) — all of a dungeon's modes count. Task lists follow aion2-guide/data.js (priorities, weekly, weeklyLimits).",
+  "daily": [
+    { "id": "d-quests", "max": 1, "en": "Daily quests", "uk": "Щоденні квести", "ru": "Ежедневные задания" },
+    { "id": "d-attendance", "max": 1, "en": "Attendance", "uk": "Відмітка відвідування", "ru": "Отметка посещения", "hint": { "en": "once a day, any character on the server", "uk": "раз на день, будь-який персонаж сервера", "ru": "раз в день, любой персонаж сервера" } },
+    { "id": "d-nightmare", "max": 2, "res": 4, "en": "Nightmare", "uk": "Кошмар", "ru": "Кошмар", "hint": { "en": "2 runs a day", "uk": "2 проходження на день", "ru": "2 прохождения в день" } },
+    { "id": "d-shugo", "max": 3, "res": 1, "en": "Shugo Festival keys", "uk": "Ключі Фестивалю Шуго", "ru": "Ключи Фестиваля Шуго", "hint": { "en": "3 a day", "uk": "3 на день", "ru": "3 в день" } },
+    { "id": "d-abyss-orders", "max": 1, "en": "Abyss Supply: emergency orders", "uk": "Постачання Безодні: термінові накази", "ru": "Снабжение Бездны: срочные приказы" },
+    { "id": "d-odyle", "max": 1, "res": 60000001, "en": "Spend Odyle energy (do not sit at the cap)", "uk": "Витратити енергію Оділе (не тримати на максимумі)", "ru": "Потратить энергию Одиле (не держать на максимуме)" }
+  ],
+  "weekly": [
+    { "id": "w-ascension", "max": 3, "en": "Ascension Trial", "uk": "Випробування Вознесіння", "ru": "Испытание Вознесения" },
+    { "id": "w-daily-dungeon", "max": 14, "en": "Daily Dungeon", "uk": "Щоденне підземелля", "ru": "Ежедневное подземелье", "hint": { "en": "7 without the pass, 14 with it; shared on the server", "uk": "7 без підписки · 14 з підпискою · спільні на сервер", "ru": "7 без подписки · 14 с подпиской · общие на сервер" } },
+    { "id": "w-ex-krao", "max": 7, "runs": "Krao Cave", "en": "Exploration: Krao Cave", "uk": "Дослідження: Печера Крау", "ru": "Исследование: Пещера Крао" },
+    { "id": "w-ex-draupnir", "max": 7, "runs": "Draupnir", "en": "Exploration: Draupnir", "uk": "Дослідження: Драупнір", "ru": "Исследование: Драупнир" },
+    { "id": "w-ex-urugugu", "max": 7, "runs": "Urugugu Canyon", "en": "Exploration: Urugugu Canyon", "uk": "Дослідження: Каньйон Урюгю", "ru": "Исследование: Каньон Урюгю" },
+    { "id": "w-ex-vakron", "max": 7, "runs": "Vakron Sky Island", "en": "Exploration: Vakron Sky Island", "uk": "Дослідження: Вакрон", "ru": "Исследование: Вакрон" },
+    { "id": "w-ex-fire", "max": 7, "runs": "Fire Temple", "en": "Exploration: Fire Temple", "uk": "Дослідження: Вогненний храм", "ru": "Исследование: Храм Огня" },
+    { "id": "w-ex-horn", "max": 7, "runs": "Ferocious Horn Den", "en": "Exploration: Ferocious Horn Den", "uk": "Дослідження: Лігво Лютого Рогу", "ru": "Исследование: Логово Свирепого Рога" },
+    { "id": "w-rift", "max": 1, "en": "Unknown Rift", "uk": "Невідомий розлом", "ru": "Неизвестный разлом", "hint": { "en": "one entry a week", "uk": "один вхід на тиждень", "ru": "один вход в неделю" } },
+    { "id": "w-abyss-orders", "max": 1, "en": "Abyss Supply: weekly orders", "uk": "Постачання Безодні: тижневі накази", "ru": "Снабжение Бездны: недельные приказы" },
+    { "id": "w-arena-play", "max": 10, "en": "Solo Arena matches", "uk": "Участь у Соло-арені", "ru": "Участие на Соло-арене" },
+    { "id": "w-bf-play", "max": 3, "en": "Battlefield matches", "uk": "Участь у Полі бою", "ru": "Участие на Поле боя" },
+    { "id": "w-odyle", "max": 4, "en": "Odyle energy at the Wind Breeze Merchants", "uk": "Енергія Оділе в Торговців Вітерця", "ru": "Энергия Одиле у Торговцев Ветерка", "hint": { "en": "4 per character + 16 shared on the server", "uk": "4 на персонажа + 16 спільно на сервер", "ru": "4 на персонажа + 16 общие на сервер" } },
+    { "id": "w-odyle-craft", "max": 4, "en": "Odyle energy morph", "uk": "Морф енергії Оділе", "ru": "Морф энергии Одиле" },
+    { "id": "w-nm-ticket", "max": 14, "en": "Instant Clear Tickets: Nightmare", "uk": "Квитки миттєвого проходження: Кошмар", "ru": "Билеты мгновенного прохождения: Кошмар", "hint": { "en": "14 a week on the server, 30 000 Kinah", "uk": "14 на тиждень на сервер, 30 000 кінар", "ru": "14 в неделю на сервер, 30 000 кинар" } },
+    { "id": "w-dd-ticket", "max": 14, "en": "Instant Clear Tickets: Daily Dungeon", "uk": "Квитки миттєвого проходження: щоденне підземелля", "ru": "Билеты мгновенного прохождения: ежедневное подземелье" }
+  ]
+}
