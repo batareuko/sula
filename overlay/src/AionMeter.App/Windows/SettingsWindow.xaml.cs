@@ -88,6 +88,7 @@ public partial class SettingsWindow : Window
             });
         EventLeadMinutes.Text = s.EventAlertMinutes.ToString();
         StreamOn.IsChecked = s.StreamEnabled;
+        StateApiOn.IsChecked = s.StateApi;
         PvpOn.IsChecked = s.PvpOverlay;
         PvpThreatOn.IsChecked = s.PvpThreatAlert;
         PvpDangerGear.Text = s.PvpDangerGear.ToString();
@@ -122,6 +123,7 @@ public partial class SettingsWindow : Window
         ResourcesOn.IsChecked = s.ShowResources;
         StreamUrl.Text = $"http://localhost:{s.StreamPort}/";
         StreamPartyUrl.Text = $"http://localhost:{s.StreamPort}/party";
+        StateUrl.Text = $"http://127.0.0.1:{s.StreamPort}/state";
         OneHpPartyOnly.IsChecked = s.PartyOnly;
         OneHpPriorityBosses.IsChecked = s.PriorityBossAlerts;
         OneHpBossSync.IsChecked = s.OneHpBossSync;
@@ -174,6 +176,7 @@ public partial class SettingsWindow : Window
         s.EventAlerts = EventChecks.Children.OfType<CheckBox>().Where(c => c.IsChecked == true).Select(c => (string)c.Tag).ToList();
         if (int.TryParse(EventLeadMinutes.Text, out var lead)) s.EventAlertMinutes = Math.Clamp(lead, 1, 60);
         s.StreamEnabled = StreamOn.IsChecked == true;
+        s.StateApi = StateApiOn.IsChecked == true;
         s.PvpOverlay = PvpOn.IsChecked == true;
         s.PvpThreatAlert = PvpThreatOn.IsChecked == true;
         static int Gap(TextBox box, int fallback) => int.TryParse(box.Text.Replace(" ", ""), out var v) && v is >= 0 and <= 10_000_000 ? v : fallback;

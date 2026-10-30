@@ -288,7 +288,8 @@ public sealed class PacketParser
         o += 2;
         if (!Wire.TryVarint(b, ref o, out var target) || !IsEntityId(target)) return;
         Emit(new CastEvent(TimeMs, actor, target, (int)skill));
-        if (SkillCooldown(b) is { } cooldown && cooldown > 0) Emit(new SkillCooldownEvent(TimeMs, actor, (int)skill, cooldown));
+        if (SkillCooldown(b) is { CooldownMs: > 0 } cooldown)
+            Emit(new SkillCooldownEvent(TimeMs, actor, (int)skill, cooldown.CooldownMs, cooldown.Charges));
     }
 
     /// <summary>
@@ -298,7 +299,7 @@ public sealed class PacketParser
     /// [flags 16] bool, [flags 32] count × (varint, 12 bytes)
     /// </code>
     /// </summary>
-    private static long? SkillCooldown(ReadOnlySpan<byte> b)
+    private static (long CooldownMs, int Charges)? SkillCooldown(ReadOnlySpan<byte> b)
     {
         var r = new FieldReader(b);
         r.Var(32);
@@ -317,7 +318,8 @@ public sealed class PacketParser
         r.U8();
         if ((flags & 2) != 0) r.Var(32);
         var cooldown = (long)r.Var(32);
-        if ((flags & 4) != 0) r.U8();
+        var charges = -1;
+        if ((flags & 4) != 0) charges = r.U8();
         if ((flags & 8) != 0) r.Var(32);
         if ((flags & 16) != 0) r.Bool();
         if ((flags & 32) != 0)
@@ -326,7 +328,7 @@ public sealed class PacketParser
                 r.Var(32);
                 r.Skip(12);
             }
-        return r.Done ? cooldown : null;
+        return r.Done ? (cooldown, charges) : null;
     }
 
     // ------------------------------------------------------------------ damage (04 38)

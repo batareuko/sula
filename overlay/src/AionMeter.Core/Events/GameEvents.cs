@@ -146,7 +146,8 @@ public sealed record ResourceEvent(long TimeMs, int Id, int Count, int Bonus) : 
 public sealed record PartyRequestEvent(long TimeMs, string Name, int ServerId, GameClass Class, int Level, long Power) : GameEvent(TimeMs);
 
 /// <summary>1 HP: a cast started its skill's cooldown (<c>02 38</c>; the game sends it for you and your party).</summary>
-public sealed record SkillCooldownEvent(long TimeMs, uint ActorId, int SkillCode, long CooldownMs) : GameEvent(TimeMs);
+/// <param name="Charges">Charges the game sent with the cooldown (a charge skill); -1 when the packet carried none.</param>
+public sealed record SkillCooldownEvent(long TimeMs, uint ActorId, int SkillCode, long CooldownMs, int Charges = -1) : GameEvent(TimeMs);
 
 /// <summary>1 HP diagnostics: a party packet as it came (hex, cut short) and whether it was read — for the log.</summary>
 public sealed record PartyPacketEvent(long TimeMs, ushort Opcode, string Hex, bool Read) : GameEvent(TimeMs);
