@@ -16,6 +16,7 @@ public sealed class TrayIcon : IDisposable
     private readonly ToolStripMenuItem _map;
     private readonly ToolStripMenuItem _checklist;
     private readonly ToolStripMenuItem _party;
+    private readonly ToolStripMenuItem _miniMap;
     private readonly ToolStripMenuItem _history;
     private readonly ToolStripMenuItem _timers;
     private readonly ToolStripMenuItem _settings;
@@ -56,6 +57,7 @@ public sealed class TrayIcon : IDisposable
         _map = new ToolStripMenuItem("", null, (_, _) => actions.Map());
         _checklist = new ToolStripMenuItem("", null, (_, _) => actions.Checklist());
         _party = new ToolStripMenuItem("", null, (_, _) => actions.Party());
+        _miniMap = new ToolStripMenuItem("", null, (_, _) => actions.MiniMap());
         _settings = new ToolStripMenuItem("", null, (_, _) => actions.Settings());
         _language = new ToolStripMenuItem("", null, (_, _) => actions.ToggleLanguage());
         _demo = new ToolStripMenuItem("", null, (_, _) => actions.Demo());
@@ -71,7 +73,7 @@ public sealed class TrayIcon : IDisposable
         menu.Items.AddRange([
             _update, _updateSeparator,
             _headMeter, _toggle, _clickThrough, _reset, new ToolStripSeparator(),
-            _headWindows, _party, _history, _timers, _checklist, _map, _petRadar, new ToolStripSeparator(),
+            _headWindows, _party, _history, _timers, _checklist, _map, _miniMap, _petRadar, new ToolStripSeparator(),
             _tools, _web, _settings, _language, new ToolStripSeparator(),
             _exit,
         ]);
@@ -81,6 +83,7 @@ public sealed class TrayIcon : IDisposable
             if (actions.State?.Invoke() is not { } s) return;
             _party.Checked = s.Party;
             _petRadar.Checked = s.PetRadar;
+            _miniMap.Checked = s.MiniMap;
             _clickThrough.Checked = s.ClickThrough;
         };
         ApplyTexts();
@@ -129,6 +132,7 @@ public sealed class TrayIcon : IDisposable
         _map.Text = t.MapTray;
         _checklist.Text = t.ChecklistTray;
         _party.Text = t.PartyTray;
+        _miniMap.Text = t.MiniMapTray;
         _settings.Text = t.TraySettings;
         _language.Text = t.SwitchLanguage;
         _demo.Text = t.TrayDemo;
@@ -217,6 +221,7 @@ public sealed record TrayActions(
     Action Map,
     Action Checklist,
     Action Party,
+    Action MiniMap,
     Action Settings,
     Action Demo,
     Action Replay,
@@ -229,4 +234,4 @@ public sealed record TrayActions(
     Func<TrayState>? State = null);
 
 /// <summary>1 HP: what the tray menu ticks — the windows open and the modes on.</summary>
-public sealed record TrayState(bool Party, bool PetRadar, bool ClickThrough);
+public sealed record TrayState(bool Party, bool PetRadar, bool ClickThrough, bool MiniMap = false);

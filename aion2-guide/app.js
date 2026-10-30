@@ -2614,12 +2614,20 @@
     { key: 'kibelisks', name: 'Кібеліски', icon: 'UT_Marker_TeleportArtifact_Light_Unengraved', color: '#7aa7ff' },
     { key: 'monoliths', name: 'Моноліти', icon: 'UT_Marker_Monolith_Light', color: '#e8e0a0' },
     { key: 'gather', name: 'Збір', icon: 'UT_Marker_Gatherl_Jewelry', color: '#5fbf6a', dense: true },
-    { key: 'pets', name: 'Душі петів', icon: 'Icon_BMShop_Soulcrystal_All', color: '#c86bff', dense: true },
+    { key: 'pets-fera', name: 'Душі: Фера', icon: 'Icon_BMShop_Soulcrystal_All', color: '#ff7a5c', dense: true, src: 'pets', family: 'Fera' },
+    { key: 'pets-natura', name: 'Душі: Натура', icon: 'Icon_BMShop_Soulcrystal_All', color: '#6cd87a', dense: true, src: 'pets', family: 'Natura' },
+    { key: 'pets-varian', name: 'Душі: Варіан', icon: 'Icon_BMShop_Soulcrystal_All', color: '#5cb4ff', dense: true, src: 'pets', family: 'Varian' },
+    { key: 'pets-cogni', name: 'Душі: Когні', icon: 'Icon_BMShop_Soulcrystal_All', color: '#c08cff', dense: true, src: 'pets', family: 'Cogni' },
     { key: 'cubes', name: 'Місця прихованих кубів', icon: 'Icon_Item_Currency_Treasure_Key_A_s_001', color: '#f2b632', dense: true },
   ];
   var wm = {
     data: null, map: null, img: null, icons: {}, zoom: 1, pan: { x: 0, y: 0 }, hover: null, loading: false,
-    layers: prefGet('wmapLayers', ['bosses', 'dungeons', 'rifts', 'kibelisks']),
+    layers: (function (v) {
+      // один шар «пети» до 30.10 — тепер чотири, за родинами
+      var i = v.indexOf('pets');
+      if (i >= 0) v.splice(i, 1, 'pets-fera', 'pets-natura', 'pets-varian', 'pets-cogni');
+      return v;
+    })(prefGet('wmapLayers', ['bosses', 'dungeons', 'rifts', 'kibelisks'])),
   };
 
   function wmIcon(name) {
@@ -2652,8 +2660,14 @@
 
   function wmToScreen(pt, sz) { var k = wmScale(sz) * wm.map.image.w / 10000; return { x: wm.pan.x + pt[0] * k, y: wm.pan.y + pt[1] * k }; }
 
+  // місця шару: душі петів — з одного списку, за родиною
+  function wmPlaces(l) {
+    var list = wm.map.layers[l.src || l.key] || [];
+    return l.family ? list.filter(function (p) { return p.f === l.family; }) : list;
+  }
+
   function wmVisible() {
-    return WMAP_LAYERS.filter(function (l) { return wm.layers.indexOf(l.key) >= 0 && wm.map.layers[l.key]; });
+    return WMAP_LAYERS.filter(function (l) { return wm.layers.indexOf(l.key) >= 0 && wmPlaces(l).length; });
   }
 
   function wmOwnedPet(place) {
@@ -2684,8 +2698,8 @@
     var base = Math.max(16, Math.min(30, 14 + wm.zoom * 3));
     // дрібні шари внизу, орієнтири зверху
     wmVisible().sort(function (a, b) { return (b.dense ? 1 : 0) - (a.dense ? 1 : 0); }).forEach(function (l) {
-      m.layers[l.key].forEach(function (place) {
-        var owned = l.key === 'pets' && wmOwnedPet(place);
+      wmPlaces(l).forEach(function (place) {
+        var owned = l.src === 'pets' && wmOwnedPet(place);
         var size = l.dense ? base * 0.72 : base;
         // дрібні шари (пети, збір, куби) — крапками, доки не наблизите, щоб не засипали карту
         var im = l.dense && wm.zoom < 2 ? null : wmIcon(wmPlaceIcon(l, place));
@@ -2693,7 +2707,13 @@
         place.pts.forEach(function (pt) {
           var p = wmToScreen(pt, sz);
           if (p.x < -20 || p.y < -20 || p.x > sz.w + 20 || p.y > sz.h + 20) return;
-          if (im) ctx.drawImage(im, p.x - size / 2, p.y - size / 2, size, size);
+          if (im && l.src === 'pets') {
+            // душа пета: колір родини навколо кристала
+            ctx.fillStyle = l.color; ctx.beginPath(); ctx.arc(p.x, p.y, size / 2, 0, 7); ctx.fill();
+            ctx.strokeStyle = 'rgba(10,14,22,.85)'; ctx.lineWidth = 1; ctx.stroke();
+            ctx.drawImage(im, p.x - size * 0.36, p.y - size * 0.36, size * 0.72, size * 0.72);
+          }
+          else if (im) ctx.drawImage(im, p.x - size / 2, p.y - size / 2, size, size);
           else { ctx.fillStyle = l.color; ctx.beginPath(); ctx.arc(p.x, p.y, l.dense ? 2.5 : 3.5, 0, 7); ctx.fill(); }
         });
         ctx.globalAlpha = 1;
@@ -2724,7 +2744,7 @@
   function wmNearest(x, y, within) {
     var sz = wmCanvasSize(), best = null, bd = within * within;
     wmVisible().forEach(function (l) {
-      wm.map.layers[l.key].forEach(function (place) {
+      wmPlaces(l).forEach(function (place) {
         place.pts.forEach(function (pt) {
           var p = wmToScreen(pt, sz), d = (p.x - x) * (p.x - x) + (p.y - y) * (p.y - y);
           if (d < bd) { bd = d; best = { layer: l, place: place, p: p }; }
@@ -2740,7 +2760,7 @@
     if (!hit) { tip.hidden = true; wmDraw(); return; }
     tip.textContent = '';
     // у боса й пета — його портрет із гри
-    if (hit.place.i && (hit.layer.key === 'bosses' || hit.layer.key === 'pets'))
+    if (hit.place.i && (hit.layer.key === 'bosses' || hit.layer.src === 'pets'))
       tip.appendChild(h('img', { src: GAME_RES + hit.place.i + '.png', alt: '', loading: 'lazy' }));
     var txt = h('div', {});
     txt.appendChild(h('b', { text: hit.place.n }));
@@ -2785,11 +2805,12 @@
     var box = $('wmapLayers');
     box.textContent = '';
     WMAP_LAYERS.forEach(function (l) {
-      var list = wm.map.layers[l.key];
-      if (!list) return;
+      var list = wmPlaces(l);
+      if (!list.length) return;
       var on = wm.layers.indexOf(l.key) >= 0;
       var b = h('button', { class: 'wmap-chip', type: 'button', 'aria-pressed': on ? 'true' : 'false' });
-      b.appendChild(h('img', { src: GAME_RES + l.icon + '.png', alt: '' }));
+      b.appendChild(l.src === 'pets' ? h('span', { class: 'wmap-dot', style: 'background:' + l.color })
+        : h('img', { src: GAME_RES + l.icon + '.png', alt: '' }));
       b.appendChild(document.createTextNode(l.name + ' '));
       b.appendChild(h('span', { class: 'mono muted', text: String(list.length) }));
       b.addEventListener('click', function () {

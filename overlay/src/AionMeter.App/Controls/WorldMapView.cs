@@ -48,6 +48,21 @@ public sealed class WorldMapView : FrameworkElement
 
     public void Redraw() => InvalidateVisual();
 
+    /// <summary>The mini-map: you in the middle at this zoom (1 = the whole map in the view).</summary>
+    public void Follow((double X, double Y) at, double zoom)
+    {
+        if (_map is null) return;
+        _zoom = Math.Clamp(zoom, 1, 40);
+        var k = UnitsToPx;
+        _pan = new Point(ActualWidth / 2 - at.X * k, ActualHeight / 2 - at.Y * k);
+        InvalidateVisual(); // no clamping: you stay in the middle even at the map's edge
+    }
+
+    public double Zoom => _zoom;
+
+    /// <summary>Small view (the mini-map): no scale bar, no area names, smaller icons.</summary>
+    public bool Compact { get; set; }
+
     public WorldMapView()
     {
         ClipToBounds = true;
@@ -115,6 +130,7 @@ public sealed class WorldMapView : FrameworkElement
         if (_map is null) return;
         var at = e.GetPosition(this);
         var before = _zoom;
+        if (Compact) return; // the mini-map zooms itself (its window handles the wheel)
         _zoom = Math.Clamp(_zoom * (e.Delta > 0 ? 1.25 : 0.8), 1, 12);
         var k = _zoom / before;
         _pan = new Point(at.X - (at.X - _pan.X) * k, at.Y - (at.Y - _pan.Y) * k);
@@ -125,6 +141,7 @@ public sealed class WorldMapView : FrameworkElement
 
     protected override void OnMouseLeftButtonDown(MouseButtonEventArgs e)
     {
+        if (Compact) return; // the mini-map's window is dragged instead
         _dragFrom = e.GetPosition(this);
         CaptureMouse();
         e.Handled = true;
@@ -164,7 +181,7 @@ public sealed class WorldMapView : FrameworkElement
         HoverChanged?.Invoke(null);
     }
 
-    private static bool Dense(string key) => key is "pets" or "gather" or "cubes";
+    private static bool Dense(string key) => key.StartsWith("pets", StringComparison.Ordinal) || key is "gather" or "cubes";
 
     private static string Describe(WorldMaps.Place p) =>
         p.Name + (string.IsNullOrEmpty(p.Sub) ? "" : " · " + p.Sub) + (p.Points.Count > 1 ? $" · {p.Points.Count} ×" : "");
@@ -221,7 +238,10 @@ public sealed class WorldMapView : FrameworkElement
         "kibelisks" => Color.FromRgb(0x7A, 0xA7, 0xFF),
         "monoliths" => Color.FromRgb(0xE8, 0xE0, 0xA0),
         "gather" => Color.FromRgb(0x5F, 0xBF, 0x6A),
-        "pets" => Color.FromRgb(0xC8, 0x6B, 0xFF),
+        "pets-fera" => Color.FromRgb(0xFF, 0x7A, 0x5C),
+        "pets-natura" => Color.FromRgb(0x6C, 0xD8, 0x7A),
+        "pets-varian" => Color.FromRgb(0x5C, 0xB4, 0xFF),
+        "pets-cogni" => Color.FromRgb(0xC0, 0x8C, 0xFF),
         "cubes" => Color.FromRgb(0xF2, 0xB6, 0x32),
         _ => Colors.White,
     };
@@ -239,7 +259,7 @@ public sealed class WorldMapView : FrameworkElement
         // main areas by name: the biggest ones always, the smaller ones once zoomed in
         foreach (var a in _map.Areas)
         {
-            if (a.Rank > 1 && _zoom < 2.5) continue;
+            if (Compact || (a.Rank > 1 && _zoom < 2.5)) continue;
             var text = new FormattedText(a.Name, CultureInfo.CurrentUICulture, FlowDirection.LeftToRight, a.Rank == 1 ? Bold : Face,
                 a.Rank == 1 ? 12 : 10.5, Brushes.White, dpi);
             var p = ToScreen((a.X, a.Y));
@@ -250,7 +270,7 @@ public sealed class WorldMapView : FrameworkElement
         }
 
         var r = Math.Clamp(2.5 + _zoom * 0.6, 3, 7);
-        var size = Math.Clamp(14 + _zoom * 3, 16, 30); // icon size, px
+        var size = Compact ? 18 : Math.Clamp(14 + _zoom * 3, 16, 30); // icon size, px
         // the many small spots (pets, gathering, cube spots) below, the few landmarks on top of them
         foreach (var (key, places) in Visible().OrderBy(l => Dense(l.Key) ? 0 : 1))
         {
@@ -260,14 +280,20 @@ public sealed class WorldMapView : FrameworkElement
             {
                 var dim = _dim(place);
                 // the many spots of a dense layer are dots until zoomed in, so they do not bury the map
-                var icon = dense && _zoom < 2 ? null : Icon(WorldMaps.IconOf(key, place));
+                var icon = dense && _zoom < (Compact ? 6 : 2) ? null : Icon(WorldMaps.IconOf(key, place));
                 var s = dense ? size * 0.72 : size;
                 if (dim) dc.PushOpacity(0.3);
                 foreach (var pt in place.Points)
                 {
                     var p = ToScreen(pt);
                     if (p.X < -20 || p.Y < -20 || p.X > ActualWidth + 20 || p.Y > ActualHeight + 20) continue;
-                    if (icon is not null) dc.DrawImage(icon, new Rect(p.X - s / 2, p.Y - s / 2, s, s));
+                    if (icon is not null && key.StartsWith("pets", StringComparison.Ordinal))
+                    {
+                        // a pet soul: its family's colour around the soul crystal
+                        dc.DrawEllipse(dim ? Grey : fill, Edge, p, s / 2, s / 2);
+                        dc.DrawImage(icon, new Rect(p.X - s * 0.36, p.Y - s * 0.36, s * 0.72, s * 0.72));
+                    }
+                    else if (icon is not null) dc.DrawImage(icon, new Rect(p.X - s / 2, p.Y - s / 2, s, s));
                     else dc.DrawEllipse(dim ? Grey : fill, dense ? null : Edge, p, dense ? r * 0.6 : r, dense ? r * 0.6 : r);
                 }
                 if (dim) dc.Pop();
@@ -294,6 +320,8 @@ public sealed class WorldMapView : FrameworkElement
             dc.DrawRoundedRectangle(Shadow, null, new Rect(x - 4, p.Y - 10, label.Width + 8, label.Height + 2), 4, 4);
             dc.DrawText(label, new Point(x, p.Y - 9));
         }
+
+        if (Compact) return;
 
         // scale bar
         var metresPerPx = _map.Metres / (_map.Width * Scale);

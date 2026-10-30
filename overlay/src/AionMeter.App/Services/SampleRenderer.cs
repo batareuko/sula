@@ -70,6 +70,22 @@ public static class SampleRenderer
                 host = radar;
                 refresh = radar.Refresh;
                 break;
+            case "minimap":
+            {
+                // you near Dawn Legion Base in Verteron (its Kibelisk from the calibration recording)
+                var at = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds();
+                meter.Settings.MapLayers = ["bosses", "dungeons", "rifts", "kibelisks", "gather"];
+                meter.Settings.MiniMapZoom = 8;
+                meter.Pets.Observe(new ZoneChangedEvent(at - 5_000, 1010, "Open world", false, IsTeleport: true));
+                meter.Pets.Observe(new SelfIdentifiedEvent(at - 4_000, 7, "Celesta", 2305, GameClass.Cleric));
+                meter.Pets.Observe(new MoveEvent(at - 1_000, 7, -109_000, -97_500, 0));
+                meter.Tracker.Process(new SelfIdentifiedEvent(at - 4_000, 7, "Celesta", 2305, GameClass.Cleric));
+                if (meter.Maps.Find("verteron") is { } vert) MapAssets.LoadNow(vert, meter.Settings.MapLayers);
+                var mini = new MiniMapWindow(meter);
+                host = mini;
+                refresh = mini.Refresh;
+                break;
+            }
             case "party":
                 FeedParty(meter);
                 var party = new PartyWindow(meter) { Width = o.Width ?? 340 };
@@ -96,7 +112,7 @@ public static class SampleRenderer
                 break;
             case "map":
                 meter.Settings.MapSlug = "verteron";
-                meter.Settings.MapLayers = ["bosses", "dungeons", "rifts", "kibelisks", "pets"];
+                meter.Settings.MapLayers = ["bosses", "dungeons", "rifts", "kibelisks", "pets-fera", "pets-cogni"];
                 var map = new MapWindow(meter) { Width = o.Width ?? 900, Height = o.Height ?? 820 };
                 map.LoadPictureNow();
                 host = map;
