@@ -105,6 +105,28 @@ public class LiveStateTests
     }
 
     [Fact]
+    public void Hp_and_mana_updates_keep_the_maxima_from_the_character_record()
+    {
+        var t = Setup(out _);
+        t.Process(new PlayerVitalsEvent(1_000, Me, 20_726, 22_206, 4_312, 4_936));
+        t.Process(new NpcHpEvent(1_200, Me, 17_000, 0, IsNpc: false)); // 1 HP: 00 8D carries no maximum
+        t.Process(new PlayerMpEvent(1_200, Me, 3_900));
+        t.Process(new PlayerVitalsEvent(1_000, Mate, 15_000, 21_000, 3_000, 4_000));
+
+        var s = t.State(2_000)!;
+        Assert.True(s.Me.Alive);
+        Assert.Equal(17_000, s.Me.Hp);
+        Assert.Equal(22_206, s.Me.HpMax);
+        Assert.Equal(3_900, s.Me.Mp);
+        Assert.Equal(4_936, s.Me.MpMax);
+
+        var mate = Assert.Single(s.Party);
+        Assert.True(mate.Alive);
+        Assert.Equal(15_000, mate.Hp);
+        Assert.Equal(21_000, mate.HpMax);
+    }
+
+    [Fact]
     public void Zone_change_clears_positions_and_health_but_keeps_the_party_names()
     {
         var t = Setup(out _);

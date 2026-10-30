@@ -73,6 +73,16 @@ public sealed record SummonSeenEvent(long TimeMs, uint ActorId, uint OwnerId, st
 /// true when the record itself says the entity is an NPC; otherwise it may be a player and only updates known NPCs.</summary>
 public sealed record NpcHpEvent(long TimeMs, uint ActorId, long CurrentHp, long MaxHp, bool IsNpc = true) : GameEvent(TimeMs);
 
+/// <summary>1 HP: a player's mana (<c>00 8D</c>, resource 1) — the packet carries the current value only.</summary>
+public sealed record PlayerMpEvent(long TimeMs, uint ActorId, long Mp) : GameEvent(TimeMs);
+
+/// <summary>
+/// 1 HP: a player's HP and MP with their maxima, from the character record (<c>33 36</c> for you, <c>45 36</c> for
+/// another player): <c>[hp varint][hpMax varint][mp u32][mpMax u32]</c>. The record is sent when the character enters
+/// the game, so this is the only place the maxima come from — the HP updates (00 8D) carry just the current values.
+/// </summary>
+public sealed record PlayerVitalsEvent(long TimeMs, uint ActorId, long Hp, long HpMax, long Mp, long MpMax) : GameEvent(TimeMs);
+
 /// <summary>1 HP: an entity moved to x, y, z (centimetres; packet 1b 37).</summary>
 public sealed record MoveEvent(long TimeMs, uint ActorId, float X, float Y, float Z) : GameEvent(TimeMs);
 

@@ -74,10 +74,26 @@ public sealed class StreamServer : IDisposable
         if (!streamEnabled && !stateEnabled) return;
         try
         {
-            var listener = new HttpListener();
-            listener.Prefixes.Add($"http://localhost:{port}/");
-            listener.Prefixes.Add($"http://127.0.0.1:{port}/");
-            listener.Start();
+            // 1 HP: loopback only. The "localhost" prefix also binds the whole IPv6 wildcard (::), i.e. every
+            // interface, so it is not used; http://localhost still resolves to one of these two loopback prefixes.
+            HttpListener Open(params string[] prefixes)
+            {
+                var http = new HttpListener();
+                foreach (var prefix in prefixes) http.Prefixes.Add(prefix);
+                http.Start();
+                return http;
+            }
+
+            HttpListener listener;
+            try
+            {
+                listener = Open($"http://127.0.0.1:{port}/", $"http://[::1]:{port}/");
+            }
+            catch (HttpListenerException)
+            {
+                // 1 HP: this machine's HTTP.sys refused the IPv6 loopback prefix: serve IPv4 loopback only.
+                listener = Open($"http://127.0.0.1:{port}/");
+            }
             _listener = listener;
             _port = port;
             _ = Task.Run(() => Serve(listener));

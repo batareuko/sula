@@ -244,6 +244,49 @@ public class ProtocolTests
         Assert.Equal([Opcodes.Heartbeat, (ushort)0x4136], seen);
     }
 
+    // 1 HP: the HP/MP update of the current client (00 8D) from the 2026-10-30 capture: entity, kind, count,
+    // count × (resource u8, amount u32) — resource 0 is HP, 1 is MP. The player's own HP was 20 725–20 726.
+    [Fact]
+    public void Health_update_carries_the_players_hp()
+    {
+        var hp = Assert.Single(Parse(Opcodes.RemainHp, "d0 2e 02 01 00 f6 50 00 00 00 00 00 00").OfType<NpcHpEvent>());
+        Assert.Equal(5968u, hp.ActorId);
+        Assert.Equal(20_726, hp.CurrentHp);
+        Assert.False(hp.IsNpc); // the packet does not say: only a known NPC is treated as one
+    }
+
+    [Fact]
+    public void Health_update_carries_the_players_mana()
+    {
+        var mp = Assert.Single(Parse(Opcodes.RemainHp, "d0 2e 01 01 01 17 10 00 00").OfType<PlayerMpEvent>());
+        Assert.Equal(5968u, mp.ActorId);
+        Assert.Equal(4_119, mp.Mp);
+    }
+
+    [Fact]
+    public void Health_update_reads_every_resource_of_the_list()
+    {
+        var events = Parse(Opcodes.RemainHp, "d0 2e 01 02 00 f6 50 00 00 01 17 10 00 00");
+        Assert.Equal(20_726, Assert.Single(events.OfType<NpcHpEvent>()).CurrentHp);
+        Assert.Equal(4_119, Assert.Single(events.OfType<PlayerMpEvent>()).Mp);
+    }
+
+    // 1 HP: a character record (33 36 / 45 36) carries HP and MP with the maxima in one block; the rest of the
+    // 1.4–2.7 KB record is stat data. Built from the 2026-10-30 capture, where Talii's block was 25 075 / 3 478.
+    [Theory]
+    [InlineData(Opcodes.PlayerInfo, "c81a" + "00000000" + "01" + "05" + "54616c6969" + "1805" + "1e000000" + "01" + "2d000000" + "0000" +
+                                     "f3c301f3c301960d0000960d0000")]
+    [InlineData(Opcodes.SelfInfo, "d02e" + "00000000" + "01" + "05" + "54616c6969" + "1805" + "1e000000" + "01" + "2d000000" + "0000" +
+                                   "f3c301f3c301960d0000960d0000")]
+    public void Character_record_carries_hp_and_mp_maxima(ushort opcode, string hex)
+    {
+        var vitals = Assert.Single(Parse(opcode, hex).OfType<PlayerVitalsEvent>());
+        Assert.Equal(25_075, vitals.Hp);
+        Assert.Equal(25_075, vitals.HpMax);
+        Assert.Equal(3_478, vitals.Mp);
+        Assert.Equal(3_478, vitals.MpMax);
+    }
+
     // 1 HP: movement records from a live EU capture (2026-10-28): a monster around you, and a two-byte variant
     [Theory]
     [InlineData("8e830204678 26bc8a5227848000058 43b874b87401", 33166u, -241162f, 254090f)]

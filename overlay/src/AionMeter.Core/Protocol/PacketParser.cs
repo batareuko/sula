@@ -569,6 +569,7 @@ public sealed class PacketParser
     /// </summary>
     private bool ParseIdentity(ReadOnlySpan<byte> b, int o, bool isSelf, bool wholePacket = false)
     {
+        var start = o;
         if (!Wire.TryVarint(b, ref o, out var id) || !IsEntityId(id)) return false;
         o += 4; // mask1
         if (o + 2 > b.Length || (b[o] & 0x01) == 0) return false;
@@ -609,9 +610,41 @@ public sealed class PacketParser
         Emit(isSelf
             ? new SelfIdentifiedEvent(TimeMs, id, name, server, cls, level)
             : new PlayerSeenEvent(TimeMs, id, name, server, cls));
+        // 1 HP: a whole record carries the HP/MP block with the maxima; a record found inside a bigger packet is not
+        // scanned for it, because the pattern could belong to a neighbour.
+        if (start == 0 && CharacterVitals(b) is { } vitals)
+            Emit(new PlayerVitalsEvent(TimeMs, id, vitals.Hp, vitals.HpMax, vitals.Mp, vitals.MpMax));
         // 1 HP: a player coming into view brings their combat power (the stat block at the end of the record)
         if (wholePacket && !isSelf && TailCombatPower(b) is > 0 and var power) Emit(new PlayerPowerEvent(TimeMs, id, name, power));
         return true;
+    }
+
+    /// <summary>
+    /// 1 HP: the HP and MP block of a character record (<c>33 36</c> / <c>45 36</c>):
+    /// <code>[hp varint][hpMax varint][mp u32][mpMax u32]</code>. In the captures it is the only pair of near-equal
+    /// counts followed by a pair of near-equal u32 in the whole record; two candidates means the pattern is not
+    /// trusted and nothing is read (null beats a guess).
+    /// </summary>
+    private static (long Hp, long HpMax, long Mp, long MpMax)? CharacterVitals(ReadOnlySpan<byte> b)
+    {
+        (long Hp, long HpMax, long Mp, long MpMax)? found = null;
+        for (var i = 0; i + 12 <= b.Length; i++)
+        {
+            if (!Wire.TryVarint(b, i, out var hpWire, out var n1)) continue;
+            var j = i + n1;
+            if (!Wire.TryVarint(b, j, out var hpMaxWire, out var n2)) continue;
+            long hp = hpWire, hpMax = hpMaxWire;
+            if (hp is < 500 or > 2_000_000 || hpMax < hp || hpMax > 2_000_000) continue;
+            if (hpMax - hp > Math.Max(500, hpMax * 35 / 100)) continue;
+            var k = j + n2;
+            if (k + 8 > b.Length) continue;
+            long mp = Wire.U32(b, k), mpMax = Wire.U32(b, k + 4);
+            if (mp is < 100 or > 300_000 || mpMax < mp || mpMax > 300_000) continue;
+            if (mpMax - mp > Math.Max(300, mpMax * 35 / 100)) continue;
+            if (found is not null) return null; // ambiguous: never guess
+            found = (hp, hpMax, mp, mpMax);
+        }
+        return found;
     }
 
     /// <summary>
@@ -930,17 +963,24 @@ public sealed class PacketParser
     }
 
     /// <summary><c>entity varint, kind varint (2 = NPC, 1 = player), varint, varint, hp u64</c></summary>
+    /// <summary>
+    /// 1 HP: <code>entity varint, kind varint, count varint, count × (resource u8, amount u32)</code> — resource 0 is
+    /// HP and 1 is MP (player capture 2026-10-30: 465 packets read, none refused). kind 2 puts a u32 after the list and
+    /// kind 3 a second list; neither is read here, only the first list is needed.
+    /// </summary>
     private void ParseRemainHp(ReadOnlySpan<byte> b)
     {
         var o = 0;
         if (!Wire.TryVarint(b, ref o, out var id) || !IsEntityId(id)) return;
-        if (!Wire.TryVarint(b, ref o, out var kind) || kind != 2) return;
-        if (!Wire.TryVarint(b, ref o, out _) || !Wire.TryVarint(b, ref o, out _)) return;
-        if (!Wire.TryU32(b, ref o, out var lo)) return;
-        Wire.TryU32(b, ref o, out var hi);
-        var hp = (long)hi << 32 | lo;
-        if (hp is < 0 or > 10_000_000_000) return;
-        Emit(new NpcHpEvent(TimeMs, id, hp, 0, IsNpc: true));
+        if (!Wire.TryVarint(b, ref o, out var kind) || kind is < 1 or > 3) return;
+        if (!Wire.TryVarint(b, ref o, out var count) || count is < 1 or > 16) return;
+        for (var i = 0; i < count; i++)
+        {
+            if (!Wire.TryU8(b, ref o, out var resource) || !Wire.TryU32(b, ref o, out var amount)) return;
+            if (amount > 100_000_000) continue; // 1 HP: not a health bar (a mis-aligned list): skip the entry
+            if (resource == 0) Emit(new NpcHpEvent(TimeMs, id, amount, 0, IsNpc: false)); // HP, player or NPC
+            else if (resource == 1) Emit(new PlayerMpEvent(TimeMs, id, amount));         // MP, players only
+        }
     }
 
     /// <summary><c>actor varint, hp varint, hpMax varint</c> — sent for players and NPCs alike.</summary>
