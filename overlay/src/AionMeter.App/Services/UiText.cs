@@ -85,7 +85,7 @@ public sealed partial class UiText
     public string TimersButton { get; init; } = "Boss timers";
     public string HkTimers { get; init; } = "Boss timers";
     public string TipTimers { get; init; } = "Boss respawn timers";
-    public string TrayTimers { get; init; } = "Boss timers…";
+    public string TrayTimers { get; init; } = "⏱ Boss timers…";
     public string TimersHint { get; init; } =
         "Open a map's field boss list in the game (map → Exploration → field monsters) and its timers come in straight from the server. Field bosses you see die restart their countdown. Bosses of quest and sealed-area instances have no world timer and are not listed. 🔔 = notify before respawn.";
     public string FilterWatched { get; init; } = "🔔 Watched";
@@ -181,8 +181,8 @@ public sealed partial class UiText
     // ---------------------------------------------------------------- tray
     public string TrayHide { get; init; } = "Hide overlay";
     public string TrayShow { get; init; } = "Show overlay";
-    public string TrayHistory { get; init; } = "Fight history…";
-    public string TraySettings { get; init; } = "Settings…";
+    public string TrayHistory { get; init; } = "📜 Fight history…";
+    public string TraySettings { get; init; } = "⚙ Settings…";
     public string TrayDemo { get; init; } = "Run demo fight";
     public string TrayReplay { get; init; } = "Replay capture file…";
     public string TrayExit { get; init; } = "Exit";
@@ -409,7 +409,7 @@ public sealed partial class UiText
         TimersButton = "Таймеры боссов",
         HkTimers = "Таймеры боссов",
         TipTimers = "Таймеры респауна боссов",
-        TrayTimers = "Таймеры боссов…",
+        TrayTimers = "⏱ Таймеры боссов…",
         TimersHint = "Откройте в игре список полевых боссов карты (карта → Исследование → полевые монстры) — таймеры придут прямо с сервера. Убийство полевого босса рядом с вами перезапускает его отсчёт. У боссов квестовых и запечатанных инстансов нет общего таймера — их здесь нет. 🔔 — оповещать перед респауном.",
         FilterWatched = "🔔 Отслеживаемые",
         TipWatch = "Оповещать перед респауном этого босса",
@@ -496,8 +496,8 @@ public sealed partial class UiText
 
         TrayHide = "Скрыть оверлей",
         TrayShow = "Показать оверлей",
-        TrayHistory = "История боёв…",
-        TraySettings = "Настройки…",
+        TrayHistory = "📜 История боёв…",
+        TraySettings = "⚙ Настройки…",
         TrayDemo = "Демо-бой",
         TrayReplay = "Воспроизвести запись…",
         TrayExit = "Выход",
@@ -826,6 +826,10 @@ public sealed partial class UiText
         AnUsesTotal = "~{0} применений",
         AnalysisNote = "Применения — оценка: игра присылает удары, а не касты, поэтому удары одного скилла с промежутком меньше 1,2 с считаются одним применением. Урон со временем (DoT) входит в урон скилла, но не в применения.",
         UiScale = "Масштаб интерфейса",
+        TrayGroupMeter = "МЕТР",
+        TrayGroupWindows = "ОКНА",
+        TrayGroupTools = "🛠 Инструменты",
+        TrayGroupWeb = "🌐 Сайт гильдии",
         PartyWindowTitle = "ГРУППА",
         PartyTray = "👥 Окно группы (Ctrl+Shift+G)",
         PartyWindowEmpty = "Метр ещё не знает вас: группа появится, как только игра назовёт вашего персонажа.",

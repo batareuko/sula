@@ -152,7 +152,8 @@ public partial class App : Application
             {
                 Log.Info("Exit chosen in the tray menu");
                 Shutdown();
-            }));
+            },
+            State: () => new TrayState(_party?.IsVisible == true, _petRadar?.IsVisible == true, _meter.Settings.ClickThrough)));
         _focus = new GameFocus(settings, () => [_overlay, _bossBar, _petRadar, _party]);
         _focus.Start();
         SessionEnding += (_, end) => Log.Info($"Windows {end.ReasonSessionEnding}: closing");
