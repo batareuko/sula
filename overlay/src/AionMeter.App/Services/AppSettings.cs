@@ -156,6 +156,12 @@ public sealed class AppSettings
     public string? MapSlug { get; set; }
     public List<string> MapLayers { get; set; } = ["bosses", "dungeons", "rifts", "kibelisks"];
     public string HotkeyMap { get; set; } = "Ctrl+Shift+M";
+    /// <summary>1 HP: the mini-map over the game (Windows/MiniMapWindow.cs): on, size in px, zoom, opacity.</summary>
+    public bool MiniMap { get; set; }
+    public int MiniMapSize { get; set; } = 240;
+    public double MiniMapZoom { get; set; } = 8;
+    public double MiniMapOpacity { get; set; } = 0.9;
+    public string HotkeyMiniMap { get; set; } = "Ctrl+Shift+N";
     /// <summary>1 HP: the overlay, the boss bar and the pet radar step aside while another program is in front of the game.</summary>
     public bool HideBehindOtherApps { get; set; } = true;
     /// <summary>1 HP: ping the game server and the router once a second for the network strip (off: stream counters only).</summary>

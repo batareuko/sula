@@ -29,7 +29,7 @@ public sealed class WorldMaps
         "kibelisks" => "UT_Marker_TeleportArtifact_Light_Unengraved",
         "monoliths" => "UT_Marker_Monolith_Light",
         "gather" => "UT_Marker_Gatherl_Jewelry",
-        "pets" => "Icon_BMShop_Soulcrystal_All",
+        "pets" or "pets-fera" or "pets-natura" or "pets-varian" or "pets-cogni" => "Icon_BMShop_Soulcrystal_All",
         "cubes" => "Icon_Item_Currency_Treasure_Key_A_s_001",
         _ => "UT_Marker_Pin",
     };
@@ -60,7 +60,11 @@ public sealed class WorldMaps
     }
 
     /// <summary>Layers in the order the map window offers them.</summary>
-    public static readonly string[] LayerOrder = ["bosses", "dungeons", "rifts", "kibelisks", "monoliths", "gather", "pets", "cubes"];
+    public static readonly string[] LayerOrder =
+        ["bosses", "dungeons", "rifts", "kibelisks", "monoliths", "gather", "pets-fera", "pets-natura", "pets-varian", "pets-cogni", "cubes"];
+
+    /// <summary>Pet souls come as one layer per family (the place's kind): "pets-fera", "pets-natura" …</summary>
+    public static string PetLayer(string? family) => "pets-" + (family ?? "other").ToLowerInvariant();
 
     public IReadOnlyList<Map> All { get; }
 
@@ -109,6 +113,10 @@ public sealed class WorldMaps
                     {
                         Icon = p.TryGetProperty("i", out var i) ? i.GetString() : null,
                     }).ToList();
+                // pet souls by family, each its own layer
+                if (layers.Remove("pets", out var pets))
+                    foreach (var family in pets.GroupBy(p => PetLayer(p.Kind)))
+                        layers[family.Key] = family.ToList();
                 maps.Add(new Map(m.GetProperty("slug").GetString() ?? "", m.GetProperty("name").GetString() ?? "",
                     m.GetProperty("faction").GetString() ?? "", m.GetProperty("metres").GetDouble(), image.GetProperty("src").GetString() ?? "",
                     image.GetProperty("w").GetInt32(), image.GetProperty("h").GetInt32(), areas, layers)

@@ -1,9 +1,6 @@
-using System.IO;
-using System.Net.Http;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Media;
-using System.Windows.Media.Imaging;
 using System.Windows.Shapes;
 using AionMeter.App.Controls;
 using AionMeter.App.Services;
@@ -18,16 +15,12 @@ namespace AionMeter.App.Windows;
 /// </summary>
 public sealed class MapWindow : Window
 {
-    private static readonly HttpClient Http = CreateHttp();
-    private static readonly string CacheDir = System.IO.Path.Combine(AppSettings.AppDataDir, "maps");
 
     private readonly MeterService _meter;
     private readonly WorldMapView _view = new();
     private readonly ComboBox _pick = new() { Width = 190, Margin = new Thickness(0, 0, 10, 0), VerticalAlignment = VerticalAlignment.Center };
     private readonly WrapPanel _chips = new() { VerticalAlignment = VerticalAlignment.Center };
     private readonly TextBlock _status = new() { Foreground = new SolidColorBrush(Color.FromRgb(0xC9, 0xD2, 0xE0)), Margin = new Thickness(10, 5, 10, 6), TextTrimming = TextTrimming.CharacterEllipsis };
-    private readonly Dictionary<string, ImageSource?> _images = new();
-    private static readonly Dictionary<string, ImageSource?> Icons = new(); // game icons by resource name (null: downloading or missing)
     private readonly System.Windows.Threading.DispatcherTimer _timer = new() { Interval = TimeSpan.FromSeconds(1) };
     private readonly Button _whereButton = new() { Margin = new Thickness(0, 0, 10, 0), Padding = new Thickness(10, 3, 10, 3), VerticalAlignment = VerticalAlignment.Center, Visibility = Visibility.Collapsed };
     private bool _followed;
@@ -46,6 +39,9 @@ public sealed class MapWindow : Window
         FontFamily = new FontFamily("Segoe UI");
         WindowMemory.Track(this, "map");
 
+        // the one pet layer of 1.20–1.23 is now four, one per family
+        if (meter.Settings.MapLayers.Remove("pets"))
+            meter.Settings.MapLayers.AddRange(["pets-fera", "pets-natura", "pets-varian", "pets-cogni"]);
         foreach (var m in meter.Maps.All) _pick.Items.Add(new ComboBoxItem { Content = $"{m.Name} · {m.Faction}", Tag = m.Slug });
         _pick.SelectionChanged += (_, _) =>
         {
@@ -59,6 +55,10 @@ public sealed class MapWindow : Window
         _whereButton.Click += (_, _) => FollowYou(centre: true);
         DockPanel.SetDock(_whereButton, Dock.Left);
         top.Children.Add(_whereButton);
+        var mini = new Button { Content = t.MiniMapButton, Margin = new Thickness(0, 0, 10, 0), Padding = new Thickness(10, 3, 10, 3), VerticalAlignment = VerticalAlignment.Center, ToolTip = t.MiniMapTray };
+        mini.Click += (_, _) => AppHost.Current.ToggleMiniMap();
+        DockPanel.SetDock(mini, Dock.Left);
+        top.Children.Add(mini);
         top.Children.Add(_chips);
 
         var credit = new TextBlock { Margin = new Thickness(10, 5, 10, 6), HorizontalAlignment = HorizontalAlignment.Right };
@@ -82,7 +82,9 @@ public sealed class MapWindow : Window
         Content = grid;
 
         _view.HoverChanged += text => _status.Text = text ?? Hint();
-        _view.Icon = IconFor;
+        _view.Icon = MapAssets.Icon;
+        MapAssets.Changed += OnAssets;
+        Closed += (_, _) => MapAssets.Changed -= OnAssets;
         _timer.Tick += (_, _) => FollowYou(centre: false);
         IsVisibleChanged += (_, _) => { if (IsVisible) _timer.Start(); else _timer.Stop(); };
         _view.ToolTip = t.MapTip;
@@ -123,46 +125,6 @@ public sealed class MapWindow : Window
         }
     }
 
-    /// <summary>A game icon from the game's CDN, kept in %AppData%\1HP-Overlay\maps\icons; null while it downloads.</summary>
-    private ImageSource? IconFor(string name)
-    {
-        if (Icons.TryGetValue(name, out var icon)) return icon;
-        Icons[name] = null;
-        _ = LoadIconAsync(name);
-        return null;
-    }
-
-    private async Task LoadIconAsync(string name)
-    {
-        var file = System.IO.Path.Combine(CacheDir, "icons", name + ".png");
-        try
-        {
-            if (!File.Exists(file))
-            {
-                Directory.CreateDirectory(System.IO.Path.GetDirectoryName(file)!);
-                var bytes = await Http.GetByteArrayAsync(GameResources + name + ".png").ConfigureAwait(true);
-                var tmp = $"{file}.{Guid.NewGuid():N}.tmp";
-                await File.WriteAllBytesAsync(tmp, bytes).ConfigureAwait(true);
-                File.Move(tmp, file, overwrite: true);
-            }
-            var bmp = new BitmapImage();
-            bmp.BeginInit();
-            bmp.CacheOption = BitmapCacheOption.OnLoad;
-            bmp.DecodePixelWidth = 64;
-            bmp.UriSource = new Uri(file);
-            bmp.EndInit();
-            bmp.Freeze();
-            Icons[name] = bmp;
-            _view.Redraw();
-            BuildChips();
-        }
-        catch (Exception ex) when (ex is HttpRequestException or IOException or TaskCanceledException or NotSupportedException or FileFormatException or UnauthorizedAccessException)
-        {
-            Log.Info($"Map icon {name} not loaded: {ex.Message}");
-        }
-    }
-
-    private const string GameResources = "https://assets.playnccdn.com/static-aion2-gamedata/resources/";
 
     private string Hint() => _map is null ? "" : string.Format(UiText.Current.MapHint, _map.Name, $"{_map.Metres:0}");
 
@@ -174,10 +136,9 @@ public sealed class MapWindow : Window
         _meter.Settings.MapSlug = slug;
         _meter.Settings.Save();
         BuildChips();
-        _view.SetMap(map, _images.GetValueOrDefault(slug));
+        _view.SetMap(map, MapAssets.Picture(map));
         ApplyLayers();
-        _status.Text = Hint();
-        if (!_images.ContainsKey(slug)) _ = LoadImageAsync(map);
+        _status.Text = MapAssets.Downloading(slug) ? UiText.Current.MapLoading : Hint();
     }
 
     private void BuildChips()
@@ -200,7 +161,7 @@ public sealed class MapWindow : Window
                     Orientation = Orientation.Horizontal,
                     Children =
                     {
-                        IconFor(WorldMaps.LayerIcon(key)) is { } icon
+                        !key.StartsWith("pets", StringComparison.Ordinal) && MapAssets.Icon(WorldMaps.LayerIcon(key)) is { } icon
                             ? new Image { Source = icon, Width = 18, Height = 18, Margin = new Thickness(0, 0, 6, 0), VerticalAlignment = VerticalAlignment.Center }
                             : new Ellipse { Width = 9, Height = 9, Fill = new SolidColorBrush(WorldMapView.LayerColor(key)), Margin = new Thickness(0, 0, 6, 0), VerticalAlignment = VerticalAlignment.Center },
                         label,
@@ -237,98 +198,23 @@ public sealed class MapWindow : Window
             place => ids.TryGetValue(place.Name, out var id) && have.Contains(id)); // pets you have: small and grey
     }
 
-    private async Task LoadImageAsync(WorldMaps.Map map)
-    {
-        _images[map.Slug] = null;
-        var file = System.IO.Path.Combine(CacheDir, map.Slug + ".webp");
-        try
-        {
-            if (!File.Exists(file))
-            {
-                _status.Text = UiText.Current.MapLoading;
-                await DownloadAsync(map, file);
-            }
-            var bmp = Decode(file);
-            _images[map.Slug] = bmp;
-            if (_map?.Slug == map.Slug)
-            {
-                _view.SetImage(bmp);
-                _status.Text = Hint();
-            }
-        }
-        catch (Exception ex) when (ex is HttpRequestException or IOException or TaskCanceledException or NotSupportedException or FileFormatException or UnauthorizedAccessException)
-        {
-            Log.Info($"Map picture {map.Slug} not loaded: {ex.Message}");
-            _images.Remove(map.Slug); // try again next time
-            if (_map?.Slug == map.Slug)
-                _status.Text = ex is NotSupportedException or FileFormatException ? UiText.Current.MapNoCodec : UiText.Current.MapNoPicture;
-        }
-    }
-
-    private static async Task DownloadAsync(WorldMaps.Map map, string file)
-    {
-        Directory.CreateDirectory(CacheDir);
-        var bytes = await Http.GetByteArrayAsync(map.ImageUrl).ConfigureAwait(false);
-        var tmp = $"{file}.{Guid.NewGuid():N}.tmp"; // a second meter may fetch the same picture
-        await File.WriteAllBytesAsync(tmp, bytes).ConfigureAwait(false);
-        File.Move(tmp, file, overwrite: true);
-    }
-
-    /// <summary>WebP through the Windows imaging codec (built into Windows 11; "WebP Image Extensions" on 10).</summary>
-    private static BitmapImage Decode(string file)
-    {
-        var bmp = new BitmapImage();
-        bmp.BeginInit();
-        bmp.CacheOption = BitmapCacheOption.OnLoad;
-        bmp.UriSource = new Uri(file);
-        bmp.EndInit();
-        bmp.Freeze();
-        return bmp;
-    }
-
-    /// <summary>The preview renderer: the picture of the map shown, downloaded and drawn before the window is captured.</summary>
+    /// <summary>The preview renderer: the picture of the map shown and the icons, drawn before the window is captured.</summary>
     public void LoadPictureNow()
     {
         if (_map is null) return;
-        var file = System.IO.Path.Combine(CacheDir, _map.Slug + ".webp");
-        try
-        {
-            if (!File.Exists(file)) DownloadAsync(_map, file).GetAwaiter().GetResult();
-            _images[_map.Slug] = Decode(file);
-            _view.SetImage(_images[_map.Slug]);
-        }
-        catch (Exception ex) when (ex is HttpRequestException or IOException or TaskCanceledException or NotSupportedException or FileFormatException)
-        {
-            Log.Info($"Map picture {_map.Slug} not loaded: {ex.Message}");
-        }
-        try
-        {
-            // and the icons of the layers shown, so the preview has them all
-            foreach (var key in _meter.Settings.MapLayers)
-                if (_map.Layers.TryGetValue(key, out var places))
-                    foreach (var name in places.Select(p => WorldMaps.IconOf(key, p)).Distinct())
-                    {
-                        var icon = System.IO.Path.Combine(CacheDir, "icons", name + ".png");
-                        if (!File.Exists(icon))
-                        {
-                            Directory.CreateDirectory(System.IO.Path.GetDirectoryName(icon)!);
-                            File.WriteAllBytes(icon, Http.GetByteArrayAsync(GameResources + name + ".png").GetAwaiter().GetResult());
-                        }
-                        Icons[name] = new BitmapImage(new Uri(icon));
-                    }
-            BuildChips();
-            _view.Redraw();
-        }
-        catch (Exception ex) when (ex is HttpRequestException or IOException or TaskCanceledException or NotSupportedException or FileFormatException)
-        {
-            Log.Info($"Map icons not loaded: {ex.Message}");
-        }
+        MapAssets.LoadNow(_map, _meter.Settings.MapLayers);
+        _view.SetImage(MapAssets.Picture(_map));
+        BuildChips();
+        _view.Redraw();
     }
 
-    private static HttpClient CreateHttp()
+    private void OnAssets()
     {
-        var http = new HttpClient { Timeout = TimeSpan.FromSeconds(30) };
-        http.DefaultRequestHeaders.UserAgent.ParseAdd("1HP-Overlay (world map, credited to Aion2Data)");
-        return http;
+        if (_map is null) return;
+        _view.SetImage(MapAssets.Picture(_map));
+        _view.Redraw();
+        BuildChips();
+        if (MapAssets.Problem(_map.Slug) is { } why) _status.Text = why == "codec" ? UiText.Current.MapNoCodec : UiText.Current.MapNoPicture;
+        else if (_status.Text == UiText.Current.MapLoading) _status.Text = Hint();
     }
 }

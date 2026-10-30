@@ -129,6 +129,7 @@ public partial class App : Application
 
         if (settings.PetRadarWindow && !settings.NoOverlay) ShowPetRadar(true);
         if (settings.PartyWindow && !settings.NoOverlay) ShowParty(true);
+        if (settings.MiniMap && !settings.NoOverlay) ShowMiniMap(true);
 
         _tray = new TrayIcon(new TrayActions(
             ToggleOverlay: () => SetOverlayVisible(!_overlay.IsVisible),
@@ -140,6 +141,7 @@ public partial class App : Application
             Map: ShowMap,
             Checklist: ShowChecklist,
             Party: ToggleParty,
+            MiniMap: ToggleMiniMap,
             Settings: ShowSettings,
             Demo: () => _meter.StartDemo(),
             Replay: PickReplay,
@@ -153,8 +155,8 @@ public partial class App : Application
                 Log.Info("Exit chosen in the tray menu");
                 Shutdown();
             },
-            State: () => new TrayState(_party?.IsVisible == true, _petRadar?.IsVisible == true, _meter.Settings.ClickThrough)));
-        _focus = new GameFocus(settings, () => [_overlay, _bossBar, _petRadar, _party]);
+            State: () => new TrayState(_party?.IsVisible == true, _petRadar?.IsVisible == true, _meter.Settings.ClickThrough, _miniMap?.IsVisible == true)));
+        _focus = new GameFocus(settings, () => [_overlay, _bossBar, _petRadar, _party, _miniMap]);
         _focus.Start();
         SessionEnding += (_, end) => Log.Info($"Windows {end.ReasonSessionEnding}: closing");
 
@@ -347,6 +349,7 @@ public partial class App : Application
         _hotkeys.Register(s.HotkeyTimers, ToggleBossTimers);
         _hotkeys.Register(s.HotkeyPetRadar, TogglePetRadar);
         _hotkeys.Register(s.HotkeyMap, ShowMap);
+        _hotkeys.Register(s.HotkeyMiniMap, ToggleMiniMap);
         _hotkeys.Register(s.HotkeyChecklist, ShowChecklist);
         _hotkeys.Register(s.HotkeyParty, ToggleParty);
     }
@@ -477,6 +480,24 @@ public partial class App : Application
     private GameFocus? _focus;
 
     /// <summary>1 HP: the pet radar window on / off (tray, Ctrl+Shift+P); remembered for the next start.</summary>
+    private MiniMapWindow? _miniMap;
+
+    /// <summary>1 HP: the mini-map over the game on / off (tray, Ctrl+Shift+N, the world map's button); remembered.</summary>
+    public void ToggleMiniMap() => ShowMiniMap(!(_miniMap?.IsVisible ?? false));
+
+    private void ShowMiniMap(bool on)
+    {
+        _meter.Settings.MiniMap = on;
+        _meter.Settings.Save();
+        if (on && !_meter.Settings.NoOverlay)
+        {
+            _miniMap ??= new MiniMapWindow(_meter);
+            _miniMap.Show();
+            _focus?.Apply();
+        }
+        else _miniMap?.Hide();
+    }
+
     private PartyWindow? _party;
 
     /// <summary>1 HP: the party window on / off (tray, Ctrl+Shift+G); remembered for the next start.</summary>
@@ -954,6 +975,7 @@ public partial class App : Application
         _bossBar?.ApplyScale(percent);
         _petRadar?.ApplyScale(percent);
         _party?.ApplyScale(percent);
+        _miniMap?.ApplySize();
     }
 
     private void PickReplay()

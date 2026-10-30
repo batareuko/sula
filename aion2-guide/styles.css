@@ -1023,3 +1023,5 @@ main section.meter-hero { margin-top: 0; }
 .sheet-list a { background: var(--bg-2); border: 1px solid var(--line); padding: 10px; }
 @media (max-width: 1100px) { .nav-gname { display: none; } .nav-gbtn .nav-gicon { font-size: 18px; } .nav-gcur:not(:empty)::before { content: ''; } }
 @media (max-width: 760px) { .nav-find span, .nav-find kbd { display: none; } .nav-find { padding: 7px; } }
+.wmap-dot { width: 14px; height: 14px; margin: 3px; border-radius: 50%; flex-shrink: 0; box-shadow: 0 0 0 2px rgba(255,255,255,.15); }
+.wmap-chip:not([aria-pressed="true"]) .wmap-dot { opacity: .45; }

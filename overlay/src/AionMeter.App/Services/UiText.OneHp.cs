@@ -228,6 +228,17 @@ public sealed partial class UiText
     public string MapNoPicture { get; init; } = "The map picture could not be downloaded (internet?). The places are shown without it.";
     public string MapNoCodec { get; init; } = "Windows cannot open the map picture (WebP): install \"WebP Image Extensions\" from the Microsoft Store (free). The places are shown without it.";
     public string MapWhereAmI { get; init; } = "◎ Where am I";
+    public string MiniMapTray { get; init; } = "🧭 Mini-map over the game (Ctrl+Shift+N)";
+    public string MiniMapButton { get; init; } = "🧭 Mini-map";
+    public string MiniMapUnknown { get; init; } = "Where you are is not known yet: open the map in the game or fly to a Kibelisk (Verteron for now).";
+    public string MiniMapTip { get; init; } = "You in the middle, the layers of the big map. Wheel — zoom, drag — move, right click — size, opacity.";
+    public string MiniMapSize { get; init; } = "Size";
+    public string MiniMapSmall { get; init; } = "Small";
+    public string MiniMapMedium { get; init; } = "Medium";
+    public string MiniMapLarge { get; init; } = "Large";
+    public string MiniMapHuge { get; init; } = "Very large";
+    public string MiniMapOpacity { get; init; } = "Opacity";
+    public string MiniMapHide { get; init; } = "Hide the mini-map";
     public string MapNoData { get; init; } = "No map table (data/world_maps.json).";
     public string LayerBosses { get; init; } = "Field bosses";
     public string LayerDungeons { get; init; } = "Dungeons";
@@ -246,7 +257,10 @@ public sealed partial class UiText
         "kibelisks" => LayerKibelisks,
         "monoliths" => LayerMonoliths,
         "gather" => LayerGather,
-        "pets" => LayerPets,
+        "pets-fera" => LayerPets + ": Fera",
+        "pets-natura" => LayerPets + ": Natura",
+        "pets-varian" => LayerPets + ": Varian",
+        "pets-cogni" => LayerPets + ": Cogni",
         "cubes" => LayerCubes,
         _ => key,
     };
