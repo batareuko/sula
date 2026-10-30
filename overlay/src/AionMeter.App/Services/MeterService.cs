@@ -53,7 +53,11 @@ public sealed class MeterService : IDisposable
         Cloud = new OneHpCloud(settings);
         Dummies = new Core.OneHp.DummyRuns(settings.Transient ? null : Path.Combine(AppSettings.AppDataDir, "dummy-runs.json"));
         Stream = new StreamServer(this);
-        if (!settings.Transient) Stream.Apply(settings.StreamEnabled, settings.StreamPort);
+        if (!settings.Transient)
+        {
+            Stream.StateEnabled = settings.StateEnabled;
+            Stream.Apply(settings.StreamEnabled || settings.StateEnabled, settings.StreamPort);
+        }
         Tracker.EncounterFinished += OnEncounterFinished;
         Tracker.PvpSessionEnded += SavePvp;
         Tracker.DungeonRunEnded += SaveRun;
@@ -434,7 +438,11 @@ public sealed class MeterService : IDisposable
         Tracker.Cubes = Settings.CubeRadar ? Cubes : null;
         Icons.Enabled = Settings.DownloadIcons;
         Portraits.Enabled = Settings.DownloadIcons;
-        if (!Settings.Transient) Stream.Apply(Settings.StreamEnabled, Settings.StreamPort);
+        if (!Settings.Transient)
+        {
+            Stream.StateEnabled = Settings.StateEnabled;
+            Stream.Apply(Settings.StreamEnabled || Settings.StateEnabled, Settings.StreamPort);
+        }
         Settings.Save();
     }
 

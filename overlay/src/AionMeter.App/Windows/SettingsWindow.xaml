@@ -310,6 +310,10 @@
                             <TextBox x:Name="StreamUrl" IsReadOnly="True" Margin="26,4,0,0" HorizontalAlignment="Left" MinWidth="240" />
                             <TextBlock Style="{StaticResource Hint}" Text="{Binding StreamPartyHint, Source={x:Static s:UiText.Current}}" />
                             <TextBox x:Name="StreamPartyUrl" IsReadOnly="True" Margin="26,4,0,0" HorizontalAlignment="Left" MinWidth="240" />
+                            <CheckBox x:Name="StateOn" Style="{StaticResource DarkCheck}" Margin="0,4,0,0"
+                                      Content="{Binding StateOn, Source={x:Static s:UiText.Current}}" />
+                            <TextBlock Style="{StaticResource Hint}" Text="{Binding StateHint, Source={x:Static s:UiText.Current}}" />
+                            <TextBox x:Name="StateUrl" IsReadOnly="True" Margin="26,4,0,0" HorizontalAlignment="Left" MinWidth="240" />
                             <CheckBox x:Name="OneHpWithGame" Style="{StaticResource DarkCheck}" Margin="0,4,0,0"
                                       Content="{Binding OneHpWithGame, Source={x:Static s:UiText.Current}}" />
                             <TextBlock Style="{StaticResource Hint}" Text="{Binding OneHpWithGameHint, Source={x:Static s:UiText.Current}}" />

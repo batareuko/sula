@@ -21,6 +21,16 @@ public sealed class StreamServer : IDisposable
     private HttpListener? _listener;
     private int _port;
 
+    // 1 HP: the live state endpoint (/state) is a separate opt-in from the stream page.
+    private volatile bool _stateEnabled;
+
+    /// <summary>Serves <c>/state</c> (character and party as JSON) only while true; the listener is shared with the page.</summary>
+    public bool StateEnabled
+    {
+        get => _stateEnabled;
+        set => _stateEnabled = value;
+    }
+
     // Set by the overlay (UI thread): what its one-line card shows out of combat.
     private volatile string[] _idle = ["", "", ""];
 
@@ -101,6 +111,7 @@ public sealed class StreamServer : IDisposable
                 {
                     "/frame.png" => (_frame, "image/png"),
                     "/data" => (Encoding.UTF8.GetBytes(Data()), "application/json; charset=utf-8"),
+                    "/state" when _stateEnabled => (Encoding.UTF8.GetBytes(State()), "application/json; charset=utf-8"),
                     "/" or "/index.html" => (Encoding.UTF8.GetBytes(MirrorPage), "text/html; charset=utf-8"),
                     "/party" => (Encoding.UTF8.GetBytes(MirrorPage.Replace("/frame.png", "/party.png").Replace("1 HP DPS", "1 HP Party")), "text/html; charset=utf-8"),
                     "/party.png" => (_frames.GetValueOrDefault("party") ?? EmptyPng, "image/png"),
@@ -197,6 +208,10 @@ public sealed class StreamServer : IDisposable
         }
         return JsonSerializer.Serialize(new { fight, me = new { name = idle[0], power = idle[1], net = idle[2] } });
     }
+
+    /// <summary>1 HP: your character and party as JSON for local tools (see Core/OneHp/CharacterState.cs).</summary>
+    private string State() =>
+        Core.OneHp.CharacterState.Json(_meter.Tracker, DateTimeOffset.UtcNow.ToUnixTimeMilliseconds());
 
     public void Stop()
     {

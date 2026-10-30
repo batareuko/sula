@@ -323,6 +323,9 @@ public sealed partial class UiText
     public string StreamOn { get; init; } = "Stream page for OBS (browser source)";
     public string StreamHint { get; init; } =
         "In OBS add a Browser source with the address below (width 480, height 600). It shows the overlay exactly as it is on your screen, transparent around the card. A lighter card instead: the address + card (…/card, add ?idle=1 to keep your name, combat power and ping out of combat).";
+    public string StateOn { get; init; } = "Expose live state at /state";
+    public string StateHint { get; init; } =
+        "A local JSON endpoint with your character and party (HP, buffs, cooldowns) for AutoHotkey and other tools. Read-only: nothing is sent to the game. Only this computer can open it.";
     public string MiniPowerTip { get; init; } = "Combat power (from the party list in the game, or your profile on the 1 HP site)";
     public string PowerTip { get; init; } = "Combat power {0}";
 
