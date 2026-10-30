@@ -41,6 +41,11 @@ public sealed class MeterService : IDisposable
         // the cube's position packet is confirmed.
         Cubes = new Core.OneHp.CubeRadar { FadeAfterMs = Math.Clamp(settings.CubeRadarFadeMs, 0, 60_000) };
         Cubes.SelfId = () => Tracker.SelfActorId;
+        Cubes.Changed += (cube, appeared) =>
+        {
+            if (_replaying || DemoRunning) return;
+            Log.Info(appeared ? $"Hidden cube near: #{cube.CubeId}" : $"Hidden cube gone: #{cube.CubeId}");
+        };
         Tracker.Cubes = settings.CubeRadar ? Cubes : null;
         Mechanics = LoadMechanics(Path.Combine(DataDirectory, "boss_mechanics.json"));
         History = new HistoryStore(Path.Combine(AppSettings.AppDataDir, "fights"));

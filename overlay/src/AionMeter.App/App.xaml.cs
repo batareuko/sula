@@ -40,6 +40,7 @@ public partial class App : Application
     private MeterService _meter = null!;
     private OverlayWindow _overlay = null!;
     private BossBarWindow? _bossBar;
+    private CubeBadgeWindow? _cubeBadge;
     private TrayIcon? _tray;
     private HotkeyManager? _hotkeys;
     private DispatcherTimer? _timer;
@@ -150,7 +151,7 @@ public partial class App : Application
                 Log.Info("Exit chosen in the tray menu");
                 Shutdown();
             }));
-        _focus = new GameFocus(settings, () => [_overlay, _bossBar, _petRadar]);
+        _focus = new GameFocus(settings, () => [_overlay, _bossBar, _petRadar, _cubeBadge]);
         _focus.Start();
         SessionEnding += (_, end) => Log.Info($"Windows {end.ReasonSessionEnding}: closing");
 
@@ -222,6 +223,7 @@ public partial class App : Application
         UpdateAutoVisibility();
         if (_overlay.IsVisible) _overlay.Refresh();
         UpdateBossBar();
+        UpdateCubeBadge();
         if (++_ticks % 5 == 0)
         {
             _tray?.Update(_overlay.IsVisible, _meter.Settings.ClickThrough, _meter.DemoRunning ? "demo" : _meter.CaptureStatus.Message);
@@ -719,6 +721,21 @@ public partial class App : Application
         _bossBar?.Update(snap, _meter.Settings.BossBar && !_meter.Settings.NoOverlay);
     }
 
+    /// <summary>1 HP: the Hidden Cube badge above the character while a hidden cube is near (Settings → 1 HP).</summary>
+    private void UpdateCubeBadge()
+    {
+        var on = _meter.Settings.CubeRadar && !_meter.Settings.NoOverlay;
+        if (!on && _cubeBadge is null) return;
+        if (on && _cubeBadge is null)
+        {
+            _cubeBadge = new CubeBadgeWindow();
+            _cubeBadge.ApplyScale(_meter.Settings.UiScale);
+            _focus?.Apply();
+        }
+        var now = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds();
+        _cubeBadge?.Update(on && _meter.Cubes.Detected(now), _meter.Cubes.Active(now).Count);
+    }
+
     private readonly Dictionary<string, DateTimeOffset> _eventsAnnounced = new();
 
     /// <summary>1 HP: Rift, Shugo Festival, sieges, resets — a notice with a sound before they start (Settings → events).</summary>
@@ -909,6 +926,7 @@ public partial class App : Application
         _overlay?.ApplyScale(percent);
         _bossBar?.ApplyScale(percent);
         _petRadar?.ApplyScale(percent);
+        _cubeBadge?.ApplyScale(percent);
     }
 
     private void PickReplay()

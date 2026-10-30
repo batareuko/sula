@@ -256,6 +256,7 @@ public sealed partial class UiText
     public string PetRadarWindowTip { get; init; } = "Soul monsters around you: bright — pets you do not have yet, grey — you have them.\nThe centre is the monster you hit last.\nWheel — range, right click — turn a quarter (line it up with the map), drag — move.";
     public string PetRadarCount { get; init; } = "missing {0} · have {1}";
     public string CubeRadarOn { get; init; } = "Hidden Cube radar: \"Cube detected\" while a hidden cube is near";
+    public string CubeDetected { get; init; } = "Cube detected";
     public string PetHave { get; init; } = "✓ have";
     public string PetMissing { get; init; } = "missing";
     public string PetHideOwnedOn { get; init; } = "Pet radar: leave out the pets I already have";

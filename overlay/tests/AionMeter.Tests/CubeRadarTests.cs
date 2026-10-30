@@ -98,4 +98,24 @@ public class CubeRadarTests
         r.Observe(new SelfIdentifiedEvent(2_000, 7, "Me", 2305, GameClass.Elementalist));
         Assert.Equal(7u, r.Self);
     }
+
+    [Fact]
+    public void Announces_when_a_cube_appears_and_disappears()
+    {
+        var r = new CubeRadar { FadeAfterMs = 500 };
+        var seen = new List<(uint Id, bool Appeared)>();
+        r.Changed += (cube, appeared) => seen.Add((cube.CubeId, appeared));
+
+        r.Observe(new CubeEvent(1_000, CubePhase.Near, 41943));
+        r.Observe(new CubeEvent(1_100, CubePhase.Near, 41943));  // again: no second announcement
+        r.Observe(new CubeEvent(2_000, CubePhase.Focus, 41943)); // still the same cube
+        var appear = Assert.Single(seen);
+        Assert.Equal(41943u, appear.Id);
+        Assert.True(appear.Appeared);
+
+        r.Observe(new CubeEvent(3_000, CubePhase.Gone, 41943));
+        Assert.Equal(2, seen.Count);
+        Assert.Equal(41943u, seen[1].Id);
+        Assert.False(seen[1].Appeared);
+    }
 }

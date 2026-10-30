@@ -31,8 +31,12 @@ public sealed class CubeRadar
     /// <summary>Your actor id as the cube packets or the tracker know it; the arrow will aim from here once cube positions arrive.</summary>
     public uint? Self => _self ?? SelfId?.Invoke();
 
+    /// <summary>Raised (on the capture thread) when a cube is first seen (true) or collected/gone (false).</summary>
+    public event Action<Cube, bool>? Changed;
+
     public void Observe(GameEvent e)
     {
+        List<(Cube Cube, bool Appeared)>? changes = null;
         lock (_gate)
         {
             switch (e)
@@ -43,16 +47,22 @@ public sealed class CubeRadar
                     {
                         case CubePhase.Near:
                         case CubePhase.SpawnRecord:
+                            if (!_cubes.ContainsKey(c.CubeId)) (changes ??= new()).Add((new Cube(c.CubeId, c.TimeMs, c.TimeMs), true));
                             _cubes[c.CubeId] = (c.TimeMs, c.TimeMs);
                             break;
                         case CubePhase.Interact:
                         case CubePhase.Focus:
+                            if (!_cubes.ContainsKey(c.CubeId)) (changes ??= new()).Add((new Cube(c.CubeId, c.TimeMs, c.TimeMs), true));
                             if (_cubes.TryGetValue(c.CubeId, out var known)) _cubes[c.CubeId] = (known.First, c.TimeMs);
                             else _cubes[c.CubeId] = (c.TimeMs, c.TimeMs);
                             break;
                         case CubePhase.Gone:
                         case CubePhase.Collected:
-                            if (_cubes.Remove(c.CubeId)) _lastGoneMs = c.TimeMs;
+                            if (_cubes.Remove(c.CubeId, out var gone))
+                            {
+                                _lastGoneMs = c.TimeMs;
+                                (changes ??= new()).Add((new Cube(c.CubeId, gone.First, c.TimeMs), false));
+                            }
                             break;
                     }
                     break;
@@ -65,6 +75,8 @@ public sealed class CubeRadar
                     break;
             }
         }
+        if (changes is not null)
+            foreach (var (cube, appeared) in changes) Changed?.Invoke(cube, appeared);
     }
 
     /// <summary>The cubes near you, the earliest first. Each stays until its Gone/Collected packet or a zone change.</summary>
