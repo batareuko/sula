@@ -87,7 +87,7 @@ public class WhereaboutsTests
         radar.Observe(new AionMeter.Core.Events.NpcSeenEvent(1_300, 2, 2000001, 100, X: -62_000, Y: 85_000));
         radar.Observe(new AionMeter.Core.Events.NpcSeenEvent(1_400, 3, 2000001, 100, X: -61_500, Y: 84_500));
         radar.Observe(new AionMeter.Core.Events.NpcSeenEvent(20_000, 4, 2000001, 100, X: 50_000, Y: 50_000)); // later: not the arrival
-        var w = radar.Where(5_000);
+        var w = radar.Where(30_000); // the view of the last 20 s has one monster only: the arrival counts
         Assert.NotNull(w);
         Assert.Equal(1010, w!.MapId);
         Assert.Equal(-61_500, w.X);
@@ -113,5 +113,22 @@ public class WhereaboutsTests
         var nearest = v.Layers["kibelisks"].SelectMany(k => k.Points.Select(p => (k.Name, D: v.MetresBetween(p, at)))).MinBy(x => x.D);
         Assert.Equal("Dawn Legion Base", nearest.Name);
         Assert.True(nearest.D < 30);
+    }
+}
+
+public class WhereaboutsMidGameTests
+{
+    [Fact]
+    public void StartedMidGameTheFieldBossListNamesTheMap()
+    {
+        var radar = new AionMeter.Core.OneHp.PetRadar([]);
+        for (var i = 0; i < 3; i++)
+            radar.Observe(new AionMeter.Core.Events.NpcSeenEvent(1_000 + i, (uint)i + 1, 2000001, 100, X: 1_000 + i, Y: 2_000 + i));
+        Assert.Null(radar.Where(2_000)); // no map yet
+        radar.Observe(new AionMeter.Core.Events.FieldBossListEvent(2_500, 1010, 0, [], []));
+        var w = radar.Where(3_000);
+        Assert.Equal(1010, w!.MapId);
+        Assert.Equal(1_001, w.X);
+        Assert.Null(radar.Where(60_000)); // the view is old and there was no teleport
     }
 }
