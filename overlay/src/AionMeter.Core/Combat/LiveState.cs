@@ -7,7 +7,8 @@ namespace AionMeter.Core.Combat;
 /// <param name="TsMs">Unix milliseconds the snapshot was built at.</param>
 public sealed record LiveState(long TsMs, LiveSelf Me, LiveTarget? Target, IReadOnlyList<LivePartyMember> Party);
 
-/// <param name="Mp">Mana is not in a packet the meter decodes yet: null until one is confirmed.</param>
+/// <param name="Mp">Current mana from <c>00 8D</c>; null until the game sends it. <paramref name="MpMax"/> is the
+/// highest value seen (the packet does not carry a maximum).</param>
 /// <param name="Casting">A cast in progress is not announced with its end: null until the packets are confirmed.</param>
 public sealed record LiveSelf(
     string? Name,

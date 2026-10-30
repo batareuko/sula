@@ -203,6 +203,9 @@ public sealed class CombatTracker
                 case NpcHpEvent hp:
                     OnNpcHp(hp);
                     break;
+                case PlayerVitalsEvent vitals:
+                    OnPlayerVitals(vitals);
+                    break;
                 case DeathEvent death:
                     if (_playerHp.TryGetValue(death.ActorId, out var lastHp)) _playerHp[death.ActorId] = (0, lastHp.Max, death.TimeMs);
                     if (!death.AlreadyDead && _current is { IsActive: true } fight && fight.Combatants.TryGetValue(death.ActorId, out var died)) died.Deaths++;
@@ -290,6 +293,7 @@ public sealed class CombatTracker
                     _manualIds.Clear(); // ids are handed out again in the new zone
                     _buffBook.Clear();
                     _playerHp.Clear();
+                    _playerMp.Clear();
                     _positions.Clear();
                     _partySlots.Clear();
                     if (_current is { IsActive: true }) Finish(EncounterEndReason.ZoneChange, _current.LastDamageMs);
@@ -471,6 +475,22 @@ public sealed class CombatTracker
         if (enc.Combatants.TryGetValue(source, out var c)) c.Healing += h.Amount;
         if (enc.Combatants.TryGetValue(h.TargetId, out var receiver))
             receiver.HealedBy[source] = Combatant.Add(receiver.HealedBy.GetValueOrDefault(source), h.Amount);
+    }
+
+    /// <summary>1 HP: a player's vitals from <c>00 8D</c> (HP and MP, no maxima) — the party window's source of truth.
+    /// The maximum is the highest value seen so far: the packet does not carry it.</summary>
+    private void OnPlayerVitals(PlayerVitalsEvent e)
+    {
+        if (e.Hp is { } hp)
+        {
+            _playerHp.TryGetValue(e.ActorId, out var last);
+            _playerHp[e.ActorId] = (hp, Math.Max(last.Max, hp), e.TimeMs);
+        }
+        if (e.Mp is { } mp)
+        {
+            _playerMp.TryGetValue(e.ActorId, out var last);
+            _playerMp[e.ActorId] = (mp, Math.Max(last.Max, mp), e.TimeMs);
+        }
     }
 
     private void OnNpcHp(NpcHpEvent e)
@@ -1207,6 +1227,7 @@ public sealed class CombatTracker
 
             var self = _entities.Self;
             var (hp, hpMax, _) = _playerHp.TryGetValue(me, out var mine) ? mine : (-1L, 0L, 0L);
+            var (mp, mpMax, _) = _playerMp.TryGetValue(me, out var myMana) ? myMana : (-1L, 0L, 0L);
             var buffs = _buffBook.On(me, nowMs);
 
             LiveBuff Buff(ActiveBuff b) =>
@@ -1274,7 +1295,7 @@ public sealed class CombatTracker
             return new LiveState(nowMs,
                 new LiveSelf(self?.Name is { Length: > 0 } myName ? myName : null, ClassName(self?.Class ?? GameClass.Unknown),
                     hp >= 0 ? hp > 0 : null, hp >= 0 ? hp : null, hpMax > 0 ? hpMax : null,
-                    null, null, // mana is not in a packet the meter decodes yet
+                    mp >= 0 ? mp : null, mpMax > 0 ? mpMax : null,
                     _current is { IsActive: true },
                     null, // a cast in progress is not announced with its end
                     buffs.Where(b => !b.Debuff).Select(Buff).ToList(),
@@ -1318,6 +1339,9 @@ public sealed class CombatTracker
 
     // 1 HP: players' HP as the game last sent it: actor → hp, max, when.
     private readonly Dictionary<uint, (long Hp, long Max, long AtMs)> _playerHp = new();
+
+    // 1 HP: players' MP as the game last sent it: actor → mp, max (highest seen), when.
+    private readonly Dictionary<uint, (long Mp, long Max, long AtMs)> _playerMp = new();
 
     /// <summary>
     /// 1 HP: the party window — you first, then your party: class, HP (as last sent), the buffs and debuffs on them, and

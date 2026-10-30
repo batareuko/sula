@@ -929,18 +929,37 @@ public sealed class PacketParser
         Emit(new BattleStateEvent(TimeMs, id, toggle == 1));
     }
 
-    /// <summary><c>entity varint, kind varint (2 = NPC, 1 = player), varint, varint, hp u64</c></summary>
+    /// <summary>
+    /// <c>entity varint, kind varint</c>. Kind 2 (NPC): <c>varint, varint, hp u64</c>. Kind 1 (player): <c>count u8</c>
+    /// then <c>count × (resource u8, amount u32)</c> where resource 6 is HP and 3 is MP (the packet carries no maxima).
+    /// </summary>
     private void ParseRemainHp(ReadOnlySpan<byte> b)
     {
         var o = 0;
         if (!Wire.TryVarint(b, ref o, out var id) || !IsEntityId(id)) return;
-        if (!Wire.TryVarint(b, ref o, out var kind) || kind != 2) return;
+        if (!Wire.TryVarint(b, ref o, out var kind)) return;
+        if (kind == 1)
+        {
+            if (!Wire.TryU8(b, ref o, out var count) || count is 0 or > 8) return;
+            long? hp = null, mp = null;
+            for (var i = 0; i < count; i++)
+            {
+                if (!Wire.TryU8(b, ref o, out var resource)) return;
+                if (!Wire.TryU32(b, ref o, out var amount)) return;
+                if (resource == 6) hp = amount;
+                else if (resource == 3) mp = amount;
+            }
+            if (hp is null && mp is null) return;
+            Emit(new PlayerVitalsEvent(TimeMs, id, hp, mp));
+            return;
+        }
+        if (kind != 2) return;
         if (!Wire.TryVarint(b, ref o, out _) || !Wire.TryVarint(b, ref o, out _)) return;
         if (!Wire.TryU32(b, ref o, out var lo)) return;
         Wire.TryU32(b, ref o, out var hi);
-        var hp = (long)hi << 32 | lo;
-        if (hp is < 0 or > 10_000_000_000) return;
-        Emit(new NpcHpEvent(TimeMs, id, hp, 0, IsNpc: true));
+        var npcHp = (long)hi << 32 | lo;
+        if (npcHp is < 0 or > 10_000_000_000) return;
+        Emit(new NpcHpEvent(TimeMs, id, npcHp, 0, IsNpc: true));
     }
 
     /// <summary><c>actor varint, hp varint, hpMax varint</c> — sent for players and NPCs alike.</summary>

@@ -112,6 +112,27 @@ public class ProtocolTests
         Assert.Null(s.OwnerName);
     }
 
+    // Player vitals arrive as 00 8D kind 1: entity, kind, count, then count × (resource u8, amount u32) where
+    // resource 6 is HP and 3 is MP (the packet carries no maxima). Live capture 2026-10-30, actor 11679.
+    [Theory]
+    [InlineData("9f5b01020638bb02000308e20100", 11679u, 179000L, 123400L)] // HP 179000, MP 123400
+    [InlineData("9f5b01010638bb0200", 11679u, 179000L, null)]             // HP only
+    [InlineData("9f5b01010308e20100", 11679u, null, 123400L)]             // MP only
+    public void Player_vitals_decode_from_remain_hp(string hex, uint actor, long? hp, long? mp)
+    {
+        var e = Assert.IsType<PlayerVitalsEvent>(Assert.Single(Parse(Opcodes.RemainHp, hex)));
+        Assert.Equal(actor, e.ActorId);
+        Assert.Equal(hp, e.Hp);
+        Assert.Equal(mp, e.Mp);
+    }
+
+    [Fact]
+    public void Remain_hp_skips_unknown_player_resources()
+    {
+        // resource 1 (an over-heal counter, not HP/MP) on its own: nothing to report.
+        Assert.Empty(Parse(Opcodes.RemainHp, "9f5b010101ad110000"));
+    }
+
     [Fact]
     public void Layout6_block_carries_position_and_quality()
     {
