@@ -27,6 +27,14 @@ public sealed class BossBarWindow : Window
         Effect = new System.Windows.Media.Effects.DropShadowEffect { BlurRadius = 4, ShadowDepth = 1, Opacity = 0.8 },
     };
 
+    /// <summary>1 HP: interface scale — the bar and its window grow together.</summary>
+    public void ApplyScale(int percent)
+    {
+        var s = percent / 100.0;
+        if (Content is FrameworkElement root) root.LayoutTransform = s == 1 ? Transform.Identity : new ScaleTransform(s, s);
+        Width = 620 * s;
+    }
+
     public BossBarWindow()
     {
         Title = "1 HP Boss";

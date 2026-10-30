@@ -111,6 +111,15 @@
                             </StackPanel>
                             <TextBlock Style="{StaticResource Hint}" Margin="190,2,0,0"
                                        Text="{Binding RowSizeHint, Source={x:Static s:UiText.Current}}" />
+                            <StackPanel Orientation="Horizontal" Margin="0,8,0,0">
+                                <TextBlock Text="{Binding UiScale, Source={x:Static s:UiText.Current}}" Style="{StaticResource Label}" />
+                                <Slider x:Name="UiScaleValue" Style="{StaticResource GoldSlider}" Width="180" Minimum="75" Maximum="200"
+                                        SmallChange="5" LargeChange="25" TickFrequency="5" IsSnapToTickEnabled="True"
+                                        ValueChanged="UiScale_Changed" />
+                                <TextBlock x:Name="UiScaleText" VerticalAlignment="Center" Margin="10,0,0,0" />
+                            </StackPanel>
+                            <TextBlock Style="{StaticResource Hint}" Margin="190,2,0,0"
+                                       Text="{Binding UiScaleHint, Source={x:Static s:UiText.Current}}" />
                         </StackPanel>
                     </Border>
 

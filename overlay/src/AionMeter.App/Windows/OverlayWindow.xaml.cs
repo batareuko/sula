@@ -41,6 +41,7 @@ public partial class OverlayWindow : Window
 
         Left = _settings.OverlayLeft;
         Top = _settings.OverlayTop;
+        ApplyScale(_settings.UiScale, resize: false); // the saved size is already at this scale
         Width = Math.Max(MinWidth, _settings.OverlayWidth);
         if (!_settings.DynamicOverlay) Height = Math.Max(MinHeight, _settings.OverlayHeight); // dynamic: as tall as its content
         EnsureOnScreen();
@@ -1182,11 +1183,41 @@ public partial class OverlayWindow : Window
         Resources["ColShareWidth"] = new GridLength(Math.Round(68 * f));
     }
 
-    /// <summary>Ctrl + mouse wheel over the rows: row size in 5 % steps, kept right away.</summary>
+    private double _scale = 1;
+
+    /// <summary>
+    /// 1 HP: interface scale (Settings → Overlay, Ctrl + Shift + wheel): the whole card grows or shrinks, and so does the
+    /// window, so the rows keep their room. <paramref name="resize"/> is off at the start, where the saved size already fits.
+    /// </summary>
+    public void ApplyScale(int percent, bool resize = true)
+    {
+        var s = Math.Clamp(percent, AppSettings.MinUiScale, AppSettings.MaxUiScale) / 100.0;
+        if (Content is FrameworkElement root) root.LayoutTransform = s == 1 ? Transform.Identity : new ScaleTransform(s, s);
+        var ratio = s / _scale;
+        _scale = s;
+        MinWidth = 340 * s;
+        if (!resize || Math.Abs(ratio - 1) < 0.001) return;
+        Width = Math.Max(MinWidth, Width * ratio);
+        if (!_settings.DynamicOverlay) Height = Math.Max(MinHeight, Height * ratio);
+        _settings.OverlayWidth = Width;
+        if (!_settings.DynamicOverlay) _settings.OverlayHeight = Height;
+        EnsureOnScreen();
+    }
+
+    /// <summary>Ctrl + mouse wheel over the rows: row size in 5 % steps; with Shift too, the interface scale. Kept right away.</summary>
     private void Rows_PreviewMouseWheel(object sender, MouseWheelEventArgs e)
     {
         if (!NativeMethods.IsCtrlDown()) return;
         e.Handled = true;
+        if (NativeMethods.IsShiftDown())
+        {
+            var scale = Math.Clamp(_settings.UiScale + Math.Sign(e.Delta) * 5, AppSettings.MinUiScale, AppSettings.MaxUiScale);
+            if (scale == _settings.UiScale) return;
+            _settings.UiScale = scale;
+            AppHost.Current.PreviewScale(scale);
+            _settings.Save();
+            return;
+        }
         var size = Math.Clamp(_settings.RowSize + Math.Sign(e.Delta) * 5, AppSettings.MinRowSize, AppSettings.MaxRowSize);
         if (size == _settings.RowSize) return;
         _settings.RowSize = size;

@@ -192,6 +192,38 @@ public sealed partial class UiText
     public string AnSkills { get; init; } = "SKILLS";
     public string AnUsesTotal { get; init; } = "~{0} uses";
     public string AnalysisNote { get; init; } = "Uses are estimated: the game sends hits, not casts, so hits of one skill less than 1.2 s apart count as one use. Damage over time is in the skill's damage but not in its uses.";
+    public string MapTitle { get; init; } = "World map";
+    public string MapTray { get; init; } = "🗺 World map (Ctrl+Shift+M)";
+    public string MapCredit { get; init; } = "Maps and places: Aion2Data";
+    public string MapHint { get; init; } = "{0} · {1} m across · wheel — zoom, drag — move, point at a dot — its name";
+    public string MapTip { get; init; } = "Wheel — zoom, drag — move. Pets you have (ticked on the card) are grey.";
+    public string MapLoading { get; init; } = "Downloading the map picture…";
+    public string MapNoPicture { get; init; } = "The map picture could not be downloaded (internet?). The places are shown without it.";
+    public string MapNoData { get; init; } = "No map table (data/world_maps.json).";
+    public string LayerBosses { get; init; } = "Field bosses";
+    public string LayerDungeons { get; init; } = "Dungeons";
+    public string LayerRifts { get; init; } = "Rifts";
+    public string LayerKibelisks { get; init; } = "Kibelisks";
+    public string LayerMonoliths { get; init; } = "Monoliths";
+    public string LayerGather { get; init; } = "Gathering";
+    public string LayerPets { get; init; } = "Pet souls";
+    public string LayerCubes { get; init; } = "Hidden Cube spots";
+
+    public string MapLayer(string key) => key switch
+    {
+        "bosses" => LayerBosses,
+        "dungeons" => LayerDungeons,
+        "rifts" => LayerRifts,
+        "kibelisks" => LayerKibelisks,
+        "monoliths" => LayerMonoliths,
+        "gather" => LayerGather,
+        "pets" => LayerPets,
+        "cubes" => LayerCubes,
+        _ => key,
+    };
+
+    public string UiScale { get; init; } = "Interface scale";
+    public string UiScaleHint { get; init; } = "The overlay, the boss bar and the pet radar; over the rows: Ctrl + Shift + wheel";
     public string ClickToGame { get; init; } = "Click to go back to the game";
     public string HideBehindOn { get; init; } = "Hide the meter while another program is in front of the game (browser, Discord, desktop)";
     public string MechanicsOn { get; init; } = "Boss mechanics in boss fights: the boss's casts, what comes next (learnt from your fights) and the guide's tips";

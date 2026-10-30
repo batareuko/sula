@@ -36,6 +36,7 @@ public sealed class PetRadarWindow : Window
         Top = 300;
         FontFamily = new FontFamily("Segoe UI");
         WindowMemory.Track(this, "petradar");
+        Loaded += (_, _) => ApplyScale(meter.Settings.UiScale);
 
         _view.RangeMeters = Math.Clamp(meter.Settings.PetRadarRange, 25, 400);
         _view.Rotation = meter.Settings.PetRadarRotation;
@@ -71,6 +72,15 @@ public sealed class PetRadarWindow : Window
             NativeMethods.SetExStyle(new WindowInteropHelper(this).Handle, NativeMethods.WS_EX_NOACTIVATE | NativeMethods.WS_EX_TOOLWINDOW);
         _timer.Tick += (_, _) => Refresh();
         IsVisibleChanged += (_, _) => { if (IsVisible) { Refresh(); _timer.Start(); } else _timer.Stop(); };
+    }
+
+    /// <summary>1 HP: interface scale — the radar and its window grow together.</summary>
+    public void ApplyScale(int percent)
+    {
+        var s = percent / 100.0;
+        if (Content is FrameworkElement root) root.LayoutTransform = s == 1 ? Transform.Identity : new ScaleTransform(s, s);
+        Width = 260 * s;
+        Height = 290 * s;
     }
 
     public void Refresh()
