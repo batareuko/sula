@@ -3372,16 +3372,98 @@
   }
 
   /* ---------- Навігація: активний розділ, нижня панель, «Ще», «Нагору», режим для своїх ---------- */
+  /* Розділи сайту за групами: іконка, назва, що там, слова для пошуку */
+  var NAV_GROUPS = [
+    { id: 'meter', icon: '📊', name: 'DPS-метр', items: [
+      ['meter', '📊', 'Метр', 'оверлей 1 HP: що вміє, завантажити', 'dps meter оверлей overlay завантажити'],
+      ['features', '✨', 'Можливості', 'усе, що показує метр', 'функції features'],
+      ['install', '⬇️', 'Встановити', 'Npcap і перший запуск за 3 кроки', 'інсталяція npcap download'],
+      ['changes', '🆕', 'Що нового', 'зміни в кожній версії', 'changelog версії оновлення'],
+      ['dps', '🏆', 'Рейтинг DPS', 'хто скільки б\'є в гільдії', 'рейтинг топ шкода урон'],
+    ] },
+    { id: 'game', icon: '⏱', name: 'Гра сьогодні', items: [
+      ['timers', '⏱', 'Таймери', 'польові боси, розлом, Шуго, ресети', 'боси boss таймер розлом шуго'],
+      ['today', '📅', 'Сьогодні', 'що зробити за день і тиждень', 'щодня тиждень daily'],
+      ['servers', '🖥', 'Сервери', 'стан і пінг серверів', 'server пінг'],
+      ['map', '🗺', 'Карта', 'боси, підземелля, збір, кібеліски', 'карта map кібеліски куби збір'],
+      ['patches', '📰', 'Пачноути', 'зміни гри з тлумаченням', 'патч оновлення новини'],
+    ] },
+    { id: 'guild', icon: '👥', name: 'Гільдія', items: [
+      ['progress', '✅', 'Мій прогрес', 'чек-лист спорядження', 'прогрес чекліст'],
+      ['character', '🧙', 'Персонаж', 'профіль і бойова міць', 'персонаж бм cp'],
+      ['groups', '🤝', 'Групи', 'збір у підземелля й рейди', 'група пати party'],
+      ['team', '🛡', 'Склад 1 HP', 'хто є в гільдії', 'склад гільдія ростер'],
+    ] },
+    { id: 'guide', icon: '📘', name: 'Гайди', items: [
+      ['roadmap', '🧭', 'Гайд новачка', 'дорожня карта 45 рівня', 'гайд новачок roadmap'],
+      ['thresholds', '📈', 'Пороги', 'куди можна з якою силою', 'поріг gs item level'],
+      ['guides', '⚔️', 'Механіки', 'боси підземель і що робити', 'механіки boss тактика'],
+      ['classes', '🎭', 'Класи', 'білди й поради', 'клас білд build'],
+      ['pets', '🐾', 'Пети', 'де фармити душі, колекція', 'пет душі pets колекція'],
+      ['netcheck', '📶', 'Мережа', 'перевірка пінгу й втрат', 'мережа пінг лаг'],
+      ['glossary', '📖', 'Глосарій', 'терміни українською й англійською', 'словник терміни'],
+    ] },
+  ];
+
   function initNav() {
     document.querySelectorAll('details[data-wide-open]').forEach(function (d) { d.open = window.innerWidth >= 900; });
-    var links = Array.prototype.slice.call(document.querySelectorAll('.nav a'));
-    var ids = links.map(function (a) { return a.getAttribute('href').slice(1); });
+    var ALL = [];
+    NAV_GROUPS.forEach(function (g) { g.items.forEach(function (it) { ALL.push({ id: it[0], icon: it[1], name: it[2], desc: it[3], words: it[4], group: g }); }); });
+    ALL = ALL.filter(function (s) { return $(s.id); });
+    var ids = ALL.map(function (s) { return s.id; });
     var tabs = Array.prototype.slice.call(document.querySelectorAll('#tabbar a'));
     var tabIds = tabs.map(function (a) { return a.dataset.sec; });
     var more = $('tabMore'), sheet = $('moreSheet');
 
-    links.forEach(function (a) {
-      $('sheetList').appendChild(h('li', null, h('a', { href: a.getAttribute('href'), text: a.textContent, onclick: function () { setSheet(false); } })));
+    // верхнє меню: чотири групи з випадними списками (іконка, назва, що там)
+    var nav = document.querySelector('.topbar .nav');
+    nav.textContent = '';
+    nav.classList.add('nav-groups');
+    var groupBtns = [];
+    function closeMenus(except) {
+      groupBtns.forEach(function (gb) { if (gb !== except) { gb.btn.setAttribute('aria-expanded', 'false'); gb.menu.hidden = true; } });
+    }
+    NAV_GROUPS.forEach(function (g) {
+      var items = ALL.filter(function (s) { return s.group === g; });
+      if (!items.length) return;
+      var wrapEl = h('div', { class: 'nav-group' });
+      var btn = h('button', { type: 'button', class: 'nav-gbtn', 'aria-expanded': 'false', 'aria-haspopup': 'true' },
+        h('span', { class: 'nav-gicon', text: g.icon }), h('span', { class: 'nav-gname', text: g.name }),
+        h('span', { class: 'nav-gcur' }), h('span', { class: 'nav-caret', text: '▾' }));
+      var menu = h('div', { class: 'nav-menu', role: 'menu', hidden: true });
+      items.forEach(function (s) {
+        menu.appendChild(h('a', { href: '#' + s.id, role: 'menuitem', 'data-sec': s.id, onclick: function () { closeMenus(); } },
+          h('span', { class: 'nav-ii', text: s.icon }), h('span', null, h('b', { text: s.name }), h('small', { text: s.desc }))));
+      });
+      var gb = { group: g, btn: btn, menu: menu, items: items };
+      groupBtns.push(gb);
+      function open(on) { closeMenus(gb); btn.setAttribute('aria-expanded', on ? 'true' : 'false'); menu.hidden = !on; }
+      btn.addEventListener('click', function () { open(menu.hidden); });
+      var hoverTimer;
+      wrapEl.addEventListener('mouseenter', function () { if (window.matchMedia('(hover: hover)').matches) { clearTimeout(hoverTimer); open(true); } });
+      wrapEl.addEventListener('mouseleave', function () { if (window.matchMedia('(hover: hover)').matches) hoverTimer = setTimeout(function () { open(false); }, 180); });
+      menu.addEventListener('keydown', function (e) {
+        var list = Array.prototype.slice.call(menu.querySelectorAll('a')), i = list.indexOf(document.activeElement);
+        if (e.key === 'ArrowDown') { e.preventDefault(); list[(i + 1) % list.length].focus(); }
+        if (e.key === 'ArrowUp') { e.preventDefault(); list[(i - 1 + list.length) % list.length].focus(); }
+      });
+      btn.addEventListener('keydown', function (e) { if (e.key === 'ArrowDown') { e.preventDefault(); open(true); menu.querySelector('a').focus(); } });
+      wrapEl.appendChild(btn);
+      wrapEl.appendChild(menu);
+      nav.appendChild(wrapEl);
+    });
+    document.addEventListener('click', function (e) { if (!e.target.closest('.nav-group')) closeMenus(); });
+
+    // «Ще» на телефоні: ті ж групи з іконками й описами
+    var sl = $('sheetList');
+    NAV_GROUPS.forEach(function (g) {
+      var items = ALL.filter(function (s) { return s.group === g; });
+      if (!items.length) return;
+      sl.appendChild(h('li', { class: 'sheet-head', text: g.icon + ' ' + g.name }));
+      items.forEach(function (s) {
+        sl.appendChild(h('li', null, h('a', { href: '#' + s.id, 'data-sec': s.id, onclick: function () { setSheet(false); } },
+          h('span', { class: 'nav-ii', text: s.icon }), h('span', null, h('b', { text: s.name }), h('small', { text: s.desc })))));
+      });
     });
     function setSheet(open) {
       sheet.hidden = !open;
@@ -3389,17 +3471,51 @@
     }
     more.addEventListener('click', function () { setSheet(sheet.hidden); });
     sheet.addEventListener('click', function (e) { if (e.target === sheet) setSheet(false); });
-    document.addEventListener('keydown', function (e) { if (e.key === 'Escape' && !sheet.hidden) setSheet(false); });
+
+    // пошук розділу (Ctrl+K або кнопка «Розділи»)
+    var pal = $('palette'), pin = $('paletteInput'), plist = $('paletteList'), pick = 0, found = [];
+    function norm(s) { return s.toLowerCase().replace(/[’'ʼ]/g, ''); }
+    function renderPalette() {
+      var q = norm(pin.value.trim());
+      found = ALL.filter(function (s) { return !q || norm(s.name + ' ' + s.desc + ' ' + s.words + ' ' + s.group.name).indexOf(q) >= 0; });
+      pick = Math.min(pick, Math.max(0, found.length - 1));
+      plist.textContent = '';
+      if (!found.length) plist.appendChild(h('li', { class: 'muted small palette-empty', text: 'Нічого не знайдено' }));
+      found.forEach(function (s, i) {
+        plist.appendChild(h('li', { role: 'option', 'aria-selected': i === pick ? 'true' : 'false', onclick: function () { go(s); }, onmousemove: function () { if (pick !== i) { pick = i; renderPalette(); } } },
+          h('span', { class: 'nav-ii', text: s.icon }), h('span', null, h('b', { text: s.name }), h('small', { text: s.desc })),
+          h('span', { class: 'palette-group', text: s.group.name })));
+      });
+    }
+    function setPalette(open) {
+      pal.hidden = !open;
+      if (open) { pin.value = ''; pick = 0; renderPalette(); pin.focus(); }
+    }
+    function go(s) { setPalette(false); location.hash = s.id; var el = $(s.id); if (el) el.scrollIntoView({ behavior: 'smooth' }); }
+    pin.addEventListener('input', function () { pick = 0; renderPalette(); });
+    pin.addEventListener('keydown', function (e) {
+      if (e.key === 'ArrowDown') { e.preventDefault(); pick = Math.min(found.length - 1, pick + 1); renderPalette(); }
+      if (e.key === 'ArrowUp') { e.preventDefault(); pick = Math.max(0, pick - 1); renderPalette(); }
+      if (e.key === 'Enter' && found[pick]) { e.preventDefault(); go(found[pick]); }
+    });
+    pal.addEventListener('click', function (e) { if (e.target === pal) setPalette(false); });
+    $('navFind').addEventListener('click', function () { setPalette(true); });
+    document.addEventListener('keydown', function (e) {
+      if ((e.ctrlKey || e.metaKey) && (e.key === 'k' || e.key === 'K' || e.key === 'л' || e.key === 'Л')) { e.preventDefault(); setPalette(pal.hidden); }
+      if (e.key === 'Escape') { if (!pal.hidden) setPalette(false); if (!sheet.hidden) setSheet(false); closeMenus(); }
+    });
 
     function setActive(id) {
-      links.forEach(function (a) {
-        var on = a.getAttribute('href') === '#' + id;
-        if (on) a.setAttribute('aria-current', 'location'); else a.removeAttribute('aria-current');
-        if (on && a.parentNode.scrollWidth > a.parentNode.clientWidth) a.parentNode.scrollLeft = a.offsetLeft - 40;
+      var cur = ALL.filter(function (s) { return s.id === id; })[0];
+      groupBtns.forEach(function (gb) {
+        var on = !!cur && cur.group === gb.group;
+        gb.btn.classList.toggle('active', on);
+        gb.btn.querySelector('.nav-gcur').textContent = on ? cur.name : '';
+        gb.menu.querySelectorAll('a').forEach(function (a) { if (a.dataset.sec === id) a.setAttribute('aria-current', 'location'); else a.removeAttribute('aria-current'); });
       });
       tabs.forEach(function (a) { if (a.dataset.sec === id) a.setAttribute('aria-current', 'location'); else a.removeAttribute('aria-current'); });
       more.classList.toggle('active', !!id && tabIds.indexOf(id) < 0);
-      $('sheetList').querySelectorAll('a').forEach(function (a) { a.classList.toggle('active', a.getAttribute('href') === '#' + id); });
+      sl.querySelectorAll('a').forEach(function (a) { a.classList.toggle('active', a.dataset.sec === id); });
     }
     if ('IntersectionObserver' in window) {
       var visible = {};
