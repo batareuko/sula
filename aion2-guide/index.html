@@ -52,6 +52,9 @@
       <a href="#netcheck">Мережа</a>
       <a href="#glossary">Глосарій</a>
     </nav>
+    <button class="nav-find" id="navFind" type="button" aria-haspopup="dialog" title="Знайти розділ (Ctrl+K)">
+      <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="M20 20l-3.5-3.5"/></svg><span>Розділи</span><kbd>Ctrl K</kbd>
+    </button>
     <a class="chip" href="#progress" id="topChip" title="Загальний прогрес активного профілю">
       <span id="topChipName">—</span> <b id="topChipPct">0%</b>
     </a>
@@ -705,6 +708,13 @@
   <a href="#today" data-sec="today"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="9" cy="8" r="3.5"/><circle cx="17" cy="9" r="2.5"/><path d="M2.5 20c0-3.6 2.9-6 6.5-6s6.5 2.4 6.5 6M15 14.5c3.4 0 6.5 1.6 6.5 5.5"/></svg><span>Гільдія</span></a>
   <button type="button" id="tabMore" aria-expanded="false" aria-controls="moreSheet"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 6h16M4 12h16M4 18h16"/></svg><span>Ще</span></button>
 </nav>
+<div class="palette" id="palette" hidden>
+  <div class="palette-in" role="dialog" aria-label="Знайти розділ">
+    <input type="search" id="paletteInput" placeholder="Що шукаєте? Таймери, карта, пети, мій прогрес…" aria-label="Пошук розділу" autocomplete="off">
+    <ul class="palette-list" id="paletteList" role="listbox"></ul>
+    <p class="muted small palette-hint">↑ ↓ — вибрати · Enter — перейти · Esc — закрити</p>
+  </div>
+</div>
 <div class="sheet" id="moreSheet" hidden>
   <div class="sheet-in" role="dialog" aria-label="Усі розділи">
     <p class="eyebrow">Розділи</p>

@@ -984,3 +984,42 @@ main section.meter-hero { margin-top: 0; }
 .pet-areas { display: flex; gap: 6px; flex-wrap: wrap; font-size: 12px; }
 .pet-have { display: flex; gap: 4px; align-items: center; font-size: 12px; cursor: pointer; white-space: nowrap; }
 
+
+/* ---------- Меню розділів: групи з випадними списками, пошук Ctrl+K ---------- */
+.nav-groups { overflow: visible; gap: 6px; }
+.nav-group { position: relative; }
+.nav-gbtn { display: flex; align-items: center; gap: 6px; padding: 6px 10px; border: 1px solid transparent; border-radius: var(--radius);
+  background: none; color: var(--muted); font: 500 14px var(--font-body); cursor: pointer; white-space: nowrap; }
+.nav-gbtn:hover, .nav-gbtn[aria-expanded="true"] { color: var(--text); background: var(--panel); }
+.nav-gbtn.active { color: var(--gold); border-color: var(--gold-dim); }
+.nav-gcur:not(:empty)::before { content: '· '; }
+.nav-gcur { color: var(--text); font-weight: 400; max-width: 120px; overflow: hidden; text-overflow: ellipsis; }
+.nav-caret { font-size: 10px; opacity: .7; }
+.nav-menu { position: absolute; top: calc(100% + 6px); left: 0; z-index: 70; min-width: 300px; padding: 6px; display: grid; gap: 2px;
+  background: var(--panel); border: 1px solid var(--line); border-radius: 10px; box-shadow: 0 12px 32px rgba(0, 0, 0, .5); }
+.nav-menu a, .sheet-list a, .palette-list li { display: flex; align-items: center; gap: 10px; padding: 8px 10px; border-radius: var(--radius); color: var(--text); text-decoration: none; }
+.nav-menu a:hover, .nav-menu a:focus-visible { background: var(--bg-2); outline: none; }
+.nav-menu a[aria-current] { background: var(--gold-dim); }
+.nav-menu a[aria-current] b { color: var(--gold); }
+.nav-ii { width: 26px; text-align: center; font-size: 18px; flex-shrink: 0; }
+.nav-menu b, .sheet-list b, .palette-list b { display: block; font-weight: 600; font-size: 14px; }
+.nav-menu small, .sheet-list small, .palette-list small { display: block; color: var(--muted); font-size: 12px; }
+.nav-find { display: flex; align-items: center; gap: 6px; padding: 5px 10px; border: 1px solid var(--line); border-radius: 999px; background: var(--panel);
+  color: var(--muted); font: 13px var(--font-body); cursor: pointer; white-space: nowrap; }
+.nav-find:hover { color: var(--text); border-color: var(--gold); }
+.nav-find svg { width: 16px; height: 16px; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; }
+.nav-find kbd { font: 11px var(--font-mono); padding: 1px 5px; border: 1px solid var(--line); border-radius: 4px; color: var(--muted); }
+.palette { position: fixed; inset: 0; z-index: 95; background: rgba(0, 0, 0, .55); display: flex; justify-content: center; align-items: flex-start; padding: 12vh 16px 16px; }
+.palette-in { width: min(560px, 100%); background: var(--panel); border: 1px solid var(--line); border-radius: 12px; box-shadow: 0 16px 48px rgba(0, 0, 0, .6); overflow: hidden; }
+.palette-in input { width: 100%; padding: 14px 16px; border: 0; border-bottom: 1px solid var(--line); background: var(--bg-2); color: var(--text); font: 16px var(--font-body); outline: none; }
+.palette-list { list-style: none; margin: 0; padding: 6px; max-height: 52vh; overflow-y: auto; }
+.palette-list li { cursor: pointer; }
+.palette-list li[aria-selected="true"] { background: var(--gold-dim); }
+.palette-list li > span:nth-child(2) { flex: 1; min-width: 0; }
+.palette-group { color: var(--muted); font-size: 12px; white-space: nowrap; }
+.palette-empty { padding: 14px; }
+.palette-hint { margin: 0; padding: 8px 14px 10px; border-top: 1px solid var(--line); }
+.sheet-list .sheet-head { grid-column: 1 / -1; margin: 10px 2px 2px; color: var(--muted); font-size: 12px; letter-spacing: .08em; text-transform: uppercase; }
+.sheet-list a { background: var(--bg-2); border: 1px solid var(--line); padding: 10px; }
+@media (max-width: 1100px) { .nav-gname { display: none; } .nav-gbtn .nav-gicon { font-size: 18px; } .nav-gcur:not(:empty)::before { content: ''; } }
+@media (max-width: 760px) { .nav-find span, .nav-find kbd { display: none; } .nav-find { padding: 7px; } }
