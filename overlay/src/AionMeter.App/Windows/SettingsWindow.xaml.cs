@@ -121,6 +121,7 @@ public partial class SettingsWindow : Window
         PartyRequestOn.IsChecked = s.PartyRequestAlert;
         ResourcesOn.IsChecked = s.ShowResources;
         StreamUrl.Text = $"http://localhost:{s.StreamPort}/";
+        StreamPartyUrl.Text = $"http://localhost:{s.StreamPort}/party";
         OneHpPartyOnly.IsChecked = s.PartyOnly;
         OneHpPriorityBosses.IsChecked = s.PriorityBossAlerts;
         OneHpBossSync.IsChecked = s.OneHpBossSync;

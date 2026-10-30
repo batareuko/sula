@@ -70,6 +70,12 @@ public static class SampleRenderer
                 host = radar;
                 refresh = radar.Refresh;
                 break;
+            case "party":
+                FeedParty(meter);
+                var party = new PartyWindow(meter) { Width = o.Width ?? 340 };
+                host = party;
+                refresh = party.Refresh;
+                break;
             case "checklist":
                 meter.Settings.LastSelfName = "Batareyka";
                 meter.Settings.Resources["Batareyka"] = new Dictionary<int, int[]>
@@ -463,6 +469,30 @@ public static class SampleRenderer
     }
 
     /// <summary>1 HP: soul monsters around you for the pet radar preview (you just hit the first one).</summary>
+    /// <summary>The party window: you (Cleric) and four members — HP, a few buffs and debuffs, long cooldowns.</summary>
+    private static void FeedParty(MeterService meter)
+    {
+        var now = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds();
+        var t = meter.Tracker;
+        t.Process(new SelfIdentifiedEvent(now - 9_000, 7, "Celesta", 2305, GameClass.Cleric));
+        (uint Id, string Name, GameClass Class, long Hp)[] members =
+            [(1, "Borgrim", GameClass.Gladiator, 61_000), (2, "Sylvaen", GameClass.Elementalist, 18_500), (3, "Talwyn", GameClass.Ranger, 0), (8, "Hymnar", GameClass.Chanter, 52_000)];
+        foreach (var m in members) t.Process(new PlayerSeenEvent(now - 9_000, m.Id, m.Name, 2305, m.Class));
+        t.Process(new PartyRosterEvent(now - 8_000, ["Celesta", "Borgrim", "Sylvaen", "Talwyn", "Hymnar"], Complete: true));
+        t.Process(new NpcHpEvent(now - 1_000, 7, 47_000, 52_000, IsNpc: false));
+        foreach (var m in members) t.Process(new NpcHpEvent(now - 1_000, m.Id, Math.Max(1, m.Hp), m.Id == 1 ? 78_000 : 60_000, IsNpc: false));
+        t.Process(new DeathEvent(now - 500, 3));
+        t.Process(new BuffEvent(now - 5_000, 1, 8, 180100001, 120_000, 1, false));
+        t.Process(new BuffEvent(now - 5_000, 2, 8, 180100001, 120_000, 2, false));
+        t.Process(new BuffEvent(now - 2_000, 2, 900_001, 210010011, 15_000, 3, false));
+        t.Process(new BuffEvent(now - 3_000, 7, 7, 170300001, 30_000, 4, false));
+        t.Process(new SkillCooldownEvent(now - 20_000, 1, 11040000, 180_000));
+        t.Process(new SkillCooldownEvent(now - 50_000, 8, 18040000, 120_000));
+        t.Process(new SkillCooldownEvent(now - 4_000, 7, 17010000, 12_000));
+        t.Process(new SkillCooldownEvent(now - 10_000, 7, 17020000, 30_000));
+        t.Process(new SkillCooldownEvent(now - 30_000, 7, 17040000, 300_000));
+    }
+
     private static void FeedPetRadar(MeterService meter)
     {
         var now = meter.Tracker.LastEventMs > 0 ? meter.Tracker.LastEventMs : DateTimeOffset.UtcNow.ToUnixTimeMilliseconds();

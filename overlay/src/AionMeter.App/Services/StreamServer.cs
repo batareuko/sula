@@ -34,6 +34,15 @@ public sealed class StreamServer : IDisposable
     /// <summary>The overlay's card as it is on screen; <see cref="EmptyPng"/> while the overlay is hidden.</summary>
     public void SetFrame(byte[] png) => _frame = png;
 
+    // 1 HP: frames of the other windows a stream can show (by name: "party" → /party, /party.png) and when one was asked for.
+    private readonly System.Collections.Concurrent.ConcurrentDictionary<string, byte[]> _frames = new();
+    private readonly System.Collections.Concurrent.ConcurrentDictionary<string, long> _framesAsked = new();
+
+    /// <summary>A page showed the window <paramref name="name"/> in the last few seconds: it keeps rendering frames.</summary>
+    public bool WantsWindowFrame(string name) => Running && Environment.TickCount64 - _framesAsked.GetValueOrDefault(name, long.MinValue / 2) < 3_000;
+
+    public void SetWindowFrame(string name, byte[] png) => _frames[name] = png;
+
     /// <summary>A 1×1 transparent PNG.</summary>
     public static readonly byte[] EmptyPng = Convert.FromBase64String(
         "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR4nGNgYGBgAAAABQABpfZFQAAAAABJRU5ErkJggg==");
@@ -87,11 +96,14 @@ public sealed class StreamServer : IDisposable
             {
                 var path = ctx.Request.Url?.AbsolutePath ?? "/";
                 if (path == "/frame.png") Interlocked.Exchange(ref _frameAskedAt, Environment.TickCount64);
+                if (path == "/party.png") _framesAsked["party"] = Environment.TickCount64;
                 var (bytes, type) = path switch
                 {
                     "/frame.png" => (_frame, "image/png"),
                     "/data" => (Encoding.UTF8.GetBytes(Data()), "application/json; charset=utf-8"),
                     "/" or "/index.html" => (Encoding.UTF8.GetBytes(MirrorPage), "text/html; charset=utf-8"),
+                    "/party" => (Encoding.UTF8.GetBytes(MirrorPage.Replace("/frame.png", "/party.png").Replace("1 HP DPS", "1 HP Party")), "text/html; charset=utf-8"),
+                    "/party.png" => (_frames.GetValueOrDefault("party") ?? EmptyPng, "image/png"),
                     "/card" => (Encoding.UTF8.GetBytes(Page), "text/html; charset=utf-8"),
                     _ when path.StartsWith("/class/", StringComparison.Ordinal) => (ClassEmblem(path[7..]), "image/png"),
                     _ => ((byte[]?)null, "text/plain"),

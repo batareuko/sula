@@ -192,6 +192,13 @@ public sealed partial class UiText
     public string AnSkills { get; init; } = "SKILLS";
     public string AnUsesTotal { get; init; } = "~{0} uses";
     public string AnalysisNote { get; init; } = "Uses are estimated: the game sends hits, not casts, so hits of one skill less than 1.2 s apart count as one use. Damage over time is in the skill's damage but not in its uses.";
+    public string PartyWindowTitle { get; init; } = "PARTY";
+    public string PartyTray { get; init; } = "👥 Party window (Ctrl+Shift+G)";
+    public string PartyWindowEmpty { get; init; } = "The meter does not know you yet: it shows the party once the game names your character.";
+    public string PartyWindowMine { get; init; } = "YOUR COOLDOWNS";
+    public string PartyWindowFar { get; init; } = "far";
+    public string PartyWindowTip { get; init; } = "You and your party: HP, buffs and debuffs (red frame), long cooldowns; your own cooldowns below.\nPale — the game has not sent their HP for a while (far away). Drag to move.\nFor a stream: http://localhost:7799/party";
+    public string StreamPartyHint { get; init; } = "Party window for a stream:";
     public string ChecklistTitle { get; init; } = "Checklist";
     public string ChecklistTray { get; init; } = "✅ Checklist (Ctrl+Shift+J)";
     public string ChecklistNoData { get; init; } = "No checklist table (data/checklist.json).";

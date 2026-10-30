@@ -128,6 +128,7 @@ public partial class App : Application
         RegisterHotkeys();
 
         if (settings.PetRadarWindow && !settings.NoOverlay) ShowPetRadar(true);
+        if (settings.PartyWindow && !settings.NoOverlay) ShowParty(true);
 
         _tray = new TrayIcon(new TrayActions(
             ToggleOverlay: () => SetOverlayVisible(!_overlay.IsVisible),
@@ -138,6 +139,7 @@ public partial class App : Application
             PetRadar: TogglePetRadar,
             Map: ShowMap,
             Checklist: ShowChecklist,
+            Party: ToggleParty,
             Settings: ShowSettings,
             Demo: () => _meter.StartDemo(),
             Replay: PickReplay,
@@ -151,7 +153,7 @@ public partial class App : Application
                 Log.Info("Exit chosen in the tray menu");
                 Shutdown();
             }));
-        _focus = new GameFocus(settings, () => [_overlay, _bossBar, _petRadar]);
+        _focus = new GameFocus(settings, () => [_overlay, _bossBar, _petRadar, _party]);
         _focus.Start();
         SessionEnding += (_, end) => Log.Info($"Windows {end.ReasonSessionEnding}: closing");
 
@@ -345,6 +347,7 @@ public partial class App : Application
         _hotkeys.Register(s.HotkeyPetRadar, TogglePetRadar);
         _hotkeys.Register(s.HotkeyMap, ShowMap);
         _hotkeys.Register(s.HotkeyChecklist, ShowChecklist);
+        _hotkeys.Register(s.HotkeyParty, ToggleParty);
     }
 
     /// <summary>
@@ -473,6 +476,28 @@ public partial class App : Application
     private GameFocus? _focus;
 
     /// <summary>1 HP: the pet radar window on / off (tray, Ctrl+Shift+P); remembered for the next start.</summary>
+    private PartyWindow? _party;
+
+    /// <summary>1 HP: the party window on / off (tray, Ctrl+Shift+G); remembered for the next start.</summary>
+    public void ToggleParty() => ShowParty(!(_party?.IsVisible ?? false));
+
+    private void ShowParty(bool on)
+    {
+        _meter.Settings.PartyWindow = on;
+        _meter.Settings.Save();
+        if (on && !_meter.Settings.NoOverlay)
+        {
+            if (_party is null)
+            {
+                _party = new PartyWindow(_meter);
+                _party.ApplyScale(_meter.Settings.UiScale);
+            }
+            _party.Show();
+            _focus?.Apply();
+        }
+        else _party?.Hide();
+    }
+
     private ChecklistWindow? _checklistWindow;
 
     /// <summary>1 HP: the daily and weekly checklist (tray, Ctrl+Shift+J); a second call closes it.</summary>
@@ -927,6 +952,7 @@ public partial class App : Application
         _overlay?.ApplyScale(percent);
         _bossBar?.ApplyScale(percent);
         _petRadar?.ApplyScale(percent);
+        _party?.ApplyScale(percent);
     }
 
     private void PickReplay()

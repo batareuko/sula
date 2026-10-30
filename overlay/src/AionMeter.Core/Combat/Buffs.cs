@@ -45,4 +45,13 @@ internal sealed class BuffBook
 }
 
 /// <summary>1 HP: a party member's skill on cooldown.</summary>
+/// <summary>
+/// 1 HP: one row of the party window. <paramref name="Hp"/> is -1 until the game sent it; <paramref name="HpAtMs"/> is when.
+/// </summary>
+public sealed record PartyFrameMember(string Name, Events.GameClass Class, bool IsSelf, uint? ActorId, long Hp, long MaxHp, long HpAtMs,
+    IReadOnlyList<ActiveBuff> Buffs, IReadOnlyList<PartyCooldown> Cooldowns)
+{
+    public double HpFraction => MaxHp > 0 && Hp >= 0 ? Math.Clamp((double)Hp / MaxHp, 0, 1) : -1;
+}
+
 public sealed record PartyCooldown(string Player, string Skill, long LeftMs, long TotalMs, int SkillCode = 0);
