@@ -70,6 +70,24 @@ public static class SampleRenderer
                 host = radar;
                 refresh = radar.Refresh;
                 break;
+            case "checklist":
+                meter.Settings.LastSelfName = "Batareyka";
+                meter.Settings.Resources["Batareyka"] = new Dictionary<int, int[]>
+                {
+                    [Core.Events.ResourceEvent.Aether] = [612, 0], [Core.Events.ResourceEvent.ShugoKeys] = [2, 0],
+                    [Core.Events.ResourceEvent.Nightmare] = [1, 2], [Core.Events.ResourceEvent.Invasion] = [3, 0],
+                };
+                var now = DateTimeOffset.UtcNow;
+                meter.Settings.ChecklistMarks["Batareyka"] = new Dictionary<string, int[]>
+                {
+                    ["d-attendance"] = Core.OneHp.Checklist.Save(1, false, now), ["d-nightmare"] = Core.OneHp.Checklist.Save(1, false, now),
+                    ["w-ex-krao"] = Core.OneHp.Checklist.Save(3, true, now), ["w-rift"] = Core.OneHp.Checklist.Save(1, true, now),
+                    ["w-daily-dungeon"] = Core.OneHp.Checklist.Save(9, true, now),
+                };
+                var checklist = new ChecklistWindow(meter) { Width = o.Width ?? 1000, Height = o.Height ?? 1100 };
+                host = checklist;
+                refresh = checklist.Refresh;
+                break;
             case "map":
                 meter.Settings.MapSlug = "verteron";
                 meter.Settings.MapLayers = ["bosses", "dungeons", "rifts", "kibelisks", "pets"];

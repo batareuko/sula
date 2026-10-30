@@ -137,6 +137,7 @@ public partial class App : Application
             BossTimers: ShowBossTimers,
             PetRadar: TogglePetRadar,
             Map: ShowMap,
+            Checklist: ShowChecklist,
             Settings: ShowSettings,
             Demo: () => _meter.StartDemo(),
             Replay: PickReplay,
@@ -343,6 +344,7 @@ public partial class App : Application
         _hotkeys.Register(s.HotkeyTimers, ToggleBossTimers);
         _hotkeys.Register(s.HotkeyPetRadar, TogglePetRadar);
         _hotkeys.Register(s.HotkeyMap, ShowMap);
+        _hotkeys.Register(s.HotkeyChecklist, ShowChecklist);
     }
 
     /// <summary>
@@ -471,6 +473,22 @@ public partial class App : Application
     private GameFocus? _focus;
 
     /// <summary>1 HP: the pet radar window on / off (tray, Ctrl+Shift+P); remembered for the next start.</summary>
+    private ChecklistWindow? _checklistWindow;
+
+    /// <summary>1 HP: the daily and weekly checklist (tray, Ctrl+Shift+J); a second call closes it.</summary>
+    public void ShowChecklist()
+    {
+        if (_checklistWindow is { IsVisible: true })
+        {
+            _checklistWindow.Close();
+            return;
+        }
+        _checklistWindow = new ChecklistWindow(_meter);
+        _checklistWindow.Closed += (_, _) => _checklistWindow = null;
+        _checklistWindow.Show();
+        _checklistWindow.Activate();
+    }
+
     private MapWindow? _mapWindow;
 
     /// <summary>1 HP: the world map window (tray, Ctrl+Shift+M); a second call closes it.</summary>
