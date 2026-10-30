@@ -18,6 +18,8 @@ public sealed class CombatTracker
     private bool _viewCleared;
     // 1 HP: the party roster's names (Options.PartyOnly); empty = on your own.
     private readonly HashSet<string> _party = new(StringComparer.OrdinalIgnoreCase);
+    // 1 HP: the slot each name has on the game's party panel (0 …): the /state party list keeps its order.
+    private readonly Dictionary<string, int> _partySlots = new(StringComparer.OrdinalIgnoreCase);
     private int _partyVersion;
     // 1 HP: combat power by character name, from the party rosters.
     private readonly Dictionary<string, long> _powers = new(StringComparer.OrdinalIgnoreCase);
@@ -183,6 +185,7 @@ public sealed class CombatTracker
                     if (n.Name is not null) npc.Name = n.Name;
                     _entities.SetMaxHp(npc, n.MaxHp, known: true);
                     if (_current is { IsActive: true } running && running.BossId == n.ActorId) RefreshBoss(running, npc);
+                    if (n.X != 0 || n.Y != 0) Remember(n.ActorId, n.X, n.Y, n.Z, n.TimeMs);
                     NoticeBoss(npc, BossNoticeKind.Alive, n.TimeMs, n.X, n.Y, n.Z);
                     break;
                 case SummonSeenEvent s:
@@ -258,11 +261,19 @@ public sealed class CombatTracker
                     _pendingRequests.Add(request);
                     break;
                 case SkillCooldownEvent cd:
-                    _cooldowns[(_entities.ResolveOwner(cd.ActorId), cd.SkillCode / 10_000)] = (cd.SkillCode, cd.TimeMs, cd.TimeMs + cd.CooldownMs);
+                    _cooldowns[(_entities.ResolveOwner(cd.ActorId), cd.SkillCode / 10_000)] =
+                        (cd.SkillCode, cd.TimeMs, cd.TimeMs + cd.CooldownMs, cd.Charges);
                     break;
                 case BuffEvent buff:
                     _buffBook.Apply(buff, _data.BuffName(buff.Code), _data.Buffs.TryGetValue(buff.Code, out var info) && info.Debuff);
                     LearnBuffSkill(buff);
+                    // A buff that lasts until removed is a toggle (mantra, stance): the skill can report on/off later.
+                    if (!buff.Removing && buff.DurationMs <= 0 && _buffSkills.TryGetValue(buff.Code, out var source) && source > 0)
+                        _toggleSkills.Add(source / 10_000);
+                    break;
+                case MoveEvent move:
+                    // 1 HP: the server's corrections carry everyone's position now and then (you: mostly on skills/dashes)
+                    Remember(move.ActorId, move.X, move.Y, move.Z, move.TimeMs);
                     break;
                 case PartyListEvent list:
                     OnPartyList(list);
@@ -279,6 +290,8 @@ public sealed class CombatTracker
                     _manualIds.Clear(); // ids are handed out again in the new zone
                     _buffBook.Clear();
                     _playerHp.Clear();
+                    _positions.Clear();
+                    _partySlots.Clear();
                     if (_current is { IsActive: true }) Finish(EncounterEndReason.ZoneChange, _current.LastDamageMs);
                     // 1 HP: dungeon runs — leaving the instance ends the run, entering one starts it
                     if (_run is { } run && run.MapId != z.MapId)
@@ -1161,8 +1174,127 @@ public sealed class CombatTracker
         lock (_gate) return new Dictionary<int, (int, int)>(_resources);
     }
 
-    // 1 HP: skill cooldowns of you and your party: (actor, skill without its variant) → skill, start, ready at.
-    private readonly Dictionary<(uint Actor, int Skill), (int Code, long StartMs, long ReadyMs)> _cooldowns = new();
+    // 1 HP: where an announced entity was last reported — spawn position, or anyone's move correction.
+    private void Remember(uint actorId, float x, float y, float z, long timeMs)
+    {
+        if (_positions.Count > 8_192) _positions.Clear(); // a busy zone: start over rather than grow without end
+        _positions[actorId] = (x, y, z, timeMs);
+    }
+
+    private static string? ClassName(GameClass cls) => cls == GameClass.Unknown ? null : cls.ToString().ToLowerInvariant();
+
+    // 1 HP: skill cooldowns of you and your party: (actor, skill without its variant) → skill, start, ready at, charges.
+    private readonly Dictionary<(uint Actor, int Skill), (int Code, long StartMs, long ReadyMs, int Charges)> _cooldowns = new();
+
+    // 1 HP: where every announced entity (NPC spawn, anyone's move) was last reported, in game units (centimetres).
+    // The local /state endpoint uses it for the distance to the target and to party members; the zone change clears it.
+    private readonly Dictionary<uint, (float X, float Y, float Z, long Ms)> _positions = new();
+
+    // 1 HP: skills seen putting on a buff that lasts until removed — the game's toggles (mantras, stances).
+    private readonly HashSet<int> _toggleSkills = new(); // skill code / 10 000, like _cooldowns
+
+    /// <summary>
+    /// 1 HP: the live character and party state for the local <c>/state</c> endpoint (App/Services/StreamServer.cs), or
+    /// null when there is nothing live to report — you are not identified yet, or the game's stream went quiet (the
+    /// game is not running). Read under the same lock as the snapshots, so a caller off the capture thread is safe.
+    /// </summary>
+    public LiveState? State(long nowMs)
+    {
+        lock (_gate)
+        {
+            if (_entities.SelfId is not { } me) return null;
+            if (LastEventMs == 0 || nowMs - LastEventMs > 30_000) return null;
+
+            var self = _entities.Self;
+            var (hp, hpMax, _) = _playerHp.TryGetValue(me, out var mine) ? mine : (-1L, 0L, 0L);
+            var buffs = _buffBook.On(me, nowMs);
+
+            LiveBuff Buff(ActiveBuff b) =>
+                new(b.Code, b.Name, b.EndMs > 0 ? Math.Max(0, b.EndMs - nowMs) : null, null, null);
+
+            // A toggle is a skill seen putting on a buff that lasts until removed: on while that buff is on, off otherwise.
+            bool? ToggleOn(int key) => !_toggleSkills.Contains(key) ? null
+                : buffs.Any(b => b.CasterId == me && _buffSkills.TryGetValue(b.Code, out var src) && src / 10_000 == key);
+
+            var skills = new List<LiveSkill>();
+            var seen = new HashSet<int>();
+            foreach (var ((actor, key), (code, start, ready, charges)) in _cooldowns)
+            {
+                if (actor != me || !seen.Add(key)) continue;
+                skills.Add(new LiveSkill(GameData.BaseSkill(code), _data.SkillName(code), Math.Max(0, ready - nowMs),
+                    Math.Max(0, ready - start), charges >= 0 ? charges : null, null, ToggleOn(key)));
+            }
+            // Skills whose lasting buff is on you right now: a toggle seen in the buff list but not cast since the start.
+            foreach (var b in buffs.Where(b => b.CasterId == me))
+            {
+                if (!_buffSkills.TryGetValue(b.Code, out var source) || source <= 0 || !seen.Add(source / 10_000)) continue;
+                skills.Add(new LiveSkill(GameData.BaseSkill(source), _data.SkillName(source), 0, 0, null, null, ToggleOn(source / 10_000)));
+            }
+            foreach (var key in _toggleSkills.Where(key => seen.Add(key)))
+                skills.Add(new LiveSkill(key * 10_000, _data.SkillName(key * 10_000), 0, 0, null, null, ToggleOn(key)));
+            skills.Sort((a, b) => (a.Id ?? int.MaxValue).CompareTo(b.Id ?? int.MaxValue));
+
+            LiveTarget? target = null;
+            if (_current is { IsActive: true } fight)
+            {
+                var id = fight.BossId ?? 0;
+                if (id == 0 && fight.DamageByTarget.Count > 0) id = fight.DamageByTarget.MaxBy(kv => kv.Value).Key;
+                if (id != 0 && _entities.TryGetNpc(id, out var npc))
+                {
+                    var name = npc.Name is { Length: > 0 } n ? n : npc.NpcCode != 0 ? _data.NpcName(npc.NpcCode) : null;
+                    target = new LiveTarget(name, npc.Hp >= 0 ? npc.Hp : null, npc.MaxHp > 0 ? npc.MaxHp : null, true, Distance(id));
+                }
+            }
+
+            var party = new List<LivePartyMember>();
+            foreach (var name in PartySet().Where(n => !IsSelfName(n))
+                         .OrderBy(n => _partySlots.GetValueOrDefault(n, int.MaxValue))
+                         .ThenBy(n => n, StringComparer.OrdinalIgnoreCase))
+            {
+                // A member the meter has no actor id for yet still has a row, without HP, buffs or distance.
+                if (_entities.FindPlayerByName(name) is not { } id)
+                {
+                    party.Add(new LivePartyMember(name, null, null, null, null, null, null, []));
+                    continue;
+                }
+                _entities.TryGetPlayer(id, out var player);
+                long? memberHp = null, memberMax = null;
+                bool? alive = null;
+                if (_playerHp.TryGetValue(id, out var ph) && ph.Hp >= 0)
+                {
+                    memberHp = ph.Hp;
+                    memberMax = ph.Max > 0 ? ph.Max : null;
+                    alive = ph.Hp > 0;
+                }
+                party.Add(new LivePartyMember(player?.Name is { Length: > 0 } pn ? pn : name, ClassName(player?.Class ?? GameClass.Unknown),
+                    alive, memberHp, memberMax, null, Distance(id),
+                    _buffBook.On(id, nowMs).Where(b => b.Debuff).Select(Buff).ToList()));
+            }
+
+            return new LiveState(nowMs,
+                new LiveSelf(self?.Name is { Length: > 0 } myName ? myName : null, ClassName(self?.Class ?? GameClass.Unknown),
+                    hp >= 0 ? hp > 0 : null, hp >= 0 ? hp : null, hpMax > 0 ? hpMax : null,
+                    null, null, // mana is not in a packet the meter decodes yet
+                    _current is { IsActive: true },
+                    null, // a cast in progress is not announced with its end
+                    buffs.Where(b => !b.Debuff).Select(Buff).ToList(),
+                    buffs.Where(b => b.Debuff).Select(Buff).ToList(),
+                    skills),
+                target, party);
+
+            // Metres between you and an actor, from the last positions both reported. Your own position is only sent with
+            // movement corrections (mostly skills and dashes), so a stale one would invent a distance: 30 s or nothing.
+            double? Distance(uint other)
+            {
+                if (!_positions.TryGetValue(me, out var at) || nowMs - at.Ms > 30_000) return null;
+                if (!_positions.TryGetValue(other, out var to)) return null;
+                var dx = (double)at.X - to.X;
+                var dy = (double)at.Y - to.Y;
+                var dz = (double)at.Z - to.Z;
+                return Math.Round(Math.Sqrt(dx * dx + dy * dy + dz * dz) / 100, 1); // game units are centimetres
+            }
+        }
+    }
 
     /// <summary>
     /// 1 HP: your party's long cooldowns (from <paramref name="minMs"/>) that are still running, the soonest ready
@@ -1174,7 +1306,7 @@ public sealed class CombatTracker
         {
             foreach (var key in _cooldowns.Where(kv => kv.Value.ReadyMs < nowMs).Select(kv => kv.Key).ToList()) _cooldowns.Remove(key);
             var list = new List<PartyCooldown>();
-            foreach (var ((actor, _), (code, start, ready)) in _cooldowns)
+            foreach (var ((actor, _), (code, start, ready, _)) in _cooldowns)
             {
                 if (ready - start < minMs || actor == _entities.SelfId) continue;
                 if (!_entities.TryGetPlayer(actor, out var p) || string.IsNullOrEmpty(p.Name) || !InParty(p.Name)) continue;
@@ -1238,6 +1370,7 @@ public sealed class CombatTracker
     private void ClearParty()
     {
         _party.Clear();
+        _partySlots.Clear();
         _members.Clear();
         _healed.Clear();
         _manualIn.Clear();
@@ -1252,7 +1385,12 @@ public sealed class CombatTracker
         ClearParty();
         _partyFromGame = true;
         foreach (var m in list.Members)
-            if (_entities.SelfId != m.ActorId && !IsSelfName(m.Name)) _party.Add(m.Name.Trim());
+            if (_entities.SelfId != m.ActorId && !IsSelfName(m.Name))
+            {
+                var name = m.Name.Trim();
+                _party.Add(name);
+                _partySlots[name] = m.Slot;
+            }
     }
 
     /// <summary>1 HP: <c>0D 92</c> — someone joined (or a member's card): in the party from now, the whole fight counted.</summary>
@@ -1263,6 +1401,7 @@ public sealed class CombatTracker
         _partyFromGame = true;
         _healed.Clear();
         _manualOut.Remove(name);
+        _partySlots[name] = join.Member.Slot;
         if (_party.Add(name)) _partyVersion++;
     }
 

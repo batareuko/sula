@@ -205,6 +205,11 @@ public sealed class AppSettings
     /// <summary>The meter as a web page for OBS (Services/StreamServer.cs); only this computer can open it.</summary>
     public bool StreamEnabled { get; set; }
     public int StreamPort { get; set; } = StreamServer.DefaultPort;
+    /// <summary>
+    /// 1 HP: the live character / party state as JSON at http://127.0.0.1:{StreamPort}/state for another local program
+    /// (AutoHotkey); off by default, served by the same listener as the stream page.
+    /// </summary>
+    public bool StateApi { get; set; }
     /// <summary>Your characters' last known combat power by name: the one-line card shows it before the game sends it again.</summary>
     public Dictionary<string, long> Powers { get; set; } = new(StringComparer.OrdinalIgnoreCase);
     /// <summary>Your character's name last seen: a meter started mid-session recognises you by it (CombatTracker.KnownSelfName).</summary>

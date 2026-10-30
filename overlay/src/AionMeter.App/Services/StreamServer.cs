@@ -20,6 +20,8 @@ public sealed class StreamServer : IDisposable
     private readonly MeterService _meter;
     private HttpListener? _listener;
     private int _port;
+    private volatile bool _streamEnabled;
+    private volatile bool _stateEnabled;
 
     // Set by the overlay (UI thread): what its one-line card shows out of combat.
     private volatile string[] _idle = ["", "", ""];
@@ -53,13 +55,23 @@ public sealed class StreamServer : IDisposable
 
     public bool Running => _listener?.IsListening == true;
 
-    /// <summary>Starts, stops or moves the page per the settings.</summary>
-    public void Apply(bool enabled, int port)
+    /// <summary>
+    /// Starts, stops or moves the page per the settings. <paramref name="stateEnabled"/> adds the JSON state endpoint
+    /// (<c>/state</c>) to the same listener: the two need one listener, not two on one port.
+    /// </summary>
+    public void Apply(bool streamEnabled, bool stateEnabled, int port)
     {
         port = port is > 1024 and < 65536 ? port : DefaultPort;
-        if (enabled && Running && port == _port) return;
+        if ((streamEnabled || stateEnabled) && Running && port == _port)
+        {
+            _streamEnabled = streamEnabled;
+            _stateEnabled = stateEnabled;
+            return;
+        }
         Stop();
-        if (!enabled) return;
+        _streamEnabled = streamEnabled;
+        _stateEnabled = stateEnabled;
+        if (!streamEnabled && !stateEnabled) return;
         try
         {
             var listener = new HttpListener();
@@ -99,6 +111,9 @@ public sealed class StreamServer : IDisposable
                 if (path == "/party.png") _framesAsked["party"] = Environment.TickCount64;
                 var (bytes, type) = path switch
                 {
+                    // 1 HP: the live character / party state for another program on this computer (AutoHotkey and such).
+                    "/state" when _stateEnabled => (Encoding.UTF8.GetBytes(State()), "application/json; charset=utf-8"),
+                    _ when !_streamEnabled => ((byte[]?)null, "text/plain"),
                     "/frame.png" => (_frame, "image/png"),
                     "/data" => (Encoding.UTF8.GetBytes(Data()), "application/json; charset=utf-8"),
                     "/" or "/index.html" => (Encoding.UTF8.GetBytes(MirrorPage), "text/html; charset=utf-8"),
@@ -151,6 +166,75 @@ public sealed class StreamServer : IDisposable
             Emblems[cls] = bytes;
             return bytes;
         }
+    }
+
+    /// <summary>
+    /// 1 HP: <c>/state</c> — the live character and party state as flat JSON for another local program. Every field is
+    /// always present; what the game did not tell the meter is null. <c>{"ok":false}</c> while there is nothing live.
+    /// </summary>
+    private string State()
+    {
+        var now = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds();
+        var s = _meter.Tracker.State(now);
+        if (s is null) return """{"ok":false}""";
+
+        static object Buff(LiveBuff b) => new
+        {
+            id = b.Id,
+            name = b.Name,
+            remainMs = b.RemainMs,
+            stacks = b.Stacks,
+            dispellable = b.Dispellable,
+        };
+
+        object? casting = s.Me.Casting is { } c
+            ? new { skillId = c.SkillId, name = c.Name, chargeLevel = c.ChargeLevel, endsInMs = c.EndsInMs }
+            : null;
+        object? target = s.Target is { } t
+            ? new { name = t.Name, hp = t.Hp, hpMax = t.HpMax, isEnemy = t.IsEnemy, distance = t.Distance }
+            : null;
+
+        return JsonSerializer.Serialize(new
+        {
+            ok = true,
+            ts = s.TsMs,
+            me = new
+            {
+                name = s.Me.Name,
+                cls = s.Me.Class,
+                alive = s.Me.Alive,
+                hp = s.Me.Hp,
+                hpMax = s.Me.HpMax,
+                mp = s.Me.Mp,
+                mpMax = s.Me.MpMax,
+                inCombat = s.Me.InCombat,
+                casting,
+                buffs = s.Me.Buffs.Select(Buff),
+                debuffs = s.Me.Debuffs.Select(Buff),
+                skills = s.Me.Skills.Select(k => new
+                {
+                    id = k.Id,
+                    name = k.Name,
+                    cdRemainMs = k.CdRemainMs,
+                    cdTotalMs = k.CdTotalMs,
+                    charges = k.Charges,
+                    chargesMax = k.ChargesMax,
+                    toggleOn = k.ToggleOn,
+                }),
+            },
+            target,
+            party = s.Party.Select(m => new
+            {
+                name = m.Name,
+                cls = m.Class,
+                alive = m.Alive,
+                hp = m.Hp,
+                hpMax = m.HpMax,
+                inRange = m.InRange,
+                distance = m.Distance,
+                debuffs = m.Debuffs.Select(Buff),
+            }),
+        });
     }
 
     /// <summary>The live fight (or the last one, with how long ago it ended) and the one-line card.</summary>
