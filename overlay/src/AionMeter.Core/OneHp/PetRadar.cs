@@ -37,6 +37,7 @@ public sealed class PetRadar
     private (float X, float Y, long AtMs)? _anchor; // the monster you hit last
     private int _mapId;
     private (long AtMs, List<(float X, float Y)> Seen)? _arrival; // monsters that came into view right after a teleport
+    private readonly Queue<(long AtMs, float X, float Y)> _recent = new(); // the last monsters that came into view
     private readonly object _gate = new();
 
     public IReadOnlyCollection<Soul> All { get; }
@@ -89,8 +90,16 @@ public sealed class PetRadar
                     }
                     else _where.Remove(n.ActorId);
                     if (_arrival is { } arr && n.TimeMs - arr.AtMs < 10_000 && (n.X != 0 || n.Y != 0)) arr.Seen.Add((n.X, n.Y));
+                    if (n.X != 0 || n.Y != 0)
+                    {
+                        _recent.Enqueue((n.TimeMs, n.X, n.Y));
+                        while (_recent.Count > 30) _recent.Dequeue();
+                    }
                     if (_byNpc.TryGetValue(n.NpcCode, out var soul)) _inView[n.ActorId] = (soul, n.TimeMs);
                     else _inView.Remove(n.ActorId); // the id now belongs to another monster
+                    break;
+                case FieldBossListEvent list when _mapId == 0:
+                    _mapId = list.MapId; // started mid-game, before any teleport: the field boss list names the map
                     break;
                 case SelfIdentifiedEvent s:
                     _self = s.ActorId;
@@ -111,6 +120,7 @@ public sealed class PetRadar
                 case ZoneChangedEvent z:
                     _mapId = z.MapId;
                     _arrival = (z.TimeMs, new List<(float, float)>());
+                    _recent.Clear();
                     _inView.Clear();
                     _where.Clear();
                     _anchor = null;
@@ -142,7 +152,8 @@ public sealed class PetRadar
 
     /// <summary>
     /// 1 HP: where you are, for the world map: your own last move (30 s), else the monster you hit (2 min), else the middle
-    /// of the monsters that came into view in the 10 s after a teleport (5 min, at least three of them). Game units.
+    /// of the monsters that came into view in the last 20 s, else of those in the 10 s after a teleport (5 min) — at least
+    /// three of them. The map: the last zone change, or the field boss list when the meter started mid-game. Game units.
     /// </summary>
     public Whereabouts? Where(long nowMs)
     {
@@ -151,6 +162,14 @@ public sealed class PetRadar
             if (_mapId == 0) return null;
             if (_me is { } me && nowMs - me.AtMs < 30_000) return new Whereabouts(_mapId, me.X, me.Y, true);
             if (_anchor is { } a && nowMs - a.AtMs < 120_000) return new Whereabouts(_mapId, a.X, a.Y, false);
+            // the monsters that came into view in the last 20 s: you are among them
+            var recent = _recent.Where(r => nowMs - r.AtMs < 20_000).ToList();
+            if (recent.Count >= 3)
+            {
+                var rx = recent.Select(p => p.X).Order().ToList();
+                var ry = recent.Select(p => p.Y).Order().ToList();
+                return new Whereabouts(_mapId, rx[rx.Count / 2], ry[ry.Count / 2], false);
+            }
             if (_arrival is { Seen.Count: >= 3 } arr && nowMs - arr.AtMs < 300_000)
             {
                 var xs = arr.Seen.Select(p => p.X).Order().ToList();
