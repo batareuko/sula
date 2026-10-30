@@ -75,6 +75,21 @@ public class LiveStateTests
     }
 
     [Fact]
+    public void Player_vitals_feed_hp_mp_and_alive()
+    {
+        var t = Setup(out _);
+        t.Process(new PlayerVitalsEvent(1_000, Me, 179_000, 123_400));
+        t.Process(new PlayerVitalsEvent(1_100, Me, 183_000, null)); // HP rises, MP not resent
+
+        var s = t.State(2_000)!.Me;
+        Assert.Equal(183_000, s.Hp);
+        Assert.Equal(183_000, s.HpMax); // the highest value seen is the only max the packet implies
+        Assert.Equal(123_400, s.Mp);
+        Assert.Equal(123_400, s.MpMax);
+        Assert.True(s.Alive);
+    }
+
+    [Fact]
     public void Cooldown_reports_remaining_total_and_charges()
     {
         var t = Setup(out _);

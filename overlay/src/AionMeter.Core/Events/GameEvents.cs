@@ -73,6 +73,10 @@ public sealed record SummonSeenEvent(long TimeMs, uint ActorId, uint OwnerId, st
 /// true when the record itself says the entity is an NPC; otherwise it may be a player and only updates known NPCs.</summary>
 public sealed record NpcHpEvent(long TimeMs, uint ActorId, long CurrentHp, long MaxHp, bool IsNpc = true) : GameEvent(TimeMs);
 
+/// <summary>1 HP: a player's vitals (<c>00 8D</c> kind 1): <paramref name="Hp"/> and/or <paramref name="Mp"/> as the
+/// packet carried them; either is null when that packet did not include it. The max values are not sent here.</summary>
+public sealed record PlayerVitalsEvent(long TimeMs, uint ActorId, long? Hp, long? Mp) : GameEvent(TimeMs);
+
 /// <summary>1 HP: an entity moved to x, y, z (centimetres; packet 1b 37).</summary>
 public sealed record MoveEvent(long TimeMs, uint ActorId, float X, float Y, float Z) : GameEvent(TimeMs);
 

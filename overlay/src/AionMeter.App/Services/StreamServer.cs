@@ -8,7 +8,7 @@ using AionMeter.Core.Combat;
 namespace AionMeter.App.Services;
 
 /// <summary>
-/// 1 HP: the meter as a web page for a stream — OBS (or any streaming app) adds http://localhost:7799/ as a browser
+/// 1 HP: the meter as a web page for a stream — OBS (or any streaming app) adds http://127.0.0.1:7799/ as a browser
 /// source. Only this computer can open it. <c>/</c> shows the overlay itself, pixel for pixel: the overlay renders its
 /// card to <c>/frame.png</c> while a page asks for it. <c>/card</c> is a lighter HTML card built from <c>/data</c>
 /// (the live fight, or your name, combat power and ping out of combat).
@@ -51,7 +51,7 @@ public sealed class StreamServer : IDisposable
 
     public StreamServer(MeterService meter) => _meter = meter;
 
-    public string Url => $"http://localhost:{(_port > 0 ? _port : DefaultPort)}/";
+    public string Url => $"http://127.0.0.1:{(_port > 0 ? _port : DefaultPort)}/";
 
     public bool Running => _listener?.IsListening == true;
 
@@ -75,13 +75,14 @@ public sealed class StreamServer : IDisposable
         try
         {
             var listener = new HttpListener();
-            listener.Prefixes.Add($"http://localhost:{port}/");
+            // 1 HP: loopback only — the "localhost" prefix also binds the :: (all interfaces) wildcard on Windows.
             listener.Prefixes.Add($"http://127.0.0.1:{port}/");
+            listener.Prefixes.Add($"http://[::1]:{port}/");
             listener.Start();
             _listener = listener;
             _port = port;
             _ = Task.Run(() => Serve(listener));
-            Log.Info($"Stream page on http://localhost:{port}/");
+            Log.Info($"Stream page on http://127.0.0.1:{port}/");
         }
         catch (Exception ex) when (ex is HttpListenerException or InvalidOperationException)
         {
