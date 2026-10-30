@@ -259,7 +259,8 @@ public sealed class WorldMapView : FrameworkElement
             foreach (var place in places)
             {
                 var dim = _dim(place);
-                var icon = Icon(WorldMaps.IconOf(key, place));
+                // the many spots of a dense layer are dots until zoomed in, so they do not bury the map
+                var icon = dense && _zoom < 2 ? null : Icon(WorldMaps.IconOf(key, place));
                 var s = dense ? size * 0.72 : size;
                 if (dim) dc.PushOpacity(0.3);
                 foreach (var pt in place.Points)

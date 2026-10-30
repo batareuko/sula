@@ -2608,14 +2608,14 @@
   /* ---------- Карта світу: world_maps.json (Aion2Data: місця й картинки карт), значки — CDN гри ---------- */
   var GAME_RES = 'https://assets.playnccdn.com/static-aion2-gamedata/resources/';
   var WMAP_LAYERS = [
-    { key: 'bosses', name: 'Польові боси', icon: 'UT_Marker_Monster_Boss' },
-    { key: 'dungeons', name: 'Підземелля', icon: 'UT_Marker_Dungeon' },
-    { key: 'rifts', name: 'Розломи', icon: 'UT_Marker_Rift' },
-    { key: 'kibelisks', name: 'Кібеліски', icon: 'UT_Marker_TeleportArtifact_Light_Unengraved' },
-    { key: 'monoliths', name: 'Моноліти', icon: 'UT_Marker_Monolith_Light' },
-    { key: 'gather', name: 'Збір', icon: 'UT_Marker_Gatherl_Jewelry', dense: true },
-    { key: 'pets', name: 'Душі петів', icon: 'Icon_BMShop_Soulcrystal_All', dense: true },
-    { key: 'cubes', name: 'Місця прихованих кубів', icon: 'Icon_Item_Currency_Treasure_Key_A_s_001', dense: true },
+    { key: 'bosses', name: 'Польові боси', icon: 'UT_Marker_Monster_Boss', color: '#e5484d' },
+    { key: 'dungeons', name: 'Підземелля', icon: 'UT_Marker_Dungeon', color: '#f08a3c' },
+    { key: 'rifts', name: 'Розломи', icon: 'UT_Marker_Rift', color: '#3fd0e0' },
+    { key: 'kibelisks', name: 'Кібеліски', icon: 'UT_Marker_TeleportArtifact_Light_Unengraved', color: '#7aa7ff' },
+    { key: 'monoliths', name: 'Моноліти', icon: 'UT_Marker_Monolith_Light', color: '#e8e0a0' },
+    { key: 'gather', name: 'Збір', icon: 'UT_Marker_Gatherl_Jewelry', color: '#5fbf6a', dense: true },
+    { key: 'pets', name: 'Душі петів', icon: 'Icon_BMShop_Soulcrystal_All', color: '#c86bff', dense: true },
+    { key: 'cubes', name: 'Місця прихованих кубів', icon: 'Icon_Item_Currency_Treasure_Key_A_s_001', color: '#f2b632', dense: true },
   ];
   var wm = {
     data: null, map: null, img: null, icons: {}, zoom: 1, pan: { x: 0, y: 0 }, hover: null, loading: false,
@@ -2687,13 +2687,14 @@
       m.layers[l.key].forEach(function (place) {
         var owned = l.key === 'pets' && wmOwnedPet(place);
         var size = l.dense ? base * 0.72 : base;
-        var im = wmIcon(wmPlaceIcon(l, place));
+        // дрібні шари (пети, збір, куби) — крапками, доки не наблизите, щоб не засипали карту
+        var im = l.dense && wm.zoom < 2 ? null : wmIcon(wmPlaceIcon(l, place));
         ctx.globalAlpha = owned ? 0.3 : 1;
         place.pts.forEach(function (pt) {
           var p = wmToScreen(pt, sz);
           if (p.x < -20 || p.y < -20 || p.x > sz.w + 20 || p.y > sz.h + 20) return;
           if (im) ctx.drawImage(im, p.x - size / 2, p.y - size / 2, size, size);
-          else { ctx.fillStyle = '#c9d2e0'; ctx.beginPath(); ctx.arc(p.x, p.y, 3, 0, 7); ctx.fill(); }
+          else { ctx.fillStyle = l.color; ctx.beginPath(); ctx.arc(p.x, p.y, l.dense ? 2.5 : 3.5, 0, 7); ctx.fill(); }
         });
         ctx.globalAlpha = 1;
       });
