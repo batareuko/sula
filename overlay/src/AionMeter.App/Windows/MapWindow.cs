@@ -296,6 +296,13 @@ public sealed class MapWindow : Window
             if (!File.Exists(file)) DownloadAsync(_map, file).GetAwaiter().GetResult();
             _images[_map.Slug] = Decode(file);
             _view.SetImage(_images[_map.Slug]);
+        }
+        catch (Exception ex) when (ex is HttpRequestException or IOException or TaskCanceledException or NotSupportedException or FileFormatException)
+        {
+            Log.Info($"Map picture {_map.Slug} not loaded: {ex.Message}");
+        }
+        try
+        {
             // and the icons of the layers shown, so the preview has them all
             foreach (var key in _meter.Settings.MapLayers)
                 if (_map.Layers.TryGetValue(key, out var places))
@@ -314,7 +321,7 @@ public sealed class MapWindow : Window
         }
         catch (Exception ex) when (ex is HttpRequestException or IOException or TaskCanceledException or NotSupportedException or FileFormatException)
         {
-            Log.Info($"Map picture {_map.Slug} not loaded: {ex.Message}");
+            Log.Info($"Map icons not loaded: {ex.Message}");
         }
     }
 
