@@ -567,10 +567,11 @@
                     </Border>
                 </UniformGrid>
 
-                <!-- 1 HP: what the rows rank by — damage, healing, damage taken -->
+                <!-- 1 HP: what the rows rank by — damage, healing, hits per second, damage taken -->
                 <StackPanel x:Name="MetricTabs" Grid.Row="2" Orientation="Horizontal" Margin="0,0,0,5" Visibility="Collapsed">
                     <Button x:Name="TabDps" Style="{StaticResource MetricTab}" Content="DPS" Tag="dps" Click="Metric_Click" />
                     <Button x:Name="TabHps" Style="{StaticResource MetricTab}" Content="HPS" Tag="hps" Click="Metric_Click" />
+                    <Button x:Name="TabAps" Style="{StaticResource MetricTab}" Content="APS" Tag="aps" Click="Metric_Click" />
                     <Button x:Name="TabTaken" Style="{StaticResource MetricTab}" Tag="taken" Click="Metric_Click" />
                 </StackPanel>
 

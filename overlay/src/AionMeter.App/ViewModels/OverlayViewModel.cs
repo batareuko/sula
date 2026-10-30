@@ -308,8 +308,8 @@ public sealed class OverlayViewModel : ObservableObject
     private Guid? _trendFor;
     public string Version { get; } = "v" + (typeof(OverlayViewModel).Assembly.GetName().Version?.ToString(3) ?? "0.1.0");
 
-    /// <summary>1 HP: what the rows rank by — damage (DPS), healing (HPS) or damage taken.</summary>
-    public enum Metric { Dps, Hps, Taken }
+    /// <summary>1 HP: what the rows rank by — damage (DPS), healing (HPS), damage taken or hits (APS, hits per second).</summary>
+    public enum Metric { Dps, Hps, Taken, Aps }
 
     /// <summary>The fight's rows ranked by <paramref name="metric"/>: value, per second and share for each.</summary>
     private static List<(CombatantSnapshot C, long Value, double Rate, double Share)> Ranked(EncounterSnapshot snap, Metric metric)
@@ -317,7 +317,7 @@ public sealed class OverlayViewModel : ObservableObject
         if (metric == Metric.Dps) return snap.Combatants.Select(c => (c, c.Damage, c.Dps, c.Share)).ToList();
         var seconds = Math.Max(1, snap.CombatMs) / 1000.0;
         var players = snap.Combatants.Where(c => !c.IsUnknownSummons).ToList();
-        long Of(CombatantSnapshot c) => metric == Metric.Hps ? c.Healing : c.DamageTaken;
+        long Of(CombatantSnapshot c) => metric switch { Metric.Hps => c.Healing, Metric.Aps => c.Hits, _ => c.DamageTaken };
         var total = Math.Max(1, players.Sum(Of));
         return players.Select(c => (c, Of(c), Of(c) / seconds, (double)Of(c) / total))
             .OrderByDescending(x => x.Item2).ToList();

@@ -953,6 +953,7 @@ public partial class OverlayWindow : Window
     {
         "hps" => OverlayViewModel.Metric.Hps,
         "taken" => OverlayViewModel.Metric.Taken,
+        "aps" => OverlayViewModel.Metric.Aps,
         _ => OverlayViewModel.Metric.Dps,
     };
 
@@ -1054,16 +1055,18 @@ public partial class OverlayWindow : Window
         {
             OverlayViewModel.Metric.Hps => players.Sum(c => c.Healing),
             OverlayViewModel.Metric.Taken => players.Sum(c => c.DamageTaken),
+            OverlayViewModel.Metric.Aps => players.Sum(c => (long)c.Hits),
             _ => shown.TotalDamage,
         };
-        TileRateLabel.Text = metric switch { OverlayViewModel.Metric.Hps => t.TileHps, OverlayViewModel.Metric.Taken => t.TileTakenPs, _ => t.TileDps };
+        TileRateLabel.Text = metric switch { OverlayViewModel.Metric.Hps => t.TileHps, OverlayViewModel.Metric.Taken => t.TileTakenPs, OverlayViewModel.Metric.Aps => t.TileAps, _ => t.TileDps };
         TileRate.Text = Format.Compact(metric == OverlayViewModel.Metric.Dps ? shown.PartyDps : total / seconds) + "/s";
         TileTimeLabel.Text = t.TileDuration;
-        TileTotalLabel.Text = t.TileTotal;
+        TileTotalLabel.Text = metric == OverlayViewModel.Metric.Aps ? t.TileHits : t.TileTotal;
         TileTotal.Text = Format.Compact(total);
         TabTaken.Content = t.TabTaken;
+        TabAps.ToolTip = t.TabApsTip;
         var accent = (Brush)FindResource("Accent");
-        foreach (var tab in new[] { TabDps, TabHps, TabTaken })
+        foreach (var tab in new[] { TabDps, TabHps, TabAps, TabTaken })
         {
             var on = (string)tab.Tag == _settings.MeterMetric;
             tab.BorderBrush = on ? accent : Brushes.Transparent;

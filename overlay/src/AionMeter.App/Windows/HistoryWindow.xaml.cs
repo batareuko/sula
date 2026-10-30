@@ -233,6 +233,11 @@ public partial class HistoryWindow : Window
         DetailPortrait.Source = item.Portrait;
         DetailMeta.Text = $"{s.StartedAt.ToString("dd MMM yyyy HH:mm", T.Culture)} · {Format.ClockPrecise(s.CombatMs)} · " +
                           $"{Format.Compact(s.TotalDamage)} {T.DamageWord} · {Format.Compact(s.PartyDps)}/s {T.Party} · {ReasonText(s.Reason)}";
+        // 1 HP: against the last try on the same boss — faster or slower, more or less DPS
+        if (FightExport.CompareWithPrevious(entry, Store.List()) is { } cmp)
+            DetailMeta.Text += "\n" + string.Format(T.CompareLast, cmp.Before.StartedAt.ToString("dd MMM HH:mm", T.Culture),
+                Signed(cmp.PartyDpsChange), (cmp.CombatMsChange >= 0 ? "+" : "−") + Format.ClockPrecise(Math.Abs(cmp.CombatMsChange)),
+                cmp.SelfDpsChange is { } me ? Signed(me) : "—");
         var vm = new OverlayViewModel();
         vm.Apply(s, 50, relativeToTop: true);
         Party.ItemsSource = vm.Rows;
@@ -323,6 +328,31 @@ public partial class HistoryWindow : Window
             MessageBoxButton.YesNo, MessageBoxImage.Question);
         if (answer != MessageBoxResult.Yes) return;
         Store.Delete(entry.Path);
+    }
+
+    private static string Signed(double change) => (change >= 0 ? "+" : "−") + Format.Percent(Math.Abs(change), 0);
+
+    /// <summary>1 HP: the selected fight as a spreadsheet (CSV, one row per player) or as the saved fight file (JSON).</summary>
+    private void Export_Click(object sender, RoutedEventArgs e)
+    {
+        if (_record is null || _entry is null || Fights.SelectedItem is not FightItem { Entry: not null } item) return;
+        var name = string.Concat($"{item.Title} {_entry.StartedAt:yyyy-MM-dd HHmm}".Split(System.IO.Path.GetInvalidFileNameChars()));
+        var dialog = new Microsoft.Win32.SaveFileDialog
+        {
+            FileName = name,
+            Filter = "CSV (Excel)|*.csv|JSON|*.json",
+            InitialDirectory = Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments),
+        };
+        if (dialog.ShowDialog(this) != true) return;
+        try
+        {
+            if (dialog.FilterIndex == 2) System.IO.File.Copy(_entry.Path, dialog.FileName, overwrite: true);
+            else System.IO.File.WriteAllText(dialog.FileName, FightExport.Csv(_record.Summary), new System.Text.UTF8Encoding(false));
+        }
+        catch (Exception ex) when (ex is System.IO.IOException or UnauthorizedAccessException)
+        {
+            MessageBox.Show(this, ex.Message, AppInfo.Name, MessageBoxButton.OK, MessageBoxImage.Warning);
+        }
     }
 
     private void OpenFolder_Click(object sender, RoutedEventArgs e) =>

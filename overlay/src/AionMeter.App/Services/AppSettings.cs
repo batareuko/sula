@@ -148,11 +148,13 @@ public sealed class AppSettings
     public bool DiagNoCapture { get; set; }
     /// <summary>1 HP disconnect test: no looking for the game (process list, TCP table) and no pings.</summary>
     public bool DiagNoGameScan { get; set; }
+    /// <summary>1 HP: the overlay, the boss bar and the pet radar step aside while another program is in front of the game.</summary>
+    public bool HideBehindOtherApps { get; set; } = true;
     /// <summary>1 HP: ping the game server and the router once a second for the network strip (off: stream counters only).</summary>
     public bool NetPing { get; set; } = true;
     /// <summary>1 HP: rows in two lines — name, deaths and trend over damage, crit, gear and server; tiles above the rows.</summary>
     public bool TwoLineRows { get; set; } = true;
-    /// <summary>1 HP: what the rows rank by: "dps", "hps" (healing) or "taken" (damage taken).</summary>
+    /// <summary>1 HP: what the rows rank by: "dps", "hps" (healing), "aps" (hits per second) or "taken" (damage taken).</summary>
     public string MeterMetric { get; set; } = "dps";
     /// <summary>1 HP: the card's colours: slate, crimson, emerald, violet, amber.</summary>
     public string ColorTheme { get; set; } = "slate";

@@ -274,6 +274,8 @@ public sealed partial class UiText
     public string DeleteConfirm { get; init; } = "Delete \"{0}\" ({1})?";
     public string TipRefresh { get; init; } = "Refresh";
     public string TipOpenFolder { get; init; } = "Open folder";
+    public string TipExport { get; init; } = "Export the fight: CSV for Excel (one row per player) or the JSON file";
+    public string CompareLast { get; init; } = "Against the last try ({0}): party DPS {1}, time {2}, your DPS {3}";
     public string TipDelete { get; init; } = "Delete selected fight";
     public string TipOpenBreakdown { get; init; } = "Open the full breakdown";
     public string DamageWord { get; init; } = "damage";
@@ -584,6 +586,8 @@ public sealed partial class UiText
         DeleteConfirm = "Удалить «{0}» ({1})?",
         TipRefresh = "Обновить",
         TipOpenFolder = "Открыть папку",
+        TipExport = "Экспорт боя: CSV для Excel (строка на игрока) или файл JSON",
+        CompareLast = "К прошлой попытке ({0}): DPS группы {1}, время {2}, ваш DPS {3}",
         TipDelete = "Удалить выбранный бой",
         TipOpenBreakdown = "Открыть полный разбор",
         DamageWord = "урона",
@@ -821,6 +825,8 @@ public sealed partial class UiText
         AnSkills = "СКИЛЛОВ",
         AnUsesTotal = "~{0} применений",
         AnalysisNote = "Применения — оценка: игра присылает удары, а не касты, поэтому удары одного скилла с промежутком меньше 1,2 с считаются одним применением. Урон со временем (DoT) входит в урон скилла, но не в применения.",
+        ClickToGame = "Нажмите, чтобы вернуться в игру",
+        HideBehindOn = "Скрывать метр, когда поверх игры другая программа (браузер, Discord, рабочий стол)",
         MechanicsOn = "Механики боссов в бою: касты босса, что будет дальше (учится по вашим боям) и советы из гайда",
         MechNext = "Дальше: {0}",
         MechNow = "сейчас",
@@ -834,6 +840,8 @@ public sealed partial class UiText
         TileTakenPs = "Получено/с",
         TileDuration = "Длительность",
         TileTotal = "Всего",
+        TileHits = "Ударов",
+        TabApsTip = "APS — удары в секунду: как часто каждый игрок попадает",
         DeathsTip = "Смертей в этом бою",
         TrendTip = "DPS за последние 5 секунд",
         PetRadarOn = "Пет-радар: мобы рядом, с которых падает душа питомца (данные: Aion2Data)",
