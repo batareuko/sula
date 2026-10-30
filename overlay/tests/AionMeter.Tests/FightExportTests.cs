@@ -49,3 +49,28 @@ public class FightExportTests
         Assert.EndsWith(";50;5;7;1", lines[1]);
     }
 }
+
+public class WorldMapsTests
+{
+    private static string DataFile(string name)
+    {
+        for (var dir = new DirectoryInfo(AppContext.BaseDirectory); dir is not null; dir = dir.Parent)
+        {
+            var path = Path.Combine(dir.FullName, "data", name);
+            if (File.Exists(path)) return path;
+        }
+        throw new FileNotFoundException(name);
+    }
+
+    [Fact]
+    public void LoadsTheSixMapsWithTheirPlaces()
+    {
+        var maps = AionMeter.Core.OneHp.WorldMaps.Load(DataFile("world_maps.json"));
+        Assert.Equal(6, maps.All.Count);
+        var v = maps.Find("verteron")!;
+        Assert.True(v.Layers["bosses"].Count > 10);
+        Assert.True(v.Layers["dungeons"].Count > 10);
+        Assert.All(v.Layers["bosses"].SelectMany(p => p.Points), p => Assert.InRange(p.X, 0, AionMeter.Core.OneHp.WorldMaps.Units));
+        Assert.Equal(v.Metres, v.MetresBetween((0, 0), (10_000, 0)), 3);
+    }
+}

@@ -42,6 +42,11 @@ internal static partial class NativeMethods
     /// </summary>
     public static bool IsCtrlDown() => (GetAsyncKeyState(VK_CONTROL) & 0x8000) != 0;
 
+    private const int VK_SHIFT = 0x10;
+
+    /// <summary>Shift is held right now (read only together with Ctrl, on a wheel turn over the overlay).</summary>
+    public static bool IsShiftDown() => (GetAsyncKeyState(VK_SHIFT) & 0x8000) != 0;
+
     [LibraryImport("user32.dll")]
     public static partial nint GetForegroundWindow();
 

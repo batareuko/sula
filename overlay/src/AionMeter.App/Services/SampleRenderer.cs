@@ -70,6 +70,14 @@ public static class SampleRenderer
                 host = radar;
                 refresh = radar.Refresh;
                 break;
+            case "map":
+                meter.Settings.MapSlug = "verteron";
+                meter.Settings.MapLayers = ["bosses", "dungeons", "rifts", "kibelisks", "pets"];
+                var map = new MapWindow(meter) { Width = o.Width ?? 900, Height = o.Height ?? 820 };
+                map.LoadPictureNow();
+                host = map;
+                refresh = () => { };
+                break;
             case "settings":
                 host = new SettingsWindow(meter) { Width = o.Width ?? 640, Height = o.Height ?? 900 };
                 refresh = () => { };

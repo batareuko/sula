@@ -136,6 +136,7 @@ public partial class App : Application
             History: ShowHistory,
             BossTimers: ShowBossTimers,
             PetRadar: TogglePetRadar,
+            Map: ShowMap,
             Settings: ShowSettings,
             Demo: () => _meter.StartDemo(),
             Replay: PickReplay,
@@ -341,6 +342,7 @@ public partial class App : Application
         _hotkeys.Register(s.HotkeyClickThrough, ToggleClickThrough);
         _hotkeys.Register(s.HotkeyTimers, ToggleBossTimers);
         _hotkeys.Register(s.HotkeyPetRadar, TogglePetRadar);
+        _hotkeys.Register(s.HotkeyMap, ShowMap);
     }
 
     /// <summary>
@@ -469,6 +471,22 @@ public partial class App : Application
     private GameFocus? _focus;
 
     /// <summary>1 HP: the pet radar window on / off (tray, Ctrl+Shift+P); remembered for the next start.</summary>
+    private MapWindow? _mapWindow;
+
+    /// <summary>1 HP: the world map window (tray, Ctrl+Shift+M); a second call closes it.</summary>
+    public void ShowMap()
+    {
+        if (_mapWindow is { IsVisible: true })
+        {
+            _mapWindow.Close();
+            return;
+        }
+        _mapWindow = new MapWindow(_meter);
+        _mapWindow.Closed += (_, _) => _mapWindow = null;
+        _mapWindow.Show();
+        _mapWindow.Activate();
+    }
+
     public void TogglePetRadar() => ShowPetRadar(!(_petRadar?.IsVisible ?? false));
 
     private void ShowPetRadar(bool on)
@@ -695,6 +713,7 @@ public partial class App : Application
         if (snap is not null && _bossBar is null)
         {
             _bossBar = new BossBarWindow();
+            _bossBar.ApplyScale(_meter.Settings.UiScale);
             _focus?.Apply();
         }
         _bossBar?.Update(snap, _meter.Settings.BossBar && !_meter.Settings.NoOverlay);
@@ -883,6 +902,14 @@ public partial class App : Application
 
     /// <summary>The Settings window's row size slider, shown on the overlay before it is saved.</summary>
     public void PreviewRowSize(int percent) => _overlay?.ApplyRowSize(percent);
+
+    /// <summary>1 HP: interface scale on every window over the game (the settings slider, Ctrl + Shift + wheel).</summary>
+    public void PreviewScale(int percent)
+    {
+        _overlay?.ApplyScale(percent);
+        _bossBar?.ApplyScale(percent);
+        _petRadar?.ApplyScale(percent);
+    }
 
     private void PickReplay()
     {

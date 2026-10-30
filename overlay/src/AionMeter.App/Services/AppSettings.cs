@@ -58,6 +58,10 @@ public sealed class AppSettings
     public bool BarsRelativeToTop { get; set; } = true;
     public int MaxRows { get; set; } = 10;
     public const int MinRowSize = 50, MaxRowSize = 100;
+    public const int MinUiScale = 75, MaxUiScale = 200;
+
+    /// <summary>1 HP: interface scale of the windows over the game (overlay, boss bar, pet radar), percent.</summary>
+    public int UiScale { get; set; } = 100;
     /// <summary>Overlay row size in percent of the original (Settings → Overlay, or Ctrl + wheel over the rows).</summary>
     public int RowSize { get; set; } = 100;
     public bool ShowBossPanel { get; set; } = true;
@@ -148,6 +152,10 @@ public sealed class AppSettings
     public bool DiagNoCapture { get; set; }
     /// <summary>1 HP disconnect test: no looking for the game (process list, TCP table) and no pings.</summary>
     public bool DiagNoGameScan { get; set; }
+    /// <summary>1 HP: the world map window — the map last shown and the layers turned on.</summary>
+    public string? MapSlug { get; set; }
+    public List<string> MapLayers { get; set; } = ["bosses", "dungeons", "rifts", "kibelisks"];
+    public string HotkeyMap { get; set; } = "Ctrl+Shift+M";
     /// <summary>1 HP: the overlay, the boss bar and the pet radar step aside while another program is in front of the game.</summary>
     public bool HideBehindOtherApps { get; set; } = true;
     /// <summary>1 HP: ping the game server and the router once a second for the network strip (off: stream counters only).</summary>
