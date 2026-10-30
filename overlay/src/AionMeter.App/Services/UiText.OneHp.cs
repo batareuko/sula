@@ -192,6 +192,10 @@ public sealed partial class UiText
     public string AnSkills { get; init; } = "SKILLS";
     public string AnUsesTotal { get; init; } = "~{0} uses";
     public string AnalysisNote { get; init; } = "Uses are estimated: the game sends hits, not casts, so hits of one skill less than 1.2 s apart count as one use. Damage over time is in the skill's damage but not in its uses.";
+    public string TrayGroupMeter { get; init; } = "METER";
+    public string TrayGroupWindows { get; init; } = "WINDOWS";
+    public string TrayGroupTools { get; init; } = "🛠 Tools";
+    public string TrayGroupWeb { get; init; } = "🌐 Guild site";
     public string PartyWindowTitle { get; init; } = "PARTY";
     public string PartyTray { get; init; } = "👥 Party window (Ctrl+Shift+G)";
     public string PartyWindowEmpty { get; init; } = "The meter does not know you yet: it shows the party once the game names your character.";

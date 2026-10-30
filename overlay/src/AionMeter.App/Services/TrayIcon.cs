@@ -29,6 +29,10 @@ public sealed class TrayIcon : IDisposable
     private readonly ToolStripMenuItem _site;     // 1 HP
     private readonly ToolStripMenuItem _netCheck; // 1 HP
     private readonly ToolStripMenuItem _analysis; // 1 HP
+    private readonly ToolStripLabel _headMeter = Head();   // 1 HP: group headings
+    private readonly ToolStripLabel _headWindows = Head();
+    private readonly ToolStripMenuItem _tools = new();      // 1 HP: submenus
+    private readonly ToolStripMenuItem _web = new();
     private bool _analysisRunning;
     private readonly Icon _image;
     private bool _overlayVisible = true;
@@ -38,7 +42,7 @@ public sealed class TrayIcon : IDisposable
     public TrayIcon(TrayActions actions)
     {
         _image = CreateIcon();
-        var menu = new ContextMenuStrip { ShowImageMargin = false };
+        var menu = new ContextMenuStrip { ShowImageMargin = false, ShowCheckMargin = true };
         _update = new ToolStripMenuItem("", null, (_, _) => actions.Update()) { Visible = false };
         _update.Font = new Font(_update.Font, System.Drawing.FontStyle.Bold);
         _updateSeparator = new ToolStripSeparator { Visible = false };
@@ -61,13 +65,24 @@ public sealed class TrayIcon : IDisposable
         _netCheck = new ToolStripMenuItem("", null, (_, _) => OpenUrl("https://guide.sulaslova.com/#netcheck"));
         _analysis = new ToolStripMenuItem("", null, (_, _) => actions.Analysis());
         _sendLog = new ToolStripMenuItem("", null, (_, _) => actions.SendLog());
+        // 1 HP: the menu in groups — the meter, the windows (ticked while open), tools and the site as submenus
+        _tools.DropDownItems.AddRange([_analysis, _sendLog, new ToolStripSeparator(), _demo, _replay, new ToolStripSeparator(), _checkUpdates]);
+        _web.DropDownItems.AddRange([_site, _netCheck]);
         menu.Items.AddRange([
             _update, _updateSeparator,
-            _toggle, _clickThrough, _reset, _analysis, _sendLog, new ToolStripSeparator(),
-            _history, _timers, _petRadar, _map, _checklist, _party, _settings, _language, _demo, _replay, _checkUpdates, new ToolStripSeparator(),
-            _site, _netCheck, new ToolStripSeparator(),
+            _headMeter, _toggle, _clickThrough, _reset, new ToolStripSeparator(),
+            _headWindows, _party, _history, _timers, _checklist, _map, _petRadar, new ToolStripSeparator(),
+            _tools, _web, _settings, _language, new ToolStripSeparator(),
             _exit,
         ]);
+        // ticks for what is open or on, read when the menu opens
+        menu.Opening += (_, _) =>
+        {
+            if (actions.State?.Invoke() is not { } s) return;
+            _party.Checked = s.Party;
+            _petRadar.Checked = s.PetRadar;
+            _clickThrough.Checked = s.ClickThrough;
+        };
         ApplyTexts();
 
         _icon = new NotifyIcon
@@ -89,6 +104,11 @@ public sealed class TrayIcon : IDisposable
         };
         _icon.BalloonTipClosed += (_, _) => _balloonClick = null;
     }
+
+    private static ToolStripLabel Head() => new()
+    {
+        ForeColor = Color.FromArgb(255, 128, 128, 128), Font = new Font("Segoe UI", 8f, System.Drawing.FontStyle.Bold), Margin = new Padding(6, 4, 0, 0),
+    };
 
     private static void OpenUrl(string url)
     {
@@ -119,6 +139,10 @@ public sealed class TrayIcon : IDisposable
         _netCheck.Text = t.TrayNetCheck;
         _analysis.Text = _analysisRunning ? t.AnalysisTrayStop : t.AnalysisTrayStart;
         _sendLog.Text = t.SendLogTray;
+        _headMeter.Text = t.TrayGroupMeter;
+        _headWindows.Text = t.TrayGroupWindows;
+        _tools.Text = t.TrayGroupTools;
+        _web.Text = t.TrayGroupWeb;
         if (_updateVersion is not null) _update.Text = string.Format(t.TrayUpdate, _updateVersion);
     }
 
@@ -201,4 +225,8 @@ public sealed record TrayActions(
     Action CheckUpdates,
     Action Analysis,
     Action SendLog,
-    Action Exit);
+    Action Exit,
+    Func<TrayState>? State = null);
+
+/// <summary>1 HP: what the tray menu ticks — the windows open and the modes on.</summary>
+public sealed record TrayState(bool Party, bool PetRadar, bool ClickThrough);
