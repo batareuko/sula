@@ -2,7 +2,6 @@ using System.IO;
 using System.Net.Http;
 using System.Windows;
 using System.Windows.Controls;
-using System.Windows.Controls.Primitives;
 using System.Windows.Media;
 using System.Windows.Media.Imaging;
 using System.Windows.Shapes;
@@ -112,28 +111,38 @@ public sealed class MapWindow : Window
         {
             if (!_map.Layers.TryGetValue(key, out var places)) continue;
             var count = places.Count;
-            var chip = new ToggleButton
+            var on = _meter.Settings.MapLayers.Contains(key);
+            var label = new TextBlock { Text = $"{t.MapLayer(key)} {count}", FontSize = 12, VerticalAlignment = VerticalAlignment.Center };
+            var chip = new Border
             {
-                Tag = key, Margin = new Thickness(0, 2, 6, 2), Padding = new Thickness(8, 3, 8, 3), Cursor = System.Windows.Input.Cursors.Hand,
-                IsChecked = _meter.Settings.MapLayers.Contains(key), Foreground = Brushes.White, BorderThickness = new Thickness(1),
-                BorderBrush = new SolidColorBrush(Color.FromArgb(0x60, 0x6E, 0x8B, 0xFF)), Background = new SolidColorBrush(Color.FromRgb(0x1C, 0x23, 0x33)),
-                Content = new StackPanel
+                Margin = new Thickness(0, 2, 6, 2), Padding = new Thickness(8, 3, 9, 3), CornerRadius = new CornerRadius(11),
+                BorderThickness = new Thickness(1), Cursor = System.Windows.Input.Cursors.Hand,
+                Child = new StackPanel
                 {
                     Orientation = Orientation.Horizontal,
                     Children =
                     {
-                        new Ellipse { Width = 9, Height = 9, Fill = new SolidColorBrush(WorldMapView.LayerColor(key)), Margin = new Thickness(0, 0, 5, 0), VerticalAlignment = VerticalAlignment.Center },
-                        new TextBlock { Text = $"{t.MapLayer(key)} {count}", FontSize = 12 },
+                        new Ellipse { Width = 9, Height = 9, Fill = new SolidColorBrush(WorldMapView.LayerColor(key)), Margin = new Thickness(0, 0, 6, 0), VerticalAlignment = VerticalAlignment.Center },
+                        label,
                     },
                 },
             };
-            chip.Click += (_, _) =>
+            void Paint()
             {
-                var on = chip.IsChecked == true;
+                var c = WorldMapView.LayerColor(key);
+                chip.Background = new SolidColorBrush(on ? Color.FromArgb(0x40, c.R, c.G, c.B) : Color.FromRgb(0x1C, 0x23, 0x33));
+                chip.BorderBrush = new SolidColorBrush(on ? c : Color.FromArgb(0x50, 0x6E, 0x8B, 0xFF));
+                label.Foreground = new SolidColorBrush(on ? Colors.White : Color.FromRgb(0x8A, 0x94, 0xA6));
+            }
+            Paint();
+            chip.MouseLeftButtonUp += (_, _) =>
+            {
+                on = !on;
                 var layers = _meter.Settings.MapLayers;
                 if (on && !layers.Contains(key)) layers.Add(key);
                 if (!on) layers.Remove(key);
                 _meter.Settings.Save();
+                Paint();
                 ApplyLayers();
             };
             _chips.Children.Add(chip);
@@ -171,7 +180,8 @@ public sealed class MapWindow : Window
         {
             Log.Info($"Map picture {map.Slug} not loaded: {ex.Message}");
             _images.Remove(map.Slug); // try again next time
-            if (_map?.Slug == map.Slug) _status.Text = UiText.Current.MapNoPicture;
+            if (_map?.Slug == map.Slug)
+                _status.Text = ex is NotSupportedException or FileFormatException ? UiText.Current.MapNoCodec : UiText.Current.MapNoPicture;
         }
     }
 

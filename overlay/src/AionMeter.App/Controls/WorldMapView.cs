@@ -137,6 +137,8 @@ public sealed class WorldMapView : FrameworkElement
         HoverChanged?.Invoke(null);
     }
 
+    private static bool Dense(string key) => key is "pets" or "gather" or "cubes";
+
     private static string Describe(WorldMaps.Place p) =>
         p.Name + (string.IsNullOrEmpty(p.Sub) ? "" : " · " + p.Sub) + (p.Points.Count > 1 ? $" · {p.Points.Count} ×" : "");
 
@@ -210,10 +212,12 @@ public sealed class WorldMapView : FrameworkElement
         }
 
         var r = Math.Clamp(2.5 + _zoom * 0.6, 3, 7);
-        foreach (var (key, places) in Visible())
+        // the many small spots (pets, gathering, cube spots) below, the few landmarks on top of them
+        foreach (var (key, places) in Visible().OrderBy(l => Dense(l.Key) ? 0 : 1))
         {
             var fill = Fills[key];
             var big = key is "bosses" or "dungeons" or "rifts" or "monoliths";
+            var dense = Dense(key);
             foreach (var place in places)
             {
                 var dim = _dim(place);
@@ -221,8 +225,8 @@ public sealed class WorldMapView : FrameworkElement
                 {
                     var p = ToScreen(pt);
                     if (p.X < -10 || p.Y < -10 || p.X > ActualWidth + 10 || p.Y > ActualHeight + 10) continue;
-                    var radius = dim ? r * 0.6 : big ? r + 1.5 : r;
-                    dc.DrawEllipse(dim ? Grey : fill, Edge, p, radius, radius);
+                    var radius = dim ? r * 0.45 : big ? r + 1.5 : dense ? r * 0.6 : r;
+                    dc.DrawEllipse(dim ? Grey : fill, dense ? null : Edge, p, radius, radius);
                 }
             }
         }

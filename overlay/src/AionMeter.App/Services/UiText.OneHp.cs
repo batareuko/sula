@@ -199,6 +199,7 @@ public sealed partial class UiText
     public string MapTip { get; init; } = "Wheel — zoom, drag — move. Pets you have (ticked on the card) are grey.";
     public string MapLoading { get; init; } = "Downloading the map picture…";
     public string MapNoPicture { get; init; } = "The map picture could not be downloaded (internet?). The places are shown without it.";
+    public string MapNoCodec { get; init; } = "Windows cannot open the map picture (WebP): install \"WebP Image Extensions\" from the Microsoft Store (free). The places are shown without it.";
     public string MapNoData { get; init; } = "No map table (data/world_maps.json).";
     public string LayerBosses { get; init; } = "Field bosses";
     public string LayerDungeons { get; init; } = "Dungeons";
