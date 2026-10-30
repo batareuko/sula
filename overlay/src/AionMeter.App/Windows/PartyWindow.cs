@@ -12,7 +12,7 @@ namespace AionMeter.App.Windows;
 
 /// <summary>
 /// 1 HP: the party window (tray 👥, Ctrl+Shift+G) — you and your party: class, name, an HP bar with its percent, the buffs
-/// and debuffs on each one, their long cooldowns under the row, and a bar of your own cooldowns. The stream page
+/// and debuffs on each one, and the cooldowns under each row (the skill's icon and the time left; yours all, theirs the long ones). The stream page
 /// <c>/party</c> shows the same window (OBS browser source). Drag moves it.
 /// </summary>
 public sealed class PartyWindow : Window
@@ -82,16 +82,6 @@ public sealed class PartyWindow : Window
             return;
         }
         foreach (var m in members) _rows.Children.Add(Row(m, now));
-
-        // your own cooldowns: the skill icons with the time left
-        var mine = members.FirstOrDefault(m => m.IsSelf)?.Cooldowns ?? [];
-        if (mine.Count > 0)
-        {
-            _rows.Children.Add(new TextBlock { Text = t.PartyWindowMine, Foreground = Muted, FontSize = 10.5, FontWeight = FontWeights.SemiBold, Margin = new Thickness(2, 8, 0, 3) });
-            var bar = new WrapPanel();
-            foreach (var c in mine.Take(12)) bar.Children.Add(Cooldown(c, 30));
-            _rows.Children.Add(bar);
-        }
     }
 
     private UIElement Row(PartyFrameMember m, long now)
@@ -152,11 +142,11 @@ public sealed class PartyWindow : Window
             mid.Children.Add(wrap);
         }
 
-        // their long cooldowns (yours are in the bar below)
-        if (!m.IsSelf && m.Cooldowns.Count > 0)
+        // cooldowns under the row: the skill's icon with the time left on it — all of yours (from 1 s), the others' long ones
+        if (m.Cooldowns.Count > 0)
         {
-            var cds = new WrapPanel { Margin = new Thickness(0, 3, 0, 0) };
-            foreach (var c in m.Cooldowns.Take(6)) cds.Children.Add(Cooldown(c, 22));
+            var cds = new WrapPanel { Margin = new Thickness(0, 4, 0, 0) };
+            foreach (var c in m.Cooldowns.Take(m.IsSelf ? 12 : 6)) cds.Children.Add(Cooldown(c, m.IsSelf ? 28 : 24));
             mid.Children.Add(cds);
         }
         Grid.SetColumn(mid, 1);
@@ -167,7 +157,7 @@ public sealed class PartyWindow : Window
 
     private UIElement Cooldown(PartyCooldown c, double size)
     {
-        var cell = new StackPanel { Orientation = Orientation.Horizontal, Margin = new Thickness(0, 0, 8, 2), ToolTip = c.Skill };
+        var cell = new StackPanel { Orientation = Orientation.Horizontal, Margin = new Thickness(0, 0, 4, 2), ToolTip = $"{c.Skill} · {Math.Ceiling(c.LeftMs / 1000.0)} s" };
         var badge = new CooldownBadge { Margin = new Thickness(0), LayoutTransform = new ScaleTransform(size / 34, size / 34) };
         badge.Set(_meter.Icons.Get(c.SkillCode), c.TotalMs > 0 ? (double)c.LeftMs / c.TotalMs : 0, c.LeftMs);
         cell.Children.Add(badge);
