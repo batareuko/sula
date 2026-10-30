@@ -1,0 +1,6 @@
+{
+  "_note": "Game position (centimetres, x and y of the move / spawn packets) to world map units (data/world_maps.json): u = scale*x + offsetX, v = scale*y + offsetY. Fitted by least squares on the Kibelisks a player flew to (recording 2026-10-30, Verteron, 5 Kibelisks, 15-42 m off). Maps without an entry have no 'you are here' yet.",
+  "maps": {
+    "verteron": { "mapId": 1010, "scale": 0.0180684, "offsetX": 5751.88, "offsetY": 4480.09 }
+  }
+}

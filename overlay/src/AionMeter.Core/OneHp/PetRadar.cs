@@ -35,6 +35,8 @@ public sealed class PetRadar
 
     private uint? Self => _self ?? SelfId?.Invoke();
     private (float X, float Y, long AtMs)? _anchor; // the monster you hit last
+    private int _mapId;
+    private (long AtMs, List<(float X, float Y)> Seen)? _arrival; // monsters that came into view right after a teleport
     private readonly object _gate = new();
 
     public IReadOnlyCollection<Soul> All { get; }
@@ -86,6 +88,7 @@ public sealed class PetRadar
                         _where[n.ActorId] = (n.X, n.Y, n.Z);
                     }
                     else _where.Remove(n.ActorId);
+                    if (_arrival is { } arr && n.TimeMs - arr.AtMs < 10_000 && (n.X != 0 || n.Y != 0)) arr.Seen.Add((n.X, n.Y));
                     if (_byNpc.TryGetValue(n.NpcCode, out var soul)) _inView[n.ActorId] = (soul, n.TimeMs);
                     else _inView.Remove(n.ActorId); // the id now belongs to another monster
                     break;
@@ -105,7 +108,9 @@ public sealed class PetRadar
                 case DeathEvent d:
                     _inView.Remove(d.ActorId);
                     break;
-                case ZoneChangedEvent:
+                case ZoneChangedEvent z:
+                    _mapId = z.MapId;
+                    _arrival = (z.TimeMs, new List<(float, float)>());
                     _inView.Clear();
                     _where.Clear();
                     _anchor = null;
@@ -129,6 +134,30 @@ public sealed class PetRadar
             var center = _me is { } me && nowMs - me.AtMs < 30_000 ? (me.X, me.Y)
                 : _anchor is { } a && nowMs - a.AtMs < 120_000 ? (a.X, a.Y) : ((float, float)?)null;
             return new Picture(center, dots);
+        }
+    }
+
+    /// <param name="Exact">From your own move (else from the monster you hit, or the middle of what came into view after a teleport).</param>
+    public sealed record Whereabouts(int MapId, float X, float Y, bool Exact);
+
+    /// <summary>
+    /// 1 HP: where you are, for the world map: your own last move (30 s), else the monster you hit (2 min), else the middle
+    /// of the monsters that came into view in the 10 s after a teleport (5 min, at least three of them). Game units.
+    /// </summary>
+    public Whereabouts? Where(long nowMs)
+    {
+        lock (_gate)
+        {
+            if (_mapId == 0) return null;
+            if (_me is { } me && nowMs - me.AtMs < 30_000) return new Whereabouts(_mapId, me.X, me.Y, true);
+            if (_anchor is { } a && nowMs - a.AtMs < 120_000) return new Whereabouts(_mapId, a.X, a.Y, false);
+            if (_arrival is { Seen.Count: >= 3 } arr && nowMs - arr.AtMs < 300_000)
+            {
+                var xs = arr.Seen.Select(p => p.X).Order().ToList();
+                var ys = arr.Seen.Select(p => p.Y).Order().ToList();
+                return new Whereabouts(_mapId, xs[xs.Count / 2], ys[ys.Count / 2], false);
+            }
+            return null;
         }
     }
 

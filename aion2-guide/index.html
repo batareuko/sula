@@ -610,26 +610,27 @@
 
   <section class="wrap" id="map" aria-labelledby="mapTitle">
     <div class="sec-head">
-      <h2 id="mapTitle">Інтерактивна карта</h2>
-      <span class="mono muted">interactivemap.app</span>
+      <h2 id="mapTitle">Карта світу</h2>
+      <span class="mono muted">6 карт · значки з гри</span>
     </div>
-    <p class="muted lead">Карта вбудована зі стороннього сервісу <a href="https://interactivemap.app/aion2/" target="_blank" rel="noopener">interactivemap.app</a>: пошук, фільтри категорій, власні відмітки. Сама карта — англійською (української версії в сервісу немає), тому назви категорій нижче подано з англійським оригіналом.</p>
+    <p class="muted lead">Польові боси, входи в підземелля, розломи, кібеліски, моноліти, збір, моби з душами петів і місця прихованих кубів — ігровими значками на ігровій карті. Коліщатко або «+ / −» — зум, перетягніть — зсунути, наведіть (торкніться) значка — назва. Пети, позначені в розділі «Пети» як зібрані, бліді. Та сама карта є в оверлеї (трей → 🗺 або Ctrl+Shift+M).</p>
 
     <div class="map-tools">
-      <div class="tabs" id="zoneTabs" role="tablist" aria-label="Зони"></div>
+      <div class="tabs" id="wmapTabs" role="tablist" aria-label="Карта"></div>
       <div class="map-tools-r">
+        <button class="btn" id="wmapOut" type="button" aria-label="Віддалити">−</button>
+        <button class="btn" id="wmapIn" type="button" aria-label="Наблизити">+</button>
         <button class="btn" id="mapFull" type="button">На весь екран</button>
-        <a class="btn" id="mapOpen" href="#" target="_blank" rel="noopener">Відкрити в новій вкладці ↗</a>
       </div>
     </div>
+    <div class="wmap-layers" id="wmapLayers"></div>
 
-    <div class="map-frame" id="mapFrame">
-      <div class="map-placeholder" id="mapPlaceholder">
-        <p>Карта завантажується, коли ви доходите до цього розділу.</p>
-        <button class="btn" id="mapLoad" type="button">Завантажити карту зараз</button>
-      </div>
+    <div class="wmap" id="wmap">
+      <canvas id="wmapCanvas" aria-label="Карта світу Aion 2"></canvas>
+      <div class="wmap-tip" id="wmapTip" hidden></div>
+      <div class="wmap-status" id="wmapStatus">Карта завантажується, коли ви доходите до цього розділу.</div>
     </div>
-    <p class="muted small">Якщо карта не відображається (блокувальник реклами/трекерів, обмеження мережі) — відкрийте її в новій вкладці. <a id="routeGuide" href="#" target="_blank" rel="noopener">Гайд зі маршрутів ↗</a></p>
+    <p class="muted small">Карти й місця: <a href="https://aion2data.com/map" target="_blank" rel="noopener">Aion2Data</a> (картинки карт — з їхнього сайту), значки — CDN гри. Ще одна карта з пошуком і власними відмітками: <a id="mapOpen" href="https://interactivemap.app/aion2/" target="_blank" rel="noopener">interactivemap.app ↗</a> · <a id="routeGuide" href="#" target="_blank" rel="noopener">гайд з маршрутів ↗</a></p>
 
     <details class="panel mapcheck collapsible" data-wide-open>
       <summary><h3 class="h-card">Що шукати на карті · мій прогрес по зонах</h3></summary>

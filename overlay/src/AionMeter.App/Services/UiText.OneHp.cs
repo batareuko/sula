@@ -196,10 +196,11 @@ public sealed partial class UiText
     public string MapTray { get; init; } = "🗺 World map (Ctrl+Shift+M)";
     public string MapCredit { get; init; } = "Maps and places: Aion2Data";
     public string MapHint { get; init; } = "{0} · {1} m across · wheel — zoom, drag — move, point at a dot — its name";
-    public string MapTip { get; init; } = "Wheel — zoom, drag — move. Pets you have (ticked on the card) are grey.";
+    public string MapTip { get; init; } = "Wheel — zoom, drag — move. Pets you have (ticked on the card) are pale. The gold dot is you (a dashed ring: roughly, from the monsters around).";
     public string MapLoading { get; init; } = "Downloading the map picture…";
     public string MapNoPicture { get; init; } = "The map picture could not be downloaded (internet?). The places are shown without it.";
     public string MapNoCodec { get; init; } = "Windows cannot open the map picture (WebP): install \"WebP Image Extensions\" from the Microsoft Store (free). The places are shown without it.";
+    public string MapWhereAmI { get; init; } = "◎ Where am I";
     public string MapNoData { get; init; } = "No map table (data/world_maps.json).";
     public string LayerBosses { get; init; } = "Field bosses";
     public string LayerDungeons { get; init; } = "Dungeons";

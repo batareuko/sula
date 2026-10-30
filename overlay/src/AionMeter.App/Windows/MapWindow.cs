@@ -27,6 +27,10 @@ public sealed class MapWindow : Window
     private readonly WrapPanel _chips = new() { VerticalAlignment = VerticalAlignment.Center };
     private readonly TextBlock _status = new() { Foreground = new SolidColorBrush(Color.FromRgb(0xC9, 0xD2, 0xE0)), Margin = new Thickness(10, 5, 10, 6), TextTrimming = TextTrimming.CharacterEllipsis };
     private readonly Dictionary<string, ImageSource?> _images = new();
+    private static readonly Dictionary<string, ImageSource?> Icons = new(); // game icons by resource name (null: downloading or missing)
+    private readonly System.Windows.Threading.DispatcherTimer _timer = new() { Interval = TimeSpan.FromSeconds(1) };
+    private readonly Button _whereButton = new() { Margin = new Thickness(0, 0, 10, 0), Padding = new Thickness(10, 3, 10, 3), VerticalAlignment = VerticalAlignment.Center, Visibility = Visibility.Collapsed };
+    private bool _followed;
     private WorldMaps.Map? _map;
 
     public MapWindow(MeterService meter)
@@ -51,6 +55,10 @@ public sealed class MapWindow : Window
         var top = new DockPanel { Margin = new Thickness(10, 8, 10, 6) };
         DockPanel.SetDock(_pick, Dock.Left);
         top.Children.Add(_pick);
+        _whereButton.Content = t.MapWhereAmI;
+        _whereButton.Click += (_, _) => FollowYou(centre: true);
+        DockPanel.SetDock(_whereButton, Dock.Left);
+        top.Children.Add(_whereButton);
         top.Children.Add(_chips);
 
         var credit = new TextBlock { Margin = new Thickness(10, 5, 10, 6), HorizontalAlignment = HorizontalAlignment.Right };
@@ -74,6 +82,9 @@ public sealed class MapWindow : Window
         Content = grid;
 
         _view.HoverChanged += text => _status.Text = text ?? Hint();
+        _view.Icon = IconFor;
+        _timer.Tick += (_, _) => FollowYou(centre: false);
+        IsVisibleChanged += (_, _) => { if (IsVisible) _timer.Start(); else _timer.Stop(); };
         _view.ToolTip = t.MapTip;
         ToolTipService.SetInitialShowDelay(_view, 1500);
 
@@ -82,9 +93,76 @@ public sealed class MapWindow : Window
             _status.Text = t.MapNoData;
             return;
         }
-        var slug = meter.Maps.Find(meter.Settings.MapSlug)?.Slug ?? meter.Maps.All[0].Slug;
+        // the map you are on (when the meter knows it), else the one shown last
+        var here = meter.Pets.Where(meter.Tracker.LastEventMs) is { } w ? meter.Maps.ForGameMap(w.MapId) : null;
+        var slug = here?.Slug ?? meter.Maps.Find(meter.Settings.MapSlug)?.Slug ?? meter.Maps.All[0].Slug;
         _pick.SelectedItem = _pick.Items.Cast<ComboBoxItem>().First(i => (string)i.Tag == slug);
     }
+
+    /// <summary>
+    /// 1 HP: "you are here" — your position from the meter (your own moves, the monster you hit, what came into view after a
+    /// teleport), on the maps whose game coordinates are calibrated. <paramref name="centre"/>: switch to your map and centre on you.
+    /// </summary>
+    private void FollowYou(bool centre)
+    {
+        var w = _meter.Pets.Where(_meter.Tracker.LastEventMs);
+        var map = w is null ? null : _meter.Maps.ForGameMap(w.MapId);
+        _whereButton.Visibility = map is null ? Visibility.Collapsed : Visibility.Visible;
+        if (map is null || w is null)
+        {
+            _view.SetYou(null, false);
+            return;
+        }
+        if (centre && _map?.Slug != map.Slug)
+            _pick.SelectedItem = _pick.Items.Cast<ComboBoxItem>().First(i => (string)i.Tag == map.Slug);
+        _view.SetYou(_map?.Slug == map.Slug ? map.ToMap(w.X, w.Y) : null, w.Exact);
+        if (centre || !_followed)
+        {
+            _followed = true;
+            if (_map?.Slug == map.Slug) _view.CentreOnYou();
+        }
+    }
+
+    /// <summary>A game icon from the game's CDN, kept in %AppData%\1HP-Overlay\maps\icons; null while it downloads.</summary>
+    private ImageSource? IconFor(string name)
+    {
+        if (Icons.TryGetValue(name, out var icon)) return icon;
+        Icons[name] = null;
+        _ = LoadIconAsync(name);
+        return null;
+    }
+
+    private async Task LoadIconAsync(string name)
+    {
+        var file = System.IO.Path.Combine(CacheDir, "icons", name + ".png");
+        try
+        {
+            if (!File.Exists(file))
+            {
+                Directory.CreateDirectory(System.IO.Path.GetDirectoryName(file)!);
+                var bytes = await Http.GetByteArrayAsync(GameResources + name + ".png").ConfigureAwait(true);
+                var tmp = $"{file}.{Guid.NewGuid():N}.tmp";
+                await File.WriteAllBytesAsync(tmp, bytes).ConfigureAwait(true);
+                File.Move(tmp, file, overwrite: true);
+            }
+            var bmp = new BitmapImage();
+            bmp.BeginInit();
+            bmp.CacheOption = BitmapCacheOption.OnLoad;
+            bmp.DecodePixelWidth = 64;
+            bmp.UriSource = new Uri(file);
+            bmp.EndInit();
+            bmp.Freeze();
+            Icons[name] = bmp;
+            _view.Redraw();
+            BuildChips();
+        }
+        catch (Exception ex) when (ex is HttpRequestException or IOException or TaskCanceledException or NotSupportedException or FileFormatException or UnauthorizedAccessException)
+        {
+            Log.Info($"Map icon {name} not loaded: {ex.Message}");
+        }
+    }
+
+    private const string GameResources = "https://assets.playnccdn.com/static-aion2-gamedata/resources/";
 
     private string Hint() => _map is null ? "" : string.Format(UiText.Current.MapHint, _map.Name, $"{_map.Metres:0}");
 
@@ -122,7 +200,9 @@ public sealed class MapWindow : Window
                     Orientation = Orientation.Horizontal,
                     Children =
                     {
-                        new Ellipse { Width = 9, Height = 9, Fill = new SolidColorBrush(WorldMapView.LayerColor(key)), Margin = new Thickness(0, 0, 6, 0), VerticalAlignment = VerticalAlignment.Center },
+                        IconFor(WorldMaps.LayerIcon(key)) is { } icon
+                            ? new Image { Source = icon, Width = 18, Height = 18, Margin = new Thickness(0, 0, 6, 0), VerticalAlignment = VerticalAlignment.Center }
+                            : new Ellipse { Width = 9, Height = 9, Fill = new SolidColorBrush(WorldMapView.LayerColor(key)), Margin = new Thickness(0, 0, 6, 0), VerticalAlignment = VerticalAlignment.Center },
                         label,
                     },
                 },
@@ -220,6 +300,28 @@ public sealed class MapWindow : Window
         catch (Exception ex) when (ex is HttpRequestException or IOException or TaskCanceledException or NotSupportedException or FileFormatException)
         {
             Log.Info($"Map picture {_map.Slug} not loaded: {ex.Message}");
+        }
+        try
+        {
+            // and the icons of the layers shown, so the preview has them all
+            foreach (var key in _meter.Settings.MapLayers)
+                if (_map.Layers.TryGetValue(key, out var places))
+                    foreach (var name in places.Select(p => WorldMaps.IconOf(key, p)).Distinct())
+                    {
+                        var icon = System.IO.Path.Combine(CacheDir, "icons", name + ".png");
+                        if (!File.Exists(icon))
+                        {
+                            Directory.CreateDirectory(System.IO.Path.GetDirectoryName(icon)!);
+                            File.WriteAllBytes(icon, Http.GetByteArrayAsync(GameResources + name + ".png").GetAwaiter().GetResult());
+                        }
+                        Icons[name] = new BitmapImage(new Uri(icon));
+                    }
+            BuildChips();
+            _view.Redraw();
+        }
+        catch (Exception ex) when (ex is HttpRequestException or IOException or TaskCanceledException or NotSupportedException or FileFormatException)
+        {
+            Log.Info($"Map icons not loaded: {ex.Message}");
         }
     }
 

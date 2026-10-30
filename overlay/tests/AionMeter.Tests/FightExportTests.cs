@@ -74,3 +74,44 @@ public class WorldMapsTests
         Assert.Equal(v.Metres, v.MetresBetween((0, 0), (10_000, 0)), 3);
     }
 }
+
+public class WhereaboutsTests
+{
+    [Fact]
+    public void AfterATeleportYouAreAmongWhatCameIntoView()
+    {
+        var radar = new AionMeter.Core.OneHp.PetRadar([]);
+        radar.Observe(new AionMeter.Core.Events.ZoneChangedEvent(1_000, 1010, "Open world", false, IsTeleport: true));
+        Assert.Null(radar.Where(1_500));
+        radar.Observe(new AionMeter.Core.Events.NpcSeenEvent(1_200, 1, 2000001, 100, X: -61_000, Y: 84_000));
+        radar.Observe(new AionMeter.Core.Events.NpcSeenEvent(1_300, 2, 2000001, 100, X: -62_000, Y: 85_000));
+        radar.Observe(new AionMeter.Core.Events.NpcSeenEvent(1_400, 3, 2000001, 100, X: -61_500, Y: 84_500));
+        radar.Observe(new AionMeter.Core.Events.NpcSeenEvent(20_000, 4, 2000001, 100, X: 50_000, Y: 50_000)); // later: not the arrival
+        var w = radar.Where(5_000);
+        Assert.NotNull(w);
+        Assert.Equal(1010, w!.MapId);
+        Assert.Equal(-61_500, w.X);
+        Assert.Equal(84_500, w.Y);
+        Assert.False(w.Exact);
+        Assert.Null(radar.Where(400_000)); // too old
+    }
+
+    [Fact]
+    public void VerteronCalibrationPutsAKibeliskOnItsMark()
+    {
+        string Data(string name)
+        {
+            for (var dir = new DirectoryInfo(AppContext.BaseDirectory); dir is not null; dir = dir.Parent)
+                if (File.Exists(Path.Combine(dir.FullName, "data", name))) return Path.Combine(dir.FullName, "data", name);
+            throw new FileNotFoundException(name);
+        }
+        var maps = AionMeter.Core.OneHp.WorldMaps.Load(Data("world_maps.json"), Data("map_calibration.json"));
+        var v = maps.ForGameMap(1010)!;
+        Assert.Equal("verteron", v.Slug);
+        // the NPC at Dawn Legion Base's Kibelisk in the 2026-10-30 recording
+        var at = v.ToMap(-111_039, -98_733)!.Value;
+        var nearest = v.Layers["kibelisks"].SelectMany(k => k.Points.Select(p => (k.Name, D: v.MetresBetween(p, at)))).MinBy(x => x.D);
+        Assert.Equal("Dawn Legion Base", nearest.Name);
+        Assert.True(nearest.D < 30);
+    }
+}
