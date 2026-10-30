@@ -20,6 +20,33 @@ public sealed class WorldMapView : FrameworkElement
     private Point _pan; // top-left of the map in pixels
     private Point? _dragFrom;
     private (string Layer, WorldMaps.Place Place, (double X, double Y) Pt)? _hover;
+    private (double X, double Y)? _you;
+    private bool _youExact;
+
+    /// <summary>The game's icons by resource name (null while one downloads: a dot stands in).</summary>
+    public Func<string, ImageSource?> Icon { get; set; } = _ => null;
+
+    /// <summary>"You are here" in map units; null hides it. <paramref name="exact"/>: from your own move.</summary>
+    public void SetYou((double X, double Y)? at, bool exact)
+    {
+        if (_you == at && _youExact == exact) return;
+        _you = at;
+        _youExact = exact;
+        InvalidateVisual();
+    }
+
+    /// <summary>Centres the view on "you are here", zoomed in a little.</summary>
+    public void CentreOnYou()
+    {
+        if (_you is not { } y || _map is null) return;
+        _zoom = Math.Max(_zoom, 3);
+        var p = (X: y.X * UnitsToPx, Y: y.Y * UnitsToPx);
+        _pan = new Point(ActualWidth / 2 - p.X, ActualHeight / 2 - p.Y);
+        Fit();
+        InvalidateVisual();
+    }
+
+    public void Redraw() => InvalidateVisual();
 
     public WorldMapView()
     {
@@ -120,7 +147,7 @@ public sealed class WorldMapView : FrameworkElement
             InvalidateVisual();
             return;
         }
-        var hit = Nearest(at, 9);
+        var hit = Nearest(at, 12);
         if (hit?.Pt != _hover?.Pt || hit?.Place != _hover?.Place)
         {
             _hover = hit;
@@ -173,6 +200,17 @@ public sealed class WorldMapView : FrameworkElement
     private static readonly Brush Shadow = Frozen(Color.FromArgb(0xC0, 0, 0, 0));
     private static readonly Pen Edge = FrozenPen(Color.FromArgb(0xE0, 0x0A, 0x0E, 0x16), 1);
     private static readonly Pen HoverRing = FrozenPen(Colors.White, 2);
+    private static readonly Brush YouFill = Frozen(Color.FromRgb(0xFF, 0xD3, 0x4D));
+    private static readonly Brush YouHalo = Frozen(Color.FromArgb(0x55, 0xFF, 0xD3, 0x4D));
+    private static readonly Pen YouRing = FrozenPen(Color.FromRgb(0xFF, 0xD3, 0x4D), 2);
+    private static readonly Pen YouGuess = DashedPen(Color.FromRgb(0xFF, 0xD3, 0x4D));
+
+    private static Pen DashedPen(Color c)
+    {
+        var p = new Pen(Frozen(c), 2) { DashStyle = DashStyles.Dash };
+        p.Freeze();
+        return p;
+    }
 
     /// <summary>The layer's colour (the same as on Aion2Data's map).</summary>
     public static Color LayerColor(string key) => key switch
@@ -212,30 +250,43 @@ public sealed class WorldMapView : FrameworkElement
         }
 
         var r = Math.Clamp(2.5 + _zoom * 0.6, 3, 7);
+        var size = Math.Clamp(14 + _zoom * 3, 16, 30); // icon size, px
         // the many small spots (pets, gathering, cube spots) below, the few landmarks on top of them
         foreach (var (key, places) in Visible().OrderBy(l => Dense(l.Key) ? 0 : 1))
         {
             var fill = Fills[key];
-            var big = key is "bosses" or "dungeons" or "rifts" or "monoliths";
             var dense = Dense(key);
             foreach (var place in places)
             {
                 var dim = _dim(place);
+                var icon = Icon(WorldMaps.IconOf(key, place));
+                var s = dense ? size * 0.72 : size;
+                if (dim) dc.PushOpacity(0.3);
                 foreach (var pt in place.Points)
                 {
                     var p = ToScreen(pt);
-                    if (p.X < -10 || p.Y < -10 || p.X > ActualWidth + 10 || p.Y > ActualHeight + 10) continue;
-                    var radius = dim ? r * 0.45 : big ? r + 1.5 : dense ? r * 0.6 : r;
-                    dc.DrawEllipse(dim ? Grey : fill, dense ? null : Edge, p, radius, radius);
+                    if (p.X < -20 || p.Y < -20 || p.X > ActualWidth + 20 || p.Y > ActualHeight + 20) continue;
+                    if (icon is not null) dc.DrawImage(icon, new Rect(p.X - s / 2, p.Y - s / 2, s, s));
+                    else dc.DrawEllipse(dim ? Grey : fill, dense ? null : Edge, p, dense ? r * 0.6 : r, dense ? r * 0.6 : r);
                 }
+                if (dim) dc.Pop();
             }
+        }
+
+        if (_you is { } you)
+        {
+            // you: a gold dot in a ring; a dashed ring when the place is a guess (a monster you hit, the arrival)
+            var p = ToScreen(you);
+            dc.DrawEllipse(YouHalo, null, p, 14, 14);
+            dc.DrawEllipse(YouFill, new Pen(Brushes.Black, 1.5), p, 6, 6);
+            dc.DrawEllipse(null, _youExact ? YouRing : YouGuess, p, 11, 11);
         }
 
         if (_hover is { } h)
         {
             // every spot of the hovered place, and its name by the cursor's dot
             foreach (var pt in h.Place.Points)
-                dc.DrawEllipse(null, HoverRing, ToScreen(pt), r + 3, r + 3);
+                dc.DrawEllipse(null, HoverRing, ToScreen(pt), size * 0.6, size * 0.6);
             var p = ToScreen(h.Pt);
             var label = new FormattedText(h.Place.Name, CultureInfo.CurrentUICulture, FlowDirection.LeftToRight, Bold, 12, Brushes.White, dpi);
             var x = p.X + 10 + label.Width <= ActualWidth - 4 ? p.X + 10 : p.X - 10 - label.Width;

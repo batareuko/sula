@@ -30,7 +30,7 @@ public sealed class MeterService : IDisposable
         settings.ApplyTo(Options);
         Tracker = new CombatTracker(Data, Options);
         Pets = Core.OneHp.PetRadar.Load(Path.Combine(DataDirectory, "pet_souls.json"));
-        _maps = new Lazy<Core.OneHp.WorldMaps>(() => Core.OneHp.WorldMaps.Load(Path.Combine(DataDirectory, "world_maps.json")));
+        _maps = new Lazy<Core.OneHp.WorldMaps>(() => Core.OneHp.WorldMaps.Load(Path.Combine(DataDirectory, "world_maps.json"), Path.Combine(DataDirectory, "map_calibration.json")));
         Tracker.Pets = Pets;
         Pets.SelfId = () => Tracker.SelfActorId;
         // 1 HP: monster skills worth a line on the card — not plain attacks, potions or anything of the players

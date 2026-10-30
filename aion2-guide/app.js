@@ -2605,53 +2605,282 @@
     $('btnEn').addEventListener('click', function () { showEn = !showEn; prefSet('showEn', showEn); setShowEn(showEn); });
   }
 
-  /* ---------- Інтерактивна карта ---------- */
-  var mapZone = G.map.zones[0];
-  var mapLoaded = false;
+  /* ---------- Карта світу: world_maps.json (Aion2Data: місця й картинки карт), значки — CDN гри ---------- */
+  var GAME_RES = 'https://assets.playnccdn.com/static-aion2-gamedata/resources/';
+  var WMAP_LAYERS = [
+    { key: 'bosses', name: 'Польові боси', icon: 'UT_Marker_Monster_Boss' },
+    { key: 'dungeons', name: 'Підземелля', icon: 'UT_Marker_Dungeon' },
+    { key: 'rifts', name: 'Розломи', icon: 'UT_Marker_Rift' },
+    { key: 'kibelisks', name: 'Кібеліски', icon: 'UT_Marker_TeleportArtifact_Light_Unengraved' },
+    { key: 'monoliths', name: 'Моноліти', icon: 'UT_Marker_Monolith_Light' },
+    { key: 'gather', name: 'Збір', icon: 'UT_Marker_Gatherl_Jewelry', dense: true },
+    { key: 'pets', name: 'Душі петів', icon: 'Icon_BMShop_Soulcrystal_All', dense: true },
+    { key: 'cubes', name: 'Місця прихованих кубів', icon: 'Icon_Item_Currency_Treasure_Key_A_s_001', dense: true },
+  ];
+  var wm = {
+    data: null, map: null, img: null, icons: {}, zoom: 1, pan: { x: 0, y: 0 }, hover: null, loading: false,
+    layers: prefGet('wmapLayers', ['bosses', 'dungeons', 'rifts', 'kibelisks']),
+  };
 
-  function mapUrl() { return G.map.base + mapZone.slug; }
-
-  function renderMapLinks() {
-    $('mapOpen').href = mapUrl();
-    $('routeGuide').href = G.map.routeGuide;
+  function wmIcon(name) {
+    var im = wm.icons[name];
+    if (!im) {
+      im = wm.icons[name] = new Image();
+      im.onload = wmDraw;
+      im.src = GAME_RES + name + '.png';
+    }
+    return im.complete && im.naturalWidth ? im : null;
   }
 
-  function loadMap() {
-    if (mapLoaded) return;
-    mapLoaded = true;
-    $('mapPlaceholder').hidden = true;
-    $('mapFrame').appendChild(h('iframe', {
-      id: 'mapIframe', src: mapUrl(), title: 'Інтерактивна карта Aion 2: ' + mapZone.name,
-      allow: 'fullscreen', sandbox: 'allow-scripts allow-same-origin allow-popups allow-popups-to-escape-sandbox allow-forms allow-downloads',
-    }));
+  // значок місця: у збору — свій (руда, трави, риба…), в інших — маркер шару, як на карті гри
+  function wmPlaceIcon(layer, place) { return layer.key === 'gather' && place.i ? place.i : layer.icon; }
+
+  function wmCanvasSize() {
+    var c = $('wmapCanvas'), box = $('wmap'), dpr = window.devicePixelRatio || 1;
+    var w = box.clientWidth, hgt = box.clientHeight;
+    if (c.width !== Math.round(w * dpr) || c.height !== Math.round(hgt * dpr)) { c.width = Math.round(w * dpr); c.height = Math.round(hgt * dpr); }
+    return { w: w, h: hgt, dpr: dpr };
   }
+
+  function wmScale(sz) { var m = wm.map; return Math.min(sz.w / m.image.w, sz.h / m.image.h) * wm.zoom; }
+
+  function wmFit(sz) {
+    var m = wm.map, s = wmScale(sz), w = m.image.w * s, hh = m.image.h * s;
+    wm.pan.x = w <= sz.w ? (sz.w - w) / 2 : Math.min(0, Math.max(sz.w - w, wm.pan.x));
+    wm.pan.y = hh <= sz.h ? (sz.h - hh) / 2 : Math.min(0, Math.max(sz.h - hh, wm.pan.y));
+  }
+
+  function wmToScreen(pt, sz) { var k = wmScale(sz) * wm.map.image.w / 10000; return { x: wm.pan.x + pt[0] * k, y: wm.pan.y + pt[1] * k }; }
+
+  function wmVisible() {
+    return WMAP_LAYERS.filter(function (l) { return wm.layers.indexOf(l.key) >= 0 && wm.map.layers[l.key]; });
+  }
+
+  function wmOwnedPet(place) {
+    var have = petHave();
+    return (G.pets || []).some(function (p) { return p[1] === place.n && have.indexOf(p[0]) >= 0; });
+  }
+
+  function wmDraw() {
+    if (!wm.map) return;
+    var sz = wmCanvasSize(), ctx = $('wmapCanvas').getContext('2d'), m = wm.map;
+    ctx.setTransform(sz.dpr, 0, 0, sz.dpr, 0, 0);
+    ctx.fillStyle = '#0a141a';
+    ctx.fillRect(0, 0, sz.w, sz.h);
+    var s = wmScale(sz);
+    if (wm.img && wm.img.complete && wm.img.naturalWidth) ctx.drawImage(wm.img, wm.pan.x, wm.pan.y, m.image.w * s, m.image.h * s);
+    // назви територій: великі завжди, менші — при наближенні
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    (m.areas || []).forEach(function (a) {
+      if (a.r > 1 && wm.zoom < 2.5) return;
+      var p = wmToScreen([a.x, a.y], sz);
+      ctx.font = (a.r === 1 ? '600 13px' : '11px') + ' system-ui, sans-serif';
+      ctx.fillStyle = 'rgba(0,0,0,.75)';
+      ctx.fillText(a.n, p.x + 1, p.y + 1);
+      ctx.fillStyle = '#fff';
+      ctx.fillText(a.n, p.x, p.y);
+    });
+    var base = Math.max(16, Math.min(30, 14 + wm.zoom * 3));
+    // дрібні шари внизу, орієнтири зверху
+    wmVisible().sort(function (a, b) { return (b.dense ? 1 : 0) - (a.dense ? 1 : 0); }).forEach(function (l) {
+      m.layers[l.key].forEach(function (place) {
+        var owned = l.key === 'pets' && wmOwnedPet(place);
+        var size = l.dense ? base * 0.72 : base;
+        var im = wmIcon(wmPlaceIcon(l, place));
+        ctx.globalAlpha = owned ? 0.3 : 1;
+        place.pts.forEach(function (pt) {
+          var p = wmToScreen(pt, sz);
+          if (p.x < -20 || p.y < -20 || p.x > sz.w + 20 || p.y > sz.h + 20) return;
+          if (im) ctx.drawImage(im, p.x - size / 2, p.y - size / 2, size, size);
+          else { ctx.fillStyle = '#c9d2e0'; ctx.beginPath(); ctx.arc(p.x, p.y, 3, 0, 7); ctx.fill(); }
+        });
+        ctx.globalAlpha = 1;
+      });
+    });
+    if (wm.hover) {
+      // усі точки наведеного місця — в кільці
+      ctx.strokeStyle = '#fff';
+      ctx.lineWidth = 2;
+      wm.hover.place.pts.forEach(function (pt) {
+        var p = wmToScreen(pt, sz);
+        ctx.beginPath(); ctx.arc(p.x, p.y, base * 0.62, 0, 7); ctx.stroke();
+      });
+    }
+    // лінійка в метрах
+    var mpp = m.metres / (m.image.w * s), step = [50, 100, 200, 250, 500, 1000, 2000].filter(function (v) { return v / mpp <= 140; }).pop() || 50;
+    var len = step / mpp, y = sz.h - 14;
+    ctx.fillStyle = 'rgba(0,0,0,.6)';
+    ctx.fillRect(8, y - 14, len + 54, 22);
+    ctx.strokeStyle = '#fff';
+    ctx.beginPath(); ctx.moveTo(14, y); ctx.lineTo(14 + len, y); ctx.stroke();
+    ctx.fillStyle = '#fff';
+    ctx.textAlign = 'left';
+    ctx.font = '11px system-ui, sans-serif';
+    ctx.fillText(step + ' м', 20 + len, y);
+  }
+
+  function wmNearest(x, y, within) {
+    var sz = wmCanvasSize(), best = null, bd = within * within;
+    wmVisible().forEach(function (l) {
+      wm.map.layers[l.key].forEach(function (place) {
+        place.pts.forEach(function (pt) {
+          var p = wmToScreen(pt, sz), d = (p.x - x) * (p.x - x) + (p.y - y) * (p.y - y);
+          if (d < bd) { bd = d; best = { layer: l, place: place, p: p }; }
+        });
+      });
+    });
+    return best;
+  }
+
+  function wmShowTip(hit) {
+    var tip = $('wmapTip');
+    wm.hover = hit;
+    if (!hit) { tip.hidden = true; wmDraw(); return; }
+    tip.textContent = '';
+    // у боса й пета — його портрет із гри
+    if (hit.place.i && (hit.layer.key === 'bosses' || hit.layer.key === 'pets'))
+      tip.appendChild(h('img', { src: GAME_RES + hit.place.i + '.png', alt: '', loading: 'lazy' }));
+    var txt = h('div', {});
+    txt.appendChild(h('b', { text: hit.place.n }));
+    if (hit.place.s) txt.appendChild(h('div', { class: 'muted small', text: hit.place.s }));
+    txt.appendChild(h('div', { class: 'muted small', text: hit.layer.name + (hit.place.pts.length > 1 ? ' · точок: ' + hit.place.pts.length : '') }));
+    tip.appendChild(txt);
+    tip.hidden = false;
+    var box = $('wmap'), x = hit.p.x + 16, y = hit.p.y - 10;
+    tip.style.left = Math.max(4, Math.min(box.clientWidth - tip.offsetWidth - 4, x)) + 'px';
+    tip.style.top = Math.max(4, Math.min(box.clientHeight - tip.offsetHeight - 4, y)) + 'px';
+    wmDraw();
+  }
+
+  function wmZoomAt(x, y, k) {
+    var sz = wmCanvasSize(), before = wm.zoom;
+    wm.zoom = Math.max(1, Math.min(12, wm.zoom * k));
+    var r = wm.zoom / before;
+    wm.pan.x = x - (x - wm.pan.x) * r;
+    wm.pan.y = y - (y - wm.pan.y) * r;
+    wmFit(sz);
+    wmShowTip(null);
+  }
+
+  function wmSelect(slug) {
+    var m = wm.data.maps.filter(function (x) { return x.slug === slug; })[0] || wm.data.maps[0];
+    wm.map = m;
+    wm.zoom = 1;
+    prefSet('wmapSlug', m.slug);
+    $('wmapTabs').querySelectorAll('.tab').forEach(function (t) { t.setAttribute('aria-selected', t.getAttribute('data-slug') === m.slug ? 'true' : 'false'); });
+    wmRenderLayers();
+    $('wmapStatus').hidden = false;
+    $('wmapStatus').textContent = 'Завантажую картинку карти…';
+    wm.img = new Image();
+    wm.img.onload = function () { $('wmapStatus').hidden = true; wmDraw(); };
+    wm.img.onerror = function () { $('wmapStatus').textContent = 'Картинку карти не вдалося завантажити — значки показано без неї.'; };
+    wm.img.src = m.image.src;
+    wmFit(wmCanvasSize());
+    wmShowTip(null);
+  }
+
+  function wmRenderLayers() {
+    var box = $('wmapLayers');
+    box.textContent = '';
+    WMAP_LAYERS.forEach(function (l) {
+      var list = wm.map.layers[l.key];
+      if (!list) return;
+      var on = wm.layers.indexOf(l.key) >= 0;
+      var b = h('button', { class: 'wmap-chip', type: 'button', 'aria-pressed': on ? 'true' : 'false' });
+      b.appendChild(h('img', { src: GAME_RES + l.icon + '.png', alt: '' }));
+      b.appendChild(document.createTextNode(l.name + ' '));
+      b.appendChild(h('span', { class: 'mono muted', text: String(list.length) }));
+      b.addEventListener('click', function () {
+        var i = wm.layers.indexOf(l.key);
+        if (i >= 0) wm.layers.splice(i, 1); else wm.layers.push(l.key);
+        prefSet('wmapLayers', wm.layers);
+        wmRenderLayers();
+        wmShowTip(null);
+      });
+      box.appendChild(b);
+    });
+  }
+
+  function wmLoad() {
+    if (wm.loading) return;
+    wm.loading = true;
+    fetch('world_maps.json').then(function (r) { return r.json(); }).then(function (d) {
+      wm.data = d;
+      var tabs = $('wmapTabs');
+      d.maps.forEach(function (m) {
+        var b = h('button', { class: 'tab', type: 'button', role: 'tab', 'data-slug': m.slug, text: WMAP_NAMES[m.slug] || m.name });
+        b.addEventListener('click', function () { wmSelect(m.slug); });
+        tabs.appendChild(b);
+      });
+      wmSelect(prefGet('wmapSlug', 'verteron'));
+    }).catch(function () { $('wmapStatus').textContent = 'Дані карти не завантажились. Оновіть сторінку.'; wm.loading = false; });
+  }
+
+  var WMAP_NAMES = { verteron: 'Вертерон', altgard: 'Альтгард', eltnen: 'Ельтнен', morheim: 'Морхейм', 'chaotic-lower-reshanta': 'Нижня Решанта', 'chaotic-middle-reshanta': 'Середня Решанта' };
 
   function initMap() {
-    var tabs = $('zoneTabs');
-    G.map.zones.forEach(function (z) {
-      var b = h('button', { class: 'tab', type: 'button', role: 'tab', 'aria-selected': z === mapZone ? 'true' : 'false', text: z.name });
-      b.addEventListener('click', function () {
-        mapZone = z;
-        tabs.querySelectorAll('.tab').forEach(function (t) { t.setAttribute('aria-selected', t === b ? 'true' : 'false'); });
-        renderMapLinks();
-        var frame = $('mapIframe');
-        if (frame) { frame.src = mapUrl(); frame.title = 'Інтерактивна карта Aion 2: ' + z.name; } else { loadMap(); }
-      });
-      tabs.appendChild(b);
+    $('routeGuide').href = G.map.routeGuide;
+    var c = $('wmapCanvas'), pointers = {}, last = null, pinch = null;
+    c.addEventListener('wheel', function (e) {
+      if (!wm.map) return;
+      e.preventDefault();
+      var r = c.getBoundingClientRect();
+      wmZoomAt(e.clientX - r.left, e.clientY - r.top, e.deltaY < 0 ? 1.25 : 0.8);
+    }, { passive: false });
+    c.addEventListener('pointerdown', function (e) {
+      pointers[e.pointerId] = { x: e.clientX, y: e.clientY };
+      c.setPointerCapture(e.pointerId);
+      last = { x: e.clientX, y: e.clientY, moved: 0 };
     });
-    renderMapLinks();
-    $('mapLoad').addEventListener('click', loadMap);
+    c.addEventListener('pointermove', function (e) {
+      if (!wm.map) return;
+      var r = c.getBoundingClientRect(), ids = Object.keys(pointers);
+      if (ids.length === 2 && pointers[e.pointerId]) {
+        // два пальці: щипок
+        pointers[e.pointerId] = { x: e.clientX, y: e.clientY };
+        var a = pointers[ids[0]], b = pointers[ids[1]], d = Math.hypot(a.x - b.x, a.y - b.y);
+        if (pinch) wmZoomAt((a.x + b.x) / 2 - r.left, (a.y + b.y) / 2 - r.top, d / pinch);
+        pinch = d;
+        return;
+      }
+      if (last && pointers[e.pointerId]) {
+        var dx = e.clientX - last.x, dy = e.clientY - last.y;
+        last.moved += Math.abs(dx) + Math.abs(dy);
+        last.x = e.clientX; last.y = e.clientY;
+        wm.pan.x += dx; wm.pan.y += dy;
+        wmFit(wmCanvasSize());
+        if (wm.hover) wmShowTip(null); else wmDraw();
+        return;
+      }
+      wmShowTip(wmNearest(e.clientX - r.left, e.clientY - r.top, 14));
+    });
+    function up(e) {
+      var r = c.getBoundingClientRect();
+      if (last && last.moved < 6 && Object.keys(pointers).length === 1)
+        wmShowTip(wmNearest(e.clientX - r.left, e.clientY - r.top, 22)); // дотик: назва значка
+      delete pointers[e.pointerId];
+      if (Object.keys(pointers).length < 2) pinch = null;
+      if (!Object.keys(pointers).length) last = null;
+    }
+    c.addEventListener('pointerup', up);
+    c.addEventListener('pointercancel', up);
+    c.addEventListener('pointerleave', function () { if (!last) wmShowTip(null); });
+    $('wmapIn').addEventListener('click', function () { var sz = wmCanvasSize(); if (wm.map) wmZoomAt(sz.w / 2, sz.h / 2, 1.5); });
+    $('wmapOut').addEventListener('click', function () { var sz = wmCanvasSize(); if (wm.map) wmZoomAt(sz.w / 2, sz.h / 2, 1 / 1.5); });
     $('mapFull').addEventListener('click', function () {
-      var f = $('mapFrame');
+      var f = $('wmap');
       if (f.requestFullscreen) f.requestFullscreen().catch(function () { toast('Повноекранний режим недоступний'); });
       else toast('Повноекранний режим недоступний у цьому браузері');
     });
+    window.addEventListener('resize', function () { if (wm.map) { wmFit(wmCanvasSize()); wmDraw(); } });
+    document.addEventListener('fullscreenchange', function () { if (wm.map) setTimeout(function () { wmFit(wmCanvasSize()); wmDraw(); }, 50); });
     if ('IntersectionObserver' in window) {
       var io = new IntersectionObserver(function (entries) {
-        if (entries.some(function (e) { return e.isIntersecting; })) { loadMap(); io.disconnect(); }
+        if (entries.some(function (e) { return e.isIntersecting; })) { wmLoad(); io.disconnect(); }
       }, { rootMargin: '400px' });
-      io.observe($('mapFrame'));
-    }
+      io.observe($('wmap'));
+    } else wmLoad();
   }
 
   /* ---------- Пачноути: переклад з тлумаченням (data.js → patches) + свіжі новини з офіційного сайту ---------- */
