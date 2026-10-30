@@ -31,6 +31,11 @@ public sealed class MeterService : IDisposable
         Casts = new Core.OneHp.BossCasts(code => GameData.IsNpcSkill(code) && code is < 2_000_000 or > 2_999_999 &&
                                                  !Data.SkillName(code).Equals("Attack", StringComparison.OrdinalIgnoreCase));
         Tracker.Casts = Casts;
+        // 1 HP: Hidden Cube radar — "Cube detected" while a hidden cube is near; the direction arrow is a stub until
+        // the cube's position packet is confirmed.
+        Cubes = new Core.OneHp.CubeRadar { FadeAfterMs = Math.Clamp(settings.CubeRadarFadeMs, 0, 60_000) };
+        Cubes.SelfId = () => Tracker.SelfActorId;
+        Tracker.Cubes = settings.CubeRadar ? Cubes : null;
         Mechanics = LoadMechanics(Path.Combine(DataDirectory, "boss_mechanics.json"));
         History = new HistoryStore(Path.Combine(AppSettings.AppDataDir, "fights"));
         Timers = new BossTimers(Path.Combine(AppSettings.AppDataDir, "boss-timers.json"), Data, DataDirectory, persistent: !settings.Transient);
@@ -99,6 +104,8 @@ public sealed class MeterService : IDisposable
     public Core.OneHp.PetRadar Pets { get; }
     /// <summary>1 HP: monster casts in the fight and the gaps learnt between them (boss-casts.json).</summary>
     public Core.OneHp.BossCasts Casts { get; }
+    /// <summary>1 HP: hidden cubes near you (Core/OneHp/CubeRadar.cs); hooked to the tracker when <see cref="AppSettings.CubeRadar"/> is on.</summary>
+    public Core.OneHp.CubeRadar Cubes { get; }
     /// <summary>1 HP: tips per boss NPC code, from the site's mechanics guide (data/boss_mechanics.json, by English name).</summary>
     public IReadOnlyDictionary<int, string[]> Mechanics { get; }
 
@@ -417,6 +424,8 @@ public sealed class MeterService : IDisposable
     public void ApplySettings()
     {
         Settings.ApplyTo(Options);
+        Cubes.FadeAfterMs = Math.Clamp(Settings.CubeRadarFadeMs, 0, 60_000);
+        Tracker.Cubes = Settings.CubeRadar ? Cubes : null;
         Icons.Enabled = Settings.DownloadIcons;
         Portraits.Enabled = Settings.DownloadIcons;
         if (!Settings.Transient) Stream.Apply(Settings.StreamEnabled, Settings.StreamPort);

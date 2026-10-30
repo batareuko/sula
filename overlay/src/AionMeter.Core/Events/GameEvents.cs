@@ -165,3 +165,27 @@ public sealed record PartyLeftEvent(long TimeMs) : GameEvent(TimeMs);
 
 public sealed record PartyRosterEvent(long TimeMs, IReadOnlyList<string> Names, bool Complete,
     IReadOnlyDictionary<string, long>? Powers = null, IReadOnlyDictionary<string, int>? Gear = null) : GameEvent(TimeMs);
+
+/// <summary>1 HP: what a Hidden Cube packet means.</summary>
+public enum CubePhase
+{
+    /// <summary><c>38 36</c>: the cube came near you (carries your actor id too).</summary>
+    Near,
+    /// <summary><c>37 36</c>: the cube's spawn record.</summary>
+    SpawnRecord,
+    /// <summary><c>3a 36</c>: you started collecting the cube.</summary>
+    Interact,
+    /// <summary><c>6d 8d</c>: the cube is in focus.</summary>
+    Focus,
+    /// <summary><c>05 8d</c>: the cube was collected / is gone.</summary>
+    Gone,
+    /// <summary><c>35 36</c>: the collection is confirmed.</summary>
+    Collected,
+}
+
+/// <summary>
+/// 1 HP: a Hidden Cube packet. <paramref name="CubeId"/> is the dynamic varint id the game hands the cube (unique per
+/// cube); <paramref name="PlayerId"/> is your own actor id when the packet carries it. The cube's coordinates are not in
+/// these packets (it is "hidden" by design), so this is presence only — the direction arrow waits on the position packet.
+/// </summary>
+public sealed record CubeEvent(long TimeMs, CubePhase Phase, uint CubeId, uint PlayerId = 0) : GameEvent(TimeMs);

@@ -38,6 +38,12 @@ public static class Opcodes
     public const ushort BuffRefresh = 0x2B38;    // 1 HP: one buff refreshed (target, buff, bool)
     public const ushort Move = 0x1B37;           // 1 HP: an entity moved: actor varint, 1–2 bytes, x y z f32 (cm), …
     public const ushort FieldBossList = 0x0191;  // a map's field bosses: alive since / back at (in-game map list)
+    public const ushort CubeNear = 0x3836;       // 1 HP: hidden cube near you: [cube varint][you varint]
+    public const ushort CubeSpawn = 0x3736;      // 1 HP: cube spawn record: [00 00 00][cube varint][8 × 00]
+    public const ushort CubeInteract = 0x3A36;   // 1 HP: you start collecting: [cube][you][00 00 00][u32]
+    public const ushort CubeFocus = 0x6D8D;      // 1 HP: the cube is in focus: [cube]
+    public const ushort CubeGone = 0x058D;       // 1 HP: the cube is collected / gone: [cube]
+    public const ushort CubeCollected = 0x3536;  // 1 HP: collection confirmed: [cube][04 03 00]
 
     public static string Name(ushort op) => op switch
     {
@@ -70,6 +76,12 @@ public static class Opcodes
         BuffList => "Buffs",
         BuffRefresh => "BuffRefresh",
         FieldBossList => "FieldBosses",
+        CubeNear => "CubeNear",
+        CubeSpawn => "CubeSpawn",
+        CubeInteract => "CubeInteract",
+        CubeFocus => "CubeFocus",
+        CubeGone => "CubeGone",
+        CubeCollected => "CubeCollected",
         _ => $"{op >> 8:x2} {op & 0xFF:x2}",
     };
 }
