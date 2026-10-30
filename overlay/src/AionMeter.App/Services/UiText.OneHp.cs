@@ -192,6 +192,8 @@ public sealed partial class UiText
     public string AnSkills { get; init; } = "SKILLS";
     public string AnUsesTotal { get; init; } = "~{0} uses";
     public string AnalysisNote { get; init; } = "Uses are estimated: the game sends hits, not casts, so hits of one skill less than 1.2 s apart count as one use. Damage over time is in the skill's damage but not in its uses.";
+    public string ClickToGame { get; init; } = "Click to go back to the game";
+    public string HideBehindOn { get; init; } = "Hide the meter while another program is in front of the game (browser, Discord, desktop)";
     public string MechanicsOn { get; init; } = "Boss mechanics in boss fights: the boss's casts, what comes next (learnt from your fights) and the guide's tips";
     public string MechNext { get; init; } = "Next: {0}";
     public string MechNow { get; init; } = "now";
@@ -206,6 +208,9 @@ public sealed partial class UiText
     public string TileTakenPs { get; init; } = "Taken/s";
     public string TileDuration { get; init; } = "Duration";
     public string TileTotal { get; init; } = "Total";
+    public string TileAps { get; init; } = "APS";
+    public string TileHits { get; init; } = "Hits";
+    public string TabApsTip { get; init; } = "APS — hits per second: how often each player lands a hit";
     public string DeathsTip { get; init; } = "Deaths in this fight";
     public string TrendTip { get; init; } = "DPS over the last 5 seconds";
     public string PetRadarOn { get; init; } = "Pet radar: monsters in view that drop a pet's soul (data: Aion2Data)";

@@ -42,6 +42,56 @@ internal static partial class NativeMethods
     /// </summary>
     public static bool IsCtrlDown() => (GetAsyncKeyState(VK_CONTROL) & 0x8000) != 0;
 
+    [LibraryImport("user32.dll")]
+    public static partial nint GetForegroundWindow();
+
+    [LibraryImport("user32.dll")]
+    public static partial uint GetWindowThreadProcessId(nint hWnd, out uint processId);
+
+    [LibraryImport("user32.dll", EntryPoint = "GetClassNameW", StringMarshalling = StringMarshalling.Utf16)]
+    private static partial int GetClassName(nint hWnd, [Out] char[] className, int maxCount);
+
+    /// <summary>The window's class name ("" when it has none or is gone).</summary>
+    public static string ClassName(nint hwnd)
+    {
+        var buffer = new char[64];
+        var n = GetClassName(hwnd, buffer, buffer.Length);
+        return n > 0 ? new string(buffer, 0, n) : "";
+    }
+
+    [StructLayout(LayoutKind.Sequential)]
+    private struct FLASHWINFO
+    {
+        public uint cbSize;
+        public nint hwnd;
+        public uint dwFlags;
+        public uint uCount;
+        public uint dwTimeout;
+    }
+
+    [LibraryImport("user32.dll")]
+    [return: MarshalAs(UnmanagedType.Bool)]
+    private static partial bool FlashWindowEx(ref FLASHWINFO info);
+
+    [LibraryImport("user32.dll")]
+    [return: MarshalAs(UnmanagedType.Bool)]
+    public static partial bool SetForegroundWindow(nint hWnd);
+
+    [LibraryImport("user32.dll")]
+    [return: MarshalAs(UnmanagedType.Bool)]
+    public static partial bool ShowWindow(nint hWnd, int nCmdShow);
+
+    [LibraryImport("user32.dll")]
+    [return: MarshalAs(UnmanagedType.Bool)]
+    public static partial bool IsIconic(nint hWnd);
+
+    /// <summary>The window's taskbar button blinks until the window comes to the front.</summary>
+    public static void Flash(nint hwnd)
+    {
+        var info = new FLASHWINFO { cbSize = (uint)Marshal.SizeOf<FLASHWINFO>(), hwnd = hwnd, dwFlags = 0x3 | 0xC, uCount = 0 }; // all, until in front
+        FlashWindowEx(ref info);
+    }
+
     public static void SetExStyle(nint hwnd, long add, long remove = 0)
     {
         var style = (long)GetWindowLongPtr(hwnd, GWL_EXSTYLE);

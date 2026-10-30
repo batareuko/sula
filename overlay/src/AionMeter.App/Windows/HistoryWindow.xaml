@@ -56,6 +56,7 @@
                 <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" VerticalAlignment="Center"
                             WindowChrome.IsHitTestVisibleInChrome="True">
                     <Button Style="{StaticResource IconButton}" Content="&#xE72C;" Click="Refresh_Click" ToolTip="{Binding TipRefresh, Source={x:Static s:UiText.Current}}" />
+                    <Button Style="{StaticResource IconButton}" Content="&#xE78C;" Click="Export_Click" ToolTip="{Binding TipExport, Source={x:Static s:UiText.Current}}" />
                     <Button Style="{StaticResource IconButton}" Content="&#xE838;" Click="OpenFolder_Click" ToolTip="{Binding TipOpenFolder, Source={x:Static s:UiText.Current}}" />
                     <Button Style="{StaticResource IconButton}" Content="&#xE74D;" Click="Delete_Click" ToolTip="{Binding TipDelete, Source={x:Static s:UiText.Current}}" />
                     <Button Style="{StaticResource IconButton}" Content="&#xE711;" Click="Close_Click" ToolTip="{Binding TipClose, Source={x:Static s:UiText.Current}}" />

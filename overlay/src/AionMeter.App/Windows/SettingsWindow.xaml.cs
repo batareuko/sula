@@ -102,6 +102,7 @@ public partial class SettingsWindow : Window
         TwoLineRowsOn.IsChecked = s.TwoLineRows;
         NetPingOn.IsChecked = s.NetPing;
         MechanicsOn.IsChecked = s.BossMechanics;
+        HideBehindOn.IsChecked = s.HideBehindOtherApps;
         DiagNoOverlayOn.IsChecked = s.DiagNoOverlay;
         DiagNoCaptureOn.IsChecked = s.DiagNoCapture;
         DiagNoGameScanOn.IsChecked = s.DiagNoGameScan;
@@ -185,6 +186,7 @@ public partial class SettingsWindow : Window
         s.TwoLineRows = TwoLineRowsOn.IsChecked == true;
         s.NetPing = NetPingOn.IsChecked == true;
         s.BossMechanics = MechanicsOn.IsChecked == true;
+        s.HideBehindOtherApps = HideBehindOn.IsChecked == true;
         s.DiagNoOverlay = DiagNoOverlayOn.IsChecked == true;
         s.DiagNoCapture = DiagNoCaptureOn.IsChecked == true;
         s.DiagNoGameScan = DiagNoGameScanOn.IsChecked == true;

@@ -149,6 +149,8 @@ public partial class App : Application
                 Log.Info("Exit chosen in the tray menu");
                 Shutdown();
             }));
+        _focus = new GameFocus(settings, () => [_overlay, _bossBar, _petRadar]);
+        _focus.Start();
         SessionEnding += (_, end) => Log.Info($"Windows {end.ReasonSessionEnding}: closing");
 
         // A new player's first start: without Npcap nothing can be measured — say so and offer the download.
@@ -464,6 +466,7 @@ public partial class App : Application
     // ------------------------------------------------------------ window management (used by windows via AppHost)
 
     private PetRadarWindow? _petRadar;
+    private GameFocus? _focus;
 
     /// <summary>1 HP: the pet radar window on / off (tray, Ctrl+Shift+P); remembered for the next start.</summary>
     public void TogglePetRadar() => ShowPetRadar(!(_petRadar?.IsVisible ?? false));
@@ -476,6 +479,7 @@ public partial class App : Application
         {
             _petRadar ??= new PetRadarWindow(_meter);
             _petRadar.Show();
+            _focus?.Apply();
         }
         else _petRadar?.Hide();
     }
@@ -668,7 +672,11 @@ public partial class App : Application
         if (_meter.Tracker.GearOf(r.Name) is > 0 and var gs) parts.Add(string.Format(t.GearScoreShort, gs));
         var text = "📨 " + string.Format(t.PartyRequest, string.Join(" · ", parts));
         _overlay.ShowNotice(text, TimeSpan.FromSeconds(20));
-        _tray?.ShowBalloon(AppInfo.Name, text);
+        // out of the game (another program in front, the game minimised): the game's taskbar button blinks and a
+        // click on the notification brings the game back — the invite itself is answered in the game
+        var away = _focus?.Away == true;
+        if (away) GameWindow.Flash();
+        _tray?.ShowBalloon(AppInfo.Name, away ? text + "\n" + t.ClickToGame : text, GameWindow.BringToFront);
         System.Media.SystemSounds.Asterisk.Play();
         Say(string.Format(t.PartyRequest, r.Name));
     }
@@ -684,7 +692,11 @@ public partial class App : Application
     {
         if ((!_meter.Settings.BossBar || _meter.Settings.NoOverlay) && _bossBar is null) return;
         var snap = _meter.Settings.BossBar && !_meter.Settings.NoOverlay ? _meter.Tracker.Snapshot(null, DateTimeOffset.UtcNow.ToUnixTimeMilliseconds()) : null;
-        if (snap is not null && _bossBar is null) _bossBar = new BossBarWindow();
+        if (snap is not null && _bossBar is null)
+        {
+            _bossBar = new BossBarWindow();
+            _focus?.Apply();
+        }
         _bossBar?.Update(snap, _meter.Settings.BossBar && !_meter.Settings.NoOverlay);
     }
 
