@@ -222,20 +222,49 @@ public sealed class MapWindow : Window
         var t = UiText.Current;
         var have = _meter.Settings.PetsDone;
         var ids = _meter.Pets.All.GroupBy(s => s.Pet).ToDictionary(g => g.Key, g => g.First().PetId);
-        var menu = new ContextMenu { MaxHeight = 520 };
+        var menu = new ContextMenu { MaxHeight = 520, MinWidth = 340 };
+        var rows = new List<(MenuItem Item, string Text)>();
+        // search by name (or the soul monster / resource kind) at the top: the lists run to forty names
+        var search = new TextBox
+        {
+            MinWidth = 300, Padding = new Thickness(6, 3, 6, 3), Background = new SolidColorBrush(Color.FromRgb(0x14, 0x1A, 0x29)),
+            Foreground = Brushes.White, CaretBrush = Brushes.White, BorderBrush = new SolidColorBrush(Color.FromArgb(0x60, 0x6E, 0x8B, 0xFF)),
+            ToolTip = t.MapListSearch,
+        };
+        search.TextChanged += (_, _) =>
+        {
+            var q = search.Text.Trim();
+            foreach (var (row, text) in rows)
+                row.Visibility = q.Length == 0 || text.Contains(q, StringComparison.CurrentCultureIgnoreCase) ? Visibility.Visible : Visibility.Collapsed;
+        };
+        menu.Items.Add(new MenuItem { Header = search, StaysOpenOnClick = true, Focusable = false });
+        menu.Opened += (_, _) => search.Focus();
+        var light = new SolidColorBrush(Color.FromRgb(0xE4, 0xEA, 0xF4));
+        var soft = new SolidColorBrush(Color.FromRgb(0xA8, 0xB2, 0xC4));
+        var owns = new SolidColorBrush(Color.FromRgb(0x5E, 0xE0, 0x8C));
         foreach (var place in places.OrderBy(p => p.Name, StringComparer.CurrentCultureIgnoreCase))
         {
             var owned = ids.TryGetValue(place.Name, out var id) && have.Contains(id);
+            // a picture on the left: what the node gives, or the family's colour; the name over the details
+            FrameworkElement mark = key == "gather" && MapAssets.Icon(WorldMaps.IconOf(key, place)) is { } img
+                ? new Image { Source = img, Width = 24, Height = 24 }
+                : new Ellipse { Width = 12, Height = 12, Margin = new Thickness(6), Fill = new SolidColorBrush(WorldMapView.LayerColor(key)) };
+            mark.VerticalAlignment = VerticalAlignment.Center;
+            mark.Margin = new Thickness(0, 0, 10, 0);
+            var text = new StackPanel();
+            var name = new TextBlock { FontSize = 13, FontWeight = FontWeights.SemiBold, Foreground = owned ? soft : light };
+            if (owned) name.Inlines.Add(new System.Windows.Documents.Run("✓ ") { Foreground = owns });
+            name.Inlines.Add(new System.Windows.Documents.Run(place.Name));
+            text.Children.Add(name);
+            text.Children.Add(new TextBlock { Text = $"{t.MapPlaceSub(place.Sub)} · {string.Format(t.MapListSpots, place.Points.Count)}", FontSize = 11.5, Foreground = soft });
             var item = new MenuItem
             {
-                Header = $"{(owned ? "✓ " : "")}{place.Name}  ·  {place.Sub}  ·  {place.Points.Count}",
+                Header = new StackPanel { Orientation = Orientation.Horizontal, Children = { mark, text } },
                 IsChecked = ReferenceEquals(place, _only),
-                Foreground = owned ? Brushes.Gray : Brushes.Black,
-                // a gathering node shows what it gives
-                Icon = key == "gather" && MapAssets.Icon(WorldMaps.IconOf(key, place)) is { } img ? new Image { Source = img, Width = 20, Height = 20 } : null,
             };
             item.Click += (_, _) => ShowPet(key, place);
             menu.Items.Add(item);
+            rows.Add((item, place.Name + " " + place.Sub));
         }
         return menu;
     }
@@ -252,7 +281,25 @@ public sealed class MapWindow : Window
         }
         _view.ShowOnly(place, key);
         _clearPet.Visibility = place is null ? Visibility.Collapsed : Visibility.Visible;
-        _status.Text = place is null ? Hint() : string.Format(UiText.Current.MapPetShown, place.Name, place.Sub, place.Points.Count);
+        _status.Text = place is null ? Hint() : string.Format(UiText.Current.MapPetShown, place.Name, UiText.Current.MapPlaceSub(place.Sub), place.Points.Count);
+    }
+
+    /// <summary>The preview renderer: a family's (or the gathering's) list as it opens from ▾, laid out in a panel.</summary>
+    public UIElement ListForPreview(string key)
+    {
+        var panel = new StackPanel();
+        if (_map?.Layers.GetValueOrDefault(key) is not { Count: > 0 } places) return panel;
+        var menu = PetMenu(key, places);
+        foreach (var item in menu.Items.Cast<object>().ToList())
+        {
+            menu.Items.Remove(item);
+            panel.Children.Add((UIElement)item);
+        }
+        return new Border
+        {
+            Background = (Brush)FindResource("Bg1"), BorderBrush = (Brush)FindResource("GoldDim"), BorderThickness = new Thickness(1),
+            CornerRadius = new CornerRadius(8), Padding = new Thickness(4), Child = panel,
+        };
     }
 
     /// <summary>The preview renderer: the first pet of a family shown alone.</summary>

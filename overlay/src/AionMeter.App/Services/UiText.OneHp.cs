@@ -241,6 +241,26 @@ public sealed partial class UiText
     public string MiniMapHide { get; init; } = "Hide the mini-map";
     public string MapPetList { get; init; } = "The pets of this family on this map — pick one to see only its spots";
     public string MapPetAll { get; init; } = "✕ Show all";
+    /// <summary>
+    /// The line under a map place, from Aion2Data's English ("soul from Hungry Tog", "Herb · gathering level 1"), in the
+    /// interface's language: the words around the names are translated, the game's own names stay.
+    /// </summary>
+    public string MapPlaceSub(string? sub)
+    {
+        if (string.IsNullOrEmpty(sub) || Code == "en") return sub ?? "";
+        var uk = Code == "uk";
+        var s = sub.Replace("soul from ", uk ? "душа з " : "душа с ").Replace("gathering level ", uk ? "рівень збору " : "уровень сбора ")
+            .Replace("leads to ", uk ? "веде в " : "ведёт в ").Replace("level ", uk ? "рівень " : "уровень ");
+        var kinds = uk
+            ? new Dictionary<string, string> { ["Herb"] = "Трава", ["Vegetable"] = "Овоч", ["Shellfish"] = "Молюск", ["Gem"] = "Самоцвіт", ["Fruit"] = "Фрукт", ["Odyle"] = "Оділе", ["Ore"] = "Руда", ["Log"] = "Деревина", ["Fish"] = "Риба", ["Mushroom"] = "Гриб", ["Seed"] = "Насіння" }
+            : new Dictionary<string, string> { ["Herb"] = "Трава", ["Vegetable"] = "Овощ", ["Shellfish"] = "Моллюск", ["Gem"] = "Самоцвет", ["Fruit"] = "Фрукт", ["Odyle"] = "Одиле", ["Ore"] = "Руда", ["Log"] = "Древесина", ["Fish"] = "Рыба", ["Mushroom"] = "Гриб", ["Seed"] = "Семена" };
+        var dot = s.IndexOf(" · ", StringComparison.Ordinal);
+        var head = dot > 0 ? s[..dot] : s;
+        return kinds.TryGetValue(head, out var k) ? k + (dot > 0 ? s[dot..] : "") : s;
+    }
+
+    public string MapListSearch { get; init; } = "Type to find by name";
+    public string MapListSpots { get; init; } = "{0} spots";
     public string MapGatherList { get; init; } = "The resources of this map — pick one to see only its nodes";
     public string MapPetShown { get; init; } = "{0} — {1} · {2} spots (gold rings). ✕ Show all — back to everything.";
     public string MapNoData { get; init; } = "No map table (data/world_maps.json).";

@@ -1,5 +1,6 @@
 using System.IO;
 using System.Windows;
+using System.Windows.Controls;
 using System.Windows.Media;
 using System.Windows.Media.Imaging;
 using AionMeter.App.Windows;
@@ -70,6 +71,19 @@ public static class SampleRenderer
                 host = radar;
                 refresh = radar.Refresh;
                 break;
+            case "maplist":
+            {
+                meter.Settings.MapSlug = "verteron";
+                meter.Settings.PetsDone.Add(1126); // Aberrant Tog: already in the collection
+                var mapWin = new MapWindow(meter);
+                if (meter.Maps.Find("verteron") is { } vert) MapAssets.LoadNow(vert, ["gather"]);
+                var lists = new StackPanel { Orientation = Orientation.Horizontal, Background = new SolidColorBrush(Color.FromRgb(0x0E, 0x13, 0x20)) };
+                foreach (var key in new[] { "pets-fera", "gather" })
+                    lists.Children.Add(new Border { Margin = new Thickness(10), Width = 380, Child = mapWin.ListForPreview(key), VerticalAlignment = VerticalAlignment.Top });
+                host = new Window { Width = o.Width ?? 820, Height = o.Height ?? 900, Content = lists, Background = lists.Background };
+                refresh = () => { };
+                break;
+            }
             case "minimap":
             {
                 // you near Dawn Legion Base in Verteron (its Kibelisk from the calibration recording)

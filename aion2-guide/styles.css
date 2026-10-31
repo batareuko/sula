@@ -1032,7 +1032,8 @@ main section.meter-hero { margin-top: 0; }
   background: var(--panel); border: 1px solid var(--line); border-radius: 10px; box-shadow: 0 12px 32px rgba(0,0,0,.5); }
 .wmap-pick button { display: flex; align-items: center; gap: 10px; padding: 7px 8px; border: 0; border-radius: var(--radius); background: none; color: var(--text); font: inherit; text-align: left; cursor: pointer; }
 .wmap-pick button:hover, .wmap-pick button[aria-selected="true"] { background: var(--gold-dim); }
-.wmap-pick button.owned { opacity: .55; }
+.wmap-pick button.owned { opacity: .8; }
+.wmap-pick button.owned b { color: var(--muted); }
 .wmap-pick img { width: 24px; height: 24px; object-fit: contain; flex-shrink: 0; }
 .wmap-pick b { display: block; font-size: 13.5px; }
 .wmap-pick small { display: block; color: var(--muted); font-size: 12px; }
