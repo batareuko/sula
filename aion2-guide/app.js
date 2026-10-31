@@ -2618,7 +2618,7 @@
     { key: 'pets-natura', name: 'Душі: Натура', icon: 'Icon_BMShop_Soulcrystal_All', color: '#6cd87a', dense: true, src: 'pets', family: 'Natura' },
     { key: 'pets-varian', name: 'Душі: Варіан', icon: 'Icon_BMShop_Soulcrystal_All', color: '#5cb4ff', dense: true, src: 'pets', family: 'Varian' },
     { key: 'pets-cogni', name: 'Душі: Когні', icon: 'Icon_BMShop_Soulcrystal_All', color: '#c08cff', dense: true, src: 'pets', family: 'Cogni' },
-    { key: 'cubes', name: 'Місця прихованих кубів', icon: 'Icon_Item_Currency_Treasure_Key_A_s_001', color: '#f2b632', dense: true },
+    { key: 'cubes', name: 'Місця прихованих кубів', icon: 'cube', color: '#f2b632', dense: true },
   ];
   var wm = {
     data: null, map: null, img: null, icons: {}, zoom: 1, pan: { x: 0, y: 0 }, hover: null, loading: false,
@@ -2630,12 +2630,19 @@
     })(prefGet('wmapLayers', ['bosses', 'dungeons', 'rifts', 'kibelisks'])),
   };
 
+  // прихований куб: у гри для нього немає значка на карті (там ключ), тож малюємо золотий куб самі
+  var CUBE_URI = 'data:image/svg+xml,' + encodeURIComponent('<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" stroke="#3a2608" stroke-width=".9" stroke-linejoin="round">' +
+    '<path fill="#ffe07a" d="M12 2 22 7 12 12 2 7z"/><path fill="#e0a82e" d="M2 7 12 12 12 23 2 18z"/><path fill="#b87e14" d="M12 12 22 7 22 18 12 23z"/>' +
+    '<path d="M7 4.5 17 9.5" stroke="rgba(255,255,255,.75)" stroke-width=".8"/></svg>');
+
+  function wmIconSrc(name) { return name === 'cube' ? CUBE_URI : GAME_RES + name + '.png'; }
+
   function wmIcon(name) {
     var im = wm.icons[name];
     if (!im) {
       im = wm.icons[name] = new Image();
       im.onload = wmDraw;
-      im.src = GAME_RES + name + '.png';
+      im.src = wmIconSrc(name);
     }
     return im.complete && im.naturalWidth ? im : null;
   }
@@ -2665,6 +2672,16 @@
     var list = wm.map.layers[l.src || l.key] || [];
     return l.family ? list.filter(function (p) { return p.f === l.family; }) : list;
   }
+
+  // вибрано одне місце (пет або ресурс): решта петів (чи решта збору) ховається
+  function wmShown(l, place) {
+    var o = wm.only;
+    if (!o) return true;
+    if (o.layer.key === 'gather') return l.key !== 'gather' || place === o.place;
+    return l.src !== 'pets' || place === o.place;
+  }
+
+  function wmPlacesShown(l) { return wmPlaces(l).filter(function (p) { return wmShown(l, p); }); }
 
   function wmVisible() {
     return WMAP_LAYERS.filter(function (l) { return wm.layers.indexOf(l.key) >= 0 && wmPlaces(l).length; });
@@ -2698,7 +2715,7 @@
     var base = Math.max(16, Math.min(30, 14 + wm.zoom * 3));
     // дрібні шари внизу, орієнтири зверху
     wmVisible().sort(function (a, b) { return (b.dense ? 1 : 0) - (a.dense ? 1 : 0); }).forEach(function (l) {
-      wmPlaces(l).forEach(function (place) {
+      wmPlacesShown(l).forEach(function (place) {
         var owned = l.src === 'pets' && wmOwnedPet(place);
         var size = l.dense ? base * 0.72 : base;
         // дрібні шари (пети, збір, куби) — крапками, доки не наблизите, щоб не засипали карту
@@ -2719,6 +2736,16 @@
         ctx.globalAlpha = 1;
       });
     });
+    if (wm.only) {
+      // вибране місце: усі його точки в золотих кільцях (дрібних, доки карта віддалена)
+      ctx.strokeStyle = '#ffd34d';
+      ctx.lineWidth = wm.zoom < 2 ? 1.5 : 2.5;
+      var ring = wm.zoom < 2 ? 4.5 : base * (wm.zoom < 4 ? 0.5 : 0.75);
+      wm.only.place.pts.forEach(function (pt) {
+        var p = wmToScreen(pt, sz);
+        ctx.beginPath(); ctx.arc(p.x, p.y, ring, 0, 7); ctx.stroke();
+      });
+    }
     if (wm.hover) {
       // усі точки наведеного місця — в кільці
       ctx.strokeStyle = '#fff';
@@ -2744,7 +2771,7 @@
   function wmNearest(x, y, within) {
     var sz = wmCanvasSize(), best = null, bd = within * within;
     wmVisible().forEach(function (l) {
-      wmPlaces(l).forEach(function (place) {
+      wmPlacesShown(l).forEach(function (place) {
         place.pts.forEach(function (pt) {
           var p = wmToScreen(pt, sz), d = (p.x - x) * (p.x - x) + (p.y - y) * (p.y - y);
           if (d < bd) { bd = d; best = { layer: l, place: place, p: p }; }
@@ -2788,6 +2815,8 @@
     var m = wm.data.maps.filter(function (x) { return x.slug === slug; })[0] || wm.data.maps[0];
     wm.map = m;
     wm.zoom = 1;
+    wm.only = null;
+    if ($('wmapAll')) $('wmapAll').hidden = true;
     prefSet('wmapSlug', m.slug);
     $('wmapTabs').querySelectorAll('.tab').forEach(function (t) { t.setAttribute('aria-selected', t.getAttribute('data-slug') === m.slug ? 'true' : 'false'); });
     wmRenderLayers();
@@ -2810,9 +2839,14 @@
       var on = wm.layers.indexOf(l.key) >= 0;
       var b = h('button', { class: 'wmap-chip', type: 'button', 'aria-pressed': on ? 'true' : 'false' });
       b.appendChild(l.src === 'pets' ? h('span', { class: 'wmap-dot', style: 'background:' + l.color })
-        : h('img', { src: GAME_RES + l.icon + '.png', alt: '' }));
+        : h('img', { src: wmIconSrc(l.icon), alt: '' }));
       b.appendChild(document.createTextNode(l.name + ' '));
       b.appendChild(h('span', { class: 'mono muted', text: String(list.length) }));
+      // душі й збір: ▾ — список петів родини / ресурсів цієї карти
+      if (l.src === 'pets' || l.key === 'gather') {
+        b.appendChild(h('span', { class: 'wmap-more', role: 'button', 'aria-label': 'Вибрати зі списку', title: l.key === 'gather' ? 'Ресурси цієї карти — виберіть один' : 'Пети цієї родини — виберіть одного', text: '▾',
+          onclick: function (e) { e.stopPropagation(); wmPickMenu(l, list, b); } }));
+      }
       b.addEventListener('click', function () {
         var i = wm.layers.indexOf(l.key);
         if (i >= 0) wm.layers.splice(i, 1); else wm.layers.push(l.key);
@@ -2822,6 +2856,48 @@
       });
       box.appendChild(b);
     });
+  }
+
+  function wmPickMenu(l, list, anchor) {
+    var old = $('wmapPick');
+    if (old) { old.remove(); if (old.dataset.layer === l.key) return; }
+    var have = l.src === 'pets' ? petHave() : [];
+    var menu = h('div', { class: 'wmap-pick', id: 'wmapPick', role: 'listbox', 'data-layer': l.key });
+    list.slice().sort(function (a, b) { return a.n.localeCompare(b.n); }).forEach(function (place) {
+      var owned = l.src === 'pets' && (G.pets || []).some(function (p) { return p[1] === place.n && have.indexOf(p[0]) >= 0; });
+      menu.appendChild(h('button', { type: 'button', role: 'option', class: owned ? 'owned' : null, 'aria-selected': wm.only && wm.only.place === place ? 'true' : 'false',
+        onclick: function () { menu.remove(); wmPick(l, place); } },
+        l.key === 'gather' ? h('img', { src: wmIconSrc(wmPlaceIcon(l, place)), alt: '' }) : h('span', { class: 'wmap-dot', style: 'background:' + l.color }),
+        h('span', null, h('b', { text: (owned ? '✓ ' : '') + place.n }), h('small', { text: (place.s || '') + ' · точок: ' + place.pts.length }))));
+    });
+    var box = $('wmapLayers');
+    menu.style.left = Math.max(0, Math.min(anchor.offsetLeft, box.clientWidth - 320)) + 'px';
+    menu.style.top = (anchor.offsetTop + anchor.offsetHeight + 4) + 'px';
+    box.appendChild(menu);
+    setTimeout(function () {
+      document.addEventListener('click', function close(e) { if (!menu.contains(e.target)) { menu.remove(); document.removeEventListener('click', close); } });
+    }, 0);
+  }
+
+  // показати одне місце: лише його точки, карта наближається до них
+  function wmPick(l, place) {
+    wm.only = place ? { layer: l, place: place } : null;
+    if (place && wm.layers.indexOf(l.key) < 0) { wm.layers.push(l.key); prefSet('wmapLayers', wm.layers); }
+    var all = $('wmapAll');
+    all.hidden = !place;
+    if (place) {
+      all.textContent = '✕ Показати всіх · ' + place.n + ' (' + place.pts.length + ')';
+      var sz = wmCanvasSize(), xs = place.pts.map(function (p) { return p[0]; }), ys = place.pts.map(function (p) { return p[1]; });
+      var minX = Math.min.apply(null, xs), maxX = Math.max.apply(null, xs), minY = Math.min.apply(null, ys), maxY = Math.max.apply(null, ys);
+      var k1 = Math.min(sz.w / wm.map.image.w, sz.h / wm.map.image.h) * wm.map.image.w / 10000;
+      wm.zoom = Math.max(1, Math.min(8, Math.min(sz.w * 0.7 / (Math.max(maxX - minX, 150) * k1), sz.h * 0.7 / (Math.max(maxY - minY, 150) * k1))));
+      var k = k1 * wm.zoom;
+      wm.pan.x = sz.w / 2 - (minX + maxX) / 2 * k;
+      wm.pan.y = sz.h / 2 - (minY + maxY) / 2 * k;
+      wmFit(sz);
+    }
+    wmRenderLayers();
+    wmShowTip(null);
   }
 
   function wmLoad() {
@@ -2889,6 +2965,7 @@
     c.addEventListener('pointercancel', up);
     c.addEventListener('pointerleave', function () { if (!last) wmShowTip(null); });
     $('wmapIn').addEventListener('click', function () { var sz = wmCanvasSize(); if (wm.map) wmZoomAt(sz.w / 2, sz.h / 2, 1.5); });
+    $('wmapAll').addEventListener('click', function () { wmPick(null, null); });
     $('wmapOut').addEventListener('click', function () { var sz = wmCanvasSize(); if (wm.map) wmZoomAt(sz.w / 2, sz.h / 2, 1 / 1.5); });
     $('mapFull').addEventListener('click', function () {
       var f = $('wmap');

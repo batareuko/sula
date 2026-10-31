@@ -251,6 +251,39 @@ public sealed class WorldMapView : FrameworkElement
     private static readonly Brush Shadow = Frozen(Color.FromArgb(0xC0, 0, 0, 0));
     private static readonly Pen Edge = FrozenPen(Color.FromArgb(0xE0, 0x0A, 0x0E, 0x16), 1);
     private static readonly Pen HoverRing = FrozenPen(Colors.White, 2);
+
+    /// <summary>
+    /// A Hidden Cube spot: a gold cube (the game has no map icon of its own for them — its map shows the key), drawn
+    /// rather than downloaded.
+    /// </summary>
+    public static readonly ImageSource CubeIcon = MakeCube();
+
+    private static ImageSource MakeCube()
+    {
+        static Geometry Face(params Point[] p)
+        {
+            var g = new StreamGeometry();
+            using (var c = g.Open())
+            {
+                c.BeginFigure(p[0], true, true);
+                c.PolyLineTo(p[1..], true, true);
+            }
+            g.Freeze();
+            return g;
+        }
+        var edge = FrozenPen(Color.FromRgb(0x3A, 0x26, 0x08), 0.9);
+        var group = new DrawingGroup();
+        // top, left and right faces of an isometric cube on a 24×24 box
+        group.Children.Add(new GeometryDrawing(Frozen(Color.FromRgb(0xFF, 0xE0, 0x7A)), edge, Face(new(12, 2), new(22, 7), new(12, 12), new(2, 7))));
+        group.Children.Add(new GeometryDrawing(Frozen(Color.FromRgb(0xE0, 0xA8, 0x2E)), edge, Face(new(2, 7), new(12, 12), new(12, 23), new(2, 18))));
+        group.Children.Add(new GeometryDrawing(Frozen(Color.FromRgb(0xB8, 0x7E, 0x14)), edge, Face(new(12, 12), new(22, 7), new(22, 18), new(12, 23))));
+        // a faint glow line across the top, like the cube's seal
+        group.Children.Add(new GeometryDrawing(null, FrozenPen(Color.FromArgb(0xC0, 0xFF, 0xFF, 0xFF), 0.8), Face(new(7, 4.5), new(17, 9.5))));
+        group.Freeze();
+        var image = new DrawingImage(group);
+        image.Freeze();
+        return image;
+    }
     private static readonly Pen OnlyRing = FrozenPen(Color.FromRgb(0xFF, 0xD3, 0x4D), 2.5);
     private static readonly Pen OnlyRingThin = FrozenPen(Color.FromRgb(0xFF, 0xD3, 0x4D), 1.5);
     private static readonly Brush YouFill = Frozen(Color.FromRgb(0xFF, 0xD3, 0x4D));
@@ -317,7 +350,7 @@ public sealed class WorldMapView : FrameworkElement
                 if (Hidden(key, place)) continue;
                 var dim = _dim(place);
                 // the many spots of a dense layer are dots until zoomed in, so they do not bury the map
-                var icon = dense && _zoom < (Compact ? 6 : 2) ? null : Icon(WorldMaps.IconOf(key, place));
+                var icon = dense && _zoom < (Compact ? 6 : 2) ? null : key == "cubes" ? CubeIcon : Icon(WorldMaps.IconOf(key, place));
                 var s = dense ? size * 0.72 : size;
                 if (dim) dc.PushOpacity(0.3);
                 foreach (var pt in place.Points)

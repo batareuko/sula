@@ -167,7 +167,7 @@ public sealed class MapWindow : Window
                     Orientation = Orientation.Horizontal,
                     Children =
                     {
-                        !key.StartsWith("pets", StringComparison.Ordinal) && MapAssets.Icon(WorldMaps.LayerIcon(key)) is { } icon
+                        !key.StartsWith("pets", StringComparison.Ordinal) && (key == "cubes" ? WorldMapView.CubeIcon : MapAssets.Icon(WorldMaps.LayerIcon(key))) is { } icon
                             ? new Image { Source = icon, Width = 18, Height = 18, Margin = new Thickness(0, 0, 6, 0), VerticalAlignment = VerticalAlignment.Center }
                             : new Ellipse { Width = 9, Height = 9, Fill = new SolidColorBrush(WorldMapView.LayerColor(key)), Margin = new Thickness(0, 0, 6, 0), VerticalAlignment = VerticalAlignment.Center },
                         label,
