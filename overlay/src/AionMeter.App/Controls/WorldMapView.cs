@@ -245,6 +245,7 @@ public sealed class WorldMapView : FrameworkElement
     private static readonly Pen Edge = FrozenPen(Color.FromArgb(0xE0, 0x0A, 0x0E, 0x16), 1);
     private static readonly Pen HoverRing = FrozenPen(Colors.White, 2);
     private static readonly Pen OnlyRing = FrozenPen(Color.FromRgb(0xFF, 0xD3, 0x4D), 2.5);
+    private static readonly Pen OnlyRingThin = FrozenPen(Color.FromRgb(0xFF, 0xD3, 0x4D), 1.5);
     private static readonly Brush YouFill = Frozen(Color.FromRgb(0xFF, 0xD3, 0x4D));
     private static readonly Brush YouHalo = Frozen(Color.FromArgb(0x55, 0xFF, 0xD3, 0x4D));
     private static readonly Pen YouRing = FrozenPen(Color.FromRgb(0xFF, 0xD3, 0x4D), 2);
@@ -339,8 +340,13 @@ public sealed class WorldMapView : FrameworkElement
         }
 
         if (_only is { } only)
+        {
+            // rings around the chosen pet's spots: small while the map is far, so hundreds of spots stay apart
+            var ring = _zoom < 2 ? 4.5 : _zoom < 4 ? size * 0.5 : size * 0.75;
+            var pen = _zoom < 2 ? OnlyRingThin : OnlyRing;
             foreach (var pt in only.Points)
-                dc.DrawEllipse(null, OnlyRing, ToScreen(pt), size * 0.75, size * 0.75);
+                dc.DrawEllipse(null, pen, ToScreen(pt), ring, ring);
+        }
 
         if (_hover is { } h)
         {
