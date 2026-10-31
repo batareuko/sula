@@ -51,9 +51,10 @@ public sealed class WorldMapView : FrameworkElement
     private WorldMaps.Place? _only;
 
     /// <summary>One pet's spots only (the rest of the pets hidden), ringed, and the view zoomed to them; null shows all.</summary>
-    public void ShowOnly(WorldMaps.Place? place)
+    public void ShowOnly(WorldMaps.Place? place, string? layer = null)
     {
         _only = place;
+        _onlyLayer = place is null ? null : layer;
         _hover = null;
         if (place is { Points.Count: > 0 } && _map is not null && ActualWidth > 0)
         {
@@ -72,8 +73,14 @@ public sealed class WorldMapView : FrameworkElement
         InvalidateVisual();
     }
 
+    private string? _onlyLayer;
+
+    /// <summary>
+    /// Hidden while one place is chosen: the other pets (every family) for a pet, the other resources for a gathering node.
+    /// </summary>
     private bool Hidden(string key, WorldMaps.Place place) =>
-        _only is not null && key.StartsWith("pets", StringComparison.Ordinal) && !ReferenceEquals(place, _only);
+        _only is not null && !ReferenceEquals(place, _only) &&
+        (_onlyLayer == "gather" ? key == "gather" : key.StartsWith("pets", StringComparison.Ordinal));
 
     /// <summary>The mini-map: you in the middle at this zoom (1 = the whole map in the view).</summary>
     public void Follow((double X, double Y) at, double zoom)

@@ -175,9 +175,13 @@ public sealed class MapWindow : Window
                 },
             };
             // pet souls: ▾ lists the family's pets on this map, to show one of them
-            if (key.StartsWith("pets", StringComparison.Ordinal))
+            if (key.StartsWith("pets", StringComparison.Ordinal) || key == "gather")
             {
-                var arrow = new TextBlock { Text = "  ▾", FontSize = 12, VerticalAlignment = VerticalAlignment.Center, Foreground = Brushes.White, ToolTip = t.MapPetList };
+                var arrow = new TextBlock
+                {
+                    Text = "  ▾", FontSize = 12, VerticalAlignment = VerticalAlignment.Center, Foreground = Brushes.White,
+                    ToolTip = key == "gather" ? t.MapGatherList : t.MapPetList,
+                };
                 arrow.MouseLeftButtonUp += (_, e) =>
                 {
                     e.Handled = true; // the arrow opens the list; the rest of the chip turns the layer on / off
@@ -209,7 +213,10 @@ public sealed class MapWindow : Window
 
     private WorldMaps.Place? _only;
 
-    /// <summary>The pets of one family on this map, by name: the soul monster, how many spots, ✓ for the ones you have.</summary>
+    /// <summary>
+    /// The pets of one family on this map by name (the soul monster, how many spots, ✓ for the ones you have), or the
+    /// gathering nodes by what they give (with its icon).
+    /// </summary>
     private ContextMenu PetMenu(string key, IReadOnlyList<WorldMaps.Place> places)
     {
         var t = UiText.Current;
@@ -224,6 +231,8 @@ public sealed class MapWindow : Window
                 Header = $"{(owned ? "✓ " : "")}{place.Name}  ·  {place.Sub}  ·  {place.Points.Count}",
                 IsChecked = ReferenceEquals(place, _only),
                 Foreground = owned ? Brushes.Gray : Brushes.Black,
+                // a gathering node shows what it gives
+                Icon = key == "gather" && MapAssets.Icon(WorldMaps.IconOf(key, place)) is { } img ? new Image { Source = img, Width = 20, Height = 20 } : null,
             };
             item.Click += (_, _) => ShowPet(key, place);
             menu.Items.Add(item);
@@ -241,7 +250,7 @@ public sealed class MapWindow : Window
             ApplyLayers();
             BuildChips();
         }
-        _view.ShowOnly(place);
+        _view.ShowOnly(place, key);
         _clearPet.Visibility = place is null ? Visibility.Collapsed : Visibility.Visible;
         _status.Text = place is null ? Hint() : string.Format(UiText.Current.MapPetShown, place.Name, place.Sub, place.Points.Count);
     }
