@@ -506,6 +506,8 @@ public sealed partial class UiText
         MiniMapHide = "Сховати міні-карту",
         MapPetList = "Пети цієї родини на цій карті — виберіть одного, щоб бачити лише його точки",
         MapPetAll = "✕ Показати всіх",
+        MapListSearch = "Пишіть, щоб знайти за назвою",
+        MapListSpots = "точок: {0}",
         MapGatherList = "Ресурси цієї карти — виберіть один, щоб бачити лише його точки",
         MapPetShown = "{0} — {1} · точок: {2} (золоті кільця). «✕ Показати всіх» — повернути всі.",
         MapNoData = "Немає таблиці карт (data/world_maps.json).",

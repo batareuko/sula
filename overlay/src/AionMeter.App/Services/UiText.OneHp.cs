@@ -241,6 +241,8 @@ public sealed partial class UiText
     public string MiniMapHide { get; init; } = "Hide the mini-map";
     public string MapPetList { get; init; } = "The pets of this family on this map — pick one to see only its spots";
     public string MapPetAll { get; init; } = "✕ Show all";
+    public string MapListSearch { get; init; } = "Type to find by name";
+    public string MapListSpots { get; init; } = "{0} spots";
     public string MapGatherList { get; init; } = "The resources of this map — pick one to see only its nodes";
     public string MapPetShown { get; init; } = "{0} — {1} · {2} spots (gold rings). ✕ Show all — back to everything.";
     public string MapNoData { get; init; } = "No map table (data/world_maps.json).";
