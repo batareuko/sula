@@ -24,6 +24,7 @@ public sealed class MapWindow : Window
     private readonly System.Windows.Threading.DispatcherTimer _timer = new() { Interval = TimeSpan.FromSeconds(1) };
     private readonly Button _whereButton = new() { Margin = new Thickness(0, 0, 10, 0), Padding = new Thickness(10, 3, 10, 3), VerticalAlignment = VerticalAlignment.Center, Visibility = Visibility.Collapsed };
     private bool _followed;
+    private readonly Button _clearPet = new() { Margin = new Thickness(0, 0, 10, 0), Padding = new Thickness(10, 3, 10, 3), VerticalAlignment = VerticalAlignment.Center, Visibility = Visibility.Collapsed };
     private WorldMaps.Map? _map;
 
     public MapWindow(MeterService meter)
@@ -55,6 +56,10 @@ public sealed class MapWindow : Window
         _whereButton.Click += (_, _) => FollowYou(centre: true);
         DockPanel.SetDock(_whereButton, Dock.Left);
         top.Children.Add(_whereButton);
+        _clearPet.Content = t.MapPetAll;
+        _clearPet.Click += (_, _) => ShowPet("", null);
+        DockPanel.SetDock(_clearPet, Dock.Left);
+        top.Children.Add(_clearPet);
         var mini = new Button { Content = t.MiniMapButton, Margin = new Thickness(0, 0, 10, 0), Padding = new Thickness(10, 3, 10, 3), VerticalAlignment = VerticalAlignment.Center, ToolTip = t.MiniMapTray };
         mini.Click += (_, _) => AppHost.Current.ToggleMiniMap();
         DockPanel.SetDock(mini, Dock.Left);
@@ -137,6 +142,7 @@ public sealed class MapWindow : Window
         _meter.Settings.Save();
         BuildChips();
         _view.SetMap(map, MapAssets.Picture(map));
+        if (_only is not null) ShowPet("", null); // another map: all pets again
         ApplyLayers();
         _status.Text = MapAssets.Downloading(slug) ? UiText.Current.MapLoading : Hint();
     }
@@ -168,6 +174,17 @@ public sealed class MapWindow : Window
                     },
                 },
             };
+            // pet souls: ▾ lists the family's pets on this map, to show one of them
+            if (key.StartsWith("pets", StringComparison.Ordinal))
+            {
+                var arrow = new TextBlock { Text = "  ▾", FontSize = 12, VerticalAlignment = VerticalAlignment.Center, Foreground = Brushes.White, ToolTip = t.MapPetList };
+                arrow.MouseLeftButtonUp += (_, e) =>
+                {
+                    e.Handled = true; // the arrow opens the list; the rest of the chip turns the layer on / off
+                    PetMenu(key, places).IsOpen = true;
+                };
+                ((StackPanel)chip.Child).Children.Add(arrow);
+            }
             void Paint()
             {
                 var c = WorldMapView.LayerColor(key);
@@ -187,6 +204,57 @@ public sealed class MapWindow : Window
                 ApplyLayers();
             };
             _chips.Children.Add(chip);
+        }
+    }
+
+    private WorldMaps.Place? _only;
+
+    /// <summary>The pets of one family on this map, by name: the soul monster, how many spots, ✓ for the ones you have.</summary>
+    private ContextMenu PetMenu(string key, IReadOnlyList<WorldMaps.Place> places)
+    {
+        var t = UiText.Current;
+        var have = _meter.Settings.PetsDone;
+        var ids = _meter.Pets.All.GroupBy(s => s.Pet).ToDictionary(g => g.Key, g => g.First().PetId);
+        var menu = new ContextMenu { MaxHeight = 520 };
+        foreach (var place in places.OrderBy(p => p.Name, StringComparer.CurrentCultureIgnoreCase))
+        {
+            var owned = ids.TryGetValue(place.Name, out var id) && have.Contains(id);
+            var item = new MenuItem
+            {
+                Header = $"{(owned ? "✓ " : "")}{place.Name}  ·  {place.Sub}  ·  {place.Points.Count}",
+                IsChecked = ReferenceEquals(place, _only),
+                Foreground = owned ? Brushes.Gray : Brushes.Black,
+            };
+            item.Click += (_, _) => ShowPet(key, place);
+            menu.Items.Add(item);
+        }
+        return menu;
+    }
+
+    private void ShowPet(string key, WorldMaps.Place? place)
+    {
+        _only = place;
+        if (place is not null && !_meter.Settings.MapLayers.Contains(key))
+        {
+            _meter.Settings.MapLayers.Add(key); // the family's layer on, so the pet shows
+            _meter.Settings.Save();
+            ApplyLayers();
+            BuildChips();
+        }
+        _view.ShowOnly(place);
+        _clearPet.Visibility = place is null ? Visibility.Collapsed : Visibility.Visible;
+        _status.Text = place is null ? Hint() : string.Format(UiText.Current.MapPetShown, place.Name, place.Sub, place.Points.Count);
+    }
+
+    /// <summary>The preview renderer: the first pet of a family shown alone.</summary>
+    public void ShowPetForPreview(string key)
+    {
+        if (_map?.Layers.GetValueOrDefault(key) is { Count: > 0 } places)
+        {
+            Measure(new Size(Width, Height));
+            Arrange(new Rect(0, 0, Width, Height));
+            UpdateLayout();
+            ShowPet(key, places.OrderByDescending(p => p.Points.Count).First());
         }
     }
 

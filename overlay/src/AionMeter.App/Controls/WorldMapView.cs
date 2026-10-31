@@ -48,6 +48,33 @@ public sealed class WorldMapView : FrameworkElement
 
     public void Redraw() => InvalidateVisual();
 
+    private WorldMaps.Place? _only;
+
+    /// <summary>One pet's spots only (the rest of the pets hidden), ringed, and the view zoomed to them; null shows all.</summary>
+    public void ShowOnly(WorldMaps.Place? place)
+    {
+        _only = place;
+        _hover = null;
+        if (place is { Points.Count: > 0 } && _map is not null && ActualWidth > 0)
+        {
+            var minX = place.Points.Min(p => p.X);
+            var maxX = place.Points.Max(p => p.X);
+            var minY = place.Points.Min(p => p.Y);
+            var maxY = place.Points.Max(p => p.Y);
+            var k1 = Base * _map.Width / WorldMaps.Units; // units → px at zoom 1
+            var w = Math.Max(maxX - minX, 150) * k1;
+            var h = Math.Max(maxY - minY, 150) * k1;
+            _zoom = Math.Clamp(Math.Min(ActualWidth * 0.7 / w, ActualHeight * 0.7 / h), 1, 8);
+            var k = k1 * _zoom;
+            _pan = new Point(ActualWidth / 2 - (minX + maxX) / 2 * k, ActualHeight / 2 - (minY + maxY) / 2 * k);
+            Fit();
+        }
+        InvalidateVisual();
+    }
+
+    private bool Hidden(string key, WorldMaps.Place place) =>
+        _only is not null && key.StartsWith("pets", StringComparison.Ordinal) && !ReferenceEquals(place, _only);
+
     /// <summary>The mini-map: you in the middle at this zoom (1 = the whole map in the view).</summary>
     public void Follow((double X, double Y) at, double zoom)
     {
@@ -193,7 +220,7 @@ public sealed class WorldMapView : FrameworkElement
         var bestD = within * within;
         foreach (var (key, places) in Visible())
             foreach (var place in places)
-                foreach (var pt in place.Points)
+                foreach (var pt in Hidden(key, place) ? [] : place.Points)
                 {
                     var p = ToScreen(pt);
                     var d = (p.X - at.X) * (p.X - at.X) + (p.Y - at.Y) * (p.Y - at.Y);
@@ -217,6 +244,7 @@ public sealed class WorldMapView : FrameworkElement
     private static readonly Brush Shadow = Frozen(Color.FromArgb(0xC0, 0, 0, 0));
     private static readonly Pen Edge = FrozenPen(Color.FromArgb(0xE0, 0x0A, 0x0E, 0x16), 1);
     private static readonly Pen HoverRing = FrozenPen(Colors.White, 2);
+    private static readonly Pen OnlyRing = FrozenPen(Color.FromRgb(0xFF, 0xD3, 0x4D), 2.5);
     private static readonly Brush YouFill = Frozen(Color.FromRgb(0xFF, 0xD3, 0x4D));
     private static readonly Brush YouHalo = Frozen(Color.FromArgb(0x55, 0xFF, 0xD3, 0x4D));
     private static readonly Pen YouRing = FrozenPen(Color.FromRgb(0xFF, 0xD3, 0x4D), 2);
@@ -278,6 +306,7 @@ public sealed class WorldMapView : FrameworkElement
             var dense = Dense(key);
             foreach (var place in places)
             {
+                if (Hidden(key, place)) continue;
                 var dim = _dim(place);
                 // the many spots of a dense layer are dots until zoomed in, so they do not bury the map
                 var icon = dense && _zoom < (Compact ? 6 : 2) ? null : Icon(WorldMaps.IconOf(key, place));
@@ -308,6 +337,10 @@ public sealed class WorldMapView : FrameworkElement
             dc.DrawEllipse(YouFill, new Pen(Brushes.Black, 1.5), p, 6, 6);
             dc.DrawEllipse(null, _youExact ? YouRing : YouGuess, p, 11, 11);
         }
+
+        if (_only is { } only)
+            foreach (var pt in only.Points)
+                dc.DrawEllipse(null, OnlyRing, ToScreen(pt), size * 0.75, size * 0.75);
 
         if (_hover is { } h)
         {

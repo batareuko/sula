@@ -115,6 +115,7 @@ public static class SampleRenderer
                 meter.Settings.MapLayers = ["bosses", "dungeons", "rifts", "kibelisks", "pets-fera", "pets-cogni"];
                 var map = new MapWindow(meter) { Width = o.Width ?? 900, Height = o.Height ?? 820 };
                 map.LoadPictureNow();
+                map.ShowPetForPreview("pets-fera");
                 host = map;
                 refresh = () => { };
                 break;
