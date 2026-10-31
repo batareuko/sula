@@ -256,7 +256,7 @@ public sealed class MapWindow : Window
             if (owned) name.Inlines.Add(new System.Windows.Documents.Run("✓ ") { Foreground = owns });
             name.Inlines.Add(new System.Windows.Documents.Run(place.Name));
             text.Children.Add(name);
-            text.Children.Add(new TextBlock { Text = $"{place.Sub} · {string.Format(t.MapListSpots, place.Points.Count)}", FontSize = 11.5, Foreground = soft });
+            text.Children.Add(new TextBlock { Text = $"{t.MapPlaceSub(place.Sub)} · {string.Format(t.MapListSpots, place.Points.Count)}", FontSize = 11.5, Foreground = soft });
             var item = new MenuItem
             {
                 Header = new StackPanel { Orientation = Orientation.Horizontal, Children = { mark, text } },
@@ -281,7 +281,7 @@ public sealed class MapWindow : Window
         }
         _view.ShowOnly(place, key);
         _clearPet.Visibility = place is null ? Visibility.Collapsed : Visibility.Visible;
-        _status.Text = place is null ? Hint() : string.Format(UiText.Current.MapPetShown, place.Name, place.Sub, place.Points.Count);
+        _status.Text = place is null ? Hint() : string.Format(UiText.Current.MapPetShown, place.Name, UiText.Current.MapPlaceSub(place.Sub), place.Points.Count);
     }
 
     /// <summary>The preview renderer: a family's (or the gathering's) list as it opens from ▾, laid out in a panel.</summary>
