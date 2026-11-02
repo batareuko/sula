@@ -73,7 +73,8 @@ public static class SampleRenderer
                 break;
             case "earnings":
             {
-                meter.Settings.LastSelfName = "Celesta";
+                var who = meter.Tracker.SelfName ?? "Celesta"; // the sample meter may already know a character
+                meter.Settings.LastSelfName = who;
                 var t0 = DateTimeOffset.UtcNow.AddMinutes(-95);
                 meter.Earnings.SessionStart = t0;
                 (int Min, int Id, long Balance)[] steps =
@@ -83,7 +84,7 @@ public static class SampleRenderer
                     (41, Core.Events.ResourceEvent.AbyssPoints, 131_240), (70, Core.Events.ResourceEvent.AbyssPoints, 133_870),
                     (88, Core.Events.ResourceEvent.Kinah, 25_812_450),
                 ];
-                foreach (var (min, id, balance) in steps) meter.Earnings.Observe("Celesta", id, balance, t0.AddMinutes(min));
+                foreach (var (min, id, balance) in steps) meter.Earnings.Observe(who, id, balance, t0.AddMinutes(min));
                 var earn = new EarningsWindow(meter) { Width = o.Width ?? 380 };
                 host = earn;
                 refresh = earn.Refresh;
