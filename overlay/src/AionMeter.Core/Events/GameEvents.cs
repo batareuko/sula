@@ -154,8 +154,11 @@ public sealed record ResourceEvent(long TimeMs, int Id, int Count, int Bonus) : 
     /// <summary>1 HP: Kinah (seen 2026-10-31: 25 114 052 → 25 105 302 after a teleport).</summary>
     public const int Kinah = 3;
 
-    /// <summary>1 HP: a currency the Abyss recording shows (130 000 then); taken for Abyss Points until a recording confirms it.</summary>
-    public const int AbyssPoints = 10000001;
+    /// <summary>
+    /// 1 HP: a currency the Abyss recording shows (130 000 then). Not Abyss Points (the player had 90 000) — still unknown;
+    /// the Abyss Points' id waits for a recording where they change.
+    /// </summary>
+    public const int Currency10000001 = 10000001;
 
     /// <summary>1 HP: a wallet's amount (Kinah and such: the ticket's 64-bit field, flag 1); 0 for tickets, which use <see cref="Count"/>.</summary>
     public long Amount { get; init; }

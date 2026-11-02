@@ -81,8 +81,7 @@ public sealed class EarningsWindow : Window
             var name = s.Id switch
             {
                 ResourceEvent.Kinah => t.EarningsKinah,
-                ResourceEvent.AbyssPoints => t.EarningsAbyss,
-                _ => t.ResourceName(s.Id) is { Length: > 0 } n && !n.StartsWith('#') ? n : "#" + s.Id,
+                _ => t.ResourceName(s.Id) is { Length: > 0 } n && !n.StartsWith('#') ? n : string.Format(t.EarningsOther, s.Id),
             };
             var row = Line(name, Plus(s.Session), Plus(s.Hour), Plus(s.Today), Brushes.White, 13);
             _rows.Children.Add(row);

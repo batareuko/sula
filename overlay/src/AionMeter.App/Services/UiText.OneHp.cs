@@ -198,14 +198,14 @@ public sealed partial class UiText
     public string TrayGroupWeb { get; init; } = "🌐 Guild site";
     public string EarningsTitle { get; init; } = "EARNINGS";
     public string EarningsTray { get; init; } = "💰 Earnings (Ctrl+Shift+E)";
-    public string EarningsTip { get; init; } = "What you earned: this session, the last hour, today (from the 07:00 UTC reset). The game reports Kinah and Abyss Points as you gain or spend them. Drag to move.";
-    public string EarningsEmpty { get; init; } = "Nothing yet: the numbers come as the game changes your Kinah or Abyss Points (the first change after a start sets the starting point).";
+    public string EarningsTip { get; init; } = "What you earned: this session, the last hour, today (from the 07:00 UTC reset). The game reports Kinah and other currencies as you gain or spend them. Drag to move.";
+    public string EarningsEmpty { get; init; } = "Nothing yet: the numbers come as the game changes your Kinah or another currency (the first change after a start sets the starting point).";
     public string EarningsCurrency { get; init; } = "currency";
     public string EarningsSession { get; init; } = "session";
     public string EarningsHour { get; init; } = "hour";
     public string EarningsToday { get; init; } = "today";
     public string EarningsKinah { get; init; } = "Kinah";
-    public string EarningsAbyss { get; init; } = "Abyss Points";
+    public string EarningsOther { get; init; } = "Currency #{0}";
     public string EarningsBalance { get; init; } = "now";
     public string EarningsSpent { get; init; } = "spent today";
     public string DeathNoteTitle { get; init; } = "Death note";
