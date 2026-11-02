@@ -236,6 +236,37 @@ public sealed class OneHpCloud : IDisposable
         }
     }
 
+    /// <summary>
+    /// 1 HP death note: one PvP death (who killed you, where) to the guild site through <c>dps-upload</c> (needs the key and
+    /// Settings → 1 HP → death note). The site lists everyone who killed a guild member twice or more.
+    /// </summary>
+    public async Task UploadDeathAsync(Core.OneHp.DeathNote.Death d)
+    {
+        var key = _settings.OneHpKey?.Trim();
+        if (!_settings.OneHpDeathNote || string.IsNullOrEmpty(key)) return;
+        try
+        {
+            using var res = await _http.PostAsJsonAsync(SupabaseUrl + "/functions/v1/dps-upload", new
+            {
+                key,
+                death = new
+                {
+                    victim = d.Victim, victimServer = d.VictimServer, killer = d.Killer, killerServer = d.KillerServer,
+                    killerClass = d.KillerClass == Core.Events.GameClass.Unknown ? "" : d.KillerClass.ToString(),
+                    killerPower = d.KillerPower, killerItemLevel = d.KillerItemLevel, zone = d.Zone, at = d.At.ToString("O"),
+                },
+            }, _cts.Token).ConfigureAwait(false);
+            if (!res.IsSuccessStatusCode) Log.Info("1 HP death note: " + (int)res.StatusCode + " " + await res.Content.ReadAsStringAsync().ConfigureAwait(false));
+        }
+        catch (Exception ex) when (ex is not OperationCanceledException)
+        {
+            Log.Info("1 HP death note not sent: " + ex.Message);
+        }
+        catch (OperationCanceledException)
+        {
+        }
+    }
+
     private sealed record AnalysisSlot(string? path, string? uploadUrl, string? error);
     private sealed record AnalysisLink(string? url, string? error);
 

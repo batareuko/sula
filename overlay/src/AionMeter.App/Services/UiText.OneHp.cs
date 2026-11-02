@@ -196,6 +196,17 @@ public sealed partial class UiText
     public string TrayGroupWindows { get; init; } = "WINDOWS";
     public string TrayGroupTools { get; init; } = "🛠 Tools";
     public string TrayGroupWeb { get; init; } = "🌐 Guild site";
+    public string DeathNoteTitle { get; init; } = "Death note";
+    public string DeathNoteTray { get; init; } = "💀 Death note (Ctrl+Shift+K)";
+    public string DeathNoteShowAll { get; init; } = "everyone who killed me (not only 2+)";
+    public string DeathNoteEmpty { get; init; } = "No PvP deaths yet. When a player kills you, the meter notes who, from where and when.";
+    public string DeathNoteSummary { get; init; } = "Deaths by players' hands: {0} · killers: {1} · killed you twice or more: {2}";
+    public string DeathNoteNoRepeat { get; init; } = "Nobody has killed you twice yet. Tick the box above to see everyone.";
+    public string DeathNoteLast { get; init; } = "last {0}";
+    public string DeathNoteWhere { get; init; } = "where: {0}";
+    public string DeathNoteVictims { get; init; } = "killed: {0}";
+    public string DeathNoteKills { get; init; } = "kills";
+    public string OneHpDeathNoteOn { get; init; } = "Send my PvP deaths (who killed me, where) to the guild's death note on the 1 HP site";
     public string PartyWindowTitle { get; init; } = "PARTY";
     public string PartyTray { get; init; } = "👥 Party window (Ctrl+Shift+G)";
     public string PartyWindowEmpty { get; init; } = "The meter does not know you yet: it shows the party once the game names your character.";

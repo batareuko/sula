@@ -236,6 +236,12 @@
         .order('dps', { ascending: false }).limit(3000).then(check);
     },
 
+    fetchPvpDeaths: function () {
+      return client.from('pvp_deaths')
+        .select('user_id,victim,victim_server,killer,killer_server,killer_class,killer_power,killer_item_level,zone,killed_at')
+        .order('killed_at', { ascending: false }).limit(5000).then(check);
+    },
+
     deleteDpsRecord: function (id) {
       return client.from('dps_records').delete().eq('id', id).eq('user_id', user.id).then(check);
     },

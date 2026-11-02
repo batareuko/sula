@@ -71,6 +71,24 @@ public static class SampleRenderer
                 host = radar;
                 refresh = radar.Refresh;
                 break;
+            case "deathnote":
+            {
+                var at = DateTimeOffset.UtcNow;
+                (string Killer, int Server, GameClass Cls, long Power, int Il, int Times, string Zone)[] killers =
+                [
+                    ("Miranda", 2309, GameClass.Assassin, 241_000, 2710, 4, "Lower Abyss"), ("Borgoth", 2311, GameClass.Gladiator, 198_500, 2655, 3, "Middle Abyss"),
+                    ("Lyssa", 2309, GameClass.Sorcerer, 0, 0, 2, "Lower Abyss"), ("Tarnok", 2302, GameClass.Ranger, 175_000, 0, 1, "Eltnen"),
+                ];
+                var k = 0;
+                foreach (var x in killers)
+                    for (var i = 0; i < x.Times; i++)
+                        meter.DeathNote.Add(new Core.OneHp.DeathNote.Death(at.AddMinutes(-(k++ * 37)), i % 3 == 2 ? "Kaelith" : "Celesta", 1304,
+                            x.Killer, x.Server, x.Cls, x.Power, x.Il, x.Zone));
+                var note = new DeathNoteWindow(meter) { Width = o.Width ?? 720, Height = o.Height ?? 560 };
+                host = note;
+                refresh = note.Refresh;
+                break;
+            }
             case "maplist":
             {
                 meter.Settings.MapSlug = "verteron";

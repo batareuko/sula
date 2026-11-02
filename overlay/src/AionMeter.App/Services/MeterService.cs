@@ -56,6 +56,8 @@ public sealed class MeterService : IDisposable
         if (!settings.Transient) Stream.Apply(settings.StreamEnabled, settings.StateApi, settings.StreamPort);
         Tracker.EncounterFinished += OnEncounterFinished;
         Tracker.PvpSessionEnded += SavePvp;
+        DeathNote = new Core.OneHp.DeathNote(settings.Transient ? null : Path.Combine(AppSettings.AppDataDir, "pvp-deaths.json"));
+        Tracker.DeathRecapped += NoteDeath;
         Tracker.DungeonRunEnded += SaveRun;
         // A recording's or the demo's bosses must not move the live respawn timers.
         Tracker.BossNoticed += n =>
@@ -176,6 +178,23 @@ public sealed class MeterService : IDisposable
     public NetMonitor Net { get; }
     /// <summary>1 HP: party gear lookups and the guild DPS rating (guide.sulaslova.com).</summary>
     public OneHpCloud Cloud { get; }
+
+    /// <summary>1 HP: your PvP deaths — who killed you (Windows/DeathNoteWindow.cs, the site's death note).</summary>
+    public Core.OneHp.DeathNote DeathNote { get; } = null!;
+
+    /// <summary>
+    /// 1 HP: a death by a player's hand goes into the death note (with the killer's combat power and item level when the
+    /// meter knows them) and, with a key, to the guild site. Replays and the demo are left out.
+    /// </summary>
+    private void NoteDeath(Core.Combat.DeathRecap r)
+    {
+        if (_replaying || DemoRunning || !r.ByPlayer || string.IsNullOrWhiteSpace(r.KillerName) || r.KillerName.StartsWith('#')) return;
+        var gear = Cloud.GearFor(r.KillerName, r.KillerServer);
+        var death = new Core.OneHp.DeathNote.Death(DateTimeOffset.FromUnixTimeMilliseconds(r.DeathMs), Tracker.SelfName ?? r.VictimName,
+            Tracker.SelfServerId, r.KillerName, r.KillerServer, r.KillerClass,
+            gear?.CombatPower is > 0 ? gear.CombatPower : Tracker.PowerOf(r.KillerName), gear?.ItemLevel ?? Tracker.GearOf(r.KillerName), Tracker.ZoneName);
+        if (DeathNote.Add(death)) _ = Cloud.UploadDeathAsync(death);
+    }
     /// <summary>1 HP: training dummy runs (number, against your best and your last run).</summary>
     public Core.OneHp.DummyRuns Dummies { get; }
     /// <summary>1 HP: the meter as a page for OBS (http://localhost:7799/).</summary>

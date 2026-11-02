@@ -17,6 +17,7 @@ public sealed class TrayIcon : IDisposable
     private readonly ToolStripMenuItem _checklist;
     private readonly ToolStripMenuItem _party;
     private readonly ToolStripMenuItem _miniMap;
+    private readonly ToolStripMenuItem _deathNote;
     private readonly ToolStripMenuItem _history;
     private readonly ToolStripMenuItem _timers;
     private readonly ToolStripMenuItem _settings;
@@ -58,6 +59,7 @@ public sealed class TrayIcon : IDisposable
         _checklist = new ToolStripMenuItem("", null, (_, _) => actions.Checklist());
         _party = new ToolStripMenuItem("", null, (_, _) => actions.Party());
         _miniMap = new ToolStripMenuItem("", null, (_, _) => actions.MiniMap());
+        _deathNote = new ToolStripMenuItem("", null, (_, _) => actions.DeathNote());
         _settings = new ToolStripMenuItem("", null, (_, _) => actions.Settings());
         _language = new ToolStripMenuItem("", null, (_, _) => actions.ToggleLanguage());
         _demo = new ToolStripMenuItem("", null, (_, _) => actions.Demo());
@@ -73,7 +75,7 @@ public sealed class TrayIcon : IDisposable
         menu.Items.AddRange([
             _update, _updateSeparator,
             _headMeter, _toggle, _clickThrough, _reset, new ToolStripSeparator(),
-            _headWindows, _party, _history, _timers, _checklist, _map, _miniMap, _petRadar, new ToolStripSeparator(),
+            _headWindows, _party, _history, _timers, _checklist, _map, _miniMap, _petRadar, _deathNote, new ToolStripSeparator(),
             _tools, _web, _settings, _language, new ToolStripSeparator(),
             _exit,
         ]);
@@ -133,6 +135,7 @@ public sealed class TrayIcon : IDisposable
         _checklist.Text = t.ChecklistTray;
         _party.Text = t.PartyTray;
         _miniMap.Text = t.MiniMapTray;
+        _deathNote.Text = t.DeathNoteTray;
         _settings.Text = t.TraySettings;
         _language.Text = t.SwitchLanguage;
         _demo.Text = t.TrayDemo;
@@ -222,6 +225,7 @@ public sealed record TrayActions(
     Action Checklist,
     Action Party,
     Action MiniMap,
+    Action DeathNote,
     Action Settings,
     Action Demo,
     Action Replay,

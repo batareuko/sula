@@ -213,3 +213,27 @@ create policy "dps delete own" on public.dps_records for delete to authenticated
 insert into storage.buckets (id, name, public, file_size_limit, allowed_mime_types)
 values ('analysis', 'analysis', false, 52428800, array['application/zip'])
 on conflict (id) do update set public = false, file_size_limit = excluded.file_size_limit;
+
+-- 1 HP: зошит смерті — хто вбивав учасників у PvP. Пише лише функція dps-upload (service role) за ключем оверлея;
+-- читають учасники після входу; кожен може видалити свої записи. Сайт показує тих, хто вбивав 2+ рази.
+create table if not exists public.pvp_deaths (
+  id                bigint generated always as identity primary key,
+  user_id           uuid not null references auth.users(id) on delete cascade,
+  victim            text not null check (char_length(victim) between 1 and 40),
+  victim_server     int not null default 0,
+  killer            text not null check (char_length(killer) between 1 and 40),
+  killer_server     int not null default 0,
+  killer_class      text not null default '' check (char_length(killer_class) <= 20),
+  killer_power      bigint not null default 0 check (killer_power between 0 and 50000000),
+  killer_item_level int not null default 0 check (killer_item_level between 0 and 10000),
+  zone              text check (char_length(zone) <= 80),
+  killed_at         timestamptz not null,
+  created_at        timestamptz not null default now(),
+  unique (user_id, killer, killer_server, killed_at)
+);
+create index if not exists pvp_deaths_killer on public.pvp_deaths (killer, killer_server);
+alter table public.pvp_deaths enable row level security;
+drop policy if exists "deaths readable" on public.pvp_deaths;
+create policy "deaths readable" on public.pvp_deaths for select to authenticated using (true);
+drop policy if exists "deaths delete own" on public.pvp_deaths;
+create policy "deaths delete own" on public.pvp_deaths for delete to authenticated using (user_id = auth.uid());
