@@ -459,6 +459,28 @@
       <p class="muted small">Без входу через Discord прогрес зберігається лише в цьому браузері. Щоб передати його лідеру, скопіюйте «посилання» у своєму профілі й надішліть — лідер імпортує його сюди. Імпорт оновлює профіль з тим самим ніком.</p>
     </div>
   </section>
+
+  <section class="wrap" id="deathnote" aria-labelledby="deathnoteTitle">
+    <div class="sec-head">
+      <h2 id="deathnoteTitle">💀 Зошит смерті</h2>
+      <span class="mono muted">PvP · за даними оверлея</span>
+    </div>
+    <div class="panel" id="deathLocked">
+      <p class="muted">Зошит бачать учасники 1 HP після входу через Discord. Смерті в PvP надсилає <a href="#meter">DPS-метр 1 HP</a> з ключем (Налаштування → 1 HP → «Надсилати мої смерті в PvP»).</p>
+    </div>
+    <div id="deathBox" hidden>
+      <div class="dps-tools">
+        <div class="tabs" id="deathScope" role="group" aria-label="Чиї смерті">
+          <button class="tab" type="button" data-scope="guild" aria-pressed="true">Уся гільдія</button>
+          <button class="tab" type="button" data-scope="me" aria-pressed="false">Лише мене</button>
+        </div>
+        <label class="small"><input type="checkbox" id="deathAll"> показати й тих, хто вбив один раз</label>
+        <button class="btn btn-ghost btn-sm" type="button" id="deathRefresh">Оновити</button>
+      </div>
+      <p class="muted small" id="deathSummary"></p>
+      <div class="death-list" id="deathList"></div>
+    </div>
+  </section>
     </div>
   </details>
 

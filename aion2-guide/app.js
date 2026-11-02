@@ -3209,9 +3209,11 @@
     $('dpsBox').hidden = false;
     loadDps();
     loadOverlayKey();
+    startDeaths();
   }
 
   function stopDps() {
+    stopDeaths();
     $('dpsLocked').hidden = false;
     $('dpsBox').hidden = true;
     dpsState.rows = [];
@@ -3350,6 +3352,72 @@
       });
       box.appendChild(h('details', { class: 'netcheck-more' }, h('summary', { text: 'Ваші результати на цьому босі (' + mine.length + ')' }), ul));
     }
+  }
+
+  /* ---------- Зошит смерті: хто вбивав учасників 1 HP у PvP (pvp_deaths, пише оверлей) ---------- */
+  var death = { rows: [], err: '', scope: prefGet('deathScope', 'guild'), all: false };
+
+  function startDeaths() { $('deathLocked').hidden = true; $('deathBox').hidden = false; loadDeaths(); }
+  function stopDeaths() { $('deathLocked').hidden = false; $('deathBox').hidden = true; death.rows = []; }
+
+  function loadDeaths() {
+    Cloud.fetchPvpDeaths().then(function (rows) { death.rows = rows || []; death.err = ''; renderDeaths(); })
+      .catch(function (err) { death.rows = []; death.err = 'Не вдалося завантажити зошит (' + err.message + '). Чи виконано оновлений schema.sql?'; renderDeaths(); });
+  }
+
+  function renderDeaths() {
+    var me = Cloud.user && Cloud.user.id;
+    var rows = death.rows.filter(function (r) { return death.scope !== 'me' || r.user_id === me; });
+    var groups = {};
+    rows.forEach(function (r) {
+      var k = r.killer.toLowerCase() + '@' + r.killer_server;
+      var g = groups[k] || (groups[k] = { name: r.killer, server: r.killer_server, cls: '', power: 0, il: 0, n: 0, first: r.killed_at, last: r.killed_at, victims: {}, zones: {} });
+      g.n++;
+      if (r.killed_at > g.last) g.last = r.killed_at;
+      if (r.killed_at < g.first) g.first = r.killed_at;
+      // найсвіжіші цифри: рядки вже від нових до старих
+      if (!g.cls && r.killer_class) g.cls = r.killer_class;
+      if (!g.power && r.killer_power) g.power = r.killer_power;
+      if (!g.il && r.killer_item_level) g.il = r.killer_item_level;
+      g.victims[r.victim] = (g.victims[r.victim] || 0) + 1;
+      if (r.zone) g.zones[r.zone] = (g.zones[r.zone] || 0) + 1;
+    });
+    var all = Object.keys(groups).map(function (k) { return groups[k]; });
+    var list = all.filter(function (g) { return death.all || g.n >= 2; }).sort(function (a, b) { return b.n - a.n || (b.last > a.last ? 1 : -1); });
+    $('deathSummary').textContent = death.err || (rows.length
+      ? 'Смертей від гравців: ' + rows.length + ' · вбивць: ' + all.length + ' · вбивали двічі й більше: ' + all.filter(function (g) { return g.n >= 2; }).length
+      : 'Поки порожньо. Смерті з’являться, коли оверлей з ключем запише перше вбивство в PvP.');
+    $('deathScope').querySelectorAll('.tab').forEach(function (b) { b.setAttribute('aria-pressed', b.dataset.scope === death.scope ? 'true' : 'false'); });
+    var box = $('deathList');
+    box.textContent = '';
+    list.forEach(function (g) {
+      var top = function (o) { return Object.keys(o).sort(function (a, b) { return o[b] - o[a]; }); };
+      var facts = [CLASS_UA[g.cls] || g.cls || 'клас невідомий'];
+      if (g.power) facts.push('⚡ ' + fmtCompact(g.power));
+      if (g.il) facts.push('рівень спорядження ' + g.il);
+      facts.push('востаннє ' + new Date(g.last).toLocaleString('uk-UA', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' }));
+      var victims = top(g.victims).map(function (v) { return v + (g.victims[v] > 1 ? ' ×' + g.victims[v] : ''); }).join(', ');
+      var zones = top(g.zones).slice(0, 3).join(', ');
+      box.appendChild(h('div', { class: 'death-card' + (g.n >= 2 ? ' repeat' : '') },
+        h('div', { class: 'death-n' }, h('b', { text: '×' + g.n }), h('small', { text: 'вбивств' })),
+        h('div', { class: 'death-main' },
+          h('div', { class: 'death-name' }, h('b', { text: g.name }), g.server ? h('span', { class: 'muted small', text: ' · ' + srvName(g.server) }) : null),
+          h('div', { class: 'muted small', text: facts.join(' · ') }),
+          h('div', { class: 'small', text: 'Кого: ' + victims + (zones ? '   ·   де: ' + zones : '') }))));
+    });
+    if (!list.length && rows.length) box.appendChild(h('p', { class: 'muted', text: 'Двічі ще ніхто не вбивав. Позначте «показати й тих, хто вбив один раз».' }));
+  }
+
+  function initDeaths() {
+    $('deathRefresh').addEventListener('click', loadDeaths);
+    $('deathAll').addEventListener('change', function () { death.all = $('deathAll').checked; renderDeaths(); });
+    $('deathScope').addEventListener('click', function (e) {
+      var b = e.target.closest('[data-scope]');
+      if (!b) return;
+      death.scope = b.dataset.scope;
+      prefSet('deathScope', death.scope);
+      renderDeaths();
+    });
   }
 
   function initDps() {
@@ -3491,6 +3559,7 @@
       ['character', '🧙', 'Персонаж', 'профіль і бойова міць', 'персонаж бм cp'],
       ['groups', '🤝', 'Групи', 'збір у підземелля й рейди', 'група пати party'],
       ['team', '🛡', 'Склад 1 HP', 'хто є в гільдії', 'склад гільдія ростер'],
+      ['deathnote', '💀', 'Зошит смерті', 'хто вбивав нас у PvP 2+ рази', 'зошит смерті пвп pvp вбивця kill'],
     ] },
     { id: 'guide', icon: '📘', name: 'Гайди', items: [
       ['roadmap', '🧭', 'Гайд новачка', 'дорожня карта 45 рівня', 'гайд новачок roadmap'],
@@ -4106,6 +4175,7 @@
   initServers();
   initPets();
   initDps();
+  initDeaths();
   $('netcheckCopy').addEventListener('click', function () { copyText($('netcheckCmd').textContent, 'Команду скопійовано: вставте її в PowerShell'); });
   initMeter();
   initFolds();

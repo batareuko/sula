@@ -142,6 +142,7 @@ public partial class App : Application
             Checklist: ShowChecklist,
             Party: ToggleParty,
             MiniMap: ToggleMiniMap,
+            DeathNote: ShowDeathNote,
             Settings: ShowSettings,
             Demo: () => _meter.StartDemo(),
             Replay: PickReplay,
@@ -350,6 +351,7 @@ public partial class App : Application
         _hotkeys.Register(s.HotkeyPetRadar, TogglePetRadar);
         _hotkeys.Register(s.HotkeyMap, ShowMap);
         _hotkeys.Register(s.HotkeyMiniMap, ToggleMiniMap);
+        _hotkeys.Register(s.HotkeyDeathNote, ShowDeathNote);
         _hotkeys.Register(s.HotkeyChecklist, ShowChecklist);
         _hotkeys.Register(s.HotkeyParty, ToggleParty);
     }
@@ -480,6 +482,22 @@ public partial class App : Application
     private GameFocus? _focus;
 
     /// <summary>1 HP: the pet radar window on / off (tray, Ctrl+Shift+P); remembered for the next start.</summary>
+    private DeathNoteWindow? _deathNote;
+
+    /// <summary>1 HP: the PvP death note (tray, Ctrl+Shift+K); a second call closes it.</summary>
+    public void ShowDeathNote()
+    {
+        if (_deathNote is { IsVisible: true })
+        {
+            _deathNote.Close();
+            return;
+        }
+        _deathNote = new DeathNoteWindow(_meter);
+        _deathNote.Closed += (_, _) => _deathNote = null;
+        _deathNote.Show();
+        _deathNote.Activate();
+    }
+
     private MiniMapWindow? _miniMap;
 
     /// <summary>1 HP: the mini-map over the game on / off (tray, Ctrl+Shift+N, the world map's button); remembered.</summary>

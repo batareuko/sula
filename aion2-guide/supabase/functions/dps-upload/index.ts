@@ -13,6 +13,8 @@
 //        запис для розбору («Записати для аналізу» в оверлеї): адреса, куди оверлей кладе zip (PUT, до 50 МБ),
 //        у приватний кошик Storage `analysis`, тека — id користувача
 //   POST { key, analysisLink: { path } } -> { url }   посилання на цей zip на 7 днів (його вставляють у чат для розбору)
+//   POST { key, death: { victim, victimServer, killer, killerServer, killerClass, killerPower, killerItemLevel, zone, at } }
+//        -> { saved }   зошит смерті: хто вбив учасника в PvP (таблиця pvp_deaths; сайт показує тих, хто вбивав 2+ рази)
 // Ключ створюється на сайті (розділ «Рейтинг DPS»); у базі лише його SHA-256 (таблиця overlay_keys).
 // SUPABASE_URL і SUPABASE_SERVICE_ROLE_KEY Supabase додає сам.
 
@@ -87,6 +89,28 @@ export function validate(r: any): { row?: Record<string, unknown>; error?: strin
   const at = Date.parse(row.fought_at);
   if (!Number.isFinite(at) || at > Date.now() + 10 * 60_000 || at < Date.now() - 30 * 86_400_000) return { error: 'bad_time' };
   row.fought_at = new Date(at).toISOString();
+  return { row };
+}
+
+/** Рядок pvp_deaths (зошит смерті) або причина відмови */
+export function deathRow(d: any, now = Date.now()): { row?: Record<string, unknown>; error?: string } {
+  if (!d || typeof d !== 'object') return { error: 'bad_death' };
+  const row = {
+    victim: str(d.victim, 40),
+    victim_server: int(d.victimServer) || 0,
+    killer: str(d.killer, 40),
+    killer_server: int(d.killerServer) || 0,
+    killer_class: CLASSES.includes(String(d.killerClass ?? '')) ? String(d.killerClass ?? '') : '',
+    killer_power: Math.max(0, int(d.killerPower) || 0),
+    killer_item_level: Math.max(0, int(d.killerItemLevel) || 0),
+    zone: str(d.zone, 80) || null,
+    killed_at: str(d.at, 40),
+  };
+  if (!row.victim || !row.killer || row.killer.startsWith('#')) return { error: 'no_names' };
+  if (row.killer_power > 50_000_000 || row.killer_item_level > 10_000) return { error: 'bad_numbers' };
+  const at = Date.parse(row.killed_at);
+  if (!Number.isFinite(at) || at > now + 10 * 60_000 || at < now - 30 * 86_400_000) return { error: 'bad_time' };
+  row.killed_at = new Date(at).toISOString();
   return { row };
 }
 
@@ -180,6 +204,17 @@ export async function handler(req: Request): Promise<Response> {
       const rows = await rest(`boss_kills?server_id=eq.${server}&source=eq.game&respawn_at=gte.${encodeURIComponent(since)}` +
         `&select=boss_id,respawn_at,alive,killed_at,by_name`);
       return json({ bosses: rows ?? [] });
+    }
+
+    if (body.death) {
+      const { row, error } = deathRow(body.death);
+      if (!row) return json({ error }, 400);
+      const saved = await rest('pvp_deaths', {
+        method: 'POST',
+        headers: { Prefer: 'resolution=ignore-duplicates,return=representation' },
+        body: JSON.stringify([{ ...row, user_id: userId }]),
+      });
+      return json({ saved: Array.isArray(saved) && saved.length > 0 });
     }
 
     if (body.bosses) {

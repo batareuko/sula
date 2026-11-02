@@ -127,6 +127,7 @@ public partial class SettingsWindow : Window
         OneHpPartyOnly.IsChecked = s.PartyOnly;
         OneHpPriorityBosses.IsChecked = s.PriorityBossAlerts;
         OneHpBossSync.IsChecked = s.OneHpBossSync;
+        OneHpDeathNote.IsChecked = s.OneHpDeathNote;
         AutoInstallUpdates.IsChecked = s.AutoInstallUpdates;
         AutoInstallUpdates.IsEnabled = Updater.CanSelfUpdate; // a copy in a read-only folder cannot replace itself
         VersionText.Text = string.Format(Updater.IsInstalled ? T.VersionInstalled : T.VersionPortable, _meter.Updates.Current.ToString(3));
@@ -213,6 +214,7 @@ public partial class SettingsWindow : Window
         s.PartyOnly = OneHpPartyOnly.IsChecked == true;
         s.PriorityBossAlerts = OneHpPriorityBosses.IsChecked == true;
         s.OneHpBossSync = OneHpBossSync.IsChecked == true;
+        s.OneHpDeathNote = OneHpDeathNote.IsChecked == true;
         if ((OneHpWithGame.IsChecked == true) != s.WithGame)
         {
             s.WithGame = OneHpWithGame.IsChecked == true;

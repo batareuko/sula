@@ -102,6 +102,8 @@ public sealed class AppSettings
     public bool OneHpGear { get; set; } = true;
     /// <summary>Send the in-game field boss list's times for your server to the site (OneHpCloud.SyncBosses).</summary>
     public bool OneHpBossSync { get; set; } = true;
+    /// <summary>1 HP: send your PvP deaths (who killed you, where) to the guild's death note on the site.</summary>
+    public bool OneHpDeathNote { get; set; } = true;
     /// <summary>Started by the watcher when AION 2 starts (Services/GameAutostart.cs) and closed after the game.</summary>
     public bool WithGame { get; set; } = true;
     /// <summary>Smaller header, rows and strip (Settings → 1 HP).</summary>
@@ -162,6 +164,7 @@ public sealed class AppSettings
     public double MiniMapZoom { get; set; } = 8;
     public double MiniMapOpacity { get; set; } = 0.9;
     public string HotkeyMiniMap { get; set; } = "Ctrl+Shift+N";
+    public string HotkeyDeathNote { get; set; } = "Ctrl+Shift+K";
     /// <summary>1 HP: the overlay, the boss bar and the pet radar step aside while another program is in front of the game.</summary>
     public bool HideBehindOtherApps { get; set; } = true;
     /// <summary>1 HP: ping the game server and the router once a second for the network strip (off: stream counters only).</summary>
