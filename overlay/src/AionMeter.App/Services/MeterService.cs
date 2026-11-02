@@ -56,6 +56,7 @@ public sealed class MeterService : IDisposable
         if (!settings.Transient) Stream.Apply(settings.StreamEnabled, settings.StateApi, settings.StreamPort);
         Tracker.EncounterFinished += OnEncounterFinished;
         Tracker.PvpSessionEnded += SavePvp;
+        Earnings = new Core.OneHp.Earnings(settings.Transient ? null : Path.Combine(AppSettings.AppDataDir, "earnings.json"));
         DeathNote = new Core.OneHp.DeathNote(settings.Transient ? null : Path.Combine(AppSettings.AppDataDir, "pvp-deaths.json"));
         Tracker.DeathRecapped += NoteDeath;
         Tracker.DungeonRunEnded += SaveRun;
@@ -244,6 +245,16 @@ public sealed class MeterService : IDisposable
     private int _partyLogged;
 
     /// <summary>1 HP: the party packets in the log (raw and read) — what the PARTY filter is built from.</summary>
+    /// <summary>1 HP: what you earn — each currency the game updates (Kinah, Abyss Points …), per character.</summary>
+    public Core.OneHp.Earnings Earnings { get; } = null!;
+
+    private void NoteWallet(Core.Events.GameEvent e)
+    {
+        if (e is not Core.Events.ResourceEvent { Amount: > 0 } r) return;
+        var me = Tracker.SelfName ?? Settings.LastSelfName;
+        if (!string.IsNullOrEmpty(me)) Earnings.Observe(me, r.Id, r.Amount, DateTimeOffset.UtcNow);
+    }
+
     private void LogParty(Core.Events.GameEvent e)
     {
         if (_partyLogged > 400) return; // enough to see what the game sends
@@ -319,6 +330,7 @@ public sealed class MeterService : IDisposable
                 _capture = CaptureFactory(Data);
                 _capture.EventDecoded += Tracker.Process;
                 _capture.EventDecoded += LogParty;
+                _capture.EventDecoded += NoteWallet;
                 _capture.EventDecoded += Analysis.Write;
                 Analysis.Attach(_capture as LiveCapture);
                 _capture.Start();

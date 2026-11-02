@@ -71,6 +71,25 @@ public static class SampleRenderer
                 host = radar;
                 refresh = radar.Refresh;
                 break;
+            case "earnings":
+            {
+                var who = meter.Tracker.SelfName ?? "Celesta"; // the sample meter may already know a character
+                meter.Settings.LastSelfName = who;
+                var t0 = DateTimeOffset.UtcNow.AddMinutes(-95);
+                meter.Earnings.SessionStart = t0;
+                (int Min, int Id, long Balance)[] steps =
+                [
+                    (0, Core.Events.ResourceEvent.Kinah, 25_114_052), (0, Core.Events.ResourceEvent.AbyssPoints, 130_000),
+                    (12, Core.Events.ResourceEvent.Kinah, 25_105_302), (30, Core.Events.ResourceEvent.Kinah, 25_431_900),
+                    (41, Core.Events.ResourceEvent.AbyssPoints, 131_240), (70, Core.Events.ResourceEvent.AbyssPoints, 133_870),
+                    (88, Core.Events.ResourceEvent.Kinah, 25_812_450),
+                ];
+                foreach (var (min, id, balance) in steps) meter.Earnings.Observe(who, id, balance, t0.AddMinutes(min));
+                var earn = new EarningsWindow(meter) { Width = o.Width ?? 380 };
+                host = earn;
+                refresh = earn.Refresh;
+                break;
+            }
             case "deathnote":
             {
                 var at = DateTimeOffset.UtcNow;

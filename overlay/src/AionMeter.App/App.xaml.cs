@@ -130,6 +130,7 @@ public partial class App : Application
         if (settings.PetRadarWindow && !settings.NoOverlay) ShowPetRadar(true);
         if (settings.PartyWindow && !settings.NoOverlay) ShowParty(true);
         if (settings.MiniMap && !settings.NoOverlay) ShowMiniMap(true);
+        if (settings.EarningsWindow && !settings.NoOverlay) ShowEarnings(true);
 
         _tray = new TrayIcon(new TrayActions(
             ToggleOverlay: () => SetOverlayVisible(!_overlay.IsVisible),
@@ -143,6 +144,7 @@ public partial class App : Application
             Party: ToggleParty,
             MiniMap: ToggleMiniMap,
             DeathNote: ShowDeathNote,
+            Earnings: ToggleEarnings,
             Settings: ShowSettings,
             Demo: () => _meter.StartDemo(),
             Replay: PickReplay,
@@ -157,7 +159,7 @@ public partial class App : Application
                 Shutdown();
             },
             State: () => new TrayState(_party?.IsVisible == true, _petRadar?.IsVisible == true, _meter.Settings.ClickThrough, _miniMap?.IsVisible == true)));
-        _focus = new GameFocus(settings, () => [_overlay, _bossBar, _petRadar, _party, _miniMap]);
+        _focus = new GameFocus(settings, () => [_overlay, _bossBar, _petRadar, _party, _miniMap, _earnings]);
         _focus.Start();
         SessionEnding += (_, end) => Log.Info($"Windows {end.ReasonSessionEnding}: closing");
 
@@ -352,6 +354,7 @@ public partial class App : Application
         _hotkeys.Register(s.HotkeyMap, ShowMap);
         _hotkeys.Register(s.HotkeyMiniMap, ToggleMiniMap);
         _hotkeys.Register(s.HotkeyDeathNote, ShowDeathNote);
+        _hotkeys.Register(s.HotkeyEarnings, ToggleEarnings);
         _hotkeys.Register(s.HotkeyChecklist, ShowChecklist);
         _hotkeys.Register(s.HotkeyParty, ToggleParty);
     }
@@ -482,6 +485,28 @@ public partial class App : Application
     private GameFocus? _focus;
 
     /// <summary>1 HP: the pet radar window on / off (tray, Ctrl+Shift+P); remembered for the next start.</summary>
+    private EarningsWindow? _earnings;
+
+    /// <summary>1 HP: the earnings window on / off (tray, Ctrl+Shift+E); remembered for the next start.</summary>
+    public void ToggleEarnings() => ShowEarnings(!(_earnings?.IsVisible ?? false));
+
+    private void ShowEarnings(bool on)
+    {
+        _meter.Settings.EarningsWindow = on;
+        _meter.Settings.Save();
+        if (on && !_meter.Settings.NoOverlay)
+        {
+            if (_earnings is null)
+            {
+                _earnings = new EarningsWindow(_meter);
+                _earnings.ApplyScale(_meter.Settings.UiScale);
+            }
+            _earnings.Show();
+            _focus?.Apply();
+        }
+        else _earnings?.Hide();
+    }
+
     private DeathNoteWindow? _deathNote;
 
     /// <summary>1 HP: the PvP death note (tray, Ctrl+Shift+K); a second call closes it.</summary>
@@ -994,6 +1019,7 @@ public partial class App : Application
         _petRadar?.ApplyScale(percent);
         _party?.ApplyScale(percent);
         _miniMap?.ApplySize();
+        _earnings?.ApplyScale(percent);
     }
 
     private void PickReplay()

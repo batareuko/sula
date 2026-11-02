@@ -165,6 +165,9 @@ public sealed class AppSettings
     public double MiniMapOpacity { get; set; } = 0.9;
     public string HotkeyMiniMap { get; set; } = "Ctrl+Shift+N";
     public string HotkeyDeathNote { get; set; } = "Ctrl+Shift+K";
+    /// <summary>1 HP: the earnings window (Windows/EarningsWindow.cs) is open.</summary>
+    public bool EarningsWindow { get; set; }
+    public string HotkeyEarnings { get; set; } = "Ctrl+Shift+E";
     /// <summary>1 HP: the overlay, the boss bar and the pet radar step aside while another program is in front of the game.</summary>
     public bool HideBehindOtherApps { get; set; } = true;
     /// <summary>1 HP: ping the game server and the router once a second for the network strip (off: stream counters only).</summary>
