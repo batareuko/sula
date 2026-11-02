@@ -80,7 +80,7 @@ public sealed class Earnings
                 var session = Gained(_started);
                 return new Sum(id, _last.GetValueOrDefault((character.ToLowerInvariant(), id), of.LastOrDefault()?.Balance ?? 0),
                     session, Gained(now.AddHours(-1)), Gained(day), -of.Where(c => c.At >= day && c.Delta < 0).Sum(c => c.Delta), session / hours);
-            }).OrderBy(s => s.Id == ResourceEvent.Kinah ? 0 : s.Id == ResourceEvent.AbyssPoints ? 1 : 2).ThenBy(s => s.Id).ToList();
+            }).OrderBy(s => s.Id == ResourceEvent.Kinah ? 0 : s.Id == ResourceEvent.Currency10000001 ? 1 : 2).ThenBy(s => s.Id).ToList();
         }
     }
 

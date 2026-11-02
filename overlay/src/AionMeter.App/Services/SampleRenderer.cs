@@ -79,9 +79,9 @@ public static class SampleRenderer
                 meter.Earnings.SessionStart = t0;
                 (int Min, int Id, long Balance)[] steps =
                 [
-                    (0, Core.Events.ResourceEvent.Kinah, 25_114_052), (0, Core.Events.ResourceEvent.AbyssPoints, 130_000),
+                    (0, Core.Events.ResourceEvent.Kinah, 25_114_052), (0, Core.Events.ResourceEvent.Currency10000001, 130_000),
                     (12, Core.Events.ResourceEvent.Kinah, 25_105_302), (30, Core.Events.ResourceEvent.Kinah, 25_431_900),
-                    (41, Core.Events.ResourceEvent.AbyssPoints, 131_240), (70, Core.Events.ResourceEvent.AbyssPoints, 133_870),
+                    (41, Core.Events.ResourceEvent.Currency10000001, 131_240), (70, Core.Events.ResourceEvent.Currency10000001, 133_870),
                     (88, Core.Events.ResourceEvent.Kinah, 25_812_450),
                 ];
                 foreach (var (min, id, balance) in steps) meter.Earnings.Observe(who, id, balance, t0.AddMinutes(min));
