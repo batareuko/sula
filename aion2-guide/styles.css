@@ -1048,3 +1048,6 @@ main section.meter-hero { margin-top: 0; }
 .death-n small { color: var(--muted); font-size: 11px; }
 .death-main { min-width: 0; display: grid; gap: 2px; }
 .death-name b { font-size: 16px; }
+.death-main { flex: 1; }
+.death-gear { flex-shrink: 0; }
+@media (max-width: 560px) { .death-card { flex-wrap: wrap; } .death-gear { width: 100%; } }

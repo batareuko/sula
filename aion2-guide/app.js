@@ -3403,9 +3403,33 @@
         h('div', { class: 'death-main' },
           h('div', { class: 'death-name' }, h('b', { text: g.name }), g.server ? h('span', { class: 'muted small', text: ' · ' + srvName(g.server) }) : null),
           h('div', { class: 'muted small', text: facts.join(' · ') }),
-          h('div', { class: 'small', text: 'Кого: ' + victims + (zones ? '   ·   де: ' + zones : '') }))));
+          h('div', { class: 'small', text: 'Кого: ' + victims + (zones ? '   ·   де: ' + zones : '') })),
+        h('button', { class: 'btn btn-ghost btn-sm death-gear', type: 'button', text: '🛡 Спорядження', title: 'Повна картка персонажа з офіційного сайту Aion 2: спорядження, дошки, вміння',
+          onclick: function (e) { deathGear(g, e.currentTarget); } })));
     });
     if (!list.length && rows.length) box.appendChild(h('p', { class: 'muted', text: 'Двічі ще ніхто не вбивав. Позначте «показати й тих, хто вбив один раз».' }));
+  }
+
+  // спорядження вбивці: пошук за ніком на сайті Aion 2 (aion-lookup), той, що з його сервера, — у картці персонажа
+  function deathGear(g, btn) {
+    var open = function (data) {
+      var ch = data && data.character;
+      if (!ch) { toast('Не вдалося отримати профіль ' + g.name); return; }
+      openCharacterDialog(sanitizeCharacter({ n: ch.name, s: ch.serverName, cls: ch.className, rg: ch.region, cid: ch.characterId, sid: ch.serverId,
+        lvl: ch.level, il: ch.itemLevel, cp: ch.combatPower, t: Date.now(), r: ch.raceName, img: ch.profileImage }), sanitizeGame(data.game), g.name);
+    };
+    btn.disabled = true;
+    btn.textContent = 'Шукаю…';
+    Cloud.lookup({ name: g.name }).then(function (data) {
+      if (data && data.matches) {
+        var m = data.matches.filter(function (x) { return x.serverId === g.server; })[0] || (data.matches.length === 1 ? data.matches[0] : null);
+        if (!m) throw new Error('not_found');
+        return Cloud.lookup({ characterId: m.characterId, serverId: m.serverId, region: m.region });
+      }
+      return data;
+    }).then(open).catch(function () {
+      toast('Профіль ' + g.name + ' не знайдено на сайті Aion 2 (змінив нік або сайт недоступний).');
+    }).then(function () { btn.disabled = false; btn.textContent = '🛡 Спорядження'; });
   }
 
   function initDeaths() {
