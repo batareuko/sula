@@ -150,6 +150,15 @@ public sealed record PlayerPowerEvent(long TimeMs, uint ActorId, string Name, lo
 public sealed record ResourceEvent(long TimeMs, int Id, int Count, int Bonus) : GameEvent(TimeMs)
 {
     public const int Aether = 60000001, ShugoKeys = 1, Nightmare = 4, Invasion = 8, Awakening = 80000001;
+
+    /// <summary>1 HP: Kinah (seen 2026-10-31: 25 114 052 → 25 105 302 after a teleport).</summary>
+    public const int Kinah = 3;
+
+    /// <summary>1 HP: a currency the Abyss recording shows (130 000 then); taken for Abyss Points until a recording confirms it.</summary>
+    public const int AbyssPoints = 10000001;
+
+    /// <summary>1 HP: a wallet's amount (Kinah and such: the ticket's 64-bit field, flag 1); 0 for tickets, which use <see cref="Count"/>.</summary>
+    public long Amount { get; init; }
 }
 
 /// <summary>1 HP: <c>07 97</c> — a player asks to join your party: name, server, class, level, combat power.</summary>
