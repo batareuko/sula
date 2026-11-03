@@ -200,7 +200,15 @@ public partial class OverlayWindow : Window
     private void UpdateCooldownLine()
     {
         var now = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds();
-        var all = _settings.ShowPartyCooldowns ? _meter.Tracker.PartyCooldowns(now).Take(8).ToList() : [];
+        // 1 HP: only in a boss fight — your skills on cooldown (8 s and more) first, then the party's long ones
+        var boss = _meter.Tracker.LiveFight() is { Boss: true };
+        List<Core.Combat.PartyCooldown> all = [];
+        if (boss && _settings.ShowPartyCooldowns)
+        {
+            var mine = _meter.Tracker.PartyFrame(now, selfMinMs: 8_000).FirstOrDefault(m => m.IsSelf)?.Cooldowns ?? [];
+            all = mine.Take(8).Select(c => c with { Player = UiText.Current.CooldownYou })
+                .Concat(_meter.Tracker.PartyCooldowns(now)).Take(12).ToList();
+        }
         CooldownPanel.Visibility = all.Count > 0 ? Visibility.Visible : Visibility.Collapsed;
         // 1 HP: a round badge per cooldown — the skill icon, the sector still cooling down, the seconds; reused while
         // the same cooldowns run, so the tooltips stay put

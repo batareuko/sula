@@ -349,7 +349,8 @@ public sealed partial class UiText
     public string PetHideOwnedOn { get; init; } = "Pet radar: leave out the pets I already have";
     public string BuffEndOn { get; init; } = "Notice 10 s before a buff of a minute or more runs out";
     public string BuffEnding { get; init; } = "{0} ends in {1} s";
-    public string CooldownsOn { get; init; } = "Your party's cooldowns of a minute and more on the card";
+    public string CooldownsOn { get; init; } = "Cooldowns on the card in boss fights: your skills (8 s and more) and your party's long ones";
+    public string CooldownYou { get; init; } = "you";
     public string PartyRequestOn { get; init; } = "Notice when someone asks to join your party (class, level, combat power)";
     public string PartyRequest { get; init; } = "Asks to join: {0}";
     public string LevelShort { get; init; } = "lvl {0}";

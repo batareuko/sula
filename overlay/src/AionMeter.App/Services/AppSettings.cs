@@ -133,7 +133,7 @@ public sealed class AppSettings
     /// <summary>1 HP: alerts spoken by the Windows voice as well (events, bosses, deaths).</summary>
     public bool VoiceAlerts { get; set; }
     /// <summary>1 HP: your lasting buffs on the card, and a notice 10 s before one of a minute or more runs out.</summary>
-    public bool ShowBuffs { get; set; } = true;
+    public bool ShowBuffs { get; set; }
     /// <summary>1 HP: no card around the meter — a dark header and rows straight over the game (like the stream meters).</summary>
     public bool Frameless { get; set; } = true;
     /// <summary>1 HP: names shimmer in the class colours (yours gold-pink).</summary>
@@ -225,7 +225,7 @@ public sealed class AppSettings
 
     /// <summary>Bumped when the overlay layout changes enough that saved sizes no longer fit.</summary>
     public int LayoutVersion { get; set; } // 0 when missing from an older settings file; new installs get it in Load()
-    private const int CurrentLayout = 7;
+    private const int CurrentLayout = 8;
 
     public static AppSettings Load()
     {
@@ -262,6 +262,12 @@ public sealed class AppSettings
                     // the meter in the tray with no window, so they are cleared once and the overlay shown again.
                     s.DiagSilent = s.DiagNoOverlay = s.DiagNoCapture = s.DiagNoGameScan = false;
                     s.OverlayVisible = true;
+                }
+                if (s.LayoutVersion < 8)
+                {
+                    // v8 = the card's buff line (passives and auras with ∞, food with hours) off: players took it for
+                    // cooldowns; the card shows cooldowns in boss fights instead
+                    s.ShowBuffs = false;
                 }
                 s.Language = UiText.Normalize(s.Language);
                 s.LayoutVersion = CurrentLayout;
