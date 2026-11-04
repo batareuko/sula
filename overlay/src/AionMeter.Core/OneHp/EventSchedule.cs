@@ -5,7 +5,7 @@ namespace AionMeter.Core.OneHp;
 /// the region comes from the server id: 1x1x North America east, 1x2x west, 1x3x Europe, 1x4x South America, 1x5x
 /// Asia). Server time: the Spacetime Rift at 02, 05, …, 23 (entry open 10 min), the Shugo Festival every hour (10 min),
 /// the invasion every hour at :30, Watcher Kaira in Lower Reshanta at 01, 04, …, 22, the Arena of Strategy 11–14 and
-/// 19–21, the Artifact Siege on Monday, Thursday and Saturday at 21:00 with its bosses at 21:30, Guardian Lord Nahma on
+/// 19–21, the Artifact Siege on Thursday and Saturday (since the 4 November patch) at 21:00 with its bosses at 21:30, Guardian Lord Nahma on
 /// Friday and Sunday at 21:00. The daily / weekly (Wednesday) resets are at 07:00 UTC.
 /// </summary>
 public static class EventSchedule
@@ -72,7 +72,7 @@ public static class EventSchedule
         return list.ToArray();
     }
 
-    private static readonly DayOfWeek[] SiegeDays = [DayOfWeek.Monday, DayOfWeek.Thursday, DayOfWeek.Saturday];
+    private static readonly DayOfWeek[] SiegeDays = [DayOfWeek.Thursday, DayOfWeek.Saturday];
 
     public static readonly GameEvent Rift = new("rift", Every(2 * 60, 180), DurationMinutes: 10);
     public static readonly GameEvent Shugo = new("shugo", Every(0, 60), DurationMinutes: 10);

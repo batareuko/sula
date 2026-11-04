@@ -288,6 +288,7 @@ public class EventScheduleTests
         Assert.Equal(Utc(10, 14, 0), EventSchedule.Kaira.Next(Utc(10, 12, 5), serverId: hithanya));   // 16:00 Berlin
         Assert.Equal(Utc(10, 19, 0), EventSchedule.Siege.Next(Utc(10, 9, 0), serverId: hithanya));    // Saturday 21:00
         Assert.Equal(Utc(10, 19, 30), EventSchedule.SiegeBosses.Next(Utc(10, 9, 0), serverId: hithanya));
+        Assert.Equal(Utc(15, 19, 0), EventSchedule.Siege.Next(Utc(10, 20, 0), serverId: hithanya));   // no Monday siege: Thursday 21:00
         Assert.Equal(Utc(11, 19, 0), EventSchedule.Nahma.Next(Utc(10, 20, 0), serverId: hithanya));   // Sunday 21:00
         Assert.Equal(Utc(14, 7, 0), EventSchedule.WeeklyReset.Next(Utc(10, 8, 0)));                   // Wednesday, UTC
         Assert.Equal(Utc(10, 12, 0), EventSchedule.Rift.Next(Utc(10, 12, 5), includeRunning: true, serverId: hithanya));
