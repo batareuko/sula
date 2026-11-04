@@ -178,6 +178,123 @@ window.GUIDE = {
      act — що зробити; counter — id лічильника в «Тижневих лімітах». Новий пачноут — новий об'єкт зверху. */
   patches: [
     {
+      id: '6aead0e86cfe4756db5b913f',
+      date: '2026-11-04',
+      title: 'Пачноут 4 листопада',
+      en: '[Notice] Patch Notes | Nov. 3 (PST) / Nov. 4 (CET)',
+      maint: 'Техобслуговування 4 листопада з 06:30 UTC (08:30 за Києвом), 3 год.',
+      tldr: [
+        'Нове Святилище «Безодня-кузня: Лудра»: Normal з 2800, Hard з 3000, 1 година на забіг; Зала слави для найкращих Сил регіону.',
+        'Нові браслети: Безодній (підсилення до 3) і браслет Лудри (до 5) — з Ваучерів зміни спорядження.',
+        'Хаотичний Зовнішній Решанта: PvP з однаковими статами для всіх, з 45 рівня, 3 години на тиждень; Очки Безодні за PvP там −50%.',
+        'Облога артефактів і її боси — двічі на тиждень (чт і сб, 21:00 / 21:30) замість трьох; за Коридор Безодні +50% Очок Безодні.',
+        'Респаун: Гартуа й Лагта 12 → 11 год (обидві раси); Арго, Король духів — щодня о 10:30 і 22:30.',
+        'Експедиції (Дослідження) Драупнір, Вакрон і Лігво Лютого Рогу — нагороди як у Normal, але зв\'язані.',
+        'Крафт Справжнього й Зоряного Дракона зі 100% успіхом (без КОМБО, зв\'язане); душі деяких петів падають в Експедиціях і Трансценденції.',
+        'Події: відмітки «Ludra Conquest» (7 нагород за 14 днів), 4 Енергії Оділе поштою щодня до 11.11, титули за Лудру до 25.11.',
+      ],
+      groups: [
+        {
+          title: 'Святилище: Безодня-кузня Лудра',
+          items: [
+            {
+              en: 'The "Abyssal Forge: Ludra" content will be added with Normal and Hard difficulties and a 1-hour time limit for each run. Normal offers the same types of item rewards as Hard, with different drop rates. Minimum entry item level: Normal 2,800, Hard 3,000. Rewards: Ludra\'s Weapon, Guard (Bound), Ludra\'s Bracelet (Bound), Abyssal Bracelet (Bound), Sealed Abyssal Waves Wings, Artwork: Abyssal Ludra. Substance Morph on a Gear Change Voucher gives an Abyssal Forge: Weapon Selection Chest (Bound). Top-ranking Forces that clear Hard will be inducted into the Hall of Fame by regional rankings.',
+              ua: 'Нове [Святилище|Sanctuary] — «[Безодня-кузня: Лудра|Abyssal Forge: Ludra]», Normal і Hard, на забіг 1 година. Вхід: Normal — рівень предметів 2 800, Hard — 3 000. Normal дає ті самі типи нагород, що й Hard, лише з іншим шансом: зброя й щит Лудри, [браслет Лудри|Ludra\'s Bracelet], [Безодній браслет|Abyssal Bracelet], запечатані крила Abyssal Waves, артворк Лудри. [Морф|Substance Morph] [Ваучера зміни спорядження|Gear Change Voucher] — скриня вибору зброї Кузні. Найкращі Сили регіону на Hard потрапляють до [Зали слави|Hall of Fame].',
+              why: 'Перший рейд на 3 000 — головна ціль сезону. Hard не обов\'язковий: Normal з 2 800 дає ті самі предмети, лише рідше. Розподіл урону й смерті в групі покаже аналіз бою в оверлеї.',
+              who: ['raid'], kind: 'plus', act: 'Маєте 2 800 — збирайте Силу на Лудру Normal; на Hard потрібно 3 000.',
+            },
+            {
+              en: 'Two new bracelets: Abyssal Bracelet (Bound) — Amplify up to Level 3, chance to drop from Normal and Hard; Ludra\'s Bracelet (Bound) — Amplify up to Level 5, via Substance Morph. A Gear Change Voucher (Bound) can be selected as a guaranteed reward on both difficulties; Gear Change Voucher: Ludra (Bound) from Normal, Gear Change Voucher: Ludra (Hard) (Bound) from Hard. Ludra x6 → Ludra\'s Bracelet; Ludra (Hard) x3 → Ludra\'s Bracelet; Ludra x2 → Ludra (Hard) x1.',
+              ua: 'Два нові браслети. [Безодній браслет|Abyssal Bracelet] — [підсилення|Amplify] до 3, падає з шансом з обох складностей. [Браслет Лудри|Ludra\'s Bracelet] — підсилення до 5, через морф ваучерів. Гарантована нагорода на вибір — Ваучер зміни спорядження: з Normal — «Лудра», з Hard — «Лудра (Hard)». Рецепти: 6 «Лудра» → браслет Лудри; 3 «Лудра (Hard)» → браслет Лудри; 2 «Лудра» → 1 «Лудра (Hard)».',
+              why: 'Браслет Лудри гарантований і без Hard: 6 закриттів Normal — і він ваш. Hard удвічі швидший (3 ваучери).',
+              who: ['raid'], kind: 'plus', act: 'Обирайте ваучер «Лудра» як гарантовану нагороду: 6 штук — браслет Лудри.',
+            },
+          ],
+        },
+        {
+          title: 'Безодня й боси',
+          items: [
+            {
+              en: '"Chaotic Outer Reshanta" will be added. All characters will have standardized stats, skill levels and Stigma levels; only stat bonuses and specialization effects from class-specific skills and Stigmas will apply. Entry from Lv. 45, 3 hours of base playtime per week, extendable with Outer Entry Stones. Some Season Missions can be completed there. Rewards: Kina (Bound), Abyss Points, Common, Rare and Epic Gear, Outer Abyss Rift Stone (Bound), crafting materials (Bound). Abyss Points earned through PvP in Outer Reshanta will be reduced by 50%.',
+              ua: 'Новий «[Хаотичний Зовнішній Решанта|Chaotic Outer Reshanta]»: усім персонажам вирівнюють стати, рівні вмінь і [Стигм|Stigma] — діють лише класові бонуси вмінь і Стигм. Вхід з 45 рівня, 3 години на тиждень, більше — за [Камені входу Зовнішнього|Outer Entry Stones]. Частину сезонних місій можна виконати там. Нагороди: кінари (зв\'язані), [Очки Безодні|Abyss Points], спорядження до Epic, [Камінь розлому Зовнішньої Безодні|Outer Abyss Rift Stone], матеріали. Очки Безодні за PvP там — на 50% менші.',
+              why: 'PvP, де вирішує вміння, а не спорядження, — шанс для твінків і новачків. Але Очок Безодні за вбивства вдвічі менше, тож для фарму AP основна Безодня лишається вигіднішою.',
+              who: ['raid', 'all'], kind: 'plus', act: 'Щотижня 3 години в Зовнішньому Решанта — закривайте там сезонні місії.',
+            },
+            {
+              en: 'The Artifact Siege schedule will change from three times a week to twice a week (Thursdays and Saturdays) at 21:00 as before. Abyss Points awarded per run in the Abyss Corridor will be increased by 50%. The three Artifact Bosses (Executor Kaira, Executor Argo, Executor Tamasa) will also move to Thursdays and Saturdays at 21:30.',
+              ua: '[Облога артефактів|Artifact Siege] — двічі на тиждень, четвер і субота о 21:00 (понеділок прибрали). Три боси артефактів ([Виконавці|Executor] Кайра, Арго й Тамаса) — так само чт і сб о 21:30. За забіг у [Коридорі Безодні|Abyss Corridor] — на 50% більше Очок Безодні.',
+              why: 'Понеділкової облоги більше немає — смуга подій на сайті вже показує новий розклад. Втрачені нагороди компенсують +50% AP за Коридор.',
+              who: ['raid'], kind: 'minus',
+            },
+            {
+              en: 'Field Boss respawn times: Elyos — Eternal Gartua / High Commander Lagta (12 hours → 11 hours); Asmodian — Immortal Gartua / High Commander Lagta (12 hours → 11 hours). Abyss Field Boss Argo, the Spirit King will spawn twice daily at 10:30 and 22:30.',
+              ua: 'Респаун [польових босів|Field Boss]: Елійці — [Вічний Гартуа|Eternal Gartua] і [Верховний командир Лагта|High Commander Lagta], Асмодіани — [Безсмертний Гартуа|Immortal Gartua] і Лагта: 12 → 11 годин. Бос Безодні [Арго, Король духів|Argo, the Spirit King] — двічі на день, о 10:30 і 22:30.',
+              why: 'Таймери на сайті вже рахують 11 годин. Гартуа й Лагта щодня зсуваються на годину раніше — стежте за спільними таймерами гільдії, а не за «звичним» часом.',
+              who: ['raid', 'all'], kind: 'plus',
+            },
+          ],
+        },
+        {
+          title: 'Експедиції (Дослідження) і крафт',
+          items: [
+            {
+              en: 'Rewards for Draupnir (Exploration), Vakron Sky Island (Exploration) and Ferocious Horn Den (Exploration) will be increased to match Normal difficulty: more Kina (Bound), Enhance Stones, Silentium (Bound) and Soul Codex (Bound); Amplify Stone Fragment (Unique) (Bound) added; Refining Stones and crafting materials in the same quantities as Normal, but Bound. Runs for guaranteed rewards and available runs will match Conquest. Kina by cumulative Exploration runs: 0–40 100%, 41–50 80%, 51–60 60%, 61–70 40%, 71+ 20%.',
+              ua: '[Дослідження|Exploration] Драупніра, Вакрона й [Лігва Лютого Рогу|Ferocious Horn Den] — нагороди як у Normal: більше кінар, [каменів заточки|Enhance Stones], [Сілентіуму|Silentium] і [Кодексів душі|Soul Codex], додано [Уламок каменя підсилення (Unique)|Amplify Stone Fragment]; камені очищення й матеріали — як у Normal, але зв\'язані. Кількість забігів і гарантованих нагород — як у [Підкоренні|Conquest]. Кінари за сумою забігів: 0–40 — 100%, 41–50 — 80%, 51–60 — 60%, 61–70 — 40%, від 71 — 20%.',
+              why: 'Коли немає групи — Дослідження тепер майже не гірше Normal, хіба що на продаж нічого. Після 40 забігів кінар стає помітно менше, тож рахуйте їх.',
+              who: ['stones', 'all'], kind: 'plus', act: 'Без групи — ходіть у Дослідження Драупніра, Вакрона чи Лігва; після 40 забігів кінари падають.',
+            },
+            {
+              en: 'New crafting recipes will allow True Dragon and Star Dragon Gear to be crafted with a 100% success rate. They will not trigger COMBO (Great Success), and the Gear will be Bound. Both Bound and Unbound Artisan to Epic Gear can be used as materials. Existing recipes remain unchanged (risk of failure, chance of COMBO and tradable Gear).',
+              ua: 'Нові рецепти: спорядження [Справжнього|True Dragon] і [Зоряного Дракона|Star Dragon] — зі 100% успіхом, але без [КОМБО|Great Success] і лише зв\'язане. Матеріалом підходить спорядження від Artisan до Epic, зв\'язане чи ні. Старі рецепти лишаються: ризик провалу, зате шанс КОМБО й річ на продаж.',
+              why: 'Крафт собі — нові рецепти, без ризику. Крафт на продаж — старі.',
+              who: ['craft'], kind: 'plus',
+            },
+            {
+              en: 'The souls of certain Pets, previously available only through Pet Chests, will also be obtainable from Expedition and Transcendence Dungeons. Dungeon difficulty information will be added to Item Source.',
+              ua: 'Душі деяких [улюбленців|Pets], які раніше були лише в скринях петів, тепер падають і в Експедиціях та [Трансценденції|Transcendence]. В [«Джерело предмета»|Item Source] додано складність підземелля.',
+              why: 'Колекцію петів тепер можна добирати з підземель, а не лише за скрині.',
+              who: ['all'], kind: 'plus',
+            },
+          ],
+        },
+        {
+          title: 'Події',
+          items: [
+            {
+              en: 'Ludra Conquest Check-In: November 4, 06:00 – November 17, 23:59 PST (November 4, 15:00 – November 18, 08:59 CET). Check in once per day; 7 rewards over 14 days: 500,000 Bound Kina, 2,000 Centuryroot Token, 3,000 Phantasmal Fragment, 30,000 Abyss Points, 3,000 Soul Crystals, 1,000,000 Bound Kina, Fresh Leaf Tiara (Helm).',
+              ua: 'Відмітки «[Ludra Conquest Check-In|Ludra Conquest Check-In]» — з 4 листопада 16:00 до 18 листопада 09:59 за Києвом. Раз на день, 7 нагород за 14 днів: 500 000 кінар, 2 000 [Жетонів Столітнього кореня|Centuryroot Token] (монети Шуго), 3 000 [Примарних уламків|Phantasmal Fragment] (монети Кошмару), 30 000 Очок Безодні, 3 000 Кристалів душі, 1 000 000 кінар, [Тіара Свіжого листя|Fresh Leaf Tiara] (шолом).',
+              why: 'Можна пропустити до 7 днів і все одно забрати все.',
+              who: ['event', 'all'], kind: 'plus',
+            },
+            {
+              en: 'Odyle Energy Boost: from October 28 after maintenance until November 11 before maintenance (CET), log in once per day to get 4 Odyle Energy by in-game mail. One delivery per account per day; the mail expires after 7 days.',
+              ua: '[Енергія Оділе|Odyle Energy]: до техобслуговування 11 листопада — щодня 4 штуки поштою за вхід. Одна на акаунт на день, лист зникає через 7 днів.',
+              why: 'Лист на акаунт, а не на персонажа: забирайте тим, кому енергії бракує.',
+              who: ['event', 'all'], kind: 'plus', act: 'Щодня до 11.11 заходьте й забирайте 4 Енергії Оділе з пошти — лист живе 7 днів.',
+            },
+            {
+              en: 'Ludra Hunt: from November 4 after maintenance until November 25 before maintenance (CET). The first 20 parties to kill Ludra on Hard in each region earn exclusive titles (Rank 1: 1st party, Rank 2: 2nd–5th, Rank 3: 6th–20th); everyone who clears Normal or Hard Ludra during the event gets a title too. In the EU region, the 10 Force members who cleared Ludra during the AA period get a red-background title. Titles will be sent by December 2, 23:59 PST.',
+              ua: '«[Полювання на Лудру|Ludra Hunt]» — до техобслуговування 25 листопада. Перші 20 груп регіону, що вб\'ють Лудру на Hard, отримують унікальні титули (1-ша; 2–5; 6–20, з фіолетовим фоном). Усі, хто закриє Normal чи Hard за час події, — титул «Ludra\'s Nemesis». У Європі 10 гравців Сили, що закрила Лудру ще в AA-період, — титул з червоним фоном. Титули надішлють до 3 грудня.',
+              why: 'Титул за Normal отримує кожен — закрийте Лудру до 25.11.',
+              who: ['event', 'raid'], kind: 'plus',
+            },
+            {
+              en: 'Restoration: content entry passes that were not reset as intended in the EU region on Oct 25 will be granted.',
+              ua: 'Компенсація: у Європі видадуть входи в контент, які 25 жовтня не оновилися, як мали.',
+              why: 'Нічого робити не треба — перевірте входи після техобслуговування.',
+              who: ['all'], kind: 'fix',
+            },
+            {
+              en: 'A [Standard Color Code] input field will be added to the Color Palette UI (Customization, Closet, Settings > Chat Font Color).',
+              ua: 'У палітрі кольорів — поле [«Код кольору»|Standard Color Code]: можна вводити HEX-коди (зовнішність, гардероб, колір шрифту чату).',
+              why: 'Точний колір із вебу чи збережений раніше — без підбору вручну.',
+              who: ['qol'], kind: 'plus',
+            },
+          ],
+        },
+      ],
+    },
+    {
       id: '6ae19668577e8c01355e0210',
       date: '2026-10-28',
       title: 'Пачноут 28 жовтня',
@@ -1538,8 +1655,8 @@ window.GUIDE = {
       { id: '2100661', zone: 'verteron', area: 'Garden of the Illusion God', lv: 45, min: 360, name: 'Phantasm Kasia' },
       { id: '2101120', zone: 'verteron', area: 'Artamia Plateau South', lv: 48, min: 180, name: 'Silent Dartan' },
       { id: '2101122', zone: 'verteron', area: 'Artamia Plateau East', lv: 48, min: 360, name: 'Soul Ruler Kashapa' },
-      { id: '2101131', zone: 'verteron', area: 'Red Forest', lv: 48, min: 360, name: 'High Commander Lagta' },
-      { id: '2101074', zone: 'verteron', area: 'Isle of Eternity', lv: 51, min: 360, name: 'Eternal Gartua' },
+      { id: '2101131', zone: 'verteron', area: 'Red Forest', lv: 48, min: 660, name: 'High Commander Lagta' },
+      { id: '2101074', zone: 'verteron', area: 'Isle of Eternity', lv: 51, min: 660, name: 'Eternal Gartua' },
       { id: '2400017', zone: 'altgard', area: 'Dredgion Crash Site', lv: 45, min: 30, name: 'Melted Danar' },
       { id: '2400074', zone: 'altgard', area: 'Nameless Graveyard', lv: 45, min: 30, name: 'Black Warrior Aed' },
       { id: '2400140', zone: 'altgard', area: 'Sanctuary Watch Post', lv: 45, min: 30, name: 'Faithful Rajit' },
@@ -1562,8 +1679,8 @@ window.GUIDE = {
       { id: '2400709', zone: 'altgard', area: 'Impetusium Plaza', lv: 45, min: 360, name: 'Sharp Shylak' },
       { id: '2400855', zone: 'altgard', area: 'Forest of Purification', lv: 48, min: 360, name: 'Silent Dartan' },
       { id: '2400854', zone: 'altgard', area: 'Pafnite Burial Ground', lv: 48, min: 360, name: 'Soul Ruler Kashapa' },
-      { id: '2400853', zone: 'altgard', area: 'Ragta Fortress', lv: 48, min: 720, name: 'High Commander Lagta' },
-      { id: '2400800', zone: 'altgard', area: 'Isle of Immortality', lv: 51, min: 720, name: 'Immortal Gartua' },
+      { id: '2400853', zone: 'altgard', area: 'Ragta Fortress', lv: 48, min: 660, name: 'High Commander Lagta' },
+      { id: '2400800', zone: 'altgard', area: 'Isle of Immortality', lv: 51, min: 660, name: 'Immortal Gartua' },
   ],
 
   /* Інтерактивна карта: interactivemap.app (сторонній сервіс). Slug-и зон перевірено. */
