@@ -2201,7 +2201,7 @@
     if (!box) return;
     var now = Date.now(), r = riftInfo(now), hourly = [], half = [];
     for (var i = 0; i < 24; i++) { hourly.push(i * 60); half.push(i * 60 + 30); }
-    var siege = nextServerEvent(now, [21 * 60], [1, 4, 6], 30), nahma = nextServerEvent(now, [21 * 60], [5, 0], 30);
+    var siege = nextServerEvent(now, [21 * 60], [4, 6], 30), nahma = nextServerEvent(now, [21 * 60], [5, 0], 30);
     var big = siege && (!nahma || siege.start <= nahma.start) ? { id: 'siege', name: 'Облога артефактів', ev: siege } : { id: 'nahma', name: 'Лорд-охоронець Нахма', ev: nahma };
     var week = nextReset('week', now);
     var items = [
