@@ -137,6 +137,21 @@ public static class SampleRenderer
                 refresh = mini.Refresh;
                 break;
             }
+            case "mechalerts":
+            {
+                // Eternal Ludra at 50 %: Bingo now, phase 2 a little later, the enrage in 8 s
+                var ludra = meter.Alerts.For(2301014);
+                Core.OneHp.BossAlerts.Alert A(string id) => ludra.First(x => x.Id == id);
+                var alerts = new MechAlertWindow { AutoShow = false };
+                alerts.Update([
+                    new(A("ludra-bingo1"), Core.OneHp.BossAlerts.Stage.Now, null, 50),
+                    new(A("ludra-phase2"), Core.OneHp.BossAlerts.Stage.Soon, null, 45),
+                    new(A("ludra-enrage-60"), Core.OneHp.BossAlerts.Stage.Soon, 8, null),
+                ]);
+                host = alerts;
+                refresh = () => { };
+                break;
+            }
             case "party":
                 FeedParty(meter);
                 var party = new PartyWindow(meter) { Width = o.Width ?? 340 };
@@ -392,7 +407,7 @@ public static class SampleRenderer
     /// <summary>What shows through the translucent overlay card; other windows draw their own background.</summary>
     private static Brush? Backdrop(Window host, string backdrop)
     {
-        if (host is not OverlayWindow) return host.Background;
+        if (host is not OverlayWindow and not MechAlertWindow) return host.Background;
         return backdrop switch
         {
             "none" => null,

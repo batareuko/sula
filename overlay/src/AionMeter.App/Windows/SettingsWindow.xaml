@@ -280,6 +280,8 @@
                                       Content="{Binding HideBehindOn, Source={x:Static s:UiText.Current}}" />
                             <CheckBox x:Name="MechanicsOn" Style="{StaticResource DarkCheck}" Margin="0,4,0,0"
                                       Content="{Binding MechanicsOn, Source={x:Static s:UiText.Current}}" />
+                            <CheckBox x:Name="MechAlertsOn" Style="{StaticResource DarkCheck}" Margin="0,4,0,0"
+                                      Content="{Binding MechAlertsOn, Source={x:Static s:UiText.Current}}" />
                             <CheckBox x:Name="NetPingOn" Style="{StaticResource DarkCheck}" Margin="0,4,0,0"
                                       Content="{Binding NetPingOn, Source={x:Static s:UiText.Current}}" />
                             <CheckBox x:Name="TwoLineRowsOn" Style="{StaticResource DarkCheck}" Margin="0,4,0,0"

@@ -115,6 +115,52 @@ public sealed class MeterService : IDisposable
     public Core.OneHp.BossCasts Casts { get; }
     /// <summary>1 HP: hidden cubes near you (Core/OneHp/CubeRadar.cs); hooked to the tracker when <see cref="AppSettings.CubeRadar"/> is on.</summary>
     public Core.OneHp.CubeRadar Cubes { get; }
+    private (string Lang, Core.OneHp.BossAlerts Alerts)? _alerts;
+
+    /// <summary>1 HP: the big mechanic warnings (data/boss_alerts.json), in the interface language.</summary>
+    public Core.OneHp.BossAlerts Alerts
+    {
+        get
+        {
+            var lang = UiText.Current.Code;
+            if (_alerts?.Lang != lang) _alerts = (lang, LoadAlerts(lang));
+            return _alerts.Value.Alerts;
+        }
+    }
+
+    private Core.OneHp.BossAlerts LoadAlerts(string lang)
+    {
+        try
+        {
+            using var npcs = System.Text.Json.JsonDocument.Parse(File.ReadAllText(Path.Combine(DataDirectory, "npcs", "en.json")));
+            var names = npcs.RootElement.EnumerateObject()
+                .Where(n => n.Value.TryGetProperty("name", out _))
+                .Select(n => (Code: int.TryParse(n.Name, out var c) ? c : 0, Name: n.Value.GetProperty("name").GetString() ?? ""))
+                .Where(n => n.Code != 0).ToList();
+            string[] fallbacks = lang switch { "ru" => ["uk", "en"], "uk" => ["en"], _ => ["en", "uk"] };
+            return Core.OneHp.BossAlerts.Load(File.ReadAllText(Path.Combine(DataDirectory, "boss_alerts.json")), names, lang, fallbacks);
+        }
+        catch (Exception ex) when (ex is IOException or UnauthorizedAccessException or System.Text.Json.JsonException or KeyNotFoundException or InvalidOperationException)
+        {
+            Log.Info("boss_alerts.json: " + ex.Message);
+            return new Core.OneHp.BossAlerts(new Dictionary<int, IReadOnlyList<Core.OneHp.BossAlerts.Alert>>());
+        }
+    }
+
+    /// <summary>
+    /// 1 HP: the warnings due in a live fight with a boss that has them — by its HP, the fight clock and its casts (the
+    /// ones of the last 10 s and the next ones learnt from earlier fights).
+    /// </summary>
+    public (IReadOnlyList<Core.OneHp.BossAlerts.Banner> Shown, IReadOnlyList<Core.OneHp.BossAlerts.Alert> Fired) MechAlerts(EncounterSnapshot? snap)
+    {
+        if (snap is not { IsActive: true, Boss: { Hp: > 0 } boss } || !Alerts.Knows(boss.NpcCode)) return ([], []);
+        var now = Tracker.LastEventMs;
+        var casts = Casts.Recent(boss.ActorId, now - 10_000).Select(c => (Data.SkillName(c.SkillCode), c.AtMs)).ToList();
+        var next = Casts.Next(boss.ActorId, now).Select(u => (Data.SkillName(u.SkillCode), u.DueMs)).ToList();
+        var hp = boss.MaxHpKnown && boss.MaxHp > 0 ? boss.HpFraction * 100 : (double?)null;
+        return Alerts.Tick(new Core.OneHp.BossAlerts.Fight(snap.Id, boss.NpcCode, hp, snap.ClockMs, now, casts, next));
+    }
+
     /// <summary>1 HP: tips per boss NPC code, from the site's mechanics guide (data/boss_mechanics.json, by English name).</summary>
     public IReadOnlyDictionary<int, string[]> Mechanics { get; }
 

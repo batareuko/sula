@@ -1,0 +1,94 @@
+{
+ "_source": "1 HP: our own short texts after the Abyssal Forge: Ludra guides of aion2guidance.com, Inven (inven.co.kr/board/aion2/6444/1159) and game.savetip.co.kr, written for the Korean / Early Access version (read 2026-11-09). The global version changed some mechanics on 4 November 2026, so the HP marks are a guide, not a promise. Skill names are the game's (skills/en.json).",
+ "_format": "bosses: English boss name (npcs/en.json) -> alerts. hp: fires at that HP % ('soon' from hp + soon, default 4); at: seconds of the fight (soon from at - soonSec, default 10); skills: the boss's skill names (also early, from the gaps learnt between its casts); pull: once at the start. icon: jump, stack, spread, orb, defense, safe, dodge, laser, enrage, adds, bomb, look, color, break, info.",
+ "bosses": {
+  "Central Abyss Fusion Reactor": [
+   {
+    "id": "reactor-pull", "icon": "break", "pull": true,
+    "uk": { "title": "ДОПОМІЖНІ РЕАКТОРИ", "do": "2–3 гравці — на висхідний потік і ламають допоміжні: ЛІВИЙ → ПРАВИЙ → ЦЕНТР", "then": "Поки стоїть хоч один допоміжний — центральний майже не пробити" },
+    "en": { "title": "AUXILIARY REACTORS", "do": "2–3 players ride the updraft and break them: LEFT → RIGHT → CENTRE", "then": "While any auxiliary stands, the central reactor barely takes damage" }
+   }
+  ],
+  "Isolation Specialist Rahu": [
+   {
+    "id": "rahu-pull", "icon": "bomb", "pull": true,
+    "uk": { "title": "БОМБА — ПЕРЕДАЙ", "do": "Фіолетове коло-бомба: перед кінцем таймера стань поруч з іншим — бомба перейде. Сам — лишить чорну діру", "then": "80%: лазер і безпечний сектор" },
+    "en": { "title": "BOMB — PASS IT", "do": "Purple bomb ring: before it runs out stand next to someone so it passes. Alone, it leaves a black hole", "then": "80%: laser and the safe slice" }
+   },
+   {
+    "id": "rahu-80", "icon": "laser", "hp": 80,
+    "uk": { "title": "ЛАЗЕР — СЕКТОР", "do": "Стійте БІЛЯ безпечного сектора, заходьте, коли зона заповниться ~на 90%. Лазер — смерть", "then": "70%: червоні кола — всі в купу" },
+    "en": { "title": "LASER — SAFE SLICE", "do": "Wait BESIDE the safe slice, dash in when the area is ~90% full. The laser kills", "then": "70%: red circles — stack up" }
+   },
+   {
+    "id": "rahu-70", "icon": "stack", "hp": 70,
+    "uk": { "title": "ЧЕРВОНІ КОЛА — ЗБІР", "do": "У кожного червоне коло: усі на позначеного гравця, кола мають перекриватись. Відкинуло до краю — калюжі кладіть разом", "then": "50%: поле ділиться на 4 частини" },
+    "en": { "title": "RED CIRCLES — STACK", "do": "Everyone gets a red circle: stack on the marked player so the circles overlap. Thrown to the edge — drop puddles together", "then": "50%: the arena splits in four" }
+   },
+   {
+    "id": "rahu-50", "icon": "dodge", "hp": 50,
+    "uk": { "title": "4 СЕКТОРИ", "do": "Біжіть у сектор без калюжі. Далі особисті калюжі й «бублик» — від боса подалі", "then": "30%: пожирачі — лазер крізь них" },
+    "en": { "title": "FOUR QUARTERS", "do": "Run to the quarter without a puddle. Then personal puddles and a donut — away from the boss", "then": "30%: devourers — laser through them" }
+   },
+   {
+    "id": "rahu-30", "icon": "adds", "hp": 30, "skills": ["Feeding Time"],
+    "uk": { "title": "ПОЖИРАЧІ — ЛАЗЕР", "do": "4 пожирачі. Лазер іде в одного гравця: станьте так, щоб промінь пройшов КРІЗЬ пожирачів", "then": "Кожен пропущений — чорна діра. 3 діри = вайп" },
+    "en": { "title": "DEVOURERS — LASER", "do": "4 devourers. The laser goes at one player: stand so the beam passes THROUGH the devourers", "then": "Each one missed adds a black hole. 3 holes = wipe" }
+   }
+  ],
+  "Abyssal Wings Ketu": [
+   {
+    "id": "ketu-pull", "icon": "jump", "pull": true,
+    "uk": { "title": "ОКО — СТРИБОК", "do": "Око над гравцем — Кету пікірує. Коли висмикує зброю — перестрибніть кільце. Падають 2 кулі — двоє не-танків ловлять", "then": "80%: хованки — усі на 6 год" },
+    "en": { "title": "EYE — JUMP", "do": "Eye over a player — Ketu dives. When he pulls his weapon out, jump the ring. 2 orbs fall — two non-tanks catch them", "then": "80%: hide and seek — all to 6 o'clock" }
+   },
+   {
+    "id": "ketu-80", "icon": "dodge", "hp": 80,
+    "uk": { "title": "ХОВАНКИ — 6 ГОД", "do": "Усі на 6 год, ухиляйтесь від лазерів → до 12 год, бийте духів (важить кількість ударів) → біла зона: у центр на печатку", "then": "50%: червоні й сині кулі" },
+    "en": { "title": "HIDE AND SEEK — 6 O'CLOCK", "do": "All to 6 o'clock, dodge the lasers → to 12, kill spirits (hit count matters) → white area: centre sigil", "then": "50%: red and blue orbs" }
+   },
+   {
+    "id": "ketu-50", "icon": "look", "hp": 50,
+    "uk": { "title": "ЧЕРВОНІ — ДИВИСЬ, СИНІ — СПИНОЮ", "do": "На червоні кулі дивіться, від синіх відверніться", "then": "30%: вибух сили — камені душі" },
+    "en": { "title": "FACE RED, BACK TO BLUE", "do": "Look at the red orbs, turn your back to the blue ones", "then": "30%: power burst — soul stones" }
+   },
+   {
+    "id": "ketu-30", "icon": "break", "hp": 30,
+    "uk": { "title": "ВИБУХ СИЛИ", "do": "Збір на мітці, за ~5 с до фіксації — вибігайте. Потім ламайте камінь душі: ~4 с невразливості", "then": "Останній камінь — хілу" },
+    "en": { "title": "POWER BURST", "do": "Gather on the marker, dash out ~5 s before it locks. Then break a soul stone: ~4 s of invulnerability", "then": "Leave the last stone to the healer" }
+   }
+  ],
+  "Eternal Ludra": [
+   {
+    "id": "ludra-pull", "icon": "orb", "pull": true,
+    "uk": { "title": "ЛУДРА: ХТО БЕРЕ ЧЕРВОНУ", "do": "Червону кулю — лише під захисним вмінням (блок, щит, ухилення). Сині — будь-хто. Хвіст ззаду: −80% HP", "then": "Кольори фази 2: ЧЕРВОНІ ЛІВОРУЧ, СИНІ ПРАВОРУЧ" },
+    "en": { "title": "LUDRA: WHO TAKES RED", "do": "Red orb only under a defensive skill (block, shield, evasion). Anyone takes blue. Tail from behind: −80% HP", "then": "Phase 2 colours: RED LEFT, BLUE RIGHT" }
+   },
+   {
+    "id": "ludra-bingo1", "icon": "safe", "hp": 50, "skills": ["Ludra's Trial"],
+    "uk": { "title": "БІНГО — ШУКАЙ СИНІЙ СТОВП", "do": "Поле 6×6: дальні — краї, ближні — центр. Синій стовп = невразливість: хто знайшов — кричить, усі туди", "then": "Після бінго — Лудра на 12 год (фаза 2), ~10 с оглушення" },
+    "en": { "title": "BINGO — FIND THE BLUE PILLAR", "do": "6×6 grid: ranged test the edges, melee the centre. Blue pillar = invulnerable: call it, everyone runs in", "then": "After Bingo — Ludra at 12 o'clock (phase 2), ~10 s stun" }
+   },
+   {
+    "id": "ludra-phase2", "icon": "color", "hp": 45, "soon": 2,
+    "uk": { "title": "ФАЗА 2: ЧЕРВОНІ ЛІВОРУЧ", "do": "Сяєш червоним — ЛІВОРУЧ, синім — ПРАВОРУЧ. Різні кольори поруч — урон обом", "then": "Перед диханням: у коло свого кольору за 1–2 с" },
+    "en": { "title": "PHASE 2: RED LEFT", "do": "Glowing red — go LEFT, blue — go RIGHT. Different colours together hurt both", "then": "Before the breath: into your colour's circle 1–2 s early" }
+   },
+   {
+    "id": "ludra-bingo2", "icon": "safe", "hp": 25, "skills": ["Ludra's Trial"],
+    "uk": { "title": "БІНГО 2 + СКАКАЛКА", "do": "Знову синій стовп. Тримайте Лудру в полі зору — стрибайте через хвилю", "then": "Після — дихання: у коло свого кольору" },
+    "en": { "title": "BINGO 2 + JUMP ROPE", "do": "Blue pillar again. Keep Ludra in sight — jump the wave", "then": "Then the breath: into your colour's circle" }
+   },
+   {
+    "id": "ludra-enrage-60", "icon": "enrage", "at": 540, "soonSec": 0,
+    "uk": { "title": "ЛЮТЬ ЧЕРЕЗ 1 ХВ", "do": "Усе в боса: відкати, зілля, бурст", "then": "10:00 — лють, вайп" },
+    "en": { "title": "ENRAGE IN 1 MIN", "do": "Everything on the boss: cooldowns, potions, burst", "then": "10:00 — enrage, wipe" }
+   },
+   {
+    "id": "ludra-enrage", "icon": "enrage", "at": 600,
+    "uk": { "title": "ЛЮТЬ!", "do": "Лудра в люті — добивайте або виходьте", "then": null },
+    "en": { "title": "ENRAGE!", "do": "Ludra is enraged — finish it or leave", "then": null }
+   }
+  ]
+ }
+}
