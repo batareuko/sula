@@ -140,6 +140,9 @@ public sealed class AppSettings
     public bool AnimatedNames { get; set; } = true;
     /// <summary>1 HP: boss mechanics on the card in boss fights — the last cast, what comes next, the guide's tips.</summary>
     public bool BossMechanics { get; set; } = true;
+
+    /// <summary>1 HP: big mechanic warnings over the game (Windows/MechAlertWindow.cs, data/boss_alerts.json).</summary>
+    public bool MechAlerts { get; set; } = true;
     /// <summary>
     /// 1 HP disconnect test, the strictest: the meter only sits in the tray — no window, no capture, no game search,
     /// no hotkeys, no internet (updates, guild timers), no start-with-game. Implies the three below.

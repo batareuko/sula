@@ -40,6 +40,7 @@ public partial class App : Application
     private MeterService _meter = null!;
     private OverlayWindow _overlay = null!;
     private BossBarWindow? _bossBar;
+    private MechAlertWindow? _mechAlerts;
     private TrayIcon? _tray;
     private HotkeyManager? _hotkeys;
     private DispatcherTimer? _timer;
@@ -159,7 +160,7 @@ public partial class App : Application
                 Shutdown();
             },
             State: () => new TrayState(_party?.IsVisible == true, _petRadar?.IsVisible == true, _meter.Settings.ClickThrough, _miniMap?.IsVisible == true)));
-        _focus = new GameFocus(settings, () => [_overlay, _bossBar, _petRadar, _party, _miniMap, _earnings]);
+        _focus = new GameFocus(settings, () => [_overlay, _bossBar, _mechAlerts, _petRadar, _party, _miniMap, _earnings]);
         _focus.Start();
         SessionEnding += (_, end) => Log.Info($"Windows {end.ReasonSessionEnding}: closing");
 
@@ -231,6 +232,7 @@ public partial class App : Application
         UpdateAutoVisibility();
         if (_overlay.IsVisible) _overlay.Refresh();
         UpdateBossBar();
+        UpdateMechAlerts();
         if (++_ticks % 5 == 0)
         {
             _tray?.Update(_overlay.IsVisible, _meter.Settings.ClickThrough, _meter.DemoRunning ? "demo" : _meter.CaptureStatus.Message);
@@ -827,6 +829,26 @@ public partial class App : Application
         _bossBar?.Update(snap, _meter.Settings.BossBar && !_meter.Settings.NoOverlay);
     }
 
+    /// <summary>1 HP: the big mechanic warnings (Settings → 1 HP), made when a boss that has them is fought.</summary>
+    private void UpdateMechAlerts()
+    {
+        var on = _meter.Settings.MechAlerts && !_meter.Settings.NoOverlay;
+        if (!on && _mechAlerts is null) return;
+        var (shown, fired) = on && _meter.Tracker.LiveFight() is { Boss: true } ? _meter.MechAlerts(_meter.Tracker.Snapshot(null, DateTimeOffset.UtcNow.ToUnixTimeMilliseconds())) : ([], []);
+        if (shown.Count > 0 && _mechAlerts is null)
+        {
+            _mechAlerts = new MechAlertWindow();
+            _mechAlerts.ApplyScale(_meter.Settings.UiScale);
+            _focus?.Apply();
+        }
+        _mechAlerts?.Update(shown);
+        if (fired.Count > 0)
+        {
+            System.Media.SystemSounds.Exclamation.Play();
+            Say(fired[0].Title);
+        }
+    }
+
     private readonly Dictionary<string, DateTimeOffset> _eventsAnnounced = new();
 
     /// <summary>1 HP: Rift, Shugo Festival, sieges, resets — a notice with a sound before they start (Settings → events).</summary>
@@ -1016,6 +1038,7 @@ public partial class App : Application
     {
         _overlay?.ApplyScale(percent);
         _bossBar?.ApplyScale(percent);
+        _mechAlerts?.ApplyScale(percent);
         _petRadar?.ApplyScale(percent);
         _party?.ApplyScale(percent);
         _miniMap?.ApplySize();

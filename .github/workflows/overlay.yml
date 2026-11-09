@@ -89,6 +89,7 @@ jobs:
               @('--render-sample', 'dist/preview/maplist-uk.png', '--lang', 'uk', '--window', 'maplist'),
               @('--render-sample', 'dist/preview/deathnote-uk.png', '--lang', 'uk', '--window', 'deathnote'),
               @('--render-sample', 'dist/preview/earnings-uk.png', '--lang', 'uk', '--window', 'earnings'),
+              @('--render-sample', 'dist/preview/mechalerts-uk.png', '--lang', 'uk', '--backdrop', 'dark', '--window', 'mechalerts'),
               @('--render-sample', 'dist/preview/analysis-uk.png', '--lang', 'uk', '--window', 'breakdown', '--tab', 'analysis'))) {
             $p = Start-Process $exe -ArgumentList $shot -PassThru
             if (-not $p.WaitForExit(120000)) { $p.Kill(); Write-Host "timed out: $shot" }

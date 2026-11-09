@@ -316,6 +316,12 @@ public sealed partial class UiText
     public string UiScaleHint { get; init; } = "The overlay, the boss bar and the pet radar; over the rows: Ctrl + Shift + wheel";
     public string ClickToGame { get; init; } = "Click to go back to the game";
     public string HideBehindOn { get; init; } = "Hide the meter while another program is in front of the game (browser, Discord, desktop)";
+    public string MechAlertsOn { get; init; } = "Big mechanic warnings over the game (Ludra raid: icon, what to do, what comes next)";
+    public string MechNowStage { get; init; } = "NOW";
+    public string MechSoonStage { get; init; } = "SOON";
+    public string MechSoonHp { get; init; } = "SOON · at {0}%";
+    public string MechSoonSec { get; init; } = "IN {0} s";
+    public string MechThen { get; init; } = "Next: {0}";
     public string MechanicsOn { get; init; } = "Boss mechanics in boss fights: the boss's casts, what comes next (learnt from your fights) and the guide's tips";
     public string MechNext { get; init; } = "Next: {0}";
     public string MechNow { get; init; } = "now";
